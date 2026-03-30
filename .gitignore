@@ -12,6 +12,7 @@ web-build/
 .env*.local
 *.tsbuildinfo
 /tmp/
+coverage
 
 # lock files (use bun.lock)
 package-lock.json

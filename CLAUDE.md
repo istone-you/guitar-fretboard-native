@@ -136,13 +136,13 @@ guiter-native/
 
 ## 6. 開発ルール
 
-### スクリプト
+コードを変更した際は必ず以下を実行し、エラーがないことを確認すること。
 
 ```bash
-bun run start    # Expo 開発サーバー起動
-bun run ios      # iOS シミュレーター起動
-bun run android  # Android エミュレーター起動
-bun run web      # Web 版起動
+bun run fmt
+bun run lint
+bun run typecheck
+bun run test
 ```
 
 ### useEffect の使用について
