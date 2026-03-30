@@ -11,6 +11,8 @@ interface FretboardFooterProps {
   overlayNotes: string[];
   highlightedOverlayNotes: Set<string>;
   highlightedDegrees: Set<string>;
+  autoFilter: boolean;
+  onAutoFilterChange: (value: boolean) => void;
   onAutoFilter: () => void;
   onResetOrHighlightAll: () => void;
   onSetOverlayNoteHighlights: (notes: string[]) => void;
@@ -30,6 +32,8 @@ export default function FretboardFooter({
   overlayNotes,
   highlightedOverlayNotes,
   highlightedDegrees,
+  autoFilter,
+  onAutoFilterChange,
   onAutoFilter,
   onResetOrHighlightAll,
   onSetOverlayNoteHighlights,
@@ -72,15 +76,32 @@ export default function FretboardFooter({
     </View>
   );
 
-  const renderActionButtons = (onFilter: () => void, onToggleAll: () => void, hasHighlights: boolean) => (
+  const renderActionButtons = (onFilter: () => void, onToggleAll: () => void, hasHighlights: boolean, autoFilterKey: string) => (
     <View style={styles.actionRow}>
       <TouchableOpacity
         onPress={onFilter}
-        style={[styles.actionBtn, { borderColor: isDark ? "#4b5563" : "#d6d3d1", backgroundColor: isDark ? "#1f2937" : "#fff" }]}
+        disabled={autoFilter}
+        style={[styles.actionBtn, {
+          borderColor: isDark ? "#4b5563" : "#d6d3d1",
+          backgroundColor: isDark ? "#1f2937" : "#fff",
+          opacity: autoFilter ? 0.4 : 1,
+        }]}
         activeOpacity={0.7}
       >
         <Text style={{ fontSize: 14, color: isDark ? "#d1d5db" : "#57534e" }}>
-          {t("degreeFilter.filter")}
+          {t(`${autoFilterKey}.filter`)}
+        </Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        onPress={() => onAutoFilterChange(!autoFilter)}
+        style={[styles.actionBtn, {
+          borderColor: autoFilter ? (isDark ? "#16a34a" : "#22c55e") : isDark ? "#4b5563" : "#d6d3d1",
+          backgroundColor: autoFilter ? (isDark ? "rgba(22,163,74,0.15)" : "rgba(34,197,94,0.1)") : isDark ? "#1f2937" : "#fff",
+        }]}
+        activeOpacity={0.7}
+      >
+        <Text style={{ fontSize: 14, color: autoFilter ? (isDark ? "#4ade80" : "#16a34a") : isDark ? "#d1d5db" : "#57534e" }}>
+          {t(`${autoFilterKey}.autoFilter`)}
         </Text>
       </TouchableOpacity>
       <TouchableOpacity
@@ -89,7 +110,7 @@ export default function FretboardFooter({
         activeOpacity={0.7}
       >
         <Text style={{ fontSize: 14, color: isDark ? "#38bdf8" : "#0284c7" }}>
-          {hasHighlights ? t("degreeFilter.reset") : t("degreeFilter.highlightAll")}
+          {hasHighlights ? t(`${autoFilterKey}.reset`) : t(`${autoFilterKey}.highlightAll`)}
         </Text>
       </TouchableOpacity>
     </View>
@@ -103,24 +124,15 @@ export default function FretboardFooter({
             <Text style={[styles.title, { color: isDark ? "#9ca3af" : "#78716c" }]}>
               {t("noteFilter.title")}
             </Text>
-            <TouchableOpacity
-              onPress={() => onSetOverlayNoteHighlights(overlayNotes)}
-              style={[styles.actionBtn, { borderColor: isDark ? "#4b5563" : "#d6d3d1", backgroundColor: isDark ? "#1f2937" : "#fff" }]}
-              activeOpacity={0.7}
-            >
-              <Text style={{ fontSize: 14, color: isDark ? "#d1d5db" : "#57534e" }}>
-                {t("noteFilter.filter")}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => onSetOverlayNoteHighlights(hasHighlightedNotes ? [] : allNotes)}
-              style={[styles.actionBtn, { borderColor: isDark ? "#0284c7" : "#38bdf8", backgroundColor: isDark ? "#1f2937" : "#fff" }]}
-              activeOpacity={0.7}
-            >
-              <Text style={{ fontSize: 14, color: isDark ? "#38bdf8" : "#0284c7" }}>
-                {hasHighlightedNotes ? t("noteFilter.reset") : t("noteFilter.highlightAll")}
-              </Text>
-            </TouchableOpacity>
+            {renderActionButtons(
+              () => onSetOverlayNoteHighlights(overlayNotes),
+              () => {
+                if (hasHighlightedNotes) onAutoFilterChange(false);
+                onSetOverlayNoteHighlights(hasHighlightedNotes ? [] : allNotes);
+              },
+              hasHighlightedNotes,
+              "noteFilter",
+            )}
           </View>
           {renderChips(allNotes, highlightedOverlayNotes, onToggleOverlayNoteHighlight)}
         </>
@@ -136,6 +148,7 @@ export default function FretboardFooter({
               onAutoFilter,
               onResetOrHighlightAll,
               highlightedDegrees.size > 0,
+              "degreeFilter",
             )}
           </View>
           {renderChips([...DEGREE_CHIPS], highlightedDegrees, onToggleDegree)}

@@ -70,6 +70,8 @@ function AppContent() {
       return [0, 14];
     },
   );
+  // Auto filter
+  const [autoFilter, setAutoFilter] = useState(false);
   // Quiz
   const [showQuiz, setShowQuiz] = useState(false);
   const [chordQuizTypes, setChordQuizTypes] = useState<ChordType[]>(DEFAULT_CHORD_QUIZ_TYPES);
@@ -251,6 +253,19 @@ function AppContent() {
       .map((semitone) => notes[(rootIndex + semitone) % 12]);
   }, [accidental, overlaySemitones, rootNote]);
 
+  // Auto-filter: derived state computed during render, no useEffect
+  const DEGREE_BY_SEMITONE = ["P1","m2","M2","m3","M3","P4","b5","P5","m6","M6","m7","M7"];
+  const effectiveHighlightedDegrees = useMemo(() => {
+    if (!autoFilter) return highlightedDegrees;
+    if (overlaySemitones.size === 0) return new Set<string>();
+    return new Set(DEGREE_BY_SEMITONE.filter((_, i) => overlaySemitones.has(i)));
+  }, [autoFilter, highlightedDegrees, overlaySemitones]);
+
+  const effectiveHighlightedNotes = useMemo(() => {
+    if (!autoFilter) return highlightedOverlayNotes;
+    return new Set(overlayNotes);
+  }, [autoFilter, highlightedOverlayNotes, overlayNotes]);
+
   const quizRootChangeEnabled =
     !showQuiz || quizMode === "degree" || quizMode === "scale" || quizMode === "diatonic";
 
@@ -368,8 +383,8 @@ function AppContent() {
               {...commonFretboardProps}
               rootNote={rootNote}
               onNoteClick={handleNoteClick}
-              highlightedNotes={highlightedOverlayNotes}
-              highlightedDegrees={highlightedDegrees}
+              highlightedNotes={effectiveHighlightedNotes}
+              highlightedDegrees={effectiveHighlightedDegrees}
             />
           )}
         </View>
@@ -423,8 +438,8 @@ function AppContent() {
           showQuiz={showQuiz}
           allNotes={allNotes}
           overlayNotes={overlayNotes}
-          highlightedOverlayNotes={highlightedOverlayNotes}
-          highlightedDegrees={highlightedDegrees}
+          highlightedOverlayNotes={effectiveHighlightedNotes}
+          highlightedDegrees={effectiveHighlightedDegrees}
           onAutoFilter={() =>
             handleAutoFilter({
               rootNote,
@@ -438,9 +453,16 @@ function AppContent() {
               chordType,
             })
           }
-          onResetOrHighlightAll={() =>
-            highlightedDegrees.size > 0 ? resetHighlightedDegrees() : highlightAllDegrees()
-          }
+          onResetOrHighlightAll={() => {
+            if (effectiveHighlightedDegrees.size > 0) {
+              setAutoFilter(false);
+              resetHighlightedDegrees();
+            } else {
+              highlightAllDegrees();
+            }
+          }}
+          autoFilter={autoFilter}
+          onAutoFilterChange={setAutoFilter}
           onSetOverlayNoteHighlights={handleSetOverlayNoteHighlights}
           onToggleOverlayNoteHighlight={handleToggleOverlayNoteHighlight}
           onToggleDegree={toggleDegree}

@@ -53,14 +53,16 @@
     "filter": "Filter",
     "filterTitle": "Filter by the currently visible overlays",
     "reset": "Reset",
-    "highlightAll": "Highlight all"
+    "highlightAll": "Highlight all",
+    "autoFilter": "Auto"
   },
   "noteFilter": {
     "title": "Notes",
     "filter": "Filter",
     "filterTitle": "Filter by the currently visible overlays",
     "highlightAll": "Highlight all",
-    "reset": "Reset"
+    "reset": "Reset",
+    "autoFilter": "Auto"
   },
   "mobileControls": {
     "layers": "Layers",

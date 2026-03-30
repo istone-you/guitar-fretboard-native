@@ -53,14 +53,16 @@
     "filter": "抽出",
     "filterTitle": "表示中のオーバーレイに合わせて絞り込む",
     "reset": "リセット",
-    "highlightAll": "全強調"
+    "highlightAll": "全強調",
+    "autoFilter": "自動抽出"
   },
   "noteFilter": {
     "title": "音名",
     "filter": "抽出",
     "filterTitle": "表示中のオーバーレイに合わせて絞り込む",
     "highlightAll": "全強調",
-    "reset": "リセット"
+    "reset": "リセット",
+    "autoFilter": "自動抽出"
   },
   "mobileControls": {
     "layers": "レイヤー",
