@@ -237,17 +237,17 @@ export default function LayerControls({
   const getCardStyle = (layerOn: boolean) => {
     if (!showLayers) {
       return isDark
-        ? { borderColor: "rgba(255,255,255,0.05)", backgroundColor: "rgba(255,255,255,0.02)" }
-        : { borderColor: "#e7e5e4", backgroundColor: "rgba(245,245,244,0.7)" };
+        ? { borderColor: "rgba(255,255,255,0.05)", backgroundColor: "#0a0a0a" }
+        : { borderColor: "#e7e5e4", backgroundColor: "#f5f5f4" };
     }
     if (layerOn) {
       return isDark
-        ? { borderColor: "rgba(255,255,255,0.10)", backgroundColor: "rgba(255,255,255,0.045)" }
-        : { borderColor: "#e7e5e4", backgroundColor: "rgba(250,250,249,0.9)" };
+        ? { borderColor: "rgba(255,255,255,0.10)", backgroundColor: "#111111" }
+        : { borderColor: "#e7e5e4", backgroundColor: "#fafaf9" };
     }
     return isDark
-      ? { borderColor: "rgba(255,255,255,0.05)", backgroundColor: "rgba(255,255,255,0.015)" }
-      : { borderColor: "rgba(231,229,228,0.6)", backgroundColor: "rgba(245,245,244,0.4)" };
+      ? { borderColor: "rgba(255,255,255,0.05)", backgroundColor: "#0d0d0d" }
+      : { borderColor: "rgba(231,229,228,0.6)", backgroundColor: "#f5f5f4" };
   };
 
   const getContentOpacity = (layerOn: boolean) =>

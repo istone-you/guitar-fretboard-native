@@ -158,6 +158,8 @@ interface AppHeaderProps {
   fretboardDisplaySize: FretboardDisplaySize;
   fretRange: [number, number];
   accidental: Accidental;
+  isLandscape: boolean;
+  onToggleLayout: () => void;
   onThemeChange: (theme: Theme) => void;
   onDisplaySizeChange: (size: FretboardDisplaySize) => void;
   onFretRangeChange: (range: [number, number]) => void;
@@ -169,6 +171,8 @@ export default function AppHeader({
   fretboardDisplaySize,
   fretRange,
   accidental,
+  isLandscape,
+  onToggleLayout,
   onThemeChange,
   onDisplaySizeChange,
   onFretRangeChange,
@@ -216,8 +220,23 @@ export default function AppHeader({
         },
       ]}
     >
-      {/* Left spacer to balance the settings button */}
-      <View style={styles.headerSide} />
+      <View style={[styles.headerSide, { alignItems: "flex-start" }]}>
+        <TouchableOpacity
+          onPress={onToggleLayout}
+          style={styles.headerBtn}
+          activeOpacity={0.7}
+        >
+          <View style={[styles.lockIcon, {
+            borderColor: isDark ? "#9ca3af" : "#78716c",
+          }]}>
+            {/* Show landscape icon when in portrait (tap to go landscape), vice versa */}
+            <View style={[
+              isLandscape ? styles.lockBarPortrait : styles.lockBarLandscape,
+              { backgroundColor: isDark ? "#9ca3af" : "#78716c" },
+            ]} />
+          </View>
+        </TouchableOpacity>
+      </View>
 
       <Text style={[styles.title, { color: isDark ? "#fff" : "#1c1917" }]}>
         Guitar Fretboard
@@ -425,5 +444,23 @@ const styles = StyleSheet.create({
   fretRangeValue: {
     fontSize: 14,
     fontWeight: "600",
+  },
+  lockIcon: {
+    width: 20,
+    height: 20,
+    borderWidth: 2,
+    borderRadius: 3,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+  },
+  lockBarPortrait: {
+    width: 7,
+    height: 12,
+    borderRadius: 1,
+  },
+  lockBarLandscape: {
+    width: 12,
+    height: 7,
+    borderRadius: 1,
   },
 });

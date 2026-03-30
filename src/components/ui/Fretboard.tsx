@@ -139,6 +139,7 @@ export interface FretboardProps {
   chordColor?: string;
   scaleColor?: string;
   cagedColor?: string;
+  rowHeightOverride?: number;
 }
 
 export default function Fretboard({
@@ -175,10 +176,14 @@ export default function Fretboard({
   chordColor = "#ffd700",
   scaleColor = "#ff69b6",
   cagedColor = "#40e0d0",
+  rowHeightOverride,
 }: FretboardProps) {
   const [fretMin, fretMax] = fretRange;
   const quizActive = quizModeActive && quizCell !== undefined;
-  const size = FRETBOARD_SIZE_CONFIG[displaySize];
+  const baseSize = FRETBOARD_SIZE_CONFIG[displaySize];
+  const size = rowHeightOverride
+    ? { ...baseSize, rowHeight: rowHeightOverride } as typeof baseSize
+    : baseSize;
   const isDark = theme === "dark";
   const rootIndex = getRootIndex(rootNote);
   const diatonicChord =

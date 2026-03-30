@@ -1,12 +1,17 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback, useRef } from "react";
 import {
   View,
   Image,
   TouchableOpacity,
+  Pressable,
+  ScrollView,
   StatusBar,
   StyleSheet,
+  useWindowDimensions,
+  Animated,
 } from "react-native";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
+import * as ScreenOrientation from "expo-screen-orientation";
 import "./src/i18n";
 import AppHeader from "./src/components/AppHeader/index";
 import FretboardHeader from "./src/components/FretboardHeader/index";
@@ -70,6 +75,30 @@ function AppContent() {
       return [0, 14];
     },
   );
+  // Layout: force screen rotation via ScreenOrientation
+  const { width: winWidth, height: winHeight } = useWindowDimensions();
+  const isLandscape = winWidth > winHeight;
+  const [rightPanelOpen, setRightPanelOpen] = useState(true);
+  const panelSlideAnim = useRef(new Animated.Value(0)).current; // 0 = open, 1 = closed
+
+  const toggleRightPanel = useCallback(() => {
+    const toValue = rightPanelOpen ? 1 : 0;
+    setRightPanelOpen(!rightPanelOpen);
+    Animated.timing(panelSlideAnim, {
+      toValue,
+      duration: 250,
+      useNativeDriver: true,
+    }).start();
+  }, [rightPanelOpen, panelSlideAnim]);
+
+  const toggleLayout = useCallback(async () => {
+    if (isLandscape) {
+      await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+    } else {
+      await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE_RIGHT);
+    }
+  }, [isLandscape]);
+
   // Auto filter
   const [autoFilter, setAutoFilter] = useState(false);
   // Quiz
@@ -308,6 +337,313 @@ function AppContent() {
       ? quizQuestion.promptChordRoot
       : rootNote;
 
+  // ── Shared JSX pieces ──────────────────────────────────────────
+
+  const fretboardHeaderEl = (
+    <FretboardHeader
+      theme={theme}
+      rootNote={rootNote}
+      accidental={accidental}
+      baseLabelMode={baseLabelMode}
+      showQuiz={showQuiz}
+      rootChangeDisabled={!quizRootChangeEnabled}
+      onBaseLabelModeChange={setBaseLabelMode}
+      onRootNoteChange={quizRootChangeEnabled ? handleNoteClick : () => {}}
+    />
+  );
+
+  const fretboardEl = (
+    <View style={{ paddingVertical: isLandscape ? 2 : 8 }}>
+      {showQuiz ? (
+        <QuizFretboard
+          {...commonFretboardProps}
+          showChord={false}
+          showScale={false}
+          showCaged={false}
+          rootNote={quizEffectiveRootNote}
+          onNoteClick={handleNoteClick}
+          quizModeActive={quizQuestion != null}
+          quizCell={
+            quizQuestion != null &&
+            quizType !== "fretboard" &&
+            quizMode !== "chord" &&
+            quizMode !== "scale" &&
+            quizMode !== "diatonic"
+              ? { stringIdx: quizQuestion.stringIdx, fret: quizQuestion.fret }
+              : undefined
+          }
+          quizAnswerMode={quizType === "fretboard"}
+          quizTargetString={
+            quizType === "fretboard" &&
+            (quizMode === "note" || quizMode === "degree") &&
+            !fretboardAllStrings &&
+            quizQuestion != null
+              ? quizQuestion.stringIdx
+              : undefined
+          }
+          quizAnsweredCell={quizAnsweredCell}
+          quizCorrectCell={quizCorrectCell}
+          quizSelectedCells={quizSelectedCells}
+          onQuizCellClick={handleFretboardQuizAnswer}
+          quizRevealNoteNames={quizRevealNoteNames}
+          highlightedNotes={new Set<string>()}
+          highlightedDegrees={new Set<string>()}
+        />
+      ) : (
+        <NormalFretboard
+          {...commonFretboardProps}
+          rootNote={rootNote}
+          onNoteClick={handleNoteClick}
+          highlightedNotes={effectiveHighlightedNotes}
+          highlightedDegrees={effectiveHighlightedDegrees}
+        />
+      )}
+    </View>
+  );
+
+  const quizPanelEl = showQuiz && quizQuestion != null ? (
+    <QuizPanel
+      theme={theme}
+      mode={quizMode}
+      quizType={quizType}
+      question={quizQuestion}
+      score={quizScore}
+      selectedAnswer={selectedAnswer}
+      rootNote={rootNote}
+      quizSelectedChoices={quizSelectedChoices}
+      noteOptions={quizNoteOptions}
+      quizSelectedChordRoot={quizSelectedChordRoot}
+      quizSelectedChordType={quizSelectedChordType}
+      diatonicSelectedRoot={diatonicSelectedRoot}
+      diatonicSelectedChordType={diatonicSelectedChordType}
+      diatonicAllAnswers={diatonicAllAnswers}
+      diatonicEditingDegree={diatonicEditingDegree}
+      diatonicQuizKeyType={diatonicQuizKeyType}
+      diatonicQuizChordSize={diatonicQuizChordSize}
+      chordQuizTypes={chordQuizTypes}
+      availableChordQuizTypes={CHORD_QUIZ_TYPES_ALL}
+      scaleType={scaleType}
+      onKindChange={handleQuizKindChange}
+      onChordQuizTypesChange={setChordQuizTypes}
+      onScaleTypeChange={(v) => setScaleType(v as ScaleType)}
+      onDiatonicQuizKeyTypeChange={(v) => setDiatonicQuizKeyType(v)}
+      onDiatonicQuizChordSizeChange={(v) => setDiatonicQuizChordSize(v)}
+      onAnswer={handleQuizAnswer}
+      onChordQuizRootSelect={handleChordQuizRootSelect}
+      onChordQuizTypeSelect={handleChordQuizTypeSelect}
+      onDiatonicAnswerRootSelect={handleDiatonicAnswerRootSelect}
+      onDiatonicAnswerTypeSelect={handleDiatonicAnswerTypeSelect}
+      onDiatonicDegreeCardClick={handleDiatonicDegreeCardClick}
+      onDiatonicSubmitAll={handleDiatonicSubmitAll}
+      onNextQuestion={handleNextQuestion}
+      onRetryQuestion={handleRetryQuestion}
+      fretboardAllStrings={fretboardAllStrings}
+      onFretboardAllStringsChange={setFretboardAllStrings}
+    />
+  ) : null;
+
+  const footerFilterEl = (
+    <FretboardFooter
+      theme={theme}
+      baseLabelMode={baseLabelMode}
+      showQuiz={showQuiz}
+      allNotes={allNotes}
+      overlayNotes={overlayNotes}
+      highlightedOverlayNotes={effectiveHighlightedNotes}
+      highlightedDegrees={effectiveHighlightedDegrees}
+      onAutoFilter={() =>
+        handleAutoFilter({
+          rootNote,
+          showScale: effectiveShowScale,
+          scaleType,
+          showCaged: effectiveShowCaged,
+          showChord: effectiveShowChord,
+          chordDisplayMode,
+          diatonicScaleType,
+          diatonicDegree,
+          chordType,
+        })
+      }
+      onResetOrHighlightAll={() => {
+        if (effectiveHighlightedDegrees.size > 0) {
+          setAutoFilter(false);
+          resetHighlightedDegrees();
+        } else {
+          highlightAllDegrees();
+        }
+      }}
+      autoFilter={autoFilter}
+      onAutoFilterChange={setAutoFilter}
+      onSetOverlayNoteHighlights={handleSetOverlayNoteHighlights}
+      onToggleOverlayNoteHighlight={handleToggleOverlayNoteHighlight}
+      onToggleDegree={toggleDegree}
+    />
+  );
+
+  const layerControlsEl = !showQuiz ? (
+    <LayerControls
+      theme={theme}
+      rootNote={rootNote}
+      accidental={accidental}
+      showLayers={showLayers}
+      setShowLayers={setShowLayers}
+      showChord={showChord}
+      setShowChord={setShowChord}
+      chordDisplayMode={chordDisplayMode}
+      setChordDisplayMode={(v) => setChordDisplayMode(v as ChordDisplayMode)}
+      showScale={showScale}
+      setShowScale={setShowScale}
+      scaleType={scaleType}
+      setScaleType={(v) => setScaleType(v as ScaleType)}
+      showCaged={showCaged}
+      setShowCaged={setShowCaged}
+      cagedForms={cagedForms}
+      toggleCagedForm={toggleCagedForm}
+      chordType={chordType}
+      setChordType={(v) => setChordType(v as ChordType)}
+      triadInversion={triadInversion}
+      setTriadInversion={setTriadInversion}
+      diatonicKeyType={diatonicKeyType}
+      setDiatonicKeyType={handleDiatonicKeyTypeChange}
+      diatonicChordSize={diatonicChordSize}
+      setDiatonicChordSize={handleDiatonicChordSizeChange}
+      diatonicDegree={diatonicDegree}
+      setDiatonicDegree={setDiatonicDegree}
+      scaleColor={scaleColor}
+      setScaleColor={setScaleColor}
+      cagedColor={cagedColor}
+      setCagedColor={setCagedColor}
+      chordColor={chordColor}
+      setChordColor={setChordColor}
+    />
+  ) : null;
+
+  const tabBarEl = (
+    <View
+      style={[
+        styles.tabBar,
+        {
+          backgroundColor: isDark ? "#111111" : "#fafaf9",
+          borderTopColor: isDark ? "rgba(255,255,255,0.08)" : "#e7e5e4",
+          paddingBottom: Math.max(insets.bottom, 8),
+        },
+      ]}
+    >
+      <TouchableOpacity
+        style={styles.tabItem}
+        onPress={() => setShowQuiz(false)}
+        activeOpacity={0.7}
+      >
+        <Image
+          source={isDark ? GUITAR_ICON_DARK : GUITAR_ICON_LIGHT}
+          style={[styles.tabIcon, { tintColor: !showQuiz ? (isDark ? "#38bdf8" : "#0284c7") : isDark ? "#6b7280" : "#a8a29e" }]}
+          resizeMode="contain"
+        />
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.tabItem}
+        onPress={() => setShowQuiz(true)}
+        activeOpacity={0.7}
+      >
+        <Image
+          source={isDark ? QUIZ_ICON_DARK : QUIZ_ICON_LIGHT}
+          style={[styles.tabIcon, { tintColor: showQuiz ? (isDark ? "#38bdf8" : "#0284c7") : isDark ? "#6b7280" : "#a8a29e" }]}
+          resizeMode="contain"
+        />
+      </TouchableOpacity>
+    </View>
+  );
+
+  // ── Layout ──────────────────────────────────────────────────────
+
+  if (isLandscape) {
+    // Fretboard: scale uniformly to fit available height (keep portrait proportions)
+    // Fretboard only (footer is outside the scaled area)
+    const FB_APPROX_H: Record<FretboardDisplaySize, number> = { small: 200, standard: 248, large: 310 };
+    const availH = winHeight - 44;
+    const fbScale = (availH * 0.85) / FB_APPROX_H[fretboardDisplaySize];
+
+    // Right panel: render content at portrait width, scale to fit panel
+    const portraitW = winHeight; // portrait screen width = landscape screen height
+    const panelW = Math.round(winWidth * 0.4);
+    const panelScale = panelW / portraitW;
+
+    return (
+      <View style={[styles.safeArea, { backgroundColor: bgColor, paddingTop: insets.top }]}>
+        <StatusBar translucent barStyle={isDark ? "light-content" : "dark-content"} backgroundColor="transparent" />
+
+        <View style={{ flex: 1, flexDirection: "row" }}>
+          {/* Left: fretboard full height — tap to close panel */}
+          <Pressable style={{ flex: 1, paddingLeft: Math.max(insets.left, 16) }} onPress={() => { if (rightPanelOpen) toggleRightPanel(); }}>
+            {/* Top bar */}
+            <View style={[styles.landscapeTopBar, { borderBottomColor: isDark ? "rgba(255,255,255,0.08)" : "#e7e5e4" }]}>
+              <TouchableOpacity onPress={toggleLayout} style={{ padding: 6 }} activeOpacity={0.7}>
+                <View style={[styles.lockIcon, { borderColor: isDark ? "#9ca3af" : "#78716c" }]}>
+                  <View style={[styles.lockBarPortrait, { backgroundColor: isDark ? "#9ca3af" : "#78716c" }]} />
+                </View>
+              </TouchableOpacity>
+              {fretboardHeaderEl}
+            </View>
+
+            {/* Scaled fretboard — full remaining height */}
+            <View style={{ flex: 1, overflow: "hidden" }}>
+              <View style={{ transform: [{ scale: fbScale }], transformOrigin: "top left", marginTop: 4 }}>
+                {fretboardEl}
+              </View>
+            </View>
+          </Pressable>
+
+          {/* Right panel + toggle — single animated container, slides together */}
+          <Animated.View style={{
+            position: "absolute",
+            right: 0,
+            top: 0,
+            bottom: 0,
+            flexDirection: "row",
+            alignItems: "center",
+            transform: [{ translateX: panelSlideAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0, panelW],
+            }) }],
+          }}>
+            <TouchableOpacity
+              onPress={toggleRightPanel}
+              style={[styles.panelToggle, {
+                backgroundColor: isDark ? "#1f2937" : "#e7e5e4",
+                borderColor: isDark ? "rgba(255,255,255,0.08)" : "#d6d3d1",
+              }]}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.panelToggleArrow, {
+                borderLeftColor: rightPanelOpen ? (isDark ? "#9ca3af" : "#78716c") : "transparent",
+                borderRightColor: rightPanelOpen ? "transparent" : (isDark ? "#9ca3af" : "#78716c"),
+              }]} />
+            </TouchableOpacity>
+
+            <View style={[styles.rightPanel, {
+              width: panelW,
+              borderLeftColor: isDark ? "rgba(255,255,255,0.08)" : "#e7e5e4",
+              backgroundColor: isDark ? "#0a0f1a" : "#f3f4f6",
+            }]}>
+              <ScrollView showsVerticalScrollIndicator={false}>
+                <View style={{
+                  width: portraitW,
+                  transform: [{ scale: panelScale }],
+                  transformOrigin: "top left",
+                }}>
+                  {footerFilterEl}
+                  {quizPanelEl}
+                  {layerControlsEl}
+                </View>
+              </ScrollView>
+            </View>
+          </Animated.View>
+        </View>
+      </View>
+    );
+  }
+
+  // Portrait layout
   return (
     <View style={[styles.safeArea, { backgroundColor: bgColor }]}>
       <StatusBar
@@ -315,234 +651,36 @@ function AppContent() {
         barStyle={isDark ? "light-content" : "dark-content"}
         backgroundColor="transparent"
       />
-      {/* Header wrapper fills status bar area with header bg */}
       <View style={{ backgroundColor: headerBg, paddingTop: insets.top }}>
-      <AppHeader
-        theme={theme}
-        fretboardDisplaySize={fretboardDisplaySize}
-        fretRange={fretRange}
-        accidental={accidental}
-        onThemeChange={setTheme}
-        onDisplaySizeChange={setFretboardDisplaySize}
-        onFretRangeChange={setFretRange}
-        onAccidentalChange={handleAccidentalChange}
-      />
+        <AppHeader
+          theme={theme}
+          fretboardDisplaySize={fretboardDisplaySize}
+          fretRange={fretRange}
+          accidental={accidental}
+          isLandscape={isLandscape}
+          onToggleLayout={toggleLayout}
+          onThemeChange={setTheme}
+          onDisplaySizeChange={setFretboardDisplaySize}
+          onFretRangeChange={setFretRange}
+          onAccidentalChange={handleAccidentalChange}
+        />
       </View>
 
       <View style={{ flex: 1, overflow: "hidden" }}>
-        <FretboardHeader
-          theme={theme}
-          rootNote={rootNote}
-          accidental={accidental}
-          baseLabelMode={baseLabelMode}
-          showQuiz={showQuiz}
-          rootChangeDisabled={!quizRootChangeEnabled}
-          onBaseLabelModeChange={setBaseLabelMode}
-          onRootNoteChange={quizRootChangeEnabled ? handleNoteClick : () => {}}
-        />
-
-        {/* Fretboard */}
-        <View style={{ paddingVertical: 8 }}>
-          {showQuiz ? (
-            <QuizFretboard
-              {...commonFretboardProps}
-              showChord={false}
-              showScale={false}
-              showCaged={false}
-              rootNote={quizEffectiveRootNote}
-              onNoteClick={handleNoteClick}
-              quizModeActive={quizQuestion != null}
-              quizCell={
-                quizQuestion != null &&
-                quizType !== "fretboard" &&
-                quizMode !== "chord" &&
-                quizMode !== "scale" &&
-                quizMode !== "diatonic"
-                  ? { stringIdx: quizQuestion.stringIdx, fret: quizQuestion.fret }
-                  : undefined
-              }
-              quizAnswerMode={quizType === "fretboard"}
-              quizTargetString={
-                quizType === "fretboard" &&
-                (quizMode === "note" || quizMode === "degree") &&
-                !fretboardAllStrings &&
-                quizQuestion != null
-                  ? quizQuestion.stringIdx
-                  : undefined
-              }
-              quizAnsweredCell={quizAnsweredCell}
-              quizCorrectCell={quizCorrectCell}
-              quizSelectedCells={quizSelectedCells}
-              onQuizCellClick={handleFretboardQuizAnswer}
-              quizRevealNoteNames={quizRevealNoteNames}
-              highlightedNotes={new Set<string>()}
-              highlightedDegrees={new Set<string>()}
-            />
-          ) : (
-            <NormalFretboard
-              {...commonFretboardProps}
-              rootNote={rootNote}
-              onNoteClick={handleNoteClick}
-              highlightedNotes={effectiveHighlightedNotes}
-              highlightedDegrees={effectiveHighlightedDegrees}
-            />
-          )}
-        </View>
-
-        {/* Quiz Panel */}
-        {showQuiz && quizQuestion != null && (
-          <QuizPanel
-            theme={theme}
-            mode={quizMode}
-            quizType={quizType}
-            question={quizQuestion}
-            score={quizScore}
-            selectedAnswer={selectedAnswer}
-            rootNote={rootNote}
-            quizSelectedChoices={quizSelectedChoices}
-            noteOptions={quizNoteOptions}
-            quizSelectedChordRoot={quizSelectedChordRoot}
-            quizSelectedChordType={quizSelectedChordType}
-            diatonicSelectedRoot={diatonicSelectedRoot}
-            diatonicSelectedChordType={diatonicSelectedChordType}
-            diatonicAllAnswers={diatonicAllAnswers}
-            diatonicEditingDegree={diatonicEditingDegree}
-            diatonicQuizKeyType={diatonicQuizKeyType}
-            diatonicQuizChordSize={diatonicQuizChordSize}
-            chordQuizTypes={chordQuizTypes}
-            availableChordQuizTypes={CHORD_QUIZ_TYPES_ALL}
-            scaleType={scaleType}
-            onKindChange={handleQuizKindChange}
-            onChordQuizTypesChange={setChordQuizTypes}
-            onScaleTypeChange={(v) => setScaleType(v as ScaleType)}
-            onDiatonicQuizKeyTypeChange={(v) => setDiatonicQuizKeyType(v)}
-            onDiatonicQuizChordSizeChange={(v) => setDiatonicQuizChordSize(v)}
-            onAnswer={handleQuizAnswer}
-            onChordQuizRootSelect={handleChordQuizRootSelect}
-            onChordQuizTypeSelect={handleChordQuizTypeSelect}
-            onDiatonicAnswerRootSelect={handleDiatonicAnswerRootSelect}
-            onDiatonicAnswerTypeSelect={handleDiatonicAnswerTypeSelect}
-            onDiatonicDegreeCardClick={handleDiatonicDegreeCardClick}
-            onDiatonicSubmitAll={handleDiatonicSubmitAll}
-            onNextQuestion={handleNextQuestion}
-            onRetryQuestion={handleRetryQuestion}
-            fretboardAllStrings={fretboardAllStrings}
-            onFretboardAllStringsChange={setFretboardAllStrings}
-          />
-        )}
-
-        {/* Footer filter */}
-        <FretboardFooter
-          theme={theme}
-          baseLabelMode={baseLabelMode}
-          showQuiz={showQuiz}
-          allNotes={allNotes}
-          overlayNotes={overlayNotes}
-          highlightedOverlayNotes={effectiveHighlightedNotes}
-          highlightedDegrees={effectiveHighlightedDegrees}
-          onAutoFilter={() =>
-            handleAutoFilter({
-              rootNote,
-              showScale: effectiveShowScale,
-              scaleType,
-              showCaged: effectiveShowCaged,
-              showChord: effectiveShowChord,
-              chordDisplayMode,
-              diatonicScaleType,
-              diatonicDegree,
-              chordType,
-            })
-          }
-          onResetOrHighlightAll={() => {
-            if (effectiveHighlightedDegrees.size > 0) {
-              setAutoFilter(false);
-              resetHighlightedDegrees();
-            } else {
-              highlightAllDegrees();
-            }
-          }}
-          autoFilter={autoFilter}
-          onAutoFilterChange={setAutoFilter}
-          onSetOverlayNoteHighlights={handleSetOverlayNoteHighlights}
-          onToggleOverlayNoteHighlight={handleToggleOverlayNoteHighlight}
-          onToggleDegree={toggleDegree}
-        />
-
-        {/* Layer controls — only in normal mode */}
-        {!showQuiz && <LayerControls
-          theme={theme}
-          rootNote={rootNote}
-          accidental={accidental}
-          showLayers={showLayers}
-          setShowLayers={setShowLayers}
-          showChord={showChord}
-          setShowChord={setShowChord}
-          chordDisplayMode={chordDisplayMode}
-          setChordDisplayMode={(v) => setChordDisplayMode(v as ChordDisplayMode)}
-          showScale={showScale}
-          setShowScale={setShowScale}
-          scaleType={scaleType}
-          setScaleType={(v) => setScaleType(v as ScaleType)}
-          showCaged={showCaged}
-          setShowCaged={setShowCaged}
-          cagedForms={cagedForms}
-          toggleCagedForm={toggleCagedForm}
-          chordType={chordType}
-          setChordType={(v) => setChordType(v as ChordType)}
-          triadInversion={triadInversion}
-          setTriadInversion={setTriadInversion}
-          diatonicKeyType={diatonicKeyType}
-          setDiatonicKeyType={handleDiatonicKeyTypeChange}
-          diatonicChordSize={diatonicChordSize}
-          setDiatonicChordSize={handleDiatonicChordSizeChange}
-          diatonicDegree={diatonicDegree}
-          setDiatonicDegree={setDiatonicDegree}
-          scaleColor={scaleColor}
-          setScaleColor={setScaleColor}
-          cagedColor={cagedColor}
-          setCagedColor={setCagedColor}
-          chordColor={chordColor}
-          setChordColor={setChordColor}
-        />}
+        {fretboardHeaderEl}
+        {fretboardEl}
+        {quizPanelEl}
+        {footerFilterEl}
+        {layerControlsEl}
       </View>
 
-      {/* iOS-style bottom tab bar — sits outside safe area so bg fills to edge */}
-      <View
-        style={[
-          styles.tabBar,
-          {
-            backgroundColor: isDark ? "#111111" : "#fafaf9",
-            borderTopColor: isDark ? "rgba(255,255,255,0.08)" : "#e7e5e4",
-            paddingBottom: Math.max(insets.bottom, 8),
-          },
-        ]}
-      >
-        <TouchableOpacity
-          style={styles.tabItem}
-          onPress={() => setShowQuiz(false)}
-          activeOpacity={0.7}
-        >
-          <Image
-            source={isDark ? GUITAR_ICON_DARK : GUITAR_ICON_LIGHT}
-            style={[styles.tabIcon, { tintColor: !showQuiz ? (isDark ? "#38bdf8" : "#0284c7") : isDark ? "#6b7280" : "#a8a29e" }]}
-            resizeMode="contain"
-          />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.tabItem}
-          onPress={() => setShowQuiz(true)}
-          activeOpacity={0.7}
-        >
-          <Image
-            source={isDark ? QUIZ_ICON_DARK : QUIZ_ICON_LIGHT}
-            style={[styles.tabIcon, { tintColor: showQuiz ? (isDark ? "#38bdf8" : "#0284c7") : isDark ? "#6b7280" : "#a8a29e" }]}
-            resizeMode="contain"
-          />
-        </TouchableOpacity>
-      </View>
+      {tabBarEl}
     </View>
   );
 }
+
+// Lock to portrait on startup
+ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
 
 export default function App() {
   return (
@@ -569,5 +707,55 @@ const styles = StyleSheet.create({
   tabIcon: {
     width: 28,
     height: 28,
+  },
+  // Landscape
+  landscapeTopBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderBottomWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    gap: 8,
+  },
+  rightPanel: {
+    flex: 1,
+    borderLeftWidth: 1,
+    overflow: "hidden",
+  },
+  panelToggle: {
+    width: 36,
+    height: 80,
+    justifyContent: "center",
+    alignItems: "center",
+    borderTopLeftRadius: 8,
+    borderBottomLeftRadius: 8,
+  },
+  panelToggleArrow: {
+    width: 0,
+    height: 0,
+    borderTopWidth: 8,
+    borderBottomWidth: 8,
+    borderLeftWidth: 8,
+    borderRightWidth: 8,
+    borderTopColor: "transparent",
+    borderBottomColor: "transparent",
+  },
+  lockIcon: {
+    width: 20,
+    height: 20,
+    borderWidth: 2,
+    borderRadius: 3,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  lockBarPortrait: {
+    width: 7,
+    height: 12,
+    borderRadius: 1,
+  },
+  lockBarLandscape: {
+    width: 12,
+    height: 7,
+    borderRadius: 1,
   },
 });
