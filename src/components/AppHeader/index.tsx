@@ -276,7 +276,7 @@ export default function AppHeader({
             </TouchableOpacity>
           </View>
 
-          <ScrollView style={{ maxHeight: 440 }} showsVerticalScrollIndicator={false}>
+          <View>
             {/* Theme */}
             <View style={styles.settingRow}>
               <Text style={[styles.settingLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
@@ -346,7 +346,7 @@ export default function AppHeader({
                 isDark={isDark}
               />
             </View>
-          </ScrollView>
+          </View>
         </Animated.View>
       </Modal>
     </View>

@@ -149,7 +149,6 @@ const styles = StyleSheet.create({
   triggerText: {
     fontSize: 13,
     fontWeight: "500",
-    flex: 1,
   },
   overlay: {
     flex: 1,

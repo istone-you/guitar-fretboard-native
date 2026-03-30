@@ -38,14 +38,18 @@ interface QuizPanelProps {
   onDiatonicQuizKeyTypeChange: (value: "major" | "natural-minor") => void;
   onDiatonicQuizChordSizeChange: (value: "triad" | "seventh") => void;
   onAnswer: (answer: string) => void;
+  onSubmitChoice: () => void;
   onChordQuizRootSelect: (root: string) => void;
   onChordQuizTypeSelect: (chordType: ChordType) => void;
+  onSubmitChordChoice: () => void;
   onDiatonicAnswerRootSelect: (root: string) => void;
   onDiatonicAnswerTypeSelect: (chordType: ChordType) => void;
   onDiatonicDegreeCardClick: (degree: string) => void;
   onDiatonicSubmitAll: () => void;
+  onSubmitFretboard: () => void;
   onNextQuestion: () => void;
   onRetryQuestion: () => void;
+  quizSelectedCells: { stringIdx: number; fret: number }[];
   fretboardAllStrings: boolean;
   onFretboardAllStringsChange: (value: boolean) => void;
 }
@@ -77,14 +81,18 @@ export default function QuizPanel({
   onDiatonicQuizKeyTypeChange,
   onDiatonicQuizChordSizeChange,
   onAnswer,
+  onSubmitChoice,
   onChordQuizRootSelect,
   onChordQuizTypeSelect,
+  onSubmitChordChoice,
   onDiatonicAnswerRootSelect,
   onDiatonicAnswerTypeSelect,
   onDiatonicDegreeCardClick,
   onDiatonicSubmitAll,
+  onSubmitFretboard,
   onNextQuestion,
   onRetryQuestion,
+  quizSelectedCells,
   fretboardAllStrings,
   onFretboardAllStringsChange,
 }: QuizPanelProps) {
@@ -122,7 +130,6 @@ export default function QuizPanel({
   ];
 
   const handleKindChange = (value: string) => {
-    if (answered) return;
     const parts = value.split("-");
     const newType = parts[parts.length - 1] as QuizType;
     const newMode = parts.slice(0, -1).join("-") as QuizMode;
@@ -191,20 +198,17 @@ export default function QuizPanel({
     return t("quiz.questionDegree", { string: stringNumber, fret: question.fret, root: rootNote });
   }, [mode, quizType, question, rootNote, stringNumber, fretboardAllStrings, t]);
 
-  const cardBg = isDark ? "rgba(255,255,255,0.045)" : "#f9f9f8";
-  const cardBorder = isDark ? "rgba(255,255,255,0.1)" : "#e7e5e4";
-
   return (
-    <View style={[styles.card, { backgroundColor: cardBg, borderColor: cardBorder }]}>
+    <View style={styles.card}>
       {/* Header: Kind selector + Score */}
       <View style={styles.headerRow}>
-        <View style={{ flex: 1 }}>
+        <View style={{ minWidth: 170, marginBottom: 8 }}>
           <DropdownSelect
             theme={theme}
             value={quizKindValue}
             onChange={handleKindChange}
             options={quizKindOptions}
-            disabled={answered}
+            fullWidth
           />
         </View>
         <Text style={[styles.score, { color: isDark ? "#9ca3af" : "#78716c" }]}>
@@ -236,7 +240,7 @@ export default function QuizPanel({
                     ]}
                     activeOpacity={0.7}
                   >
-                    <Text style={{ fontSize: 11, color: active ? "#fff" : isDark ? "#e5e7eb" : "#44403c" }}>{ct}</Text>
+                    <Text style={{ fontSize: 13, color: active ? "#fff" : isDark ? "#e5e7eb" : "#44403c" }}>{ct}</Text>
                   </TouchableOpacity>
                 );
               })}
@@ -317,41 +321,52 @@ export default function QuizPanel({
 
       {/* Choices for note/degree/scale modes */}
       {quizType === "choice" && (mode === "note" || mode === "degree" || mode === "scale") && (
-        <View style={styles.choicesGrid}>
-          {question.choices.map((choice) => {
-            const isSelected = selectedAnswer === choice || quizSelectedChoices.includes(choice);
-            const isCorrectChoice = question.correctNoteNames
-              ? question.correctNoteNames.includes(choice)
-              : choice === question.correct;
-            let bgColor: string;
-            let borderColor: string;
-            let textColor: string;
-            if (!answered) {
-              const sel = quizSelectedChoices.includes(choice);
-              bgColor = sel ? (isDark ? "#0284c7" : "#0ea5e9") : isDark ? "#374151" : "#fff";
-              borderColor = sel ? "transparent" : isDark ? "#4b5563" : "#d6d3d1";
-              textColor = sel ? "#fff" : isDark ? "#e5e7eb" : "#1c1917";
-            } else {
-              if (isCorrectChoice) {
-                bgColor = "#16a34a"; borderColor = "transparent"; textColor = "#fff";
-              } else if (isSelected && !isCorrectChoice) {
-                bgColor = "#ef4444"; borderColor = "transparent"; textColor = "#fff";
+        <View style={{ gap: 10 }}>
+          <View style={styles.choicesGrid}>
+            {question.choices.map((choice) => {
+              const isSelected = selectedAnswer === choice || quizSelectedChoices.includes(choice);
+              const isCorrectChoice = question.correctNoteNames
+                ? question.correctNoteNames.includes(choice)
+                : choice === question.correct;
+              let bgColor: string;
+              let borderColor: string;
+              let textColor: string;
+              if (!answered) {
+                const sel = quizSelectedChoices.includes(choice);
+                bgColor = sel ? (isDark ? "#0284c7" : "#0ea5e9") : isDark ? "#374151" : "#fff";
+                borderColor = sel ? "transparent" : isDark ? "#4b5563" : "#d6d3d1";
+                textColor = sel ? "#fff" : isDark ? "#e5e7eb" : "#1c1917";
               } else {
-                bgColor = isDark ? "#374151" : "#f5f5f4"; borderColor = isDark ? "#4b5563" : "#e7e5e4"; textColor = isDark ? "#6b7280" : "#a8a29e";
+                if (isCorrectChoice) {
+                  bgColor = "#16a34a"; borderColor = "transparent"; textColor = "#fff";
+                } else if (isSelected && !isCorrectChoice) {
+                  bgColor = "#ef4444"; borderColor = "transparent"; textColor = "#fff";
+                } else {
+                  bgColor = isDark ? "#374151" : "#f5f5f4"; borderColor = isDark ? "#4b5563" : "#e7e5e4"; textColor = isDark ? "#6b7280" : "#a8a29e";
+                }
               }
-            }
-            return (
-              <TouchableOpacity
-                key={choice}
-                onPress={() => !answered && onAnswer(choice)}
-                disabled={answered}
-                style={[styles.choiceBtn, { backgroundColor: bgColor, borderColor, borderWidth: 1 }]}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.choiceBtnText, { color: textColor }]}>{choice}</Text>
-              </TouchableOpacity>
-            );
-          })}
+              return (
+                <TouchableOpacity
+                  key={choice}
+                  onPress={() => !answered && onAnswer(choice)}
+                  disabled={answered}
+                  style={[styles.choiceBtn, { backgroundColor: bgColor, borderColor, borderWidth: 1 }]}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.choiceBtnText, { color: textColor }]}>{choice}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+          {!answered && quizSelectedChoices.length > 0 && (
+            <TouchableOpacity
+              onPress={onSubmitChoice}
+              style={[styles.submitBtn, { backgroundColor: isDark ? "#0284c7" : "#0ea5e9" }]}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.submitBtnText}>{t("quiz.submit")}</Text>
+            </TouchableOpacity>
+          )}
         </View>
       )}
 
@@ -386,25 +401,36 @@ export default function QuizPanel({
             })}
           </View>
           {quizSelectedChordRoot != null && !answered && (
-            <View style={styles.choicesGrid}>
-              {(question.diatonicChordTypeOptions ?? chordQuizTypes).map((ct) => {
-                const isSelected = ct === quizSelectedChordType;
-                return (
-                  <TouchableOpacity
-                    key={ct}
-                    onPress={() => onChordQuizTypeSelect(ct)}
-                    style={[styles.choiceBtn, {
-                      backgroundColor: isSelected ? (isDark ? "#0284c7" : "#0ea5e9") : isDark ? "#374151" : "#fff",
-                      borderColor: isSelected ? "transparent" : isDark ? "#4b5563" : "#d6d3d1",
-                      borderWidth: 1,
-                    }]}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={[styles.choiceBtnText, { color: isSelected ? "#fff" : isDark ? "#e5e7eb" : "#1c1917" }]}>{ct}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+            <>
+              <View style={styles.choicesGrid}>
+                {(question.diatonicChordTypeOptions ?? chordQuizTypes).map((ct) => {
+                  const isSelected = ct === quizSelectedChordType;
+                  return (
+                    <TouchableOpacity
+                      key={ct}
+                      onPress={() => onChordQuizTypeSelect(ct)}
+                      style={[styles.choiceBtn, {
+                        backgroundColor: isSelected ? (isDark ? "#0284c7" : "#0ea5e9") : isDark ? "#374151" : "#fff",
+                        borderColor: isSelected ? "transparent" : isDark ? "#4b5563" : "#d6d3d1",
+                        borderWidth: 1,
+                      }]}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[styles.choiceBtnText, { color: isSelected ? "#fff" : isDark ? "#e5e7eb" : "#1c1917" }]}>{ct}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+              {quizSelectedChordType != null && (
+                <TouchableOpacity
+                  onPress={onSubmitChordChoice}
+                  style={[styles.submitBtn, { backgroundColor: isDark ? "#0284c7" : "#0ea5e9" }]}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.submitBtnText}>{t("quiz.submit")}</Text>
+                </TouchableOpacity>
+              )}
+            </>
           )}
           {answered && (
             <View style={styles.choicesGrid}>
@@ -524,14 +550,30 @@ export default function QuizPanel({
         </View>
       )}
 
+      {/* Fretboard quiz: tap instruction + submit */}
+      {quizType === "fretboard" && mode !== "diatonic" && !answered && (
+        <View style={{ alignItems: "center", gap: 10 }}>
+          <Text style={{ fontSize: 15, color: isDark ? "#9ca3af" : "#78716c" }}>
+            {t("quiz.tapInstruction")}
+          </Text>
+          {quizSelectedCells.length > 0 && (
+            <TouchableOpacity
+              onPress={onSubmitFretboard}
+              style={[styles.submitBtn, { backgroundColor: isDark ? "#0284c7" : "#0ea5e9" }]}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.submitBtnText}>{t("quiz.submit")}</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
+
       {/* Result + navigation */}
       {answered && (
         <View style={styles.resultRow}>
-          <View style={[styles.resultBadge, { backgroundColor: isCorrect ? "#16a34a" : "#ef4444" }]}>
-            <Text style={styles.resultBadgeText}>
-              {isCorrect ? t("quiz.correct") : t("quiz.incorrectOnly")}
-            </Text>
-          </View>
+          <Text style={{ fontSize: 17, fontWeight: "bold", color: isCorrect ? "#16a34a" : "#ef4444" }}>
+            {isCorrect ? t("quiz.correct") : t("quiz.incorrectOnly")}
+          </Text>
           {!isCorrect && question.answerLabel != null && (
             <Text style={[styles.answerLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
               {t("quiz.incorrect", { answer: question.answerLabel })}
@@ -543,7 +585,7 @@ export default function QuizPanel({
               style={[styles.navBtn, { borderColor: isDark ? "#4b5563" : "#d6d3d1", backgroundColor: isDark ? "#1f2937" : "#fff" }]}
               activeOpacity={0.7}
             >
-              <Text style={{ fontSize: 13, color: isDark ? "#d1d5db" : "#57534e" }}>
+              <Text style={{ fontSize: 15, color: isDark ? "#d1d5db" : "#57534e" }}>
                 {t("quiz.retry")}
               </Text>
             </TouchableOpacity>
@@ -552,7 +594,7 @@ export default function QuizPanel({
               style={[styles.navBtn, { backgroundColor: isDark ? "#0284c7" : "#0ea5e9", borderColor: "transparent" }]}
               activeOpacity={0.7}
             >
-              <Text style={{ fontSize: 13, color: "#fff", fontWeight: "600" }}>
+              <Text style={{ fontSize: 15, color: "#fff", fontWeight: "600" }}>
                 {t("quiz.next")}
               </Text>
             </TouchableOpacity>
@@ -565,20 +607,18 @@ export default function QuizPanel({
 
 const styles = StyleSheet.create({
   card: {
-    borderWidth: 1,
-    borderRadius: 20,
-    padding: 16,
     gap: 12,
-    marginHorizontal: 12,
-    marginTop: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     gap: 8,
   },
   score: {
-    fontSize: 12,
+    fontSize: 14,
     fontFamily: "monospace",
     flexShrink: 0,
   },
@@ -587,7 +627,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   filterLabel: {
-    fontSize: 13,
+    fontSize: 15,
     fontWeight: "600",
   },
   diatonicSettingsRow: {
@@ -596,7 +636,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
   },
   questionText: {
-    fontSize: 15,
+    fontSize: 17,
     fontWeight: "600",
     textAlign: "center",
   },
@@ -608,13 +648,13 @@ const styles = StyleSheet.create({
   },
   choiceBtn: {
     borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    minWidth: 44,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    minWidth: 48,
     alignItems: "center",
   },
   choiceBtnText: {
-    fontSize: 13,
+    fontSize: 15,
     fontWeight: "500",
   },
   resultRow: {
@@ -632,7 +672,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   answerLabel: {
-    fontSize: 12,
+    fontSize: 16,
     textAlign: "center",
   },
   navBtns: {

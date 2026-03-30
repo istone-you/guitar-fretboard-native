@@ -1,16 +1,16 @@
-import { useMemo, useState, useCallback, useRef } from "react";
+import { useMemo, useState, useCallback } from "react";
 import {
   View,
   Image,
   TouchableOpacity,
-  Pressable,
-  ScrollView,
   StatusBar,
   StyleSheet,
   useWindowDimensions,
-  Animated,
 } from "react-native";
-import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  SafeAreaProvider,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import * as ScreenOrientation from "expo-screen-orientation";
 import "./src/i18n";
 import AppHeader from "./src/components/AppHeader/index";
@@ -44,7 +44,13 @@ const GUITAR_ICON_LIGHT = require("./public/guiter.png");
 const QUIZ_ICON_DARK = require("./public/quiz_dark.png");
 const QUIZ_ICON_LIGHT = require("./public/quiz.png");
 
-const DEFAULT_CHORD_QUIZ_TYPES: ChordType[] = ["Major", "Minor", "7th", "maj7", "m7"];
+const DEFAULT_CHORD_QUIZ_TYPES: ChordType[] = [
+  "Major",
+  "Minor",
+  "7th",
+  "maj7",
+  "m7",
+];
 
 const STORAGE_KEYS = {
   theme: "guiter:theme",
@@ -67,33 +73,29 @@ function AppContent() {
     (stored) => {
       const [rawMin, rawMax] = stored.split("-").map(Number);
       if (
-        Number.isInteger(rawMin) && Number.isInteger(rawMax) &&
-        rawMin >= 0 && rawMax <= 14 && rawMin < rawMax
-      ) return [rawMin, rawMax];
+        Number.isInteger(rawMin) &&
+        Number.isInteger(rawMax) &&
+        rawMin >= 0 &&
+        rawMax <= 14 &&
+        rawMin < rawMax
+      )
+        return [rawMin, rawMax];
       return [0, 14];
     },
   );
   // Layout: force screen rotation via ScreenOrientation
   const { width: winWidth, height: winHeight } = useWindowDimensions();
   const isLandscape = winWidth > winHeight;
-  const [rightPanelOpen, setRightPanelOpen] = useState(true);
-  const panelSlideAnim = useRef(new Animated.Value(0)).current; // 0 = open, 1 = closed
-
-  const toggleRightPanel = useCallback(() => {
-    const toValue = rightPanelOpen ? 1 : 0;
-    setRightPanelOpen(!rightPanelOpen);
-    Animated.timing(panelSlideAnim, {
-      toValue,
-      duration: 250,
-      useNativeDriver: true,
-    }).start();
-  }, [rightPanelOpen, panelSlideAnim]);
 
   const toggleLayout = useCallback(async () => {
     if (isLandscape) {
-      await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+      await ScreenOrientation.lockAsync(
+        ScreenOrientation.OrientationLock.PORTRAIT_UP,
+      );
     } else {
-      await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE_RIGHT);
+      await ScreenOrientation.lockAsync(
+        ScreenOrientation.OrientationLock.LANDSCAPE_RIGHT,
+      );
     }
   }, [isLandscape]);
 
@@ -101,7 +103,9 @@ function AppContent() {
   const [autoFilter, setAutoFilter] = useState(false);
   // Quiz
   const [showQuiz, setShowQuiz] = useState(false);
-  const [chordQuizTypes, setChordQuizTypes] = useState<ChordType[]>(DEFAULT_CHORD_QUIZ_TYPES);
+  const [chordQuizTypes, setChordQuizTypes] = useState<ChordType[]>(
+    DEFAULT_CHORD_QUIZ_TYPES,
+  );
   // Display settings
   const [accidental, setAccidental] = usePersistedSetting<Accidental>(
     STORAGE_KEYS.accidental,
@@ -136,7 +140,9 @@ function AppContent() {
     (v) => v,
   );
 
-  const [highlightedOverlayNotes, setHighlightedOverlayNotes] = useState<Set<string>>(new Set());
+  const [highlightedOverlayNotes, setHighlightedOverlayNotes] = useState<
+    Set<string>
+  >(new Set());
 
   // Layer display flags
   const [showChord, setShowChord] = useState(false);
@@ -145,7 +151,8 @@ function AppContent() {
   const [showLayers, setShowLayers] = useState(true);
 
   // Chord settings
-  const [chordDisplayMode, setChordDisplayMode] = useState<ChordDisplayMode>("form");
+  const [chordDisplayMode, setChordDisplayMode] =
+    useState<ChordDisplayMode>("form");
   const [chordType, setChordType] = useState<ChordType>("Major");
   const [triadInversion, setTriadInversion] = useState("root");
   const {
@@ -176,7 +183,10 @@ function AppContent() {
     setAccidental(mode);
   };
 
-  const handleNoteClick = (noteName: string) => setRootNote(noteName);
+  const handleNoteClick = (noteName: string) => {
+    setRootNote(noteName);
+    regenerateQuiz();
+  };
 
   const handleToggleOverlayNoteHighlight = (note: string) => {
     setHighlightedOverlayNotes((current) => {
@@ -233,6 +243,11 @@ function AppContent() {
     setDiatonicQuizChordSize,
     fretboardAllStrings,
     setFretboardAllStrings,
+    regenerateQuiz,
+    handleShowQuizChange,
+    handleSubmitChoice,
+    handleSubmitChordChoice,
+    handleSubmitFretboard,
   } = useQuiz({
     accidental,
     chordQuizTypes,
@@ -261,8 +276,15 @@ function AppContent() {
         chordType,
       }),
     [
-      rootNote, effectiveShowScale, scaleType, effectiveShowCaged,
-      effectiveShowChord, chordDisplayMode, diatonicScaleType, diatonicDegree, chordType,
+      rootNote,
+      effectiveShowScale,
+      scaleType,
+      effectiveShowCaged,
+      effectiveShowChord,
+      chordDisplayMode,
+      diatonicScaleType,
+      diatonicDegree,
+      chordType,
     ],
   );
 
@@ -274,12 +296,26 @@ function AppContent() {
       .map((semitone) => notes[(rootIndex + semitone) % 12]);
   }, [accidental, overlaySemitones, rootNote]);
 
-  // Auto-filter: derived state computed during render, no useEffect
-  const DEGREE_BY_SEMITONE = ["P1","m2","M2","m3","M3","P4","b5","P5","m6","M6","m7","M7"];
+  const DEGREE_BY_SEMITONE = [
+    "P1",
+    "m2",
+    "M2",
+    "m3",
+    "M3",
+    "P4",
+    "b5",
+    "P5",
+    "m6",
+    "M6",
+    "m7",
+    "M7",
+  ];
   const effectiveHighlightedDegrees = useMemo(() => {
     if (!autoFilter) return highlightedDegrees;
     if (overlaySemitones.size === 0) return new Set<string>();
-    return new Set(DEGREE_BY_SEMITONE.filter((_, i) => overlaySemitones.has(i)));
+    return new Set(
+      DEGREE_BY_SEMITONE.filter((_, i) => overlaySemitones.has(i)),
+    );
   }, [autoFilter, highlightedDegrees, overlaySemitones]);
 
   const effectiveHighlightedNotes = useMemo(() => {
@@ -288,9 +324,13 @@ function AppContent() {
   }, [autoFilter, highlightedOverlayNotes, overlayNotes]);
 
   const quizRootChangeEnabled =
-    !showQuiz || quizMode === "degree" || quizMode === "scale" || quizMode === "diatonic";
+    !showQuiz ||
+    quizMode === "degree" ||
+    quizMode === "scale" ||
+    quizMode === "diatonic";
 
-  const quizNoteOptions = accidental === "sharp" ? [...NOTES_SHARP] : [...NOTES_FLAT];
+  const quizNoteOptions =
+    accidental === "sharp" ? [...NOTES_SHARP] : [...NOTES_FLAT];
 
   const allNotes = useMemo(() => {
     const notes = accidental === "sharp" ? NOTES_SHARP : NOTES_FLAT;
@@ -324,7 +364,9 @@ function AppContent() {
   };
 
   const quizEffectiveRootNote =
-    quizMode === "chord" && quizType === "choice" && quizQuestion?.promptChordRoot
+    quizMode === "chord" &&
+    quizType === "choice" &&
+    quizQuestion?.promptChordRoot
       ? quizQuestion.promptChordRoot
       : rootNote;
 
@@ -347,12 +389,25 @@ function AppContent() {
     <View style={{ paddingVertical: isLandscape ? 2 : 8 }}>
       {showQuiz ? (
         <QuizFretboard
-          {...commonFretboardProps}
-          showChord={false}
+          theme={theme}
+          accidental={accidental}
+          baseLabelMode={baseLabelMode}
+          fretRange={fretRange}
+          rootNote={quizEffectiveRootNote}
+          showChord={quizMode === "chord" && quizType === "choice"}
+          chordType={quizQuestion?.promptChordType ?? "Major"}
+          chordDisplayMode="form"
           showScale={false}
           showCaged={false}
-          rootNote={quizEffectiveRootNote}
-          onNoteClick={handleNoteClick}
+          cagedForms={new Set()}
+          triadPosition="root"
+          diatonicScaleType="major-triad"
+          diatonicDegree="I"
+          scaleType="major"
+          chordColor="#0ea5e9"
+          scaleColor="#ff69b6"
+          cagedColor="#40e0d0"
+          onNoteClick={() => {}}
           quizModeActive={quizQuestion != null}
           quizCell={
             quizQuestion != null &&
@@ -392,46 +447,51 @@ function AppContent() {
     </View>
   );
 
-  const quizPanelEl = showQuiz && quizQuestion != null ? (
-    <QuizPanel
-      theme={theme}
-      mode={quizMode}
-      quizType={quizType}
-      question={quizQuestion}
-      score={quizScore}
-      selectedAnswer={selectedAnswer}
-      rootNote={rootNote}
-      quizSelectedChoices={quizSelectedChoices}
-      noteOptions={quizNoteOptions}
-      quizSelectedChordRoot={quizSelectedChordRoot}
-      quizSelectedChordType={quizSelectedChordType}
-      diatonicSelectedRoot={diatonicSelectedRoot}
-      diatonicSelectedChordType={diatonicSelectedChordType}
-      diatonicAllAnswers={diatonicAllAnswers}
-      diatonicEditingDegree={diatonicEditingDegree}
-      diatonicQuizKeyType={diatonicQuizKeyType}
-      diatonicQuizChordSize={diatonicQuizChordSize}
-      chordQuizTypes={chordQuizTypes}
-      availableChordQuizTypes={CHORD_QUIZ_TYPES_ALL}
-      scaleType={scaleType}
-      onKindChange={handleQuizKindChange}
-      onChordQuizTypesChange={setChordQuizTypes}
-      onScaleTypeChange={(v) => setScaleType(v as ScaleType)}
-      onDiatonicQuizKeyTypeChange={(v) => setDiatonicQuizKeyType(v)}
-      onDiatonicQuizChordSizeChange={(v) => setDiatonicQuizChordSize(v)}
-      onAnswer={handleQuizAnswer}
-      onChordQuizRootSelect={handleChordQuizRootSelect}
-      onChordQuizTypeSelect={handleChordQuizTypeSelect}
-      onDiatonicAnswerRootSelect={handleDiatonicAnswerRootSelect}
-      onDiatonicAnswerTypeSelect={handleDiatonicAnswerTypeSelect}
-      onDiatonicDegreeCardClick={handleDiatonicDegreeCardClick}
-      onDiatonicSubmitAll={handleDiatonicSubmitAll}
-      onNextQuestion={handleNextQuestion}
-      onRetryQuestion={handleRetryQuestion}
-      fretboardAllStrings={fretboardAllStrings}
-      onFretboardAllStringsChange={setFretboardAllStrings}
-    />
-  ) : null;
+  const quizPanelEl =
+    showQuiz && quizQuestion != null ? (
+      <QuizPanel
+        theme={theme}
+        mode={quizMode}
+        quizType={quizType}
+        question={quizQuestion}
+        score={quizScore}
+        selectedAnswer={selectedAnswer}
+        rootNote={rootNote}
+        quizSelectedChoices={quizSelectedChoices}
+        noteOptions={quizNoteOptions}
+        quizSelectedChordRoot={quizSelectedChordRoot}
+        quizSelectedChordType={quizSelectedChordType}
+        diatonicSelectedRoot={diatonicSelectedRoot}
+        diatonicSelectedChordType={diatonicSelectedChordType}
+        diatonicAllAnswers={diatonicAllAnswers}
+        diatonicEditingDegree={diatonicEditingDegree}
+        diatonicQuizKeyType={diatonicQuizKeyType}
+        diatonicQuizChordSize={diatonicQuizChordSize}
+        chordQuizTypes={chordQuizTypes}
+        availableChordQuizTypes={CHORD_QUIZ_TYPES_ALL}
+        scaleType={scaleType}
+        onKindChange={handleQuizKindChange}
+        onChordQuizTypesChange={(v) => { setChordQuizTypes(v); regenerateQuiz(); }}
+        onScaleTypeChange={(v) => { setScaleType(v as ScaleType); regenerateQuiz(); }}
+        onDiatonicQuizKeyTypeChange={(v) => { setDiatonicQuizKeyType(v); regenerateQuiz(); }}
+        onDiatonicQuizChordSizeChange={(v) => { setDiatonicQuizChordSize(v); regenerateQuiz(); }}
+        onAnswer={handleQuizAnswer}
+        onSubmitChoice={handleSubmitChoice}
+        onChordQuizRootSelect={handleChordQuizRootSelect}
+        onChordQuizTypeSelect={handleChordQuizTypeSelect}
+        onSubmitChordChoice={handleSubmitChordChoice}
+        onDiatonicAnswerRootSelect={handleDiatonicAnswerRootSelect}
+        onDiatonicAnswerTypeSelect={handleDiatonicAnswerTypeSelect}
+        onDiatonicDegreeCardClick={handleDiatonicDegreeCardClick}
+        onDiatonicSubmitAll={handleDiatonicSubmitAll}
+        onSubmitFretboard={handleSubmitFretboard}
+        onNextQuestion={handleNextQuestion}
+        onRetryQuestion={handleRetryQuestion}
+        quizSelectedCells={quizSelectedCells}
+        fretboardAllStrings={fretboardAllStrings}
+        onFretboardAllStringsChange={setFretboardAllStrings}
+      />
+    ) : null;
 
   const footerFilterEl = (
     <FretboardFooter
@@ -522,23 +582,51 @@ function AppContent() {
     >
       <TouchableOpacity
         style={styles.tabItem}
-        onPress={() => setShowQuiz(false)}
+        onPress={() => {
+          setShowQuiz(false);
+          handleShowQuizChange(false);
+        }}
         activeOpacity={0.7}
       >
         <Image
           source={isDark ? GUITAR_ICON_DARK : GUITAR_ICON_LIGHT}
-          style={[styles.tabIcon, { tintColor: !showQuiz ? (isDark ? "#38bdf8" : "#0284c7") : isDark ? "#6b7280" : "#a8a29e" }]}
+          style={[
+            styles.tabIcon,
+            {
+              tintColor: !showQuiz
+                ? isDark
+                  ? "#38bdf8"
+                  : "#0284c7"
+                : isDark
+                  ? "#6b7280"
+                  : "#a8a29e",
+            },
+          ]}
           resizeMode="contain"
         />
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.tabItem}
-        onPress={() => setShowQuiz(true)}
+        onPress={() => {
+          setShowQuiz(true);
+          handleShowQuizChange(true);
+        }}
         activeOpacity={0.7}
       >
         <Image
           source={isDark ? QUIZ_ICON_DARK : QUIZ_ICON_LIGHT}
-          style={[styles.tabIcon, { tintColor: showQuiz ? (isDark ? "#38bdf8" : "#0284c7") : isDark ? "#6b7280" : "#a8a29e" }]}
+          style={[
+            styles.tabIcon,
+            {
+              tintColor: showQuiz
+                ? isDark
+                  ? "#38bdf8"
+                  : "#0284c7"
+                : isDark
+                  ? "#6b7280"
+                  : "#a8a29e",
+            },
+          ]}
           resizeMode="contain"
         />
       </TouchableOpacity>
@@ -553,81 +641,55 @@ function AppContent() {
     const availH = winHeight - 44;
     const fbScale = (availH * 0.85) / 200;
 
-    // Right panel: render content at portrait width, scale to fit panel
-    const portraitW = winHeight; // portrait screen width = landscape screen height
-    const panelW = Math.round(winWidth * 0.4);
-    const panelScale = panelW / portraitW;
-
     return (
-      <View style={[styles.safeArea, { backgroundColor: bgColor, paddingTop: insets.top }]}>
-        <StatusBar translucent barStyle={isDark ? "light-content" : "dark-content"} backgroundColor="transparent" />
+      <View
+        style={[
+          styles.safeArea,
+          {
+            backgroundColor: bgColor,
+            paddingTop: insets.top,
+            paddingLeft: Math.max(insets.left, 16),
+          },
+        ]}
+      >
+        <StatusBar
+          translucent
+          barStyle={isDark ? "light-content" : "dark-content"}
+          backgroundColor="transparent"
+        />
 
-        <View style={{ flex: 1, flexDirection: "row" }}>
-          {/* Left: fretboard full height — tap to close panel */}
-          <Pressable style={{ flex: 1, paddingLeft: Math.max(insets.left, 16) }} onPress={() => { if (rightPanelOpen) toggleRightPanel(); }}>
-            {/* Top bar */}
-            <View style={[styles.landscapeTopBar, { borderBottomColor: isDark ? "rgba(255,255,255,0.08)" : "#e7e5e4" }]}>
-              <TouchableOpacity onPress={toggleLayout} style={{ padding: 6 }} activeOpacity={0.7}>
-                <View style={[styles.lockIcon, { borderColor: isDark ? "#9ca3af" : "#78716c" }]}>
-                  <View style={[styles.lockBarPortrait, { backgroundColor: isDark ? "#9ca3af" : "#78716c" }]} />
-                </View>
-              </TouchableOpacity>
-              {fretboardHeaderEl}
-            </View>
+        {/* Back to portrait button */}
+        <TouchableOpacity
+          onPress={toggleLayout}
+          style={styles.landscapeBackBtn}
+          activeOpacity={0.7}
+        >
+          <View
+            style={[
+              styles.lockIcon,
+              { borderColor: isDark ? "#9ca3af" : "#78716c" },
+            ]}
+          >
+            <View
+              style={[
+                styles.lockBarPortrait,
+                { backgroundColor: isDark ? "#9ca3af" : "#78716c" },
+              ]}
+            />
+          </View>
+        </TouchableOpacity>
 
-            {/* Scaled fretboard — full remaining height */}
-            <View style={{ flex: 1, overflow: "hidden" }}>
-              <View style={{ transform: [{ scale: fbScale }], transformOrigin: "top left", marginTop: 4 }}>
-                {fretboardEl}
-              </View>
-            </View>
-          </Pressable>
-
-          {/* Right panel + toggle — single animated container, slides together */}
-          <Animated.View style={{
-            position: "absolute",
-            right: 0,
-            top: 0,
-            bottom: 0,
-            flexDirection: "row",
-            alignItems: "center",
-            transform: [{ translateX: panelSlideAnim.interpolate({
-              inputRange: [0, 1],
-              outputRange: [0, panelW],
-            }) }],
-          }}>
-            <TouchableOpacity
-              onPress={toggleRightPanel}
-              style={[styles.panelToggle, {
-                backgroundColor: isDark ? "#1f2937" : "#e7e5e4",
-                borderColor: isDark ? "rgba(255,255,255,0.08)" : "#d6d3d1",
-              }]}
-              activeOpacity={0.7}
-            >
-              <View style={[styles.panelToggleArrow, {
-                borderLeftColor: rightPanelOpen ? (isDark ? "#9ca3af" : "#78716c") : "transparent",
-                borderRightColor: rightPanelOpen ? "transparent" : (isDark ? "#9ca3af" : "#78716c"),
-              }]} />
-            </TouchableOpacity>
-
-            <View style={[styles.rightPanel, {
-              width: panelW,
-              borderLeftColor: isDark ? "rgba(255,255,255,0.08)" : "#e7e5e4",
-              backgroundColor: isDark ? "#0a0f1a" : "#f3f4f6",
-            }]}>
-              <ScrollView showsVerticalScrollIndicator={false}>
-                <View style={{
-                  width: portraitW,
-                  transform: [{ scale: panelScale }],
-                  transformOrigin: "top left",
-                }}>
-                  {footerFilterEl}
-                  {quizPanelEl}
-                  {layerControlsEl}
-                </View>
-              </ScrollView>
-            </View>
-          </Animated.View>
+        {/* Fretboard only — scaled, vertically centered via computed margin */}
+        <View style={{ flex: 1, overflow: "hidden" }}>
+          <View
+            style={{
+              transform: [{ scale: fbScale }],
+              transformOrigin: "top left",
+              marginTop: Math.max(0, (availH - 200 * fbScale) / 2 + 30),
+            }}
+          >
+            {fretboardEl}
+          </View>
         </View>
       </View>
     );
@@ -697,36 +759,12 @@ const styles = StyleSheet.create({
     height: 28,
   },
   // Landscape
-  landscapeTopBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderBottomWidth: 1,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    gap: 8,
-  },
-  rightPanel: {
-    flex: 1,
-    borderLeftWidth: 1,
-    overflow: "hidden",
-  },
-  panelToggle: {
-    width: 36,
-    height: 80,
-    justifyContent: "center",
-    alignItems: "center",
-    borderTopLeftRadius: 8,
-    borderBottomLeftRadius: 8,
-  },
-  panelToggleArrow: {
-    width: 0,
-    height: 0,
-    borderTopWidth: 8,
-    borderBottomWidth: 8,
-    borderLeftWidth: 8,
-    borderRightWidth: 8,
-    borderTopColor: "transparent",
-    borderBottomColor: "transparent",
+  landscapeBackBtn: {
+    position: "absolute",
+    top: 8,
+    left: 48,
+    zIndex: 10,
+    padding: 8,
   },
   lockIcon: {
     width: 20,
