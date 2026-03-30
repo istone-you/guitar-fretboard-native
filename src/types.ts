@@ -1,7 +1,6 @@
 export type Theme = "dark" | "light";
 export type Accidental = "sharp" | "flat";
 export type BaseLabelMode = "note" | "degree";
-export type FretboardDisplaySize = "large" | "standard" | "small";
 export type ChordDisplayMode = "form" | "power" | "triad" | "diatonic";
 export type ScaleType =
   | "major"

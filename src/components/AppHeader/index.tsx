@@ -13,9 +13,8 @@ import {
 } from "react-native";
 import { useTranslation } from "react-i18next";
 import "../../i18n";
-import type { Accidental, FretboardDisplaySize, Theme } from "../../types";
+import type { Accidental, Theme } from "../../types";
 import { SegmentedToggle } from "../ui/SegmentedToggle";
-import { DropdownSelect } from "../ui/DropdownSelect";
 import { changeLocale } from "../../i18n";
 
 const SETTINGS_ICON_DARK = require("../../../public/settings_dark.jpg");
@@ -155,26 +154,22 @@ function RangeSlider({
 
 interface AppHeaderProps {
   theme: Theme;
-  fretboardDisplaySize: FretboardDisplaySize;
   fretRange: [number, number];
   accidental: Accidental;
   isLandscape: boolean;
   onToggleLayout: () => void;
   onThemeChange: (theme: Theme) => void;
-  onDisplaySizeChange: (size: FretboardDisplaySize) => void;
   onFretRangeChange: (range: [number, number]) => void;
   onAccidentalChange: (accidental: Accidental) => void;
 }
 
 export default function AppHeader({
   theme,
-  fretboardDisplaySize,
   fretRange,
   accidental,
   isLandscape,
   onToggleLayout,
   onThemeChange,
-  onDisplaySizeChange,
   onFretRangeChange,
   onAccidentalChange,
 }: AppHeaderProps) {
@@ -203,12 +198,6 @@ export default function AppHeader({
   const handleLocaleChange = (locale: "ja" | "en") => {
     void changeLocale(locale);
   };
-
-  const displaySizeOptions: { value: FretboardDisplaySize; label: string }[] = [
-    { value: "small", label: t("options.displaySize.small") },
-    { value: "standard", label: t("options.displaySize.standard") },
-    { value: "large", label: t("options.displaySize.large") },
-  ];
 
   return (
     <View
@@ -288,19 +277,6 @@ export default function AppHeader({
           </View>
 
           <ScrollView style={{ maxHeight: 440 }} showsVerticalScrollIndicator={false}>
-            {/* Display size — first */}
-            <View style={styles.settingRow}>
-              <Text style={[styles.settingLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-                {t("displaySize")}
-              </Text>
-              <DropdownSelect
-                theme={theme}
-                value={fretboardDisplaySize}
-                onChange={(v) => onDisplaySizeChange(v as FretboardDisplaySize)}
-                options={displaySizeOptions}
-              />
-            </View>
-
             {/* Theme */}
             <View style={styles.settingRow}>
               <Text style={[styles.settingLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>

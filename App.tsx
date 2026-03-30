@@ -34,7 +34,6 @@ import type {
   Theme,
   Accidental,
   BaseLabelMode,
-  FretboardDisplaySize,
   ChordDisplayMode,
   ScaleType,
   ChordType,
@@ -51,7 +50,6 @@ const STORAGE_KEYS = {
   theme: "guiter:theme",
   accidental: "guiter:accidental",
   fretRange: "guiter:fret-range",
-  fretboardDisplaySize: "guiter:fretboard-display-size",
   scaleColor: "guiter:scale-color",
   cagedColor: "guiter:caged-color",
   chordColor: "guiter:chord-color",
@@ -112,12 +110,6 @@ function AppContent() {
     (v) => v as Accidental,
   );
   const [baseLabelMode, setBaseLabelMode] = useState<BaseLabelMode>("note");
-  const [fretboardDisplaySize, setFretboardDisplaySize] = usePersistedSetting<FretboardDisplaySize>(
-    STORAGE_KEYS.fretboardDisplaySize,
-    "small",
-    (v) => v,
-    (v) => v as FretboardDisplaySize,
-  );
   const [theme, setTheme] = usePersistedSetting<Theme>(
     STORAGE_KEYS.theme,
     "dark",
@@ -315,7 +307,6 @@ function AppContent() {
     theme,
     accidental,
     baseLabelMode,
-    displaySize: fretboardDisplaySize,
     fretRange,
     showChord: effectiveShowChord,
     chordDisplayMode,
@@ -559,9 +550,8 @@ function AppContent() {
   if (isLandscape) {
     // Fretboard: scale uniformly to fit available height (keep portrait proportions)
     // Fretboard only (footer is outside the scaled area)
-    const FB_APPROX_H: Record<FretboardDisplaySize, number> = { small: 200, standard: 248, large: 310 };
     const availH = winHeight - 44;
-    const fbScale = (availH * 0.85) / FB_APPROX_H[fretboardDisplaySize];
+    const fbScale = (availH * 0.85) / 200;
 
     // Right panel: render content at portrait width, scale to fit panel
     const portraitW = winHeight; // portrait screen width = landscape screen height
@@ -654,13 +644,11 @@ function AppContent() {
       <View style={{ backgroundColor: headerBg, paddingTop: insets.top }}>
         <AppHeader
           theme={theme}
-          fretboardDisplaySize={fretboardDisplaySize}
           fretRange={fretRange}
           accidental={accidental}
           isLandscape={isLandscape}
           onToggleLayout={toggleLayout}
           onThemeChange={setTheme}
-          onDisplaySizeChange={setFretboardDisplaySize}
           onFretRangeChange={setFretRange}
           onAccidentalChange={handleAccidentalChange}
         />

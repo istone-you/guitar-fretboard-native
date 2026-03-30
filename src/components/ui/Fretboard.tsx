@@ -25,7 +25,6 @@ import type {
   Theme,
   Accidental,
   BaseLabelMode,
-  FretboardDisplaySize,
   ChordDisplayMode,
   ScaleType,
   ChordType,
@@ -33,58 +32,22 @@ import type {
 
 const STRING_COUNT = 6;
 
-const FRETBOARD_SIZE_CONFIG = {
-  large: {
-    cellWidth: 56,
-    stringLabelWidth: 32,
-    rowHeight: 40,
-    rowGap: 1,
-    headerFontSize: 14,
-    stringFontSize: 14,
-    markHeight: 20,
-    markerSize: 8,
-    markerGap: 4,
-    baseFontSize: 14,
-    overlayFontSize: 13,
-    stringLabelPaddingRight: 4,
-    rootRingInset: 2,
-    overlayInset: 4,
-    chordBorderWidth: 4,
-  },
-  standard: {
-    cellWidth: 41,
-    stringLabelWidth: 23,
-    rowHeight: 31,
-    rowGap: 1,
-    headerFontSize: 12,
-    stringFontSize: 12,
-    markHeight: 15,
-    markerSize: 6,
-    markerGap: 3,
-    baseFontSize: 12,
-    overlayFontSize: 11,
-    stringLabelPaddingRight: 3,
-    rootRingInset: 2,
-    overlayInset: 3,
-    chordBorderWidth: 3,
-  },
-  small: {
-    cellWidth: 34,
-    stringLabelWidth: 18,
-    rowHeight: 26,
-    rowGap: 1,
-    headerFontSize: 10,
-    stringFontSize: 10,
-    markHeight: 12,
-    markerSize: 4,
-    markerGap: 2,
-    baseFontSize: 10,
-    overlayFontSize: 10,
-    stringLabelPaddingRight: 2,
-    rootRingInset: 1,
-    overlayInset: 2,
-    chordBorderWidth: 2,
-  },
+const FRETBOARD_SIZE = {
+  cellWidth: 34,
+  stringLabelWidth: 18,
+  rowHeight: 26,
+  rowGap: 1,
+  headerFontSize: 10,
+  stringFontSize: 10,
+  markHeight: 12,
+  markerSize: 4,
+  markerGap: 2,
+  baseFontSize: 10,
+  overlayFontSize: 10,
+  stringLabelPaddingRight: 2,
+  rootRingInset: 1,
+  overlayInset: 2,
+  chordBorderWidth: 2,
 } as const;
 
 interface ChordGroup {
@@ -110,7 +73,6 @@ export interface FretboardProps {
   rootNote: string;
   accidental: Accidental;
   baseLabelMode: BaseLabelMode;
-  displaySize: FretboardDisplaySize;
   fretRange: [number, number];
   showChord: boolean;
   chordDisplayMode: ChordDisplayMode;
@@ -139,7 +101,6 @@ export interface FretboardProps {
   chordColor?: string;
   scaleColor?: string;
   cagedColor?: string;
-  rowHeightOverride?: number;
 }
 
 export default function Fretboard({
@@ -147,7 +108,6 @@ export default function Fretboard({
   rootNote,
   accidental,
   baseLabelMode,
-  displaySize,
   fretRange,
   showChord,
   chordDisplayMode,
@@ -176,14 +136,10 @@ export default function Fretboard({
   chordColor = "#ffd700",
   scaleColor = "#ff69b6",
   cagedColor = "#40e0d0",
-  rowHeightOverride,
 }: FretboardProps) {
   const [fretMin, fretMax] = fretRange;
   const quizActive = quizModeActive && quizCell !== undefined;
-  const baseSize = FRETBOARD_SIZE_CONFIG[displaySize];
-  const size = rowHeightOverride
-    ? { ...baseSize, rowHeight: rowHeightOverride } as typeof baseSize
-    : baseSize;
+  const size = FRETBOARD_SIZE;
   const isDark = theme === "dark";
   const rootIndex = getRootIndex(rootNote);
   const diatonicChord =
@@ -441,7 +397,7 @@ interface StringRowProps {
   scaleType: ScaleType;
   cagedPositions: Map<string, CagedPositionValue>;
   chordPositions: Set<string>;
-  size: (typeof FRETBOARD_SIZE_CONFIG)[FretboardDisplaySize];
+  size: typeof FRETBOARD_SIZE;
   visibleFrets: number[];
   onNoteClick: (noteName: string) => void;
   highlightedNotes: Set<string>;
