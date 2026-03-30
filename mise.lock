@@ -1,0 +1,15 @@
+[[tools."aqua:openai/codex"]]
+version = "0.116.0"
+backend = "aqua:openai/codex"
+
+[[tools.bun]]
+version = "1.3.10"
+backend = "core:bun"
+
+[[tools."npm:@anthropic-ai/claude-code"]]
+version = "2.1.81"
+backend = "npm:@anthropic-ai/claude-code"
+
+[[tools."npm:@google/gemini-cli"]]
+version = "0.34.0"
+backend = "npm:@google/gemini-cli"

@@ -1,0 +1,176 @@
+{
+  "mode": {
+    "normal": "Normal",
+    "quiz": "Quiz"
+  },
+  "settings": "Settings",
+  "howToUse": "How to Use",
+  "howToUseItems": {
+    "changeRoot": "Click (tap) a fretboard note or the root field above to change the root",
+    "switchLabels": "Use Notes / Degrees to switch the label display",
+    "togglePanel": "Toggle each layer on/off with the ON/OFF button",
+    "colorPicker": "Use the color picker next to Scale / CAGED / Chord to change each layer's color",
+    "switchMode": "Use the controls in each card to switch scale types, chord forms, etc.",
+    "toggleNotes": "Click (tap) the note / degree chips below the fretboard to toggle individual highlights",
+    "filterNotes": "Use \"Filter\" to highlight only the notes / degrees in the active overlays"
+  },
+  "dark": "Dark",
+  "light": "Light",
+  "theme": "Theme",
+  "displaySize": "Fretboard Size",
+  "language": "Language",
+  "accidental": "♯/♭",
+  "settingsPanel": {
+    "fretRange": "Fret Range",
+    "fretStart": "Start",
+    "fretEnd": "End"
+  },
+  "layers": {
+    "scale": "Scale",
+    "caged": "CAGED",
+    "chord": "Chord",
+    "quiz": "Quiz"
+  },
+  "controls": {
+    "displayMode": "Display",
+    "degree": "Degree",
+    "chord": "Chord",
+    "strings": "Strings",
+    "key": "Key",
+    "inversion": "Inversion",
+    "chordType": "Chord"
+  },
+  "header": {
+    "root": "Root",
+    "fret": "Fret",
+    "display": "Labels",
+    "note": "Notes",
+    "degree": "Degrees",
+    "quiz": "Quiz"
+  },
+  "degreeFilter": {
+    "title": "Degrees",
+    "filter": "Filter",
+    "filterTitle": "Filter by the currently visible overlays",
+    "reset": "Reset",
+    "highlightAll": "Highlight all"
+  },
+  "noteFilter": {
+    "title": "Notes",
+    "filter": "Filter",
+    "filterTitle": "Filter by the currently visible overlays",
+    "highlightAll": "Highlight all",
+    "reset": "Reset"
+  },
+  "mobileControls": {
+    "layers": "Layers",
+    "hide": "Hide",
+    "show": "Show",
+    "scaleKind": "Type",
+    "cagedForms": "Forms",
+    "more": "Details",
+    "less": "Close"
+  },
+  "scaleGroups": {
+    "basics": "Basics",
+    "minorDerived": "Minor Derived",
+    "modes": "Modes"
+  },
+  "scaleDialog": "Scale list",
+  "options": {
+    "chordDisplayMode": {
+      "form": "Chord Forms",
+      "power": "Power Chords",
+      "triad": "Triads",
+      "diatonic": "Diatonic"
+    },
+    "diatonicKey": {
+      "major": "Major",
+      "naturalMinor": "Minor"
+    },
+    "diatonicChordSize": {
+      "triad": "Triad",
+      "seventh": "7th"
+    },
+    "displaySize": {
+      "large": "Large",
+      "standard": "Standard",
+      "small": "Small"
+    },
+    "triadStrings": {
+      "1-3": "1-3",
+      "2-4": "2-4",
+      "3-5": "3-5",
+      "4-6": "4-6"
+    },
+    "triadInversions": {
+      "root": "Root",
+      "first": "1st",
+      "second": "2nd"
+    },
+    "scale": {
+      "major": "Major Scale",
+      "naturalMinor": "Natural Minor",
+      "majorPenta": "Major Pentatonic",
+      "minorPenta": "Minor Pentatonic",
+      "blues": "Blues",
+      "harmonicMinor": "Harmonic Minor",
+      "melodicMinor": "Melodic Minor",
+      "ionian": "Ionian",
+      "dorian": "Dorian",
+      "phrygian": "Phrygian",
+      "lydian": "Lydian",
+      "mixolydian": "Mixolydian",
+      "aeolian": "Aeolian",
+      "locrian": "Locrian"
+    }
+  },
+  "quiz": {
+    "questionNote": "String {{string}}, Fret {{fret}} — what note?",
+    "questionDegree": "String {{string}}, Fret {{fret}} — what degree? (Root: {{root}})",
+    "questionDegreeFretboard": "Where is {{degree}} on string {{string}}? (Root: {{root}})",
+    "questionScale": "Which notes are in {{root}} {{scale}}?",
+    "questionFretboard": "Where is {{note}} on string {{string}}?",
+    "questionScaleFretboard": "Where are the notes of {{root}} {{scale}}?",
+    "questionChordFretboard": "Select the chord tones of {{chord}}",
+    "questionChordIdentify": "What chord is this?",
+    "questionDiatonicAll": "What are the diatonic chords in {{root}} {{keyType}} / {{chordSize}}?",
+    "questionNoteAllStrings": "Where is {{note}}?",
+    "questionDegreeAllStrings": "Where is {{degree}}? (Root: {{root}})",
+    "fretboardMode": {
+      "singleString": "Single string",
+      "allStrings": "All strings"
+    },
+    "tapInstruction": "Tap the fretboard to answer",
+    "correct": "Correct!",
+    "incorrect": "Wrong… the answer is {{answer}}",
+    "incorrectOnly": "Wrong…",
+    "next": "Next",
+    "retry": "Retry",
+    "submit": "Submit",
+    "mode": {
+      "note": "Notes",
+      "degree": "Degrees"
+    },
+    "type": {
+      "choice": "12-choice",
+      "fretboard": "Fretboard"
+    },
+    "kind": {
+      "noteChoice": "Note / 12-choice",
+      "degreeChoice": "Degree / 12-choice",
+      "noteFretboard": "Note / Fretboard",
+      "degreeFretboard": "Degree / Fretboard",
+      "scaleChoice": "Scale / Note Select",
+      "scaleFretboard": "Scale / Fretboard",
+      "diatonicAll": "Diatonic / Full",
+      "chordChoice": "Chord / Identify",
+      "chordFretboard": "Chord / Fretboard"
+    },
+    "chordTypes": {
+      "label": "Chords",
+      "select": "Select",
+      "selectedCount": "{{count}} types"
+    }
+  }
+}

@@ -1,0 +1,176 @@
+{
+  "mode": {
+    "normal": "通常",
+    "quiz": "クイズ"
+  },
+  "settings": "設定",
+  "howToUse": "使い方",
+  "howToUseItems": {
+    "changeRoot": "指板の音、または上部のルート欄からルートを変更",
+    "switchLabels": "「音名 / 度数」で表示内容を切り替え",
+    "togglePanel": "各レイヤーカードのON/OFFでレイヤーの表示を切り替え",
+    "colorPicker": "スケール・CAGED・コードのラベル横のカラーピッカーで表示色を変更可",
+    "switchMode": "カード内のコントロールでスケール種類・コード形式などを切り替え",
+    "toggleNotes": "指板の下の音名 / 度数をクリック（タップ）して強調表示を個別に切り替え",
+    "filterNotes": "「抽出」で有効なオーバーレイの構成音 / 構成度数のみを強調"
+  },
+  "dark": "ダーク",
+  "light": "ライト",
+  "theme": "テーマ",
+  "displaySize": "指板表示サイズ",
+  "language": "言語",
+  "accidental": "♯/♭",
+  "settingsPanel": {
+    "fretRange": "フレット範囲",
+    "fretStart": "開始",
+    "fretEnd": "終了"
+  },
+  "layers": {
+    "scale": "スケール",
+    "caged": "CAGED",
+    "chord": "コード",
+    "quiz": "クイズ"
+  },
+  "controls": {
+    "displayMode": "表示形式",
+    "degree": "度数",
+    "chord": "コード",
+    "strings": "弦",
+    "key": "キー",
+    "inversion": "転回",
+    "chordType": "和音"
+  },
+  "header": {
+    "root": "ルート",
+    "fret": "フレット",
+    "display": "表示",
+    "note": "音名",
+    "degree": "度数",
+    "quiz": "クイズ"
+  },
+  "degreeFilter": {
+    "title": "度数",
+    "filter": "抽出",
+    "filterTitle": "表示中のオーバーレイに合わせて絞り込む",
+    "reset": "リセット",
+    "highlightAll": "全強調"
+  },
+  "noteFilter": {
+    "title": "音名",
+    "filter": "抽出",
+    "filterTitle": "表示中のオーバーレイに合わせて絞り込む",
+    "highlightAll": "全強調",
+    "reset": "リセット"
+  },
+  "mobileControls": {
+    "layers": "レイヤー",
+    "hide": "非表示",
+    "show": "表示",
+    "scaleKind": "種類",
+    "cagedForms": "フォーム",
+    "more": "詳細",
+    "less": "閉じる"
+  },
+  "scaleGroups": {
+    "basics": "基本",
+    "minorDerived": "マイナー派生",
+    "modes": "モード"
+  },
+  "scaleDialog": "スケール一覧",
+  "options": {
+    "chordDisplayMode": {
+      "form": "コードフォーム",
+      "power": "パワーコード",
+      "triad": "トライアド",
+      "diatonic": "ダイアトニック"
+    },
+    "diatonicKey": {
+      "major": "メジャー",
+      "naturalMinor": "マイナー"
+    },
+    "diatonicChordSize": {
+      "triad": "3和音",
+      "seventh": "4和音"
+    },
+    "displaySize": {
+      "large": "大きめ",
+      "standard": "標準",
+      "small": "小さめ"
+    },
+    "triadStrings": {
+      "1-3": "1~3",
+      "2-4": "2~4",
+      "3-5": "3~5",
+      "4-6": "4~6"
+    },
+    "triadInversions": {
+      "root": "基本",
+      "first": "第一転回",
+      "second": "第二転回"
+    },
+    "scale": {
+      "major": "メジャースケール",
+      "naturalMinor": "ナチュラルマイナー",
+      "majorPenta": "メジャーペンタ",
+      "minorPenta": "マイナーペンタ",
+      "blues": "ブルーノート",
+      "harmonicMinor": "ハーモニックマイナー",
+      "melodicMinor": "メロディックマイナー",
+      "ionian": "イオニアン",
+      "dorian": "ドリアン",
+      "phrygian": "フリジアン",
+      "lydian": "リディアン",
+      "mixolydian": "ミクソリディアン",
+      "aeolian": "エオリアン",
+      "locrian": "ロクリアン"
+    }
+  },
+  "quiz": {
+    "questionNote": "{{string}}弦 {{fret}}フレットの音は？",
+    "questionDegree": "{{string}}弦 {{fret}}フレットの度数は？（ルート: {{root}}）",
+    "questionDegreeFretboard": "{{string}}弦の {{degree}} はどこ？（ルート: {{root}}）",
+    "questionScale": "{{root}}{{scale}}の音は？",
+    "questionFretboard": "{{string}}弦の {{note}} はどこ？",
+    "questionScaleFretboard": "{{root}}{{scale}}の音はどこ？",
+    "questionChordFretboard": "{{chord}} の構成音は？",
+    "questionChordIdentify": "このコードは？",
+    "questionDiatonicAll": "{{root}}{{keyType}} / {{chordSize}} のダイアトニックコードは？",
+    "questionNoteAllStrings": "{{note}} はどこ？",
+    "questionDegreeAllStrings": "{{degree}} はどこ？（ルート: {{root}}）",
+    "fretboardMode": {
+      "singleString": "弦指定",
+      "allStrings": "全弦"
+    },
+    "tapInstruction": "指板をタップして答えてね",
+    "correct": "正解！",
+    "incorrect": "不正解… 正解は {{answer}}",
+    "incorrectOnly": "不正解…",
+    "next": "次へ",
+    "retry": "もう一度",
+    "submit": "回答",
+    "mode": {
+      "note": "音名",
+      "degree": "度数"
+    },
+    "type": {
+      "choice": "12択",
+      "fretboard": "指板"
+    },
+    "kind": {
+      "noteChoice": "音名・12択",
+      "degreeChoice": "度数・12択",
+      "noteFretboard": "音名・指板",
+      "degreeFretboard": "度数・指板",
+      "scaleChoice": "スケール・音名選択",
+      "scaleFretboard": "スケール・指板",
+      "diatonicAll": "ダイアトニック・全答",
+      "chordChoice": "コード・識別",
+      "chordFretboard": "コード・指板"
+    },
+    "chordTypes": {
+      "label": "出題コード",
+      "select": "選択",
+      "selectedCount": "{{count}}種類"
+    }
+  }
+}
