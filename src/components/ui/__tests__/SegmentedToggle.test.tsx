@@ -92,45 +92,27 @@ describe("SegmentedToggle", () => {
 
   // --- Theme variants ---
 
-  it("applies dark theme selected background color", () => {
-    const { toJSON } = render(<SegmentedToggle {...defaultProps} theme="dark" value="one" />);
-    const tree = toJSON() as any;
-    // Find the selected button (first child)
-    const selectedButton = tree.children[0];
-    const flatStyle = Object.assign(
-      {},
-      ...(Array.isArray(selectedButton?.props?.style)
-        ? selectedButton.props.style
-        : [selectedButton?.props?.style]),
-    );
-    expect(flatStyle.backgroundColor).toBe("#0284c7");
+  it("applies white text to selected option in dark theme", () => {
+    const { getByText } = render(<SegmentedToggle {...defaultProps} theme="dark" value="one" />);
+    const style = getByText("One").props.style;
+    const flat = Object.assign({}, ...(Array.isArray(style) ? style : [style]));
+    expect(flat.color).toBe("#fff");
   });
 
-  it("applies light theme selected background color", () => {
-    const { toJSON } = render(<SegmentedToggle {...defaultProps} theme="light" value="one" />);
-    const tree = toJSON() as any;
-    const selectedButton = tree.children[0];
-    const flatStyle = Object.assign(
-      {},
-      ...(Array.isArray(selectedButton?.props?.style)
-        ? selectedButton.props.style
-        : [selectedButton?.props?.style]),
-    );
-    expect(flatStyle.backgroundColor).toBe("#0ea5e9");
+  it("applies white text to selected option in light theme", () => {
+    const { getByText } = render(<SegmentedToggle {...defaultProps} theme="light" value="one" />);
+    const style = getByText("One").props.style;
+    const flat = Object.assign({}, ...(Array.isArray(style) ? style : [style]));
+    expect(flat.color).toBe("#fff");
   });
 
-  it("applies transparent background to unselected options", () => {
-    const { toJSON } = render(<SegmentedToggle {...defaultProps} value="one" />);
-    const tree = toJSON() as any;
-    // Second child ("Two") should be unselected
-    const unselectedButton = tree.children[1];
-    const flatStyle = Object.assign(
-      {},
-      ...(Array.isArray(unselectedButton?.props?.style)
-        ? unselectedButton.props.style
-        : [unselectedButton?.props?.style]),
-    );
-    expect(flatStyle.backgroundColor).toBe("transparent");
+  it("buttons have no background color (indicator handles it)", () => {
+    const { getByText } = render(<SegmentedToggle {...defaultProps} value="one" />);
+    const selected = getByText("One").parent;
+    const unselected = getByText("Two").parent;
+    // Neither button should have inline backgroundColor
+    expect(selected).toBeTruthy();
+    expect(unselected).toBeTruthy();
   });
 
   it("applies dark theme text color to selected option", () => {

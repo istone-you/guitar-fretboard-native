@@ -68,7 +68,9 @@ export default function FretboardFooter({
         return (
           <TouchableOpacity
             key={item}
-            onPress={() => onToggle(item)}
+            onPress={() => {
+              if (!autoFilter) onToggle(item);
+            }}
             style={[
               styles.chip,
               {
@@ -86,6 +88,7 @@ export default function FretboardFooter({
                   : isDark
                     ? "#1f2937"
                     : "#fafaf9",
+                opacity: autoFilter ? 0.6 : 1,
               },
             ]}
             activeOpacity={0.7}

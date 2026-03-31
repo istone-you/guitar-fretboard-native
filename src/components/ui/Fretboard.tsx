@@ -1,5 +1,5 @@
-import { useMemo } from "react";
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from "react-native";
+import { useRef, useMemo } from "react";
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Animated } from "react-native";
 import {
   FRET_COUNT,
   NOTES_SHARP,
@@ -31,6 +31,31 @@ import type {
 } from "../../types";
 
 const STRING_COUNT = 6;
+
+function PulseView({ children, style }: { children: React.ReactNode; style: any }) {
+  const opacity = useRef(
+    (() => {
+      const val = new Animated.Value(1);
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(val, {
+            toValue: 0.4,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(val, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+        ]),
+      ).start();
+      return val;
+    })(),
+  ).current;
+
+  return <Animated.View style={[style, { opacity }]}>{children}</Animated.View>;
+}
 
 const FRETBOARD_SIZE = {
   cellWidth: 34,
@@ -692,9 +717,9 @@ function StringRow({
               </View>
             )}
 
-            {/* Quiz target */}
+            {/* Quiz target (pulsing) */}
             {fret === quizTargetFret && !quizAnswerMode && (
-              <View
+              <PulseView
                 style={{
                   position: "absolute",
                   top: overlayInset,
@@ -717,7 +742,7 @@ function StringRow({
                 >
                   ?
                 </Text>
-              </View>
+              </PulseView>
             )}
 
             {/* Quiz fretboard target hint ring */}
@@ -748,22 +773,10 @@ function StringRow({
                   bottom: overlayInset,
                   borderRadius: overlaySize / 2,
                   backgroundColor: "#16a34a",
-                  alignItems: "center",
-                  justifyContent: "center",
                   zIndex: 29,
                   opacity: 0.9,
                 }}
-              >
-                <Text
-                  style={{
-                    fontSize: size.overlayFontSize,
-                    color: "#fff",
-                    fontWeight: "bold",
-                  }}
-                >
-                  {noteName}
-                </Text>
-              </View>
+              />
             )}
 
             {/* Choice answer reveal */}

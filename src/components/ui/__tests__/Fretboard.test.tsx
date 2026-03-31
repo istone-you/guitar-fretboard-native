@@ -600,9 +600,8 @@ describe("Fretboard - Quiz selected cells", () => {
     expect(json).toContain("#16a34a");
   });
 
-  it("shows note name on selected cells", () => {
-    // String 0 (6th string), fret 5 = A (E + 5 semitones = A)
-    const { getAllByText } = render(
+  it("shows green overlay on selected cells without note name", () => {
+    const { UNSAFE_root } = render(
       <Fretboard
         {...makeProps({
           quizModeActive: true,
@@ -614,8 +613,13 @@ describe("Fretboard - Quiz selected cells", () => {
         })}
       />,
     );
-    // A should appear as selected cell label
-    expect(getAllByText("A").length).toBeGreaterThanOrEqual(1);
+    // Selected cell should have green overlay
+    const allViews = UNSAFE_root.findAll((node: any) => node.type === "View");
+    const greenOverlay = allViews.find((v: any) => {
+      const style = v.props.style;
+      return style?.backgroundColor === "#16a34a" && style?.zIndex === 29;
+    });
+    expect(greenOverlay).toBeTruthy();
   });
 });
 

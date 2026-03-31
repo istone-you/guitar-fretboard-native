@@ -7,6 +7,7 @@ import {
   PanResponder,
   Modal,
   Pressable,
+  Animated,
 } from "react-native";
 import { useTranslation } from "react-i18next";
 import "../../i18n";
@@ -60,7 +61,6 @@ const COLOR_PRESETS = [
   "#ec4899",
 ];
 
-// Toggle switch
 function ToggleSwitch({
   active,
   onPress,
@@ -70,14 +70,38 @@ function ToggleSwitch({
   onPress: () => void;
   disabled: boolean;
 }) {
+  const anim = useRef(new Animated.Value(active ? 1 : 0)).current;
+
+  const handlePress = () => {
+    const toValue = active ? 0 : 1;
+    Animated.timing(anim, {
+      toValue,
+      duration: 200,
+      useNativeDriver: false,
+    }).start();
+    onPress();
+  };
+
+  const thumbTranslateX = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [2, 20],
+  });
+  const bgColor = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["#4b5563", "#0ea5e9"],
+  });
+
   return (
     <TouchableOpacity
-      onPress={disabled ? undefined : onPress}
+      onPress={disabled ? undefined : handlePress}
       disabled={disabled}
-      style={[styles.toggle, { backgroundColor: active ? "#0ea5e9" : "#4b5563" }]}
       activeOpacity={0.8}
     >
-      <View style={[styles.toggleThumb, { transform: [{ translateX: active ? 20 : 2 }] }]} />
+      <Animated.View style={[styles.toggle, { backgroundColor: bgColor }]}>
+        <Animated.View
+          style={[styles.toggleThumb, { transform: [{ translateX: thumbTranslateX }] }]}
+        />
+      </Animated.View>
     </TouchableOpacity>
   );
 }
@@ -502,73 +526,84 @@ export default function LayerControls({
         <Text style={[styles.headingText, { color: isDark ? "#9ca3af" : "#78716c" }]}>
           {t("mobileControls.layers")}
         </Text>
-        <TouchableOpacity
+        <ToggleSwitch
+          active={showLayers}
           onPress={() => setShowLayers(!showLayers)}
-          style={[
-            styles.smallBtn,
-            {
-              borderColor: isDark ? "#4b5563" : "#d6d3d1",
-              backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "#fff",
-            },
-          ]}
-          activeOpacity={0.7}
-        >
-          <Text style={{ fontSize: 14, color: isDark ? "#d1d5db" : "#57534e" }}>
-            {showLayers ? t("mobileControls.hide") : t("mobileControls.show")}
-          </Text>
-        </TouchableOpacity>
+          disabled={false}
+        />
       </View>
 
-      {/* Tab buttons (Scale / CAGED / Chord) */}
-      <View style={[styles.tabRow, !showLayers && { opacity: 0.4 }]}>
-        {[
-          { tab: "scale" as MobileTab, label: t("layers.scale"), on: showScale, color: scaleColor },
-          { tab: "caged" as MobileTab, label: t("layers.caged"), on: showCaged, color: cagedColor },
-          { tab: "chord" as MobileTab, label: t("layers.chord"), on: showChord, color: chordColor },
-        ].map(({ tab, label, on, color }) => {
-          const isCurrent = activeTab === tab;
-          return (
-            <TouchableOpacity
-              key={tab}
-              onPress={() => showLayers && setActiveTab(tab)}
-              disabled={!showLayers}
-              style={styles.tabBtn}
-              activeOpacity={0.7}
-            >
-              <Text
-                style={[
-                  styles.tabLabel,
-                  {
-                    color: isCurrent
-                      ? isDark
-                        ? "#f3f4f6"
-                        : "#1c1917"
-                      : isDark
-                        ? "#6b7280"
-                        : "#a8a29e",
-                    fontWeight: isCurrent ? "600" : "400",
-                  },
-                ]}
+      {/* Tab buttons (Scale / CAGED / Chord) — hidden when layers off */}
+      {showLayers && (
+        <View style={styles.tabRow}>
+          {[
+            {
+              tab: "scale" as MobileTab,
+              label: t("layers.scale"),
+              on: showScale,
+              color: scaleColor,
+            },
+            {
+              tab: "caged" as MobileTab,
+              label: t("layers.caged"),
+              on: showCaged,
+              color: cagedColor,
+            },
+            {
+              tab: "chord" as MobileTab,
+              label: t("layers.chord"),
+              on: showChord,
+              color: chordColor,
+            },
+          ].map(({ tab, label, on, color }) => {
+            const isCurrent = activeTab === tab;
+            return (
+              <TouchableOpacity
+                key={tab}
+                onPress={() => showLayers && setActiveTab(tab)}
+                disabled={!showLayers}
+                style={styles.tabBtn}
+                activeOpacity={0.7}
               >
-                {label}
-              </Text>
-              <View
-                style={[
-                  styles.tabDot,
-                  { backgroundColor: on ? color : isDark ? "#4b5563" : "#d6d3d1" },
-                ]}
-              />
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+                <Text
+                  style={[
+                    styles.tabLabel,
+                    {
+                      color: isCurrent
+                        ? isDark
+                          ? "#f3f4f6"
+                          : "#1c1917"
+                        : isDark
+                          ? "#6b7280"
+                          : "#a8a29e",
+                      fontWeight: isCurrent ? "600" : "400",
+                    },
+                  ]}
+                >
+                  {label}
+                </Text>
+                <View
+                  style={[
+                    styles.tabDot,
+                    {
+                      backgroundColor: on ? color : isDark ? "#4b5563" : "#d6d3d1",
+                    },
+                  ]}
+                />
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      )}
 
       {/* Swipeable card area */}
-      <View {...panResponder.panHandlers}>
-        {activeTab === "scale" && scaleCard}
-        {activeTab === "caged" && cagedCard}
-        {activeTab === "chord" && chordCard}
-      </View>
+      {showLayers && (
+        <View {...panResponder.panHandlers}>
+          {activeTab === "scale" && scaleCard}
+          {activeTab === "caged" && cagedCard}
+          {activeTab === "chord" && chordCard}
+        </View>
+      )}
     </View>
   );
 }

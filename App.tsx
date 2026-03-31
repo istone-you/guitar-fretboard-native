@@ -364,12 +364,13 @@ function AppContent() {
 
   const lastTapRef = useRef(0);
   const handleFretboardDoubleTap = useCallback(() => {
+    if (showQuiz) return;
     const now = Date.now();
     if (now - lastTapRef.current < 300) {
       toggleLayout();
     }
     lastTapRef.current = now;
-  }, [toggleLayout]);
+  }, [showQuiz, toggleLayout]);
 
   const fretboardEl = (
     <View style={{ paddingVertical: isLandscape ? 2 : 8 }} onTouchEnd={handleFretboardDoubleTap}>

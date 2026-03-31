@@ -1,8 +1,6 @@
 import { useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// Initialize synchronously with default, then load from storage via state initializer callback.
-// No useEffect needed — the async load triggers a single re-render when complete.
 export function usePersistedSetting<T>(
   storageKey: string,
   defaultValue: T,

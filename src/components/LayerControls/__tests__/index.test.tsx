@@ -88,27 +88,32 @@ describe("LayerControls", () => {
     expect(getByText("mobileControls.layers")).toBeTruthy();
   });
 
-  it("shows 'hide' button when layers are visible", () => {
-    const { getByText } = renderControls({ showLayers: true });
-    expect(getByText("mobileControls.hide")).toBeTruthy();
+  it("shows layers toggle as active when layers are visible", () => {
+    const { UNSAFE_getAllByType } = renderControls({ showLayers: true });
+    const toggles = UNSAFE_getAllByType(require("react-native").TouchableOpacity).filter(
+      (t: any) => t.props.activeOpacity === 0.8,
+    );
+    expect(toggles.length).toBeGreaterThan(0);
   });
 
-  it("shows 'show' button when layers are hidden", () => {
-    const { getByText } = renderControls({ showLayers: false });
-    expect(getByText("mobileControls.show")).toBeTruthy();
-  });
-
-  it("calls setShowLayers when show/hide button is pressed", () => {
+  it("calls setShowLayers when layers toggle is pressed", () => {
     const setShowLayers = jest.fn();
-    const { getByText } = renderControls({ showLayers: true, setShowLayers });
-    fireEvent.press(getByText("mobileControls.hide"));
+    const { UNSAFE_getAllByType } = renderControls({ showLayers: true, setShowLayers });
+    // First toggle with activeOpacity 0.8 is the layers toggle (in header row)
+    const toggles = UNSAFE_getAllByType(require("react-native").TouchableOpacity).filter(
+      (t: any) => t.props.activeOpacity === 0.8,
+    );
+    fireEvent.press(toggles[0]);
     expect(setShowLayers).toHaveBeenCalledWith(false);
   });
 
-  it("toggles from hidden to shown", () => {
+  it("calls setShowLayers(true) when toggle is pressed while hidden", () => {
     const setShowLayers = jest.fn();
-    const { getByText } = renderControls({ showLayers: false, setShowLayers });
-    fireEvent.press(getByText("mobileControls.show"));
+    const { UNSAFE_getAllByType } = renderControls({ showLayers: false, setShowLayers });
+    const toggles = UNSAFE_getAllByType(require("react-native").TouchableOpacity).filter(
+      (t: any) => t.props.activeOpacity === 0.8,
+    );
+    fireEvent.press(toggles[0]);
     expect(setShowLayers).toHaveBeenCalledWith(true);
   });
 
@@ -145,11 +150,10 @@ describe("LayerControls", () => {
     expect(getByText("mobileControls.scaleKind")).toBeTruthy();
   });
 
-  it("does not switch tabs when layers are hidden", () => {
-    const { getByText, queryByText } = renderControls({ showLayers: false });
-    fireEvent.press(getByText("layers.caged"));
-    // Should still show scale card (default), not CAGED
-    expect(queryByText("mobileControls.cagedForms")).toBeNull();
+  it("hides tabs and cards when layers are hidden", () => {
+    const { queryByText } = renderControls({ showLayers: false });
+    expect(queryByText("layers.caged")).toBeNull();
+    expect(queryByText("mobileControls.scaleKind")).toBeNull();
   });
 
   // ── Card tap to toggle layers ─────────────────────────────────────
@@ -408,11 +412,11 @@ describe("LayerControls", () => {
   });
 
   // ── Layers hidden state ───────────────────────────────────────────
-  it("renders with reduced opacity when layers are hidden", () => {
-    const { UNSAFE_getAllByType } = renderControls({ showLayers: false });
-    const views = UNSAFE_getAllByType(require("react-native").View);
-    const tabRow = views.find((v: any) => v.props.style?.opacity === 0.4);
-    expect(tabRow).toBeTruthy();
+  it("hides tab row and card area when layers are hidden", () => {
+    const { queryByText } = renderControls({ showLayers: false });
+    expect(queryByText("layers.scale")).toBeNull();
+    expect(queryByText("layers.chord")).toBeNull();
+    expect(queryByText("mobileControls.scaleKind")).toBeNull();
   });
 
   // ── Power mode has no chord selection ─────────────────────────────
@@ -438,16 +442,15 @@ describe("LayerControls", () => {
   });
 
   // ── ToggleSwitch onPress for each card ────────────────────────────
+  // toggles[0] = layers toggle, toggles[1] = card toggle
   it("calls setShowScale when scale toggle is pressed", () => {
     const setShowScale = jest.fn();
     const { UNSAFE_getAllByType } = renderControls({ showScale: true, setShowScale });
-    // ToggleSwitch renders as TouchableOpacity with activeOpacity 0.8
     const toggles = UNSAFE_getAllByType(require("react-native").TouchableOpacity).filter(
       (t: any) => t.props.activeOpacity === 0.8,
     );
-    // First toggle is for scale card (default active tab)
-    if (toggles.length > 0) {
-      fireEvent.press(toggles[0]);
+    if (toggles.length > 1) {
+      fireEvent.press(toggles[1]);
       expect(setShowScale).toHaveBeenCalledWith(false);
     }
   });
@@ -459,8 +462,8 @@ describe("LayerControls", () => {
     const toggles = UNSAFE_getAllByType(require("react-native").TouchableOpacity).filter(
       (t: any) => t.props.activeOpacity === 0.8,
     );
-    if (toggles.length > 0) {
-      fireEvent.press(toggles[0]);
+    if (toggles.length > 1) {
+      fireEvent.press(toggles[1]);
       expect(setShowCaged).toHaveBeenCalledWith(false);
     }
   });
@@ -472,8 +475,8 @@ describe("LayerControls", () => {
     const toggles = UNSAFE_getAllByType(require("react-native").TouchableOpacity).filter(
       (t: any) => t.props.activeOpacity === 0.8,
     );
-    if (toggles.length > 0) {
-      fireEvent.press(toggles[0]);
+    if (toggles.length > 1) {
+      fireEvent.press(toggles[1]);
       expect(setShowChord).toHaveBeenCalledWith(false);
     }
   });
