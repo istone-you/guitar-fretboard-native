@@ -76,7 +76,7 @@ function ToggleSwitch({
     const toValue = active ? 0 : 1;
     Animated.timing(anim, {
       toValue,
-      duration: 200,
+      duration: 300,
       useNativeDriver: false,
     }).start();
     onPress();
@@ -231,7 +231,44 @@ export default function LayerControls({
   const { t } = useTranslation();
   const isDark = theme === "dark";
   const [activeTab, setActiveTab] = useState<MobileTab>("scale");
+  const slideAnim = useRef(new Animated.Value(0)).current;
+  const prevTabIdx = useRef(0);
   const touchStartX = useRef(0);
+
+  // Swipe by direction: -1 = left swipe (next), 1 = right swipe (prev)
+  const swipeTabRef = useRef<(dir: -1 | 1) => void>(() => {});
+  swipeTabRef.current = (dir: -1 | 1) => {
+    const oldIdx = prevTabIdx.current;
+    const newIdx =
+      dir === -1 ? (oldIdx + 1) % TABS.length : (oldIdx - 1 + TABS.length) % TABS.length;
+    const newTab = TABS[newIdx];
+    slideAnim.setValue(dir === -1 ? 300 : -300);
+    setActiveTab(newTab);
+    prevTabIdx.current = newIdx;
+    Animated.spring(slideAnim, {
+      toValue: 0,
+      friction: 8,
+      tension: 80,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  // Switch to specific tab (from tab button press)
+  const switchTab = (newTab: MobileTab) => {
+    const newIdx = TABS.indexOf(newTab);
+    const oldIdx = prevTabIdx.current;
+    if (newIdx === oldIdx) return;
+    const direction = newIdx > oldIdx ? 1 : -1;
+    slideAnim.setValue(direction * 300);
+    setActiveTab(newTab);
+    prevTabIdx.current = newIdx;
+    Animated.spring(slideAnim, {
+      toValue: 0,
+      friction: 8,
+      tension: 80,
+      useNativeDriver: true,
+    }).start();
+  };
 
   const panResponder = useRef(
     PanResponder.create({
@@ -245,11 +282,7 @@ export default function LayerControls({
       },
       onPanResponderRelease: (_, gs) => {
         if (Math.abs(gs.dx) < 40) return;
-        setActiveTab((cur) => {
-          const idx = TABS.indexOf(cur);
-          if (gs.dx < 0) return TABS[Math.min(idx + 1, TABS.length - 1)];
-          return TABS[Math.max(idx - 1, 0)];
-        });
+        swipeTabRef.current(gs.dx < 0 ? -1 : 1);
       },
     }),
   ).current;
@@ -560,7 +593,7 @@ export default function LayerControls({
             return (
               <TouchableOpacity
                 key={tab}
-                onPress={() => showLayers && setActiveTab(tab)}
+                onPress={() => showLayers && switchTab(tab)}
                 disabled={!showLayers}
                 style={styles.tabBtn}
                 activeOpacity={0.7}
@@ -598,10 +631,12 @@ export default function LayerControls({
 
       {/* Swipeable card area */}
       {showLayers && (
-        <View {...panResponder.panHandlers}>
-          {activeTab === "scale" && scaleCard}
-          {activeTab === "caged" && cagedCard}
-          {activeTab === "chord" && chordCard}
+        <View {...panResponder.panHandlers} style={{ overflow: "hidden" }}>
+          <Animated.View style={{ transform: [{ translateX: slideAnim }] }}>
+            {activeTab === "scale" && scaleCard}
+            {activeTab === "caged" && cagedCard}
+            {activeTab === "chord" && chordCard}
+          </Animated.View>
         </View>
       )}
     </View>

@@ -80,13 +80,21 @@ function AppContent() {
   // Layout: force screen rotation via ScreenOrientation
   const { width: winWidth, height: winHeight } = useWindowDimensions();
   const isLandscape = winWidth > winHeight;
+  const rotatingRef = useRef(false);
+  const [animDisabled, setAnimDisabled] = useState(false);
 
   const toggleLayout = useCallback(async () => {
+    rotatingRef.current = true;
+    setAnimDisabled(true);
     if (isLandscape) {
       await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
     } else {
       await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE_RIGHT);
     }
+    setTimeout(() => {
+      rotatingRef.current = false;
+      setAnimDisabled(false);
+    }, 500);
   }, [isLandscape]);
 
   // Auto filter
@@ -335,6 +343,7 @@ function AppContent() {
     chordColor,
     scaleColor,
     cagedColor,
+    disableAnimation: isLandscape || animDisabled,
   };
 
   const quizEffectiveRootNote =
@@ -648,28 +657,109 @@ function AppContent() {
           backgroundColor="transparent"
         />
 
-        {/* Fretboard only — scaled, vertically centered. Double-tap to return */}
+        {/* Info + fretboard block — centered vertically */}
+        <View
+          style={[
+            styles.landscapeInfoOverlay,
+            { marginTop: Math.max(0, (availH - 200 * fbScale) / 2) },
+          ]}
+        >
+          <View style={styles.landscapeInfoBar}>
+            <Text
+              style={[styles.infoText, { color: isDark ? "#e5e7eb" : "#1c1917", marginRight: 6 }]}
+            >
+              {t("header.root")} {rootNote}
+            </Text>
+            {effectiveHighlightedNotes.size > 0 && baseLabelMode === "note" && (
+              <View style={styles.infoChipsRow}>
+                {[...effectiveHighlightedNotes].map((n) => (
+                  <View
+                    key={n}
+                    style={[styles.infoChip, { borderColor: isDark ? "#93c5fd" : "#3b82f6" }]}
+                  >
+                    <Text style={[styles.infoChipText, { color: isDark ? "#93c5fd" : "#3b82f6" }]}>
+                      {n}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            )}
+            {effectiveHighlightedDegrees.size > 0 && baseLabelMode === "degree" && (
+              <View style={styles.infoChipsRow}>
+                {[...effectiveHighlightedDegrees].map((d) => (
+                  <View
+                    key={d}
+                    style={[styles.infoChip, { borderColor: isDark ? "#93c5fd" : "#3b82f6" }]}
+                  >
+                    <Text style={[styles.infoChipText, { color: isDark ? "#93c5fd" : "#3b82f6" }]}>
+                      {d}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
+          {/* Info bar — line 2: layers */}
+          {(effectiveShowScale || effectiveShowCaged || effectiveShowChord) && (
+            <View style={styles.landscapeInfoBar}>
+              {effectiveShowScale && (
+                <View style={[styles.infoPill, { backgroundColor: scaleColor }]}>
+                  <Text style={styles.infoPillText}>
+                    {t(
+                      `options.scale.${scaleType.replace(/-([a-z])/g, (_: string, c: string) => c.toUpperCase())}`,
+                    )}
+                  </Text>
+                </View>
+              )}
+              {effectiveShowCaged && (
+                <View style={[styles.infoPill, { backgroundColor: cagedColor }]}>
+                  <Text style={styles.infoPillText}>{[...cagedForms].join("")}</Text>
+                </View>
+              )}
+              {effectiveShowChord && chordDisplayMode === "form" && (
+                <View style={[styles.infoPill, { backgroundColor: chordColor }]}>
+                  <Text style={styles.infoPillText}>{chordType}</Text>
+                </View>
+              )}
+              {effectiveShowChord && chordDisplayMode === "power" && (
+                <View style={[styles.infoPill, { backgroundColor: chordColor }]}>
+                  <Text style={styles.infoPillText}>{t("options.chordDisplayMode.power")}</Text>
+                </View>
+              )}
+              {effectiveShowChord && chordDisplayMode === "triad" && (
+                <View style={[styles.infoPill, { backgroundColor: chordColor }]}>
+                  <Text style={styles.infoPillText}>
+                    {t("options.chordDisplayMode.triad")}({chordType}{" "}
+                    {t(`options.triadInversions.${triadInversion}`)})
+                  </Text>
+                </View>
+              )}
+              {effectiveShowChord && chordDisplayMode === "diatonic" && (
+                <View style={[styles.infoPill, { backgroundColor: chordColor }]}>
+                  <Text style={styles.infoPillText}>
+                    {t("options.chordDisplayMode.diatonic")}({diatonicDegree}{" "}
+                    {t(
+                      `options.diatonicKey.${diatonicKeyType === "natural-minor" ? "naturalMinor" : "major"}`,
+                    )}{" "}
+                    {t(`options.diatonicChordSize.${diatonicChordSize}`)})
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
+        </View>
+
+        {/* Fretboard */}
         <View style={{ flex: 1, overflow: "hidden" }}>
           <View
             style={{
               transform: [{ scale: fbScale }],
               transformOrigin: "top left",
-              marginTop: Math.max(0, (availH - 200 * fbScale) / 2 + 30),
             }}
           >
             {fretboardEl}
           </View>
         </View>
-        <Text
-          style={{
-            textAlign: "center",
-            fontSize: 15,
-            color: "#6b7280",
-            paddingBottom: Math.max(insets.bottom, 8),
-          }}
-        >
-          {t("doubleTapToReturn")}
-        </Text>
       </View>
     );
   }
@@ -734,5 +824,43 @@ const styles = StyleSheet.create({
   tabIcon: {
     width: 28,
     height: 28,
+  },
+  landscapeInfoOverlay: {},
+  landscapeInfoBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+  },
+  infoText: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  infoPill: {
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  infoPillText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#fff",
+  },
+  infoChipsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 4,
+  },
+  infoChip: {
+    borderWidth: 1.5,
+    borderRadius: 999,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+  },
+  infoChipText: {
+    fontSize: 14,
+    fontWeight: "600",
   },
 });

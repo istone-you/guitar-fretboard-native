@@ -38,11 +38,13 @@ function ScaleAnimView({
   style,
   visible,
   color,
+  skipAnimation,
 }: {
   children?: React.ReactNode;
   style: any;
   visible: boolean;
   color?: string;
+  skipAnimation?: boolean;
 }) {
   const scale = useRef(new Animated.Value(0)).current;
   const prevVisible = useRef(false);
@@ -53,21 +55,29 @@ function ScaleAnimView({
   if (visible && !prevVisible.current) {
     prevVisible.current = true;
     scale.stopAnimation();
-    Animated.spring(scale, {
-      toValue: 1,
-      friction: 6,
-      tension: 120,
-      useNativeDriver: true,
-    }).start();
+    if (skipAnimation) {
+      scale.setValue(1);
+    } else {
+      Animated.spring(scale, {
+        toValue: 1,
+        friction: 6,
+        tension: 120,
+        useNativeDriver: true,
+      }).start();
+    }
   } else if (!visible && prevVisible.current) {
     prevVisible.current = false;
     scale.stopAnimation();
-    Animated.spring(scale, {
-      toValue: 0,
-      friction: 8,
-      tension: 100,
-      useNativeDriver: true,
-    }).start();
+    if (skipAnimation) {
+      scale.setValue(0);
+    } else {
+      Animated.spring(scale, {
+        toValue: 0,
+        friction: 8,
+        tension: 100,
+        useNativeDriver: true,
+      }).start();
+    }
   }
 
   const bgStyle = lastColor.current ? { backgroundColor: lastColor.current } : {};
@@ -169,6 +179,7 @@ export interface FretboardProps {
   chordColor?: string;
   scaleColor?: string;
   cagedColor?: string;
+  disableAnimation?: boolean;
 }
 
 export default function Fretboard({
@@ -204,6 +215,7 @@ export default function Fretboard({
   chordColor = "#ffd700",
   scaleColor = "#ff69b6",
   cagedColor = "#40e0d0",
+  disableAnimation = false,
 }: FretboardProps) {
   const [fretMin, fretMax] = fretRange;
   const quizActive = quizModeActive && quizCell !== undefined;
@@ -489,6 +501,7 @@ export default function Fretboard({
               chordColor={chordColor}
               scaleColor={scaleColor}
               cagedColor={cagedColor}
+              disableAnimation={disableAnimation}
             />
           ))}
         </View>
@@ -526,6 +539,7 @@ interface StringRowProps {
   chordColor?: string;
   scaleColor?: string;
   cagedColor?: string;
+  disableAnimation?: boolean;
 }
 
 function StringRow({
@@ -557,6 +571,7 @@ function StringRow({
   chordColor = "#ffd700",
   scaleColor = "#ff69b6",
   cagedColor = "#40e0d0",
+  disableAnimation = false,
 }: StringRowProps) {
   const isDark = theme === "dark";
   const NOTES = accidental === "sharp" ? NOTES_SHARP : NOTES_FLAT;
@@ -674,6 +689,7 @@ function StringRow({
 
             {/* Highlight ring */}
             <ScaleAnimView
+              skipAnimation={disableAnimation}
               visible={isHighlighted}
               style={{
                 position: "absolute",
@@ -706,6 +722,7 @@ function StringRow({
             {/* Scale overlay (behind CAGED) */}
             {!quizAnswerOverlay && !shouldRevealChoiceAnswer && !isSelectedCell && (
               <ScaleAnimView
+                skipAnimation={disableAnimation}
                 visible={inScale}
                 color={scaleColor}
                 style={{
@@ -735,6 +752,7 @@ function StringRow({
             {/* CAGED overlay (in front of scale) */}
             {!quizAnswerOverlay && !shouldRevealChoiceAnswer && !isSelectedCell && (
               <ScaleAnimView
+                skipAnimation={disableAnimation}
                 visible={inCaged}
                 color={cagedColor}
                 style={{
@@ -765,6 +783,7 @@ function StringRow({
             {/* Chord dot */}
             {!quizAnswerOverlay && (
               <ScaleAnimView
+                skipAnimation={disableAnimation}
                 visible={inChord}
                 color={chordColor}
                 style={{
@@ -838,8 +857,11 @@ function StringRow({
             )}
 
             {/* Selected cell (multi-select) */}
-            {isSelectedCell && !isAnswered && (
-              <View
+            {!isAnswered && (
+              <ScaleAnimView
+                skipAnimation={disableAnimation}
+                visible={isSelectedCell}
+                color="#0ea5e9"
                 style={{
                   position: "absolute",
                   top: overlayInset,
@@ -847,7 +869,6 @@ function StringRow({
                   right: overlayInset,
                   bottom: overlayInset,
                   borderRadius: overlaySize / 2,
-                  backgroundColor: "#16a34a",
                   zIndex: 29,
                   opacity: 0.9,
                 }}

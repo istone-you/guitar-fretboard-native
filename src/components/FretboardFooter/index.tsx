@@ -240,8 +240,8 @@ export default function FretboardFooter({
       style={[
         styles.actionBtn,
         {
-          borderColor: isDark ? "rgba(147,197,253,0.3)" : "rgba(59,130,246,0.25)",
-          backgroundColor: isDark ? "rgba(59,130,246,0.08)" : "rgba(219,234,254,0.7)",
+          borderColor: isDark ? "rgba(56,189,248,0.3)" : "rgba(14,165,233,0.25)",
+          backgroundColor: isDark ? "rgba(14,165,233,0.08)" : "rgba(186,230,253,0.7)",
         },
         autoFilter && {
           backgroundColor: isDark ? "#0284c7" : "#0ea5e9",
@@ -254,7 +254,7 @@ export default function FretboardFooter({
         style={{
           fontSize: 13,
           fontWeight: "600",
-          color: autoFilter ? "#fff" : isDark ? "#93c5fd" : "#3b82f6",
+          color: autoFilter ? "#fff" : isDark ? "#38bdf8" : "#0ea5e9",
         }}
       >
         {t(`${autoFilterKey}.filter`)}

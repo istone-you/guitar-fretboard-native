@@ -595,11 +595,11 @@ describe("Fretboard - Quiz selected cells", () => {
       />,
     );
     const json = JSON.stringify(toJSON());
-    // Selected cells use #16a34a (green)
-    expect(json).toContain("#16a34a");
+    // Selected cells use #0ea5e9 (sky blue)
+    expect(json).toContain("#0ea5e9");
   });
 
-  it("shows green overlay on selected cells without note name", () => {
+  it("shows sky blue overlay on selected cells without note name", () => {
     const { UNSAFE_root } = render(
       <Fretboard
         {...makeProps({
@@ -616,7 +616,7 @@ describe("Fretboard - Quiz selected cells", () => {
     const allViews = UNSAFE_root.findAll((node: any) => node.type === "View");
     const greenOverlay = allViews.find((v: any) => {
       const style = v.props.style;
-      return style?.backgroundColor === "#16a34a" && style?.zIndex === 29;
+      return style?.backgroundColor === "#0ea5e9" && style?.zIndex === 29;
     });
     expect(greenOverlay).toBeTruthy();
   });
