@@ -481,16 +481,16 @@ export default function QuizPanel({
                     ]}
                     activeOpacity={0.7}
                   >
-                    <Text style={{ fontSize: 11, color: isDark ? "#9ca3af" : "#78716c" }}>{entry.degree}</Text>
+                    <Text style={{ fontSize: 13, color: isDark ? "#9ca3af" : "#78716c" }}>{entry.degree}</Text>
                     {answer ? (
-                      <Text style={{ fontSize: 12, fontWeight: "bold", color: answered ? "#fff" : isDark ? "#e5e7eb" : "#1c1917" }}>
+                      <Text style={{ fontSize: 14, fontWeight: "bold", color: answered ? "#fff" : isDark ? "#e5e7eb" : "#1c1917" }}>
                         {answer.root}{answer.chordType === "Major" ? "" : answer.chordType === "Minor" ? "m" : answer.chordType}
                       </Text>
                     ) : (
-                      <Text style={{ fontSize: 12, color: isDark ? "#4b5563" : "#d6d3d1" }}>--</Text>
+                      <Text style={{ fontSize: 14, color: isDark ? "#4b5563" : "#d6d3d1" }}>--</Text>
                     )}
                     {answered && (
-                      <Text style={{ fontSize: 10, color: "rgba(255,255,255,0.8)" }}>
+                      <Text style={{ fontSize: 14, color: "rgba(255,255,255,0.8)" }}>
                         {entry.root}{entry.chordType === "Major" ? "" : entry.chordType === "Minor" ? "m" : entry.chordType}
                       </Text>
                     )}

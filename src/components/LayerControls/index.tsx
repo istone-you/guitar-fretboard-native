@@ -40,6 +40,36 @@ const COLOR_PRESETS = [
   "#10b981", "#84cc16", "#f97316", "#ec4899",
 ];
 
+// Toggle switch
+function ToggleSwitch({
+  active,
+  onPress,
+  disabled,
+}: {
+  active: boolean;
+  onPress: () => void;
+  disabled: boolean;
+}) {
+  return (
+    <TouchableOpacity
+      onPress={disabled ? undefined : onPress}
+      disabled={disabled}
+      style={[
+        styles.toggle,
+        { backgroundColor: active ? "#0ea5e9" : "#4b5563" },
+      ]}
+      activeOpacity={0.8}
+    >
+      <View
+        style={[
+          styles.toggleThumb,
+          { transform: [{ translateX: active ? 20 : 2 }] },
+        ]}
+      />
+    </TouchableOpacity>
+  );
+}
+
 // Circular color swatch button + picker modal
 function ColorSwatch({
   color,
@@ -261,17 +291,18 @@ export default function LayerControls({
 
   // ── Scale card ──────────────────────────────────────────────────
   const scaleCard = (
-    <TouchableOpacity
-      activeOpacity={0.85}
-      onPress={() => showLayers && setShowScale(!showScale)}
-      style={[styles.card, getCardStyle(showScale)]}
-    >
+    <View style={[styles.card, getCardStyle(showScale)]}>
       <View style={{ opacity: getContentOpacity(showScale), flex: 1 }}>
         <View style={styles.cardTitleRow}>
           <ColorSwatch
             color={scaleColor}
             onChange={setScaleColor}
             disabled={!showLayers || !showScale}
+          />
+          <ToggleSwitch
+            active={showScale}
+            onPress={() => setShowScale(!showScale)}
+            disabled={!showLayers}
           />
         </View>
 
@@ -290,22 +321,23 @@ export default function LayerControls({
           </View>
         </View>
       </View>
-    </TouchableOpacity>
+    </View>
   );
 
   // ── CAGED card ──────────────────────────────────────────────────
   const cagedCard = (
-    <TouchableOpacity
-      activeOpacity={0.85}
-      onPress={() => showLayers && setShowCaged(!showCaged)}
-      style={[styles.card, getCardStyle(showCaged)]}
-    >
+    <View style={[styles.card, getCardStyle(showCaged)]}>
       <View style={{ opacity: getContentOpacity(showCaged), flex: 1 }}>
         <View style={styles.cardTitleRow}>
           <ColorSwatch
             color={cagedColor}
             onChange={setCagedColor}
             disabled={!showLayers || !showCaged}
+          />
+          <ToggleSwitch
+            active={showCaged}
+            onPress={() => setShowCaged(!showCaged)}
+            disabled={!showLayers}
           />
         </View>
 
@@ -341,22 +373,23 @@ export default function LayerControls({
           </View>
         </View>
       </View>
-    </TouchableOpacity>
+    </View>
   );
 
   // ── Chord card ──────────────────────────────────────────────────
   const chordCard = (
-    <TouchableOpacity
-      activeOpacity={0.85}
-      onPress={() => showLayers && setShowChord(!showChord)}
-      style={[styles.card, getCardStyle(showChord)]}
-    >
+    <View style={[styles.card, getCardStyle(showChord)]}>
       <View style={{ opacity: getContentOpacity(showChord), flex: 1 }}>
         <View style={styles.cardTitleRow}>
           <ColorSwatch
             color={chordColor}
             onChange={setChordColor}
             disabled={!showLayers || !showChord}
+          />
+          <ToggleSwitch
+            active={showChord}
+            onPress={() => setShowChord(!showChord)}
+            disabled={!showLayers}
           />
         </View>
 
@@ -408,7 +441,7 @@ export default function LayerControls({
           </View>
         </View>
       </View>
-    </TouchableOpacity>
+    </View>
   );
 
   return (
@@ -536,7 +569,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
+    gap: 12,
     marginBottom: 0,
   },
   cardCenter: {
@@ -545,11 +578,30 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   sectionLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "600",
     textTransform: "uppercase",
     letterSpacing: 0.8,
     textAlign: "center",
+  },
+  toggle: {
+    width: 36,
+    height: 20,
+    borderRadius: 10,
+    justifyContent: "center",
+  },
+  toggleThumb: {
+    position: "absolute",
+    top: 3,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: "#fff",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1,
+    elevation: 2,
   },
   colorSwatch: {
     width: 24,

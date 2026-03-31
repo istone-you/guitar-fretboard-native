@@ -1,5 +1,11 @@
 import { useMemo } from "react";
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+} from "react-native";
 import {
   FRET_COUNT,
   NOTES_SHARP,
@@ -34,17 +40,14 @@ const STRING_COUNT = 6;
 
 const FRETBOARD_SIZE = {
   cellWidth: 34,
-  stringLabelWidth: 18,
   rowHeight: 26,
   rowGap: 1,
-  headerFontSize: 10,
-  stringFontSize: 10,
+  headerFontSize: 12,
   markHeight: 12,
   markerSize: 4,
   markerGap: 2,
-  baseFontSize: 10,
-  overlayFontSize: 10,
-  stringLabelPaddingRight: 2,
+  baseFontSize: 12,
+  overlayFontSize: 12,
   rootRingInset: 1,
   overlayInset: 2,
   chordBorderWidth: 2,
@@ -146,9 +149,12 @@ export default function Fretboard({
     chordDisplayMode === "diatonic"
       ? getDiatonicChord(rootIndex, diatonicScaleType, diatonicDegree)
       : null;
-  const effectiveDisplayMode = chordDisplayMode === "diatonic" ? "form" : chordDisplayMode;
-  const effectiveRootIndex = diatonicChord != null ? diatonicChord.rootIndex : rootIndex;
-  const effectiveChordType: ChordType = diatonicChord != null ? diatonicChord.chordType : chordType;
+  const effectiveDisplayMode =
+    chordDisplayMode === "diatonic" ? "form" : chordDisplayMode;
+  const effectiveRootIndex =
+    diatonicChord != null ? diatonicChord.rootIndex : rootIndex;
+  const effectiveChordType: ChordType =
+    diatonicChord != null ? diatonicChord.chordType : chordType;
 
   const chordGroups = useMemo<ChordGroup[]>(() => {
     if (!showChord) return [];
@@ -178,7 +184,9 @@ export default function Fretboard({
       const fullForm =
         effectiveDisplayMode === "power"
           ? POWER_CHORD_FORMS[rootStringIdx]
-          : (rootStringIdx === 0 ? CHORD_FORMS_6TH : CHORD_FORMS_5TH)[effectiveChordType];
+          : (rootStringIdx === 0 ? CHORD_FORMS_6TH : CHORD_FORMS_5TH)[
+              effectiveChordType
+            ];
       if (!fullForm) return [];
 
       let rootFret = -1;
@@ -191,7 +199,10 @@ export default function Fretboard({
       if (rootFret === -1) return [];
 
       const cells = fullForm
-        .map(({ string, fretOffset }) => ({ string, fret: rootFret + fretOffset }))
+        .map(({ string, fretOffset }) => ({
+          string,
+          fret: rootFret + fretOffset,
+        }))
         .filter(({ fret }) => fret >= 0 && fret < FRET_COUNT);
       if (cells.length === 0) return [];
 
@@ -257,7 +268,8 @@ export default function Fretboard({
   }, [chordGroups]);
 
   const cagedPositions = useMemo(() => {
-    if (!showCaged || cagedForms.size === 0) return new Map<string, CagedPositionValue>();
+    if (!showCaged || cagedForms.size === 0)
+      return new Map<string, CagedPositionValue>();
     const merged = new Map<string, CagedPositionValue>();
     for (const key of cagedForms) {
       for (const [cell, val] of calcCagedPositions(key, rootIndex)) {
@@ -269,22 +281,36 @@ export default function Fretboard({
     return merged;
   }, [showCaged, cagedForms, rootIndex]);
 
-  const visibleFrets = Array.from({ length: fretMax - fretMin + 1 }, (_, i) => fretMin + i);
+  const visibleFrets = Array.from(
+    { length: fretMax - fretMin + 1 },
+    (_, i) => fretMin + i,
+  );
 
-  const totalWidth = size.stringLabelWidth + visibleFrets.length * size.cellWidth;
+  const totalWidth =
+    visibleFrets.length * size.cellWidth;
 
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-      <View style={{ width: totalWidth }}>
+      <View style={{ width: totalWidth, marginLeft: 8 }}>
         {/* Fret number header */}
         <View style={styles.row}>
-          <View style={{ width: size.stringLabelWidth }} />
           {visibleFrets.map((fret) => (
             <View
               key={fret}
-              style={{ width: size.cellWidth, height: size.markHeight, alignItems: "center", justifyContent: "center" }}
+              style={{
+                width: size.cellWidth,
+                height: size.markHeight,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
             >
-              <Text style={{ fontSize: size.headerFontSize, color: isDark ? "#6b7280" : "#78716c", fontFamily: "monospace" }}>
+              <Text
+                style={{
+                  fontSize: size.headerFontSize,
+                  color: isDark ? "#6b7280" : "#78716c",
+                  fontFamily: "monospace",
+                }}
+              >
                 {fret}
               </Text>
             </View>
@@ -293,21 +319,48 @@ export default function Fretboard({
 
         {/* Position markers */}
         <View style={[styles.row, { marginBottom: 4 }]}>
-          <View style={{ width: size.stringLabelWidth }} />
           {visibleFrets.map((fret) => {
             const mark = POSITION_MARKS[fret];
             return (
               <View
                 key={fret}
-                style={{ width: size.cellWidth, height: size.markHeight, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: size.markerGap }}
+                style={{
+                  width: size.cellWidth,
+                  height: size.markHeight,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: size.markerGap,
+                }}
               >
                 {mark === "double" ? (
                   <>
-                    <View style={{ width: size.markerSize, height: size.markerSize, borderRadius: size.markerSize / 2, backgroundColor: isDark ? "#6b7280" : "#a8a29e" }} />
-                    <View style={{ width: size.markerSize, height: size.markerSize, borderRadius: size.markerSize / 2, backgroundColor: isDark ? "#6b7280" : "#a8a29e" }} />
+                    <View
+                      style={{
+                        width: size.markerSize,
+                        height: size.markerSize,
+                        borderRadius: size.markerSize / 2,
+                        backgroundColor: isDark ? "#6b7280" : "#a8a29e",
+                      }}
+                    />
+                    <View
+                      style={{
+                        width: size.markerSize,
+                        height: size.markerSize,
+                        borderRadius: size.markerSize / 2,
+                        backgroundColor: isDark ? "#6b7280" : "#a8a29e",
+                      }}
+                    />
                   </>
                 ) : mark === "single" ? (
-                  <View style={{ width: size.markerSize, height: size.markerSize, borderRadius: size.markerSize / 2, backgroundColor: isDark ? "#6b7280" : "#a8a29e" }} />
+                  <View
+                    style={{
+                      width: size.markerSize,
+                      height: size.markerSize,
+                      borderRadius: size.markerSize / 2,
+                      backgroundColor: isDark ? "#6b7280" : "#a8a29e",
+                    }}
+                  />
                 ) : null}
               </View>
             );
@@ -317,12 +370,17 @@ export default function Fretboard({
         {/* Chord group overlays + string rows */}
         <View style={{ position: "relative" }}>
           {chordGroups
-            .filter((group) => group.maxFret >= fretMin && group.minFret <= fretMax)
+            .filter(
+              (group) => group.maxFret >= fretMin && group.minFret <= fretMax,
+            )
             .map((group) => {
               const clampedMin = Math.max(group.minFret, fretMin);
               const clampedMax = Math.min(group.maxFret, fretMax);
-              const top = (STRING_COUNT - 1 - group.maxString) * (size.rowHeight + size.rowGap);
-              const left = size.stringLabelWidth + (clampedMin - fretMin) * size.cellWidth;
+              const top =
+                (STRING_COUNT - 1 - group.maxString) *
+                (size.rowHeight + size.rowGap);
+              const left =
+                (clampedMin - fretMin) * size.cellWidth;
               const width = (clampedMax - clampedMin + 1) * size.cellWidth;
               const height =
                 (group.maxString - group.minString + 1) * size.rowHeight +
@@ -341,14 +399,21 @@ export default function Fretboard({
                     borderRadius: 12,
                     borderWidth: 2,
                     zIndex: 6,
-                    borderColor: hideChordNoteLabels ? "rgba(14,165,233,0.7)" : `${chordColor}99`,
-                    backgroundColor: hideChordNoteLabels ? "rgba(14,165,233,0.1)" : `${chordColor}14`,
+                    borderColor: hideChordNoteLabels
+                      ? "rgba(14,165,233,0.7)"
+                      : `${chordColor}99`,
+                    backgroundColor: hideChordNoteLabels
+                      ? "rgba(14,165,233,0.1)"
+                      : `${chordColor}14`,
                   }}
                 />
               );
             })}
 
-          {Array.from({ length: STRING_COUNT }, (_, i) => STRING_COUNT - 1 - i).map((stringIdx) => (
+          {Array.from(
+            { length: STRING_COUNT },
+            (_, i) => STRING_COUNT - 1 - i,
+          ).map((stringIdx) => (
             <StringRow
               key={stringIdx}
               theme={theme}
@@ -366,7 +431,9 @@ export default function Fretboard({
               highlightedNotes={highlightedNotes}
               highlightedDegrees={highlightedDegrees}
               quizActive={quizActive}
-              quizTargetFret={quizCell?.stringIdx === stringIdx ? quizCell.fret : null}
+              quizTargetFret={
+                quizCell?.stringIdx === stringIdx ? quizCell.fret : null
+              }
               quizAnswerMode={quizAnswerMode}
               quizTargetString={quizTargetString}
               quizAnsweredCell={quizAnsweredCell}
@@ -451,28 +518,24 @@ function StringRow({
   const isDark = theme === "dark";
   const NOTES = accidental === "sharp" ? NOTES_SHARP : NOTES_FLAT;
   const openStringNotes = ["E", "A", "D", "G", "B", "E"];
-  const shouldSuppressRegularDisplay = suppressRegularDisplay || quizActive || quizAnswerMode;
+  const shouldSuppressRegularDisplay =
+    suppressRegularDisplay || quizActive || quizAnswerMode;
 
   const isNonTargetString =
-    quizAnswerMode && quizTargetString != null && stringIdx !== quizTargetString;
+    quizAnswerMode &&
+    quizTargetString != null &&
+    stringIdx !== quizTargetString;
   const isTargetString =
-    quizAnswerMode && (quizTargetString == null || stringIdx === quizTargetString);
+    quizAnswerMode &&
+    (quizTargetString == null || stringIdx === quizTargetString);
 
   return (
-    <View style={[styles.row, { marginBottom: size.rowGap, opacity: isNonTargetString ? 0.3 : 1 }]}>
-      <View
-        style={{
-          width: size.stringLabelWidth,
-          height: size.rowHeight,
-          alignItems: "flex-end",
-          justifyContent: "center",
-          paddingRight: size.stringLabelPaddingRight,
-        }}
-      >
-        <Text style={{ fontSize: size.stringFontSize, color: isDark ? "#9ca3af" : "#78716c", fontFamily: "monospace" }}>
-          {!shouldSuppressRegularDisplay ? openStringNotes[stringIdx] : ""}
-        </Text>
-      </View>
+    <View
+      style={[
+        styles.row,
+        { marginBottom: size.rowGap, opacity: isNonTargetString ? 0.3 : 1 },
+      ]}
+    >
 
       {visibleFrets.map((fret) => {
         const noteIdx = getNoteIndex(stringIdx, fret);
@@ -502,14 +565,17 @@ function StringRow({
           quizAnsweredCell?.stringIdx === stringIdx &&
           quizAnsweredCell?.fret === fret;
         const isCorrectCell =
-          isAnswered && quizCorrectCell?.stringIdx === stringIdx && quizCorrectCell?.fret === fret;
+          isAnswered &&
+          quizCorrectCell?.stringIdx === stringIdx &&
+          quizCorrectCell?.fret === fret;
         const isSelectedCell = quizSelectedCells.some(
           (cell) => cell.stringIdx === stringIdx && cell.fret === fret,
         );
         const shouldRevealChoiceAnswer =
           quizRevealNoteNames != null && quizRevealNoteNames.includes(noteName);
 
-        let quizAnswerOverlay: "correct" | "wrong" | "correct-hint" | null = null;
+        let quizAnswerOverlay: "correct" | "wrong" | "correct-hint" | null =
+          null;
         if (isTappedCell) {
           quizAnswerOverlay = isCorrectCell ? "correct" : "wrong";
         } else if (isCorrectCell && !isTappedCell) {
@@ -541,7 +607,10 @@ function StringRow({
               borderLeftWidth: 1,
               borderLeftColor: isDark ? "#4b5563" : "#d6d3d1",
               ...(fret === 0
-                ? { borderRightWidth: 4, borderRightColor: isDark ? "#d1d5db" : "#78716c" }
+                ? {
+                    borderRightWidth: 4,
+                    borderRightColor: isDark ? "#d1d5db" : "#78716c",
+                  }
                 : {}),
               position: "relative",
             }}
@@ -608,27 +677,36 @@ function StringRow({
             )}
 
             {/* Scale / CAGED overlay */}
-            {overlayColor && !quizAnswerOverlay && !shouldRevealChoiceAnswer && !isSelectedCell && (
-              <View
-                style={{
-                  position: "absolute",
-                  top: overlayInset,
-                  left: overlayInset,
-                  right: overlayInset,
-                  bottom: overlayInset,
-                  borderRadius: overlaySize / 2,
-                  backgroundColor: overlayColor,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  zIndex: 10,
-                  opacity: 0.85,
-                }}
-              >
-                <Text style={{ fontSize: size.overlayFontSize, color: "#fff", fontWeight: "bold" }}>
-                  {labelText}
-                </Text>
-              </View>
-            )}
+            {overlayColor &&
+              !quizAnswerOverlay &&
+              !shouldRevealChoiceAnswer &&
+              !isSelectedCell && (
+                <View
+                  style={{
+                    position: "absolute",
+                    top: overlayInset,
+                    left: overlayInset,
+                    right: overlayInset,
+                    bottom: overlayInset,
+                    borderRadius: overlaySize / 2,
+                    backgroundColor: overlayColor,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    zIndex: 10,
+                    opacity: 0.85,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: size.overlayFontSize,
+                      color: "#fff",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {labelText}
+                  </Text>
+                </View>
+              )}
 
             {/* Chord dot */}
             {inChord && !quizAnswerOverlay && (
@@ -647,7 +725,13 @@ function StringRow({
                   opacity: 0.85,
                 }}
               >
-                <Text style={{ fontSize: size.overlayFontSize, color: "#fff", fontWeight: "bold" }}>
+                <Text
+                  style={{
+                    fontSize: size.overlayFontSize,
+                    color: "#fff",
+                    fontWeight: "bold",
+                  }}
+                >
                   {hideChordNoteLabels ? "?" : labelText}
                 </Text>
               </View>
@@ -669,7 +753,15 @@ function StringRow({
                   zIndex: 30,
                 }}
               >
-                <Text style={{ fontSize: size.overlayFontSize, color: "#fff", fontWeight: "bold" }}>?</Text>
+                <Text
+                  style={{
+                    fontSize: size.overlayFontSize,
+                    color: "#fff",
+                    fontWeight: "bold",
+                  }}
+                >
+                  ?
+                </Text>
               </View>
             )}
 
@@ -707,7 +799,15 @@ function StringRow({
                   opacity: 0.9,
                 }}
               >
-                <Text style={{ fontSize: size.overlayFontSize, color: "#fff", fontWeight: "bold" }}>{noteName}</Text>
+                <Text
+                  style={{
+                    fontSize: size.overlayFontSize,
+                    color: "#fff",
+                    fontWeight: "bold",
+                  }}
+                >
+                  {noteName}
+                </Text>
               </View>
             )}
 
@@ -728,7 +828,15 @@ function StringRow({
                   opacity: 0.75,
                 }}
               >
-                <Text style={{ fontSize: size.overlayFontSize, color: "#fff", fontWeight: "bold" }}>{noteName}</Text>
+                <Text
+                  style={{
+                    fontSize: size.overlayFontSize,
+                    color: "#fff",
+                    fontWeight: "bold",
+                  }}
+                >
+                  {noteName}
+                </Text>
               </View>
             )}
 
@@ -748,7 +856,15 @@ function StringRow({
                   zIndex: 30,
                 }}
               >
-                <Text style={{ fontSize: size.overlayFontSize, color: "#fff", fontWeight: "bold" }}>{noteName}</Text>
+                <Text
+                  style={{
+                    fontSize: size.overlayFontSize,
+                    color: "#fff",
+                    fontWeight: "bold",
+                  }}
+                >
+                  {noteName}
+                </Text>
               </View>
             )}
             {quizAnswerOverlay === "wrong" && (
@@ -766,7 +882,15 @@ function StringRow({
                   zIndex: 30,
                 }}
               >
-                <Text style={{ fontSize: size.overlayFontSize, color: "#fff", fontWeight: "bold" }}>{noteName}</Text>
+                <Text
+                  style={{
+                    fontSize: size.overlayFontSize,
+                    color: "#fff",
+                    fontWeight: "bold",
+                  }}
+                >
+                  {noteName}
+                </Text>
               </View>
             )}
             {quizAnswerOverlay === "correct-hint" && (
@@ -785,7 +909,15 @@ function StringRow({
                   opacity: 0.7,
                 }}
               >
-                <Text style={{ fontSize: size.overlayFontSize, color: "#fff", fontWeight: "bold" }}>{noteName}</Text>
+                <Text
+                  style={{
+                    fontSize: size.overlayFontSize,
+                    color: "#fff",
+                    fontWeight: "bold",
+                  }}
+                >
+                  {noteName}
+                </Text>
               </View>
             )}
           </TouchableOpacity>

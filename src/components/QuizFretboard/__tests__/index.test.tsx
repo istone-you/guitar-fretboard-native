@@ -8,7 +8,7 @@ jest.mock("react-i18next", () => ({
 
 jest.mock("../../../i18n", () => ({}));
 
-const mockFretboard = jest.fn(() => {
+const mockFretboard = jest.fn((_props: any) => {
   const { View } = require("react-native");
   return <View testID="fretboard" />;
 });

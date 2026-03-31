@@ -78,6 +78,7 @@
     "minorDerived": "Minor Derived",
     "modes": "Modes"
   },
+  "doubleTapToReturn": "Double-tap to return",
   "scaleDialog": "Scale list",
   "options": {
     "chordDisplayMode": {

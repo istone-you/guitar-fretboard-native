@@ -20,8 +20,6 @@ const defaultProps = {
   theme: "dark" as Theme,
   fretRange: [0, 14] as [number, number],
   accidental: "sharp" as Accidental,
-  isLandscape: false,
-  onToggleLayout: jest.fn(),
   onThemeChange: jest.fn(),
   onFretRangeChange: jest.fn(),
   onAccidentalChange: jest.fn(),
@@ -62,7 +60,7 @@ describe("AppHeader", () => {
       require("react-native").TouchableOpacity
     );
     // The settings button is the last TouchableOpacity in the header
-    const settingsButton = allTouchables[1]; // second button (right side)
+    const settingsButton = allTouchables[0]; // settings button
     fireEvent.press(settingsButton);
 
     // After opening, the modal content should appear
@@ -91,7 +89,7 @@ describe("AppHeader", () => {
     const allTouchables = UNSAFE_getAllByType(
       require("react-native").TouchableOpacity
     );
-    fireEvent.press(allTouchables[1]);
+    fireEvent.press(allTouchables[0]);
     act(() => { jest.runAllTimers(); });
     expect(getByText("settings")).toBeTruthy();
 
@@ -112,7 +110,7 @@ describe("AppHeader", () => {
     const allTouchables = UNSAFE_getAllByType(
       require("react-native").TouchableOpacity
     );
-    fireEvent.press(allTouchables[1]);
+    fireEvent.press(allTouchables[0]);
     act(() => { jest.runAllTimers(); });
 
     expect(getByText("dark")).toBeTruthy();
@@ -127,7 +125,7 @@ describe("AppHeader", () => {
     const allTouchables = UNSAFE_getAllByType(
       require("react-native").TouchableOpacity
     );
-    fireEvent.press(allTouchables[1]);
+    fireEvent.press(allTouchables[0]);
     act(() => { jest.runAllTimers(); });
 
     fireEvent.press(getByText("light"));
@@ -141,7 +139,7 @@ describe("AppHeader", () => {
     const allTouchables = UNSAFE_getAllByType(
       require("react-native").TouchableOpacity
     );
-    fireEvent.press(allTouchables[1]);
+    fireEvent.press(allTouchables[0]);
     act(() => { jest.runAllTimers(); });
 
     expect(getByText("\u266F")).toBeTruthy();
@@ -155,7 +153,7 @@ describe("AppHeader", () => {
     const allTouchables = UNSAFE_getAllByType(
       require("react-native").TouchableOpacity
     );
-    fireEvent.press(allTouchables[1]);
+    fireEvent.press(allTouchables[0]);
     act(() => { jest.runAllTimers(); });
 
     fireEvent.press(getByText("\u266D"));
@@ -169,7 +167,7 @@ describe("AppHeader", () => {
     const allTouchables = UNSAFE_getAllByType(
       require("react-native").TouchableOpacity
     );
-    fireEvent.press(allTouchables[1]);
+    fireEvent.press(allTouchables[0]);
     act(() => { jest.runAllTimers(); });
 
     expect(getByText("JA")).toBeTruthy();
@@ -183,7 +181,7 @@ describe("AppHeader", () => {
     const allTouchables = UNSAFE_getAllByType(
       require("react-native").TouchableOpacity
     );
-    fireEvent.press(allTouchables[1]);
+    fireEvent.press(allTouchables[0]);
     act(() => { jest.runAllTimers(); });
 
     fireEvent.press(getByText("JA"));
@@ -197,7 +195,7 @@ describe("AppHeader", () => {
     const allTouchables = UNSAFE_getAllByType(
       require("react-native").TouchableOpacity
     );
-    fireEvent.press(allTouchables[1]);
+    fireEvent.press(allTouchables[0]);
     act(() => { jest.runAllTimers(); });
 
     expect(getByText("settingsPanel.fretRange")).toBeTruthy();
@@ -212,7 +210,7 @@ describe("AppHeader", () => {
     const allTouchables = UNSAFE_getAllByType(
       require("react-native").TouchableOpacity
     );
-    fireEvent.press(allTouchables[1]);
+    fireEvent.press(allTouchables[0]);
     act(() => { jest.runAllTimers(); });
 
     expect(getByText("3 \u2013 12")).toBeTruthy();
@@ -226,7 +224,7 @@ describe("AppHeader", () => {
     const allTouchables = UNSAFE_getAllByType(
       require("react-native").TouchableOpacity
     );
-    fireEvent.press(allTouchables[1]);
+    fireEvent.press(allTouchables[0]);
     act(() => { jest.runAllTimers(); });
 
     // Thumb labels show min and max
@@ -234,29 +232,6 @@ describe("AppHeader", () => {
     expect(getByText("10")).toBeTruthy();
   });
 
-  // ── Orientation lock button ────────────────────────────────────────
-  it("calls onToggleLayout when orientation button is pressed", () => {
-    const onToggleLayout = jest.fn();
-    const { UNSAFE_getAllByType } = renderHeader({ onToggleLayout });
-
-    // First button is the orientation toggle (left side)
-    const allTouchables = UNSAFE_getAllByType(
-      require("react-native").TouchableOpacity
-    );
-    fireEvent.press(allTouchables[0]);
-    expect(onToggleLayout).toHaveBeenCalledTimes(1);
-  });
-
-  it("shows landscape icon when in portrait mode", () => {
-    const { UNSAFE_root } = renderHeader({ isLandscape: false });
-    // Component renders lockBarLandscape when not in landscape
-    expect(UNSAFE_root).toBeTruthy();
-  });
-
-  it("shows portrait icon when in landscape mode", () => {
-    const { UNSAFE_root } = renderHeader({ isLandscape: true });
-    expect(UNSAFE_root).toBeTruthy();
-  });
 
   // ── Light theme rendering ─────────────────────────────────────────
   it("renders correctly with light theme", () => {
@@ -276,7 +251,7 @@ describe("AppHeader", () => {
     const allTouchables = UNSAFE_getAllByType(
       require("react-native").TouchableOpacity
     );
-    fireEvent.press(allTouchables[1]);
+    fireEvent.press(allTouchables[0]);
     act(() => { jest.runAllTimers(); });
 
     // Find the min thumb by its label text "3"
@@ -310,7 +285,7 @@ describe("AppHeader", () => {
     const allTouchables = UNSAFE_getAllByType(
       require("react-native").TouchableOpacity
     );
-    fireEvent.press(allTouchables[1]);
+    fireEvent.press(allTouchables[0]);
     act(() => { jest.runAllTimers(); });
 
     // Find the max thumb by its label text "12"
@@ -341,7 +316,7 @@ describe("AppHeader", () => {
     const allTouchables = UNSAFE_getAllByType(
       require("react-native").TouchableOpacity
     );
-    fireEvent.press(allTouchables[1]);
+    fireEvent.press(allTouchables[0]);
     act(() => { jest.runAllTimers(); });
 
     // Trigger onLayout on the RangeSlider container to set track width
@@ -390,7 +365,7 @@ describe("AppHeader", () => {
     const allTouchables = UNSAFE_getAllByType(
       require("react-native").TouchableOpacity
     );
-    fireEvent.press(allTouchables[1]);
+    fireEvent.press(allTouchables[0]);
     act(() => { jest.runAllTimers(); });
 
     // Set track width via onLayout
@@ -433,7 +408,7 @@ describe("AppHeader", () => {
     const allTouchables = UNSAFE_getAllByType(
       require("react-native").TouchableOpacity
     );
-    fireEvent.press(allTouchables[1]);
+    fireEvent.press(allTouchables[0]);
     act(() => { jest.runAllTimers(); });
 
     // All settings labels should be present
@@ -451,7 +426,7 @@ describe("AppHeader", () => {
     const allTouchables = UNSAFE_getAllByType(
       require("react-native").TouchableOpacity
     );
-    fireEvent.press(allTouchables[1]);
+    fireEvent.press(allTouchables[0]);
     act(() => { jest.runAllTimers(); });
 
     fireEvent.press(getByText("EN"));
@@ -469,7 +444,7 @@ describe("AppHeader", () => {
     const allTouchables = UNSAFE_getAllByType(
       require("react-native").TouchableOpacity
     );
-    fireEvent.press(allTouchables[1]);
+    fireEvent.press(allTouchables[0]);
 
     expect(parallelSpy).toHaveBeenCalled();
     expect(timingSpy).toHaveBeenCalled();

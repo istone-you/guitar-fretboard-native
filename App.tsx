@@ -1,6 +1,7 @@
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useRef } from "react";
 import {
   View,
+  Text,
   Image,
   TouchableOpacity,
   StatusBar,
@@ -13,6 +14,7 @@ import {
 } from "react-native-safe-area-context";
 import * as ScreenOrientation from "expo-screen-orientation";
 import "./src/i18n";
+import { useTranslation } from "react-i18next";
 import AppHeader from "./src/components/AppHeader/index";
 import FretboardHeader from "./src/components/FretboardHeader/index";
 import FretboardFooter from "./src/components/FretboardFooter/index";
@@ -63,6 +65,7 @@ const STORAGE_KEYS = {
 
 function AppContent() {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   // Root note
   const [rootNote, setRootNote] = useState("C");
   // Fret range
@@ -165,7 +168,7 @@ function AppContent() {
   } = useDiatonicSelection();
 
   const [scaleType, setScaleType] = useState<ScaleType>("major");
-  const [cagedForms, setCagedForms] = useState(new Set(["E"]));
+  const [cagedForms, setCagedForms] = useState(new Set(["E", "A"]));
 
   const toggleCagedForm = (key: string) => {
     setCagedForms((prev) => {
@@ -385,8 +388,17 @@ function AppContent() {
     />
   );
 
+  const lastTapRef = useRef(0);
+  const handleFretboardDoubleTap = useCallback(() => {
+    const now = Date.now();
+    if (now - lastTapRef.current < 300) {
+      toggleLayout();
+    }
+    lastTapRef.current = now;
+  }, [toggleLayout]);
+
   const fretboardEl = (
-    <View style={{ paddingVertical: isLandscape ? 2 : 8 }}>
+    <View style={{ paddingVertical: isLandscape ? 2 : 8 }} onTouchEnd={handleFretboardDoubleTap}>
       {showQuiz ? (
         <QuizFretboard
           theme={theme}
@@ -439,7 +451,7 @@ function AppContent() {
         <NormalFretboard
           {...commonFretboardProps}
           rootNote={rootNote}
-          onNoteClick={handleNoteClick}
+          onNoteClick={() => {}}
           highlightedNotes={effectiveHighlightedNotes}
           highlightedDegrees={effectiveHighlightedDegrees}
         />
@@ -658,28 +670,7 @@ function AppContent() {
           backgroundColor="transparent"
         />
 
-        {/* Back to portrait button */}
-        <TouchableOpacity
-          onPress={toggleLayout}
-          style={styles.landscapeBackBtn}
-          activeOpacity={0.7}
-        >
-          <View
-            style={[
-              styles.lockIcon,
-              { borderColor: isDark ? "#9ca3af" : "#78716c" },
-            ]}
-          >
-            <View
-              style={[
-                styles.lockBarPortrait,
-                { backgroundColor: isDark ? "#9ca3af" : "#78716c" },
-              ]}
-            />
-          </View>
-        </TouchableOpacity>
-
-        {/* Fretboard only — scaled, vertically centered via computed margin */}
+        {/* Fretboard only — scaled, vertically centered. Double-tap to return */}
         <View style={{ flex: 1, overflow: "hidden" }}>
           <View
             style={{
@@ -691,6 +682,9 @@ function AppContent() {
             {fretboardEl}
           </View>
         </View>
+        <Text style={{ textAlign: "center", fontSize: 15, color: "#6b7280", paddingBottom: Math.max(insets.bottom, 8) }}>
+          {t("doubleTapToReturn")}
+        </Text>
       </View>
     );
   }
@@ -708,8 +702,6 @@ function AppContent() {
           theme={theme}
           fretRange={fretRange}
           accidental={accidental}
-          isLandscape={isLandscape}
-          onToggleLayout={toggleLayout}
           onThemeChange={setTheme}
           onFretRangeChange={setFretRange}
           onAccidentalChange={handleAccidentalChange}
@@ -757,31 +749,5 @@ const styles = StyleSheet.create({
   tabIcon: {
     width: 28,
     height: 28,
-  },
-  // Landscape
-  landscapeBackBtn: {
-    position: "absolute",
-    top: 8,
-    left: 48,
-    zIndex: 10,
-    padding: 8,
-  },
-  lockIcon: {
-    width: 20,
-    height: 20,
-    borderWidth: 2,
-    borderRadius: 3,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  lockBarPortrait: {
-    width: 7,
-    height: 12,
-    borderRadius: 1,
-  },
-  lockBarLandscape: {
-    width: 12,
-    height: 7,
-    borderRadius: 1,
   },
 });

@@ -723,7 +723,7 @@ describe("Fretboard - onNoteClick callback", () => {
     );
     // Find TouchableOpacity elements by looking for components with onPress
     const touchables = UNSAFE_root.findAll(
-      (node) => node.props.onPress != null && node.props.activeOpacity != null,
+      (node: any) => node.props.onPress != null && node.props.activeOpacity != null,
     );
     expect(touchables.length).toBeGreaterThan(0);
     // Press the first touchable cell
@@ -776,7 +776,7 @@ describe("Fretboard - onQuizCellClick callback", () => {
     );
     // Find touchable cells (those with activeOpacity)
     const touchables = UNSAFE_root.findAll(
-      (node) => node.props.onPress != null && node.props.activeOpacity != null,
+      (node: any) => node.props.onPress != null && node.props.activeOpacity != null,
     );
     expect(touchables.length).toBeGreaterThan(0);
     // Press the first touchable cell
