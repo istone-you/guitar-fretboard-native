@@ -32,6 +32,51 @@ import type {
 
 const STRING_COUNT = 6;
 
+// Overlay dot with scale-in/out animation
+function OverlayDot({
+  children,
+  style,
+  visible,
+  color,
+}: {
+  children: React.ReactNode;
+  style: any;
+  visible: boolean;
+  color: string;
+}) {
+  const scale = useRef(new Animated.Value(0)).current;
+  const prevVisible = useRef(false);
+  const lastColor = useRef(color);
+
+  if (visible) lastColor.current = color;
+
+  if (visible && !prevVisible.current) {
+    prevVisible.current = true;
+    scale.stopAnimation();
+    Animated.spring(scale, {
+      toValue: 1,
+      friction: 6,
+      tension: 120,
+      useNativeDriver: true,
+    }).start();
+  } else if (!visible && prevVisible.current) {
+    prevVisible.current = false;
+    scale.stopAnimation();
+    Animated.spring(scale, {
+      toValue: 0,
+      friction: 8,
+      tension: 100,
+      useNativeDriver: true,
+    }).start();
+  }
+
+  return (
+    <Animated.View style={[style, { backgroundColor: lastColor.current, transform: [{ scale }] }]}>
+      {children}
+    </Animated.View>
+  );
+}
+
 function PulseView({ children, style }: { children: React.ReactNode; style: any }) {
   const opacity = useRef(
     (() => {
@@ -537,13 +582,12 @@ function StringRow({
           (baseLabelMode === "note" && highlightedNotes.has(noteName)) ||
           (baseLabelMode === "degree" && highlightedDegrees.has(degreeName));
 
+        const inScale = showScale && isInScale(semitone, scaleType);
+        const inCaged = !!cagedCell;
+        // For non-animated logic, keep combined overlayColor
         let overlayColor: string | null = null;
-        if (showScale && isInScale(semitone, scaleType)) {
-          overlayColor = scaleColor;
-        }
-        if (cagedCell) {
-          overlayColor = cagedColor;
-        }
+        if (inScale) overlayColor = scaleColor;
+        if (inCaged) overlayColor = cagedColor;
 
         const isAnswered = quizAnswerMode && quizAnsweredCell != null;
         const isTappedCell =
@@ -659,9 +703,11 @@ function StringRow({
               </Text>
             )}
 
-            {/* Scale / CAGED overlay */}
-            {overlayColor && !quizAnswerOverlay && !shouldRevealChoiceAnswer && !isSelectedCell && (
-              <View
+            {/* Scale overlay (behind CAGED) */}
+            {!quizAnswerOverlay && !shouldRevealChoiceAnswer && !isSelectedCell && (
+              <OverlayDot
+                visible={inScale}
+                color={scaleColor}
                 style={{
                   position: "absolute",
                   top: overlayInset,
@@ -669,11 +715,10 @@ function StringRow({
                   right: overlayInset,
                   bottom: overlayInset,
                   borderRadius: overlaySize / 2,
-                  backgroundColor: overlayColor,
                   alignItems: "center",
                   justifyContent: "center",
                   zIndex: 10,
-                  opacity: 0.85,
+                  opacity: 0.92,
                 }}
               >
                 <Text
@@ -685,12 +730,13 @@ function StringRow({
                 >
                   {labelText}
                 </Text>
-              </View>
+              </OverlayDot>
             )}
-
-            {/* Chord dot */}
-            {inChord && !quizAnswerOverlay && (
-              <View
+            {/* CAGED overlay (in front of scale) */}
+            {!quizAnswerOverlay && !shouldRevealChoiceAnswer && !isSelectedCell && (
+              <OverlayDot
+                visible={inCaged}
+                color={cagedColor}
                 style={{
                   position: "absolute",
                   top: overlayInset,
@@ -698,11 +744,40 @@ function StringRow({
                   right: overlayInset,
                   bottom: overlayInset,
                   borderRadius: overlaySize / 2,
-                  backgroundColor: chordColor,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  zIndex: 11,
+                  opacity: 0.92,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: size.overlayFontSize,
+                    color: "#fff",
+                    fontWeight: "bold",
+                  }}
+                >
+                  {labelText}
+                </Text>
+              </OverlayDot>
+            )}
+
+            {/* Chord dot */}
+            {!quizAnswerOverlay && (
+              <OverlayDot
+                visible={inChord}
+                color={chordColor}
+                style={{
+                  position: "absolute",
+                  top: overlayInset,
+                  left: overlayInset,
+                  right: overlayInset,
+                  bottom: overlayInset,
+                  borderRadius: overlaySize / 2,
                   alignItems: "center",
                   justifyContent: "center",
                   zIndex: 20,
-                  opacity: 0.85,
+                  opacity: 0.92,
                 }}
               >
                 <Text
@@ -714,7 +789,7 @@ function StringRow({
                 >
                   {hideChordNoteLabels ? "?" : labelText}
                 </Text>
-              </View>
+              </OverlayDot>
             )}
 
             {/* Quiz target (pulsing) */}
