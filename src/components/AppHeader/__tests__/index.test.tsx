@@ -56,9 +56,7 @@ describe("AppHeader", () => {
     const { getByText, queryByText, UNSAFE_getAllByType } = renderHeader();
 
     // Find and press the settings button (image button on the right)
-    const allTouchables = UNSAFE_getAllByType(
-      require("react-native").TouchableOpacity
-    );
+    const allTouchables = UNSAFE_getAllByType(require("react-native").TouchableOpacity);
     // The settings button is the last TouchableOpacity in the header
     const settingsButton = allTouchables[0]; // settings button
     fireEvent.press(settingsButton);
@@ -86,16 +84,18 @@ describe("AppHeader", () => {
     const { getByText, queryByText, UNSAFE_getAllByType } = renderHeader();
 
     // Open
-    const allTouchables = UNSAFE_getAllByType(
-      require("react-native").TouchableOpacity
-    );
+    const allTouchables = UNSAFE_getAllByType(require("react-native").TouchableOpacity);
     fireEvent.press(allTouchables[0]);
-    act(() => { jest.runAllTimers(); });
+    act(() => {
+      jest.runAllTimers();
+    });
     expect(getByText("settings")).toBeTruthy();
 
     // Press close button (✕)
     fireEvent.press(getByText("✕"));
-    act(() => { jest.runAllTimers(); });
+    act(() => {
+      jest.runAllTimers();
+    });
 
     await waitFor(() => {
       expect(queryByText("settings")).toBeNull();
@@ -107,11 +107,11 @@ describe("AppHeader", () => {
     const { UNSAFE_getAllByType, getByText } = renderHeader();
 
     // Open settings first
-    const allTouchables = UNSAFE_getAllByType(
-      require("react-native").TouchableOpacity
-    );
+    const allTouchables = UNSAFE_getAllByType(require("react-native").TouchableOpacity);
     fireEvent.press(allTouchables[0]);
-    act(() => { jest.runAllTimers(); });
+    act(() => {
+      jest.runAllTimers();
+    });
 
     expect(getByText("dark")).toBeTruthy();
     expect(getByText("light")).toBeTruthy();
@@ -122,11 +122,11 @@ describe("AppHeader", () => {
     const { getByText, UNSAFE_getAllByType } = renderHeader({ onThemeChange });
 
     // Open settings
-    const allTouchables = UNSAFE_getAllByType(
-      require("react-native").TouchableOpacity
-    );
+    const allTouchables = UNSAFE_getAllByType(require("react-native").TouchableOpacity);
     fireEvent.press(allTouchables[0]);
-    act(() => { jest.runAllTimers(); });
+    act(() => {
+      jest.runAllTimers();
+    });
 
     fireEvent.press(getByText("light"));
     expect(onThemeChange).toHaveBeenCalledWith("light");
@@ -136,11 +136,11 @@ describe("AppHeader", () => {
   it("renders accidental toggle with sharp/flat options", () => {
     const { getByText, UNSAFE_getAllByType } = renderHeader();
 
-    const allTouchables = UNSAFE_getAllByType(
-      require("react-native").TouchableOpacity
-    );
+    const allTouchables = UNSAFE_getAllByType(require("react-native").TouchableOpacity);
     fireEvent.press(allTouchables[0]);
-    act(() => { jest.runAllTimers(); });
+    act(() => {
+      jest.runAllTimers();
+    });
 
     expect(getByText("\u266F")).toBeTruthy();
     expect(getByText("\u266D")).toBeTruthy();
@@ -150,11 +150,11 @@ describe("AppHeader", () => {
     const onAccidentalChange = jest.fn();
     const { getByText, UNSAFE_getAllByType } = renderHeader({ onAccidentalChange });
 
-    const allTouchables = UNSAFE_getAllByType(
-      require("react-native").TouchableOpacity
-    );
+    const allTouchables = UNSAFE_getAllByType(require("react-native").TouchableOpacity);
     fireEvent.press(allTouchables[0]);
-    act(() => { jest.runAllTimers(); });
+    act(() => {
+      jest.runAllTimers();
+    });
 
     fireEvent.press(getByText("\u266D"));
     expect(onAccidentalChange).toHaveBeenCalledWith("flat");
@@ -164,11 +164,11 @@ describe("AppHeader", () => {
   it("renders language toggle with JA/EN options", () => {
     const { getByText, UNSAFE_getAllByType } = renderHeader();
 
-    const allTouchables = UNSAFE_getAllByType(
-      require("react-native").TouchableOpacity
-    );
+    const allTouchables = UNSAFE_getAllByType(require("react-native").TouchableOpacity);
     fireEvent.press(allTouchables[0]);
-    act(() => { jest.runAllTimers(); });
+    act(() => {
+      jest.runAllTimers();
+    });
 
     expect(getByText("JA")).toBeTruthy();
     expect(getByText("EN")).toBeTruthy();
@@ -178,11 +178,11 @@ describe("AppHeader", () => {
     const { changeLocale } = require("../../../i18n");
     const { getByText, UNSAFE_getAllByType } = renderHeader();
 
-    const allTouchables = UNSAFE_getAllByType(
-      require("react-native").TouchableOpacity
-    );
+    const allTouchables = UNSAFE_getAllByType(require("react-native").TouchableOpacity);
     fireEvent.press(allTouchables[0]);
-    act(() => { jest.runAllTimers(); });
+    act(() => {
+      jest.runAllTimers();
+    });
 
     fireEvent.press(getByText("JA"));
     expect(changeLocale).toHaveBeenCalledWith("ja");
@@ -192,11 +192,11 @@ describe("AppHeader", () => {
   it("displays fret range value", () => {
     const { getByText, UNSAFE_getAllByType } = renderHeader();
 
-    const allTouchables = UNSAFE_getAllByType(
-      require("react-native").TouchableOpacity
-    );
+    const allTouchables = UNSAFE_getAllByType(require("react-native").TouchableOpacity);
     fireEvent.press(allTouchables[0]);
-    act(() => { jest.runAllTimers(); });
+    act(() => {
+      jest.runAllTimers();
+    });
 
     expect(getByText("settingsPanel.fretRange")).toBeTruthy();
     expect(getByText("0 \u2013 14")).toBeTruthy();
@@ -207,11 +207,11 @@ describe("AppHeader", () => {
       fretRange: [3, 12],
     });
 
-    const allTouchables = UNSAFE_getAllByType(
-      require("react-native").TouchableOpacity
-    );
+    const allTouchables = UNSAFE_getAllByType(require("react-native").TouchableOpacity);
     fireEvent.press(allTouchables[0]);
-    act(() => { jest.runAllTimers(); });
+    act(() => {
+      jest.runAllTimers();
+    });
 
     expect(getByText("3 \u2013 12")).toBeTruthy();
   });
@@ -221,17 +221,16 @@ describe("AppHeader", () => {
       fretRange: [2, 10],
     });
 
-    const allTouchables = UNSAFE_getAllByType(
-      require("react-native").TouchableOpacity
-    );
+    const allTouchables = UNSAFE_getAllByType(require("react-native").TouchableOpacity);
     fireEvent.press(allTouchables[0]);
-    act(() => { jest.runAllTimers(); });
+    act(() => {
+      jest.runAllTimers();
+    });
 
     // Thumb labels show min and max
     expect(getByText("2")).toBeTruthy();
     expect(getByText("10")).toBeTruthy();
   });
-
 
   // ── Light theme rendering ─────────────────────────────────────────
   it("renders correctly with light theme", () => {
@@ -248,11 +247,11 @@ describe("AppHeader", () => {
     });
 
     // Open settings
-    const allTouchables = UNSAFE_getAllByType(
-      require("react-native").TouchableOpacity
-    );
+    const allTouchables = UNSAFE_getAllByType(require("react-native").TouchableOpacity);
     fireEvent.press(allTouchables[0]);
-    act(() => { jest.runAllTimers(); });
+    act(() => {
+      jest.runAllTimers();
+    });
 
     // Find the min thumb by its label text "3"
     const minThumbText = getByText("3");
@@ -282,11 +281,11 @@ describe("AppHeader", () => {
     });
 
     // Open settings
-    const allTouchables = UNSAFE_getAllByType(
-      require("react-native").TouchableOpacity
-    );
+    const allTouchables = UNSAFE_getAllByType(require("react-native").TouchableOpacity);
     fireEvent.press(allTouchables[0]);
-    act(() => { jest.runAllTimers(); });
+    act(() => {
+      jest.runAllTimers();
+    });
 
     // Find the max thumb by its label text "12"
     const maxThumbText = getByText("12");
@@ -313,18 +312,18 @@ describe("AppHeader", () => {
     });
 
     // Open settings
-    const allTouchables = UNSAFE_getAllByType(
-      require("react-native").TouchableOpacity
-    );
+    const allTouchables = UNSAFE_getAllByType(require("react-native").TouchableOpacity);
     fireEvent.press(allTouchables[0]);
-    act(() => { jest.runAllTimers(); });
+    act(() => {
+      jest.runAllTimers();
+    });
 
     // Trigger onLayout on the RangeSlider container to set track width
     // Find the RangeSlider container view (has paddingVertical: 16)
     const RNView = require("react-native").View;
     const allViews = UNSAFE_root.findAllByType(RNView);
     const sliderContainer = allViews.find(
-      (v: any) => v.props.onLayout && v.props.style?.paddingVertical === 16
+      (v: any) => v.props.onLayout && v.props.style?.paddingVertical === 16,
     );
     if (sliderContainer) {
       fireEvent(sliderContainer, "layout", {
@@ -362,17 +361,17 @@ describe("AppHeader", () => {
     });
 
     // Open settings
-    const allTouchables = UNSAFE_getAllByType(
-      require("react-native").TouchableOpacity
-    );
+    const allTouchables = UNSAFE_getAllByType(require("react-native").TouchableOpacity);
     fireEvent.press(allTouchables[0]);
-    act(() => { jest.runAllTimers(); });
+    act(() => {
+      jest.runAllTimers();
+    });
 
     // Set track width via onLayout
     const RNView = require("react-native").View;
     const allViews = UNSAFE_root.findAllByType(RNView);
     const sliderContainer = allViews.find(
-      (v: any) => v.props.onLayout && v.props.style?.paddingVertical === 16
+      (v: any) => v.props.onLayout && v.props.style?.paddingVertical === 16,
     );
     if (sliderContainer) {
       fireEvent(sliderContainer, "layout", {
@@ -405,11 +404,11 @@ describe("AppHeader", () => {
   it("renders all settings rows (theme, accidental, language, fret range)", () => {
     const { getByText, UNSAFE_getAllByType } = renderHeader();
 
-    const allTouchables = UNSAFE_getAllByType(
-      require("react-native").TouchableOpacity
-    );
+    const allTouchables = UNSAFE_getAllByType(require("react-native").TouchableOpacity);
     fireEvent.press(allTouchables[0]);
-    act(() => { jest.runAllTimers(); });
+    act(() => {
+      jest.runAllTimers();
+    });
 
     // All settings labels should be present
     expect(getByText("theme")).toBeTruthy();
@@ -423,11 +422,11 @@ describe("AppHeader", () => {
     const { changeLocale } = require("../../../i18n");
     const { getByText, UNSAFE_getAllByType } = renderHeader();
 
-    const allTouchables = UNSAFE_getAllByType(
-      require("react-native").TouchableOpacity
-    );
+    const allTouchables = UNSAFE_getAllByType(require("react-native").TouchableOpacity);
     fireEvent.press(allTouchables[0]);
-    act(() => { jest.runAllTimers(); });
+    act(() => {
+      jest.runAllTimers();
+    });
 
     fireEvent.press(getByText("EN"));
     expect(changeLocale).toHaveBeenCalledWith("en");
@@ -441,9 +440,7 @@ describe("AppHeader", () => {
     const parallelSpy = jest.spyOn(Animated, "parallel");
 
     const { UNSAFE_getAllByType } = renderHeader();
-    const allTouchables = UNSAFE_getAllByType(
-      require("react-native").TouchableOpacity
-    );
+    const allTouchables = UNSAFE_getAllByType(require("react-native").TouchableOpacity);
     fireEvent.press(allTouchables[0]);
 
     expect(parallelSpy).toHaveBeenCalled();

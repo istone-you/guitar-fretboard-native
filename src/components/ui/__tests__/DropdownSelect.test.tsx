@@ -140,7 +140,10 @@ describe("DropdownSelect", () => {
     // The trigger (first TouchableOpacity) should have alignSelf: "stretch"
     // tree is an array because of the fragment; first element is the trigger
     const trigger = Array.isArray(tree) ? tree[0] : tree;
-    const flatStyle = Object.assign({}, ...(Array.isArray(trigger?.props?.style) ? trigger.props.style : [trigger?.props?.style]));
+    const flatStyle = Object.assign(
+      {},
+      ...(Array.isArray(trigger?.props?.style) ? trigger.props.style : [trigger?.props?.style]),
+    );
     expect(flatStyle.alignSelf).toBe("stretch");
   });
 
@@ -148,7 +151,10 @@ describe("DropdownSelect", () => {
     const { toJSON } = render(<DropdownSelect {...defaultProps} fullWidth={false} />);
     const tree = toJSON();
     const trigger = Array.isArray(tree) ? tree[0] : tree;
-    const flatStyle = Object.assign({}, ...(Array.isArray(trigger?.props?.style) ? trigger.props.style : [trigger?.props?.style]));
+    const flatStyle = Object.assign(
+      {},
+      ...(Array.isArray(trigger?.props?.style) ? trigger.props.style : [trigger?.props?.style]),
+    );
     expect(flatStyle.alignSelf).not.toBe("stretch");
   });
 
@@ -224,12 +230,15 @@ describe("DropdownSelect", () => {
   // --- Open state styling ---
 
   it("applies open state border color in dark theme", () => {
-    const { toJSON, rerender } = render(<DropdownSelect {...defaultProps} theme="dark" />);
+    const { toJSON } = render(<DropdownSelect {...defaultProps} theme="dark" />);
     fireEvent.press(screen.getByText("Alpha"));
     // After opening, the trigger should have the "open" border color
     const tree = toJSON();
     const trigger = Array.isArray(tree) ? tree[0] : tree;
-    const flatStyle = Object.assign({}, ...(Array.isArray(trigger?.props?.style) ? trigger.props.style : [trigger?.props?.style]));
+    const flatStyle = Object.assign(
+      {},
+      ...(Array.isArray(trigger?.props?.style) ? trigger.props.style : [trigger?.props?.style]),
+    );
     expect(flatStyle.borderColor).toBe("rgba(255,255,255,0.14)");
   });
 

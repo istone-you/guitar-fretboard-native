@@ -10,9 +10,7 @@ const mockedGetActive = getActiveOverlaySemitones as jest.MockedFunction<
   typeof getActiveOverlaySemitones
 >;
 
-const ALL_DEGREES = [
-  "P1", "m2", "M2", "m3", "M3", "P4", "b5", "P5", "m6", "M6", "m7", "M7",
-];
+const ALL_DEGREES = ["P1", "m2", "M2", "m3", "M3", "P4", "b5", "P5", "m6", "M6", "m7", "M7"];
 
 const makeAutoFilterParams = (overrides = {}) => ({
   rootNote: "C",

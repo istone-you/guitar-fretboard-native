@@ -1,13 +1,5 @@
 import { useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Modal,
-  FlatList,
-  StyleSheet,
-  Pressable,
-} from "react-native";
+import { Text, TouchableOpacity, Modal, FlatList, StyleSheet, Pressable } from "react-native";
 import type { Theme } from "../../types";
 
 interface Option {
@@ -85,7 +77,12 @@ export function DropdownSelect({
         </Text>
       </TouchableOpacity>
 
-      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setVisible(false)}>
+      <Modal
+        visible={open}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setVisible(false)}
+      >
         <Pressable style={styles.overlay} onPress={() => setVisible(false)}>
           <Pressable
             style={[

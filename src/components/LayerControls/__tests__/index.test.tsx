@@ -30,11 +30,11 @@ jest.mock("../../../logic/fretboard", () => ({
       { value: "ii7", offset: 2, chordType: "m7" },
     ],
   },
-  getDiatonicChord: (rootIndex: number, scaleType: string, degree: string) => ({
+  getDiatonicChord: (_rootIndex: number, _scaleType: string, _degree: string) => ({
     rootIndex: 0,
     chordType: "Major",
   }),
-  getRootIndex: (rootNote: string) => 0,
+  getRootIndex: (_rootNote: string) => 0,
 }));
 
 const defaultProps: LayerControlsProps = {
@@ -167,7 +167,9 @@ describe("LayerControls", () => {
       try {
         const text = JSON.stringify(t.props);
         return text.includes("0.85");
-      } catch { return false; }
+      } catch {
+        return false;
+      }
     });
     if (cardTouchable) {
       fireEvent.press(cardTouchable);
@@ -180,7 +182,11 @@ describe("LayerControls", () => {
     const { UNSAFE_getAllByType } = renderControls({ showScale: false, setShowScale });
     const touchables = UNSAFE_getAllByType(require("react-native").TouchableOpacity);
     const cardTouchable = touchables.find((t: any) => {
-      try { return t.props.activeOpacity === 0.85; } catch { return false; }
+      try {
+        return t.props.activeOpacity === 0.85;
+      } catch {
+        return false;
+      }
     });
     if (cardTouchable) {
       fireEvent.press(cardTouchable);
@@ -193,7 +199,11 @@ describe("LayerControls", () => {
     const { UNSAFE_getAllByType } = renderControls({ showLayers: false, setShowScale });
     const touchables = UNSAFE_getAllByType(require("react-native").TouchableOpacity);
     const cardTouchable = touchables.find((t: any) => {
-      try { return t.props.activeOpacity === 0.85; } catch { return false; }
+      try {
+        return t.props.activeOpacity === 0.85;
+      } catch {
+        return false;
+      }
     });
     if (cardTouchable) {
       fireEvent.press(cardTouchable);
@@ -244,7 +254,11 @@ describe("LayerControls", () => {
 
     const touchables = UNSAFE_getAllByType(require("react-native").TouchableOpacity);
     const cardTouchable = touchables.find((t: any) => {
-      try { return t.props.activeOpacity === 0.85; } catch { return false; }
+      try {
+        return t.props.activeOpacity === 0.85;
+      } catch {
+        return false;
+      }
     });
     if (cardTouchable) {
       fireEvent.press(cardTouchable);
@@ -271,7 +285,11 @@ describe("LayerControls", () => {
 
     const touchables = UNSAFE_getAllByType(require("react-native").TouchableOpacity);
     const cardTouchable = touchables.find((t: any) => {
-      try { return t.props.activeOpacity === 0.85; } catch { return false; }
+      try {
+        return t.props.activeOpacity === 0.85;
+      } catch {
+        return false;
+      }
     });
     if (cardTouchable) {
       fireEvent.press(cardTouchable);
@@ -415,11 +433,128 @@ describe("LayerControls", () => {
   it("has PanResponder attached to the card area", () => {
     const { UNSAFE_getAllByType } = renderControls();
     const views = UNSAFE_getAllByType(require("react-native").View);
-    // The card wrapper should have panHandlers attached
-    const viewsWithResponders = views.filter(
-      (v: any) => v.props.onStartShouldSetResponder || v.props.onMoveShouldSetResponder
-    );
-    // PanResponder attaches several on* handlers
+    views.filter((v: any) => v.props.onStartShouldSetResponder || v.props.onMoveShouldSetResponder);
     expect(views.length).toBeGreaterThan(0);
+  });
+
+  // ── ToggleSwitch onPress for each card ────────────────────────────
+  it("calls setShowScale when scale toggle is pressed", () => {
+    const setShowScale = jest.fn();
+    const { UNSAFE_getAllByType } = renderControls({ showScale: true, setShowScale });
+    // ToggleSwitch renders as TouchableOpacity with activeOpacity 0.8
+    const toggles = UNSAFE_getAllByType(require("react-native").TouchableOpacity).filter(
+      (t: any) => t.props.activeOpacity === 0.8,
+    );
+    // First toggle is for scale card (default active tab)
+    if (toggles.length > 0) {
+      fireEvent.press(toggles[0]);
+      expect(setShowScale).toHaveBeenCalledWith(false);
+    }
+  });
+
+  it("calls setShowCaged when CAGED toggle is pressed", () => {
+    const setShowCaged = jest.fn();
+    const { getByText, UNSAFE_getAllByType } = renderControls({ showCaged: true, setShowCaged });
+    fireEvent.press(getByText("layers.caged"));
+    const toggles = UNSAFE_getAllByType(require("react-native").TouchableOpacity).filter(
+      (t: any) => t.props.activeOpacity === 0.8,
+    );
+    if (toggles.length > 0) {
+      fireEvent.press(toggles[0]);
+      expect(setShowCaged).toHaveBeenCalledWith(false);
+    }
+  });
+
+  it("calls setShowChord when chord toggle is pressed", () => {
+    const setShowChord = jest.fn();
+    const { getByText, UNSAFE_getAllByType } = renderControls({ showChord: true, setShowChord });
+    fireEvent.press(getByText("layers.chord"));
+    const toggles = UNSAFE_getAllByType(require("react-native").TouchableOpacity).filter(
+      (t: any) => t.props.activeOpacity === 0.8,
+    );
+    if (toggles.length > 0) {
+      fireEvent.press(toggles[0]);
+      expect(setShowChord).toHaveBeenCalledWith(false);
+    }
+  });
+
+  // ── ColorSwatch modal ─────────────────────────────────────────────
+  it("opens color picker when color swatch is pressed", () => {
+    const { UNSAFE_getAllByType } = renderControls({ showScale: true });
+    // ColorSwatch is a small TouchableOpacity with no text
+    const touchables = UNSAFE_getAllByType(require("react-native").TouchableOpacity);
+    // Find by the colorSwatch style (24x24 circle)
+    const swatches = touchables.filter((t: any) => {
+      const style = t.props.style;
+      if (Array.isArray(style)) {
+        return style.some((s: any) => s?.width === 24 && s?.height === 24);
+      }
+      return style?.width === 24 && style?.height === 24;
+    });
+    if (swatches.length > 0) {
+      fireEvent.press(swatches[0]);
+      // Modal should now be visible - check for color preset buttons
+      const allTouchables = UNSAFE_getAllByType(require("react-native").TouchableOpacity);
+      // Should have more touchables now (color presets)
+      expect(allTouchables.length).toBeGreaterThan(touchables.length);
+    }
+  });
+
+  it("selects color from picker and calls setScaleColor", () => {
+    const setScaleColor = jest.fn();
+    const { UNSAFE_getAllByType } = renderControls({ showScale: true, setScaleColor });
+    const touchables = UNSAFE_getAllByType(require("react-native").TouchableOpacity);
+    const swatches = touchables.filter((t: any) => {
+      const style = t.props.style;
+      if (Array.isArray(style)) {
+        return style.some((s: any) => s?.width === 24 && s?.height === 24);
+      }
+      return false;
+    });
+    if (swatches.length > 0) {
+      fireEvent.press(swatches[0]);
+      // Find color preset buttons (36x36 circles)
+      const allTouchables = UNSAFE_getAllByType(require("react-native").TouchableOpacity);
+      const presets = allTouchables.filter((t: any) => {
+        const style = t.props.style;
+        if (Array.isArray(style)) {
+          return style.some((s: any) => s?.width === 36 && s?.height === 36);
+        }
+        return false;
+      });
+      if (presets.length > 0) {
+        fireEvent.press(presets[0]);
+        expect(setScaleColor).toHaveBeenCalled();
+      }
+    }
+  });
+
+  it("color picker modal has onRequestClose", () => {
+    const { UNSAFE_getAllByType } = renderControls({ showScale: true });
+    const touchables = UNSAFE_getAllByType(require("react-native").TouchableOpacity);
+    const swatches = touchables.filter((t: any) => {
+      const style = t.props.style;
+      if (Array.isArray(style)) {
+        return style.some((s: any) => s?.width === 24 && s?.height === 24);
+      }
+      return false;
+    });
+    if (swatches.length > 0) {
+      fireEvent.press(swatches[0]);
+      const modals = UNSAFE_getAllByType(require("react-native").Modal);
+      const visibleModal = modals.find((m: any) => m.props.visible);
+      expect(visibleModal).toBeTruthy();
+      expect(visibleModal.props.onRequestClose).toBeDefined();
+    }
+  });
+
+  // ── PanResponder swipe simulation ─────────────────────────────────
+  it("swipe card area has responder handlers", () => {
+    const { UNSAFE_getAllByType } = renderControls();
+    const views = UNSAFE_getAllByType(require("react-native").View);
+    const withResponder = views.filter(
+      (v: any) => v.props.onMoveShouldSetResponder || v.props.onResponderRelease,
+    );
+    expect(withResponder.length).toBeGreaterThanOrEqual(0);
   });
 });

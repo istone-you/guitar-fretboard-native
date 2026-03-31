@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useTranslation } from "react-i18next";
 import "../../i18n";
 import type { BaseLabelMode, Theme } from "../../types";
@@ -21,7 +21,18 @@ interface FretboardFooterProps {
 }
 
 const DEGREE_CHIPS = [
-  "P1", "m2", "M2", "m3", "M3", "P4", "b5", "P5", "m6", "M6", "m7", "M7",
+  "P1",
+  "m2",
+  "M2",
+  "m3",
+  "M3",
+  "P4",
+  "b5",
+  "P5",
+  "m6",
+  "M6",
+  "m7",
+  "M7",
 ] as const;
 
 export default function FretboardFooter({
@@ -46,7 +57,11 @@ export default function FretboardFooter({
 
   if (showQuiz) return <View style={{ height: 100 }} />;
 
-  const renderChips = (items: string[], activeItems: Set<string>, onToggle: (v: string) => void) => (
+  const renderChips = (
+    items: string[],
+    activeItems: Set<string>,
+    onToggle: (v: string) => void,
+  ) => (
     <View style={styles.chipsContainer}>
       {items.map((item) => {
         const active = activeItems.has(item);
@@ -58,16 +73,30 @@ export default function FretboardFooter({
               styles.chip,
               {
                 borderColor: active
-                  ? isDark ? "#0284c7" : "#0ea5e9"
-                  : isDark ? "#374151" : "#d6d3d1",
+                  ? isDark
+                    ? "#0284c7"
+                    : "#0ea5e9"
+                  : isDark
+                    ? "#374151"
+                    : "#d6d3d1",
                 backgroundColor: active
-                  ? isDark ? "#0284c7" : "#0ea5e9"
-                  : isDark ? "#1f2937" : "#fafaf9",
+                  ? isDark
+                    ? "#0284c7"
+                    : "#0ea5e9"
+                  : isDark
+                    ? "#1f2937"
+                    : "#fafaf9",
               },
             ]}
             activeOpacity={0.7}
           >
-            <Text style={{ fontSize: 14, fontWeight: "500", color: active ? "#fff" : isDark ? "#e5e7eb" : "#44403c" }}>
+            <Text
+              style={{
+                fontSize: 14,
+                fontWeight: "500",
+                color: active ? "#fff" : isDark ? "#e5e7eb" : "#44403c",
+              }}
+            >
               {item}
             </Text>
           </TouchableOpacity>
@@ -76,16 +105,24 @@ export default function FretboardFooter({
     </View>
   );
 
-  const renderActionButtons = (onFilter: () => void, onToggleAll: () => void, hasHighlights: boolean, autoFilterKey: string) => (
+  const renderActionButtons = (
+    onFilter: () => void,
+    onToggleAll: () => void,
+    hasHighlights: boolean,
+    autoFilterKey: string,
+  ) => (
     <View style={styles.actionRow}>
       <TouchableOpacity
         onPress={onFilter}
         disabled={autoFilter}
-        style={[styles.actionBtn, {
-          borderColor: isDark ? "#4b5563" : "#d6d3d1",
-          backgroundColor: isDark ? "#1f2937" : "#fff",
-          opacity: autoFilter ? 0.4 : 1,
-        }]}
+        style={[
+          styles.actionBtn,
+          {
+            borderColor: isDark ? "#4b5563" : "#d6d3d1",
+            backgroundColor: isDark ? "#1f2937" : "#fff",
+            opacity: autoFilter ? 0.4 : 1,
+          },
+        ]}
         activeOpacity={0.7}
       >
         <Text style={{ fontSize: 14, color: isDark ? "#d1d5db" : "#57534e" }}>
@@ -94,19 +131,45 @@ export default function FretboardFooter({
       </TouchableOpacity>
       <TouchableOpacity
         onPress={() => onAutoFilterChange(!autoFilter)}
-        style={[styles.actionBtn, {
-          borderColor: autoFilter ? (isDark ? "#16a34a" : "#22c55e") : isDark ? "#4b5563" : "#d6d3d1",
-          backgroundColor: autoFilter ? (isDark ? "rgba(22,163,74,0.15)" : "rgba(34,197,94,0.1)") : isDark ? "#1f2937" : "#fff",
-        }]}
+        style={[
+          styles.actionBtn,
+          {
+            borderColor: autoFilter
+              ? isDark
+                ? "#16a34a"
+                : "#22c55e"
+              : isDark
+                ? "#4b5563"
+                : "#d6d3d1",
+            backgroundColor: autoFilter
+              ? isDark
+                ? "rgba(22,163,74,0.15)"
+                : "rgba(34,197,94,0.1)"
+              : isDark
+                ? "#1f2937"
+                : "#fff",
+          },
+        ]}
         activeOpacity={0.7}
       >
-        <Text style={{ fontSize: 14, color: autoFilter ? (isDark ? "#4ade80" : "#16a34a") : isDark ? "#d1d5db" : "#57534e" }}>
+        <Text
+          style={{
+            fontSize: 14,
+            color: autoFilter ? (isDark ? "#4ade80" : "#16a34a") : isDark ? "#d1d5db" : "#57534e",
+          }}
+        >
           {t(`${autoFilterKey}.autoFilter`)}
         </Text>
       </TouchableOpacity>
       <TouchableOpacity
         onPress={onToggleAll}
-        style={[styles.actionBtn, { borderColor: isDark ? "#0284c7" : "#38bdf8", backgroundColor: isDark ? "#1f2937" : "#fff" }]}
+        style={[
+          styles.actionBtn,
+          {
+            borderColor: isDark ? "#0284c7" : "#38bdf8",
+            backgroundColor: isDark ? "#1f2937" : "#fff",
+          },
+        ]}
         activeOpacity={0.7}
       >
         <Text style={{ fontSize: 14, color: isDark ? "#38bdf8" : "#0284c7" }}>

@@ -7,7 +7,6 @@ import {
   PanResponder,
   Modal,
   Pressable,
-  Animated,
 } from "react-native";
 import { useTranslation } from "react-i18next";
 import "../../i18n";
@@ -25,8 +24,20 @@ import { DropdownSelect } from "../ui/DropdownSelect";
 import { buildScaleOptions } from "../ui/scaleOptions";
 
 const CHORD_TYPES: ChordType[] = [
-  "Major", "Minor", "7th", "maj7", "m7", "m7(b5)", "dim7", "m(maj7)",
-  "sus2", "sus4", "6", "m6", "dim", "aug",
+  "Major",
+  "Minor",
+  "7th",
+  "maj7",
+  "m7",
+  "m7(b5)",
+  "dim7",
+  "m(maj7)",
+  "sus2",
+  "sus4",
+  "6",
+  "m6",
+  "dim",
+  "aug",
 ];
 const TRIAD_CHORD_TYPES = ["Major", "Minor", "Diminished", "Augmented"];
 
@@ -35,9 +46,18 @@ const TABS: MobileTab[] = ["scale", "caged", "chord"];
 
 // Preset color palette for the color picker
 const COLOR_PRESETS = [
-  "#ff69b6", "#ff4d4d", "#ff8c00", "#ffd700",
-  "#40e0d0", "#00bfff", "#0ea5e9", "#7c3aed",
-  "#10b981", "#84cc16", "#f97316", "#ec4899",
+  "#ff69b6",
+  "#ff4d4d",
+  "#ff8c00",
+  "#ffd700",
+  "#40e0d0",
+  "#00bfff",
+  "#0ea5e9",
+  "#7c3aed",
+  "#10b981",
+  "#84cc16",
+  "#f97316",
+  "#ec4899",
 ];
 
 // Toggle switch
@@ -54,18 +74,10 @@ function ToggleSwitch({
     <TouchableOpacity
       onPress={disabled ? undefined : onPress}
       disabled={disabled}
-      style={[
-        styles.toggle,
-        { backgroundColor: active ? "#0ea5e9" : "#4b5563" },
-      ]}
+      style={[styles.toggle, { backgroundColor: active ? "#0ea5e9" : "#4b5563" }]}
       activeOpacity={0.8}
     >
-      <View
-        style={[
-          styles.toggleThumb,
-          { transform: [{ translateX: active ? 20 : 2 }] },
-        ]}
-      />
+      <View style={[styles.toggleThumb, { transform: [{ translateX: active ? 20 : 2 }] }]} />
     </TouchableOpacity>
   );
 }
@@ -89,14 +101,22 @@ function ColorSwatch({
         style={[styles.colorSwatch, { backgroundColor: color, opacity: disabled ? 0.4 : 1 }]}
         activeOpacity={0.7}
       />
-      <Modal visible={visible} transparent animationType="fade" onRequestClose={() => setVisible(false)}>
+      <Modal
+        visible={visible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setVisible(false)}
+      >
         <Pressable style={styles.colorOverlay} onPress={() => setVisible(false)}>
           <Pressable style={styles.colorPicker}>
             <View style={styles.colorGrid}>
               {COLOR_PRESETS.map((preset) => (
                 <TouchableOpacity
                   key={preset}
-                  onPress={() => { onChange(preset); setVisible(false); }}
+                  onPress={() => {
+                    onChange(preset);
+                    setVisible(false);
+                  }}
                   style={[
                     styles.colorPreset,
                     { backgroundColor: preset },
@@ -192,8 +212,10 @@ export default function LayerControls({
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => false,
-      onMoveShouldSetPanResponder: (_, gs) => Math.abs(gs.dx) > 15 && Math.abs(gs.dx) > Math.abs(gs.dy) * 1.5,
-      onMoveShouldSetPanResponderCapture: (_, gs) => Math.abs(gs.dx) > 15 && Math.abs(gs.dx) > Math.abs(gs.dy) * 1.5,
+      onMoveShouldSetPanResponder: (_, gs) =>
+        Math.abs(gs.dx) > 15 && Math.abs(gs.dx) > Math.abs(gs.dy) * 1.5,
+      onMoveShouldSetPanResponderCapture: (_, gs) =>
+        Math.abs(gs.dx) > 15 && Math.abs(gs.dx) > Math.abs(gs.dy) * 1.5,
       onPanResponderGrant: (e) => {
         touchStartX.current = e.nativeEvent.pageX;
       },
@@ -232,8 +254,14 @@ export default function LayerControls({
     label: t(`options.triadInversions.${value}`),
   }));
   const suffixMap: Record<string, string> = {
-    Major: "", Minor: "m", "7th": "7", maj7: "maj7", m7: "m7",
-    "m7(b5)": "m7(b5)", dim7: "dim", "m(maj7)": "m(maj7)",
+    Major: "",
+    Minor: "m",
+    "7th": "7",
+    maj7: "maj7",
+    m7: "m7",
+    "m7(b5)": "m7(b5)",
+    dim7: "dim",
+    "m(maj7)": "m(maj7)",
   };
   const diatonicCodeOptions = (DIATONIC_CHORDS[diatonicScaleType] ?? []).map(({ value }) => {
     const chord = getDiatonicChord(rootIndex, diatonicScaleType, value);
@@ -254,13 +282,19 @@ export default function LayerControls({
           : placeholderOptions;
   const chordValue = chordDisplayMode === "diatonic" ? diatonicDegree : chordType;
   const thirdOptions =
-    chordDisplayMode === "diatonic" ? diatonicKeyOptions
-      : chordDisplayMode === "triad" ? triadInversionOptions
+    chordDisplayMode === "diatonic"
+      ? diatonicKeyOptions
+      : chordDisplayMode === "triad"
+        ? triadInversionOptions
         : placeholderOptions;
   const thirdValue =
-    chordDisplayMode === "diatonic" ? diatonicKeyType
-      : chordDisplayMode === "triad" ? triadInversion : "";
-  const fourthOptions = chordDisplayMode === "diatonic" ? diatonicChordSizeOptions : placeholderOptions;
+    chordDisplayMode === "diatonic"
+      ? diatonicKeyType
+      : chordDisplayMode === "triad"
+        ? triadInversion
+        : "";
+  const fourthOptions =
+    chordDisplayMode === "diatonic" ? diatonicChordSizeOptions : placeholderOptions;
   const fourthValue = chordDisplayMode === "diatonic" ? diatonicChordSize : "";
 
   // Card background/border depending on layer on/off state
@@ -280,13 +314,10 @@ export default function LayerControls({
       : { borderColor: "rgba(231,229,228,0.6)", backgroundColor: "#f5f5f4" };
   };
 
-  const getContentOpacity = (layerOn: boolean) =>
-    showLayers && layerOn ? 1 : 0.45;
+  const getContentOpacity = (layerOn: boolean) => (showLayers && layerOn ? 1 : 0.45);
 
   const sectionLabel = (text: string) => (
-    <Text style={[styles.sectionLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-      {text}
-    </Text>
+    <Text style={[styles.sectionLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>{text}</Text>
   );
 
   // ── Scale card ──────────────────────────────────────────────────
@@ -356,14 +387,26 @@ export default function LayerControls({
                     style={[
                       styles.cagedBtn,
                       {
-                        backgroundColor: active ? (isDark ? "#0284c7" : "#0ea5e9") : isDark ? "#374151" : "#fff",
+                        backgroundColor: active
+                          ? isDark
+                            ? "#0284c7"
+                            : "#0ea5e9"
+                          : isDark
+                            ? "#374151"
+                            : "#fff",
                         borderColor: active ? "transparent" : isDark ? "#6b7280" : "#d6d3d1",
                         transform: [{ scale: active ? 1.05 : 1 }],
                       },
                     ]}
                     activeOpacity={0.7}
                   >
-                    <Text style={{ fontSize: 14, fontWeight: "bold", color: active ? "#fff" : isDark ? "#f3f4f6" : "#44403c" }}>
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        fontWeight: "bold",
+                        color: active ? "#fff" : isDark ? "#f3f4f6" : "#44403c",
+                      }}
+                    >
                       {key}
                     </Text>
                   </TouchableOpacity>
@@ -407,7 +450,9 @@ export default function LayerControls({
             />
           </View>
           <View style={styles.chordGridCell}>
-            {sectionLabel(chordDisplayMode === "diatonic" ? t("controls.degree") : t("controls.chord"))}
+            {sectionLabel(
+              chordDisplayMode === "diatonic" ? t("controls.degree") : t("controls.chord"),
+            )}
             <DropdownSelect
               theme={theme}
               value={chordValue}
@@ -418,13 +463,19 @@ export default function LayerControls({
             />
           </View>
           <View style={styles.chordGridCell}>
-            {sectionLabel(chordDisplayMode === "diatonic" ? t("controls.key") : t("controls.inversion"))}
+            {sectionLabel(
+              chordDisplayMode === "diatonic" ? t("controls.key") : t("controls.inversion"),
+            )}
             <DropdownSelect
               theme={theme}
               value={thirdValue}
               onChange={chordDisplayMode === "diatonic" ? setDiatonicKeyType : setTriadInversion}
               options={thirdOptions}
-              disabled={!showLayers || !showChord || (chordDisplayMode !== "diatonic" && chordDisplayMode !== "triad")}
+              disabled={
+                !showLayers ||
+                !showChord ||
+                (chordDisplayMode !== "diatonic" && chordDisplayMode !== "triad")
+              }
               fullWidth
             />
           </View>
@@ -470,11 +521,11 @@ export default function LayerControls({
 
       {/* Tab buttons (Scale / CAGED / Chord) */}
       <View style={[styles.tabRow, !showLayers && { opacity: 0.4 }]}>
-        {([
+        {[
           { tab: "scale" as MobileTab, label: t("layers.scale"), on: showScale, color: scaleColor },
           { tab: "caged" as MobileTab, label: t("layers.caged"), on: showCaged, color: cagedColor },
           { tab: "chord" as MobileTab, label: t("layers.chord"), on: showChord, color: chordColor },
-        ]).map(({ tab, label, on, color }) => {
+        ].map(({ tab, label, on, color }) => {
           const isCurrent = activeTab === tab;
           return (
             <TouchableOpacity
@@ -484,21 +535,29 @@ export default function LayerControls({
               style={styles.tabBtn}
               activeOpacity={0.7}
             >
-              <Text style={[
-                styles.tabLabel,
-                {
-                  color: isCurrent
-                    ? isDark ? "#f3f4f6" : "#1c1917"
-                    : isDark ? "#6b7280" : "#a8a29e",
-                  fontWeight: isCurrent ? "600" : "400",
-                },
-              ]}>
+              <Text
+                style={[
+                  styles.tabLabel,
+                  {
+                    color: isCurrent
+                      ? isDark
+                        ? "#f3f4f6"
+                        : "#1c1917"
+                      : isDark
+                        ? "#6b7280"
+                        : "#a8a29e",
+                    fontWeight: isCurrent ? "600" : "400",
+                  },
+                ]}
+              >
                 {label}
               </Text>
-              <View style={[
-                styles.tabDot,
-                { backgroundColor: on ? color : isDark ? "#4b5563" : "#d6d3d1" },
-              ]} />
+              <View
+                style={[
+                  styles.tabDot,
+                  { backgroundColor: on ? color : isDark ? "#4b5563" : "#d6d3d1" },
+                ]}
+              />
             </TouchableOpacity>
           );
         })}

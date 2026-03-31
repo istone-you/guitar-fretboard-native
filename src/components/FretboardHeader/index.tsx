@@ -53,9 +53,7 @@ export default function FretboardHeader({
           >
             <Text style={[styles.stepBtnText, { color: isDark ? "#9ca3af" : "#78716c" }]}>‹</Text>
           </TouchableOpacity>
-          <Text style={[styles.rootNote, { color: isDark ? "#fff" : "#1c1917" }]}>
-            {rootNote}
-          </Text>
+          <Text style={[styles.rootNote, { color: isDark ? "#fff" : "#1c1917" }]}>{rootNote}</Text>
           <TouchableOpacity
             onPress={() => stepNote(1)}
             disabled={rootChangeDisabled}

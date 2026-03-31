@@ -8,10 +8,7 @@ import {
   StyleSheet,
   useWindowDimensions,
 } from "react-native";
-import {
-  SafeAreaProvider,
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
+import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ScreenOrientation from "expo-screen-orientation";
 import "./src/i18n";
 import { useTranslation } from "react-i18next";
@@ -46,13 +43,7 @@ const GUITAR_ICON_LIGHT = require("./public/guiter.png");
 const QUIZ_ICON_DARK = require("./public/quiz_dark.png");
 const QUIZ_ICON_LIGHT = require("./public/quiz.png");
 
-const DEFAULT_CHORD_QUIZ_TYPES: ChordType[] = [
-  "Major",
-  "Minor",
-  "7th",
-  "maj7",
-  "m7",
-];
+const DEFAULT_CHORD_QUIZ_TYPES: ChordType[] = ["Major", "Minor", "7th", "maj7", "m7"];
 
 const STORAGE_KEYS = {
   theme: "guiter:theme",
@@ -92,13 +83,9 @@ function AppContent() {
 
   const toggleLayout = useCallback(async () => {
     if (isLandscape) {
-      await ScreenOrientation.lockAsync(
-        ScreenOrientation.OrientationLock.PORTRAIT_UP,
-      );
+      await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
     } else {
-      await ScreenOrientation.lockAsync(
-        ScreenOrientation.OrientationLock.LANDSCAPE_RIGHT,
-      );
+      await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE_RIGHT);
     }
   }, [isLandscape]);
 
@@ -106,9 +93,7 @@ function AppContent() {
   const [autoFilter, setAutoFilter] = useState(false);
   // Quiz
   const [showQuiz, setShowQuiz] = useState(false);
-  const [chordQuizTypes, setChordQuizTypes] = useState<ChordType[]>(
-    DEFAULT_CHORD_QUIZ_TYPES,
-  );
+  const [chordQuizTypes, setChordQuizTypes] = useState<ChordType[]>(DEFAULT_CHORD_QUIZ_TYPES);
   // Display settings
   const [accidental, setAccidental] = usePersistedSetting<Accidental>(
     STORAGE_KEYS.accidental,
@@ -143,9 +128,7 @@ function AppContent() {
     (v) => v,
   );
 
-  const [highlightedOverlayNotes, setHighlightedOverlayNotes] = useState<
-    Set<string>
-  >(new Set());
+  const [highlightedOverlayNotes, setHighlightedOverlayNotes] = useState<Set<string>>(new Set());
 
   // Layer display flags
   const [showChord, setShowChord] = useState(false);
@@ -154,8 +137,7 @@ function AppContent() {
   const [showLayers, setShowLayers] = useState(true);
 
   // Chord settings
-  const [chordDisplayMode, setChordDisplayMode] =
-    useState<ChordDisplayMode>("form");
+  const [chordDisplayMode, setChordDisplayMode] = useState<ChordDisplayMode>("form");
   const [chordType, setChordType] = useState<ChordType>("Major");
   const [triadInversion, setTriadInversion] = useState("root");
   const {
@@ -316,9 +298,7 @@ function AppContent() {
   const effectiveHighlightedDegrees = useMemo(() => {
     if (!autoFilter) return highlightedDegrees;
     if (overlaySemitones.size === 0) return new Set<string>();
-    return new Set(
-      DEGREE_BY_SEMITONE.filter((_, i) => overlaySemitones.has(i)),
-    );
+    return new Set(DEGREE_BY_SEMITONE.filter((_, i) => overlaySemitones.has(i)));
   }, [autoFilter, highlightedDegrees, overlaySemitones]);
 
   const effectiveHighlightedNotes = useMemo(() => {
@@ -327,13 +307,9 @@ function AppContent() {
   }, [autoFilter, highlightedOverlayNotes, overlayNotes]);
 
   const quizRootChangeEnabled =
-    !showQuiz ||
-    quizMode === "degree" ||
-    quizMode === "scale" ||
-    quizMode === "diatonic";
+    !showQuiz || quizMode === "degree" || quizMode === "scale" || quizMode === "diatonic";
 
-  const quizNoteOptions =
-    accidental === "sharp" ? [...NOTES_SHARP] : [...NOTES_FLAT];
+  const quizNoteOptions = accidental === "sharp" ? [...NOTES_SHARP] : [...NOTES_FLAT];
 
   const allNotes = useMemo(() => {
     const notes = accidental === "sharp" ? NOTES_SHARP : NOTES_FLAT;
@@ -367,9 +343,7 @@ function AppContent() {
   };
 
   const quizEffectiveRootNote =
-    quizMode === "chord" &&
-    quizType === "choice" &&
-    quizQuestion?.promptChordRoot
+    quizMode === "chord" && quizType === "choice" && quizQuestion?.promptChordRoot
       ? quizQuestion.promptChordRoot
       : rootNote;
 
@@ -483,10 +457,22 @@ function AppContent() {
         availableChordQuizTypes={CHORD_QUIZ_TYPES_ALL}
         scaleType={scaleType}
         onKindChange={handleQuizKindChange}
-        onChordQuizTypesChange={(v) => { setChordQuizTypes(v); regenerateQuiz(); }}
-        onScaleTypeChange={(v) => { setScaleType(v as ScaleType); regenerateQuiz(); }}
-        onDiatonicQuizKeyTypeChange={(v) => { setDiatonicQuizKeyType(v); regenerateQuiz(); }}
-        onDiatonicQuizChordSizeChange={(v) => { setDiatonicQuizChordSize(v); regenerateQuiz(); }}
+        onChordQuizTypesChange={(v) => {
+          setChordQuizTypes(v);
+          regenerateQuiz();
+        }}
+        onScaleTypeChange={(v) => {
+          setScaleType(v as ScaleType);
+          regenerateQuiz();
+        }}
+        onDiatonicQuizKeyTypeChange={(v) => {
+          setDiatonicQuizKeyType(v);
+          regenerateQuiz();
+        }}
+        onDiatonicQuizChordSizeChange={(v) => {
+          setDiatonicQuizChordSize(v);
+          regenerateQuiz();
+        }}
         onAnswer={handleQuizAnswer}
         onSubmitChoice={handleSubmitChoice}
         onChordQuizRootSelect={handleChordQuizRootSelect}
@@ -682,7 +668,14 @@ function AppContent() {
             {fretboardEl}
           </View>
         </View>
-        <Text style={{ textAlign: "center", fontSize: 15, color: "#6b7280", paddingBottom: Math.max(insets.bottom, 8) }}>
+        <Text
+          style={{
+            textAlign: "center",
+            fontSize: 15,
+            color: "#6b7280",
+            paddingBottom: Math.max(insets.bottom, 8),
+          }}
+        >
           {t("doubleTapToReturn")}
         </Text>
       </View>

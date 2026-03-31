@@ -292,7 +292,18 @@ describe("DEGREE_COLORS", () => {
 
   it("has color for all 12 degrees", () => {
     const allDegrees: DegreeName[] = [
-      "P1", "m2", "M2", "m3", "M3", "P4", "b5", "P5", "m6", "M6", "m7", "M7",
+      "P1",
+      "m2",
+      "M2",
+      "m3",
+      "M3",
+      "P4",
+      "b5",
+      "P5",
+      "m6",
+      "M6",
+      "m7",
+      "M7",
     ];
     for (const deg of allDegrees) {
       expect(DEGREE_COLORS[deg]).toBeDefined();
@@ -305,8 +316,20 @@ describe("DEGREE_COLORS", () => {
 describe("CHORD_FORMS_6TH", () => {
   it("has all 14 chord types", () => {
     const expectedTypes: ChordType[] = [
-      "Major", "Minor", "7th", "maj7", "m7", "m7(b5)", "dim7",
-      "m(maj7)", "sus2", "sus4", "6", "m6", "dim", "aug",
+      "Major",
+      "Minor",
+      "7th",
+      "maj7",
+      "m7",
+      "m7(b5)",
+      "dim7",
+      "m(maj7)",
+      "sus2",
+      "sus4",
+      "6",
+      "m6",
+      "dim",
+      "aug",
     ];
     for (const ct of expectedTypes) {
       expect(CHORD_FORMS_6TH[ct]).toBeDefined();
@@ -326,8 +349,20 @@ describe("CHORD_FORMS_6TH", () => {
 describe("CHORD_FORMS_5TH", () => {
   it("has all 14 chord types", () => {
     const expectedTypes: ChordType[] = [
-      "Major", "Minor", "7th", "maj7", "m7", "m7(b5)", "dim7",
-      "m(maj7)", "sus2", "sus4", "6", "m6", "dim", "aug",
+      "Major",
+      "Minor",
+      "7th",
+      "maj7",
+      "m7",
+      "m7(b5)",
+      "dim7",
+      "m(maj7)",
+      "sus2",
+      "sus4",
+      "6",
+      "m6",
+      "dim",
+      "aug",
     ];
     for (const ct of expectedTypes) {
       expect(CHORD_FORMS_5TH[ct]).toBeDefined();
@@ -494,9 +529,7 @@ describe("OPEN_CHORD_FORMS", () => {
 
   it("has Minor open chords for D, E, A", () => {
     expect(OPEN_CHORD_FORMS.Minor).toBeDefined();
-    expect(Object.keys(OPEN_CHORD_FORMS.Minor!)).toEqual(
-      expect.arrayContaining(["D", "E", "A"]),
-    );
+    expect(Object.keys(OPEN_CHORD_FORMS.Minor!)).toEqual(expect.arrayContaining(["D", "E", "A"]));
   });
 });
 
@@ -691,9 +724,20 @@ describe("Scale degree sets", () => {
 describe("SCALE_DEGREES", () => {
   it("maps all ScaleType values", () => {
     const allScaleTypes: ScaleType[] = [
-      "major", "natural-minor", "major-penta", "minor-penta", "blues",
-      "harmonic-minor", "melodic-minor", "ionian", "dorian", "phrygian",
-      "lydian", "mixolydian", "aeolian", "locrian",
+      "major",
+      "natural-minor",
+      "major-penta",
+      "minor-penta",
+      "blues",
+      "harmonic-minor",
+      "melodic-minor",
+      "ionian",
+      "dorian",
+      "phrygian",
+      "lydian",
+      "mixolydian",
+      "aeolian",
+      "locrian",
     ];
     for (const st of allScaleTypes) {
       expect(SCALE_DEGREES[st]).toBeDefined();
@@ -777,9 +821,20 @@ describe("isInScale", () => {
 
   it("works for all scale types without throwing", () => {
     const allScaleTypes: ScaleType[] = [
-      "major", "natural-minor", "major-penta", "minor-penta", "blues",
-      "harmonic-minor", "melodic-minor", "ionian", "dorian", "phrygian",
-      "lydian", "mixolydian", "aeolian", "locrian",
+      "major",
+      "natural-minor",
+      "major-penta",
+      "minor-penta",
+      "blues",
+      "harmonic-minor",
+      "melodic-minor",
+      "ionian",
+      "dorian",
+      "phrygian",
+      "lydian",
+      "mixolydian",
+      "aeolian",
+      "locrian",
     ];
     for (const st of allScaleTypes) {
       // Root should always be in the scale
@@ -985,9 +1040,7 @@ describe("getActiveOverlaySemitones", () => {
 
 describe("CAGED_FORMS", () => {
   it("has all 5 CAGED forms", () => {
-    expect(Object.keys(CAGED_FORMS)).toEqual(
-      expect.arrayContaining(["C", "A", "G", "E", "D"]),
-    );
+    expect(Object.keys(CAGED_FORMS)).toEqual(expect.arrayContaining(["C", "A", "G", "E", "D"]));
   });
 
   it("each form has label, color, anchorString, and positions", () => {

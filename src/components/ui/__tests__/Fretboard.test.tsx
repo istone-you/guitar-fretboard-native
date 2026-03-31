@@ -57,9 +57,7 @@ describe("Fretboard - Basic rendering", () => {
     // Each string row has cells for each fret. We verify by checking
     // that notes from all strings are rendered. String 0 (6th string) open = E,
     // String 1 (5th string) open = A, etc.
-    const { getAllByText } = render(
-      <Fretboard {...makeProps({ fretRange: [0, 0] })} />,
-    );
+    const { getAllByText } = render(<Fretboard {...makeProps({ fretRange: [0, 0] })} />);
     // With fretRange [0,0], we only see open string notes: E, A, D, G, B, E
     // These are both string labels and note labels
     const eCount = getAllByText("E").length;
@@ -86,9 +84,7 @@ describe("Fretboard - Fret range", () => {
   });
 
   it("renders correct number of fret columns for narrow range", () => {
-    const { getAllByText } = render(
-      <Fretboard {...makeProps({ fretRange: [5, 7] })} />,
-    );
+    const { getAllByText } = render(<Fretboard {...makeProps({ fretRange: [5, 7] })} />);
     // Fret numbers 5, 6, 7 should be in header
     expect(getAllByText("5").length).toBeGreaterThanOrEqual(1);
     expect(getAllByText("6").length).toBeGreaterThanOrEqual(1);
@@ -118,9 +114,7 @@ describe("Fretboard - Note display", () => {
   });
 
   it("shows correct open string notes", () => {
-    const { getAllByText } = render(
-      <Fretboard {...makeProps({ fretRange: [0, 0] })} />,
-    );
+    const { getAllByText } = render(<Fretboard {...makeProps({ fretRange: [0, 0] })} />);
     // Open strings: E(6th), A(5th), D(4th), G(3rd), B(2nd), E(1st)
     expect(getAllByText("E").length).toBeGreaterThanOrEqual(2);
     expect(getAllByText("A").length).toBeGreaterThanOrEqual(1);
@@ -174,9 +168,7 @@ describe("Fretboard - Degree display", () => {
 
 describe("Fretboard - Root highlight", () => {
   it("renders root note ring (border color #ef4444) for root notes", () => {
-    const { toJSON } = render(
-      <Fretboard {...makeProps({ rootNote: "E", fretRange: [0, 0] })} />,
-    );
+    const { toJSON } = render(<Fretboard {...makeProps({ rootNote: "E", fretRange: [0, 0] })} />);
     // Root ring has borderColor: "#ef4444"
     const json = JSON.stringify(toJSON());
     expect(json).toContain("#ef4444");
@@ -734,7 +726,7 @@ describe("Fretboard - onNoteClick callback", () => {
   it("does not fire onNoteClick in quiz answer mode", () => {
     const onNoteClick = jest.fn();
     const onQuizCellClick = jest.fn();
-    const { getAllByText } = render(
+    render(
       <Fretboard
         {...makeProps({
           onNoteClick,
@@ -811,9 +803,7 @@ describe("Fretboard - onQuizCellClick callback", () => {
 
 describe("Fretboard - Theme", () => {
   it("uses dark theme colors", () => {
-    const { toJSON } = render(
-      <Fretboard {...makeProps({ theme: "dark", fretRange: [0, 2] })} />,
-    );
+    const { toJSON } = render(<Fretboard {...makeProps({ theme: "dark", fretRange: [0, 2] })} />);
     const json = JSON.stringify(toJSON());
     // Dark mode fret number color: #6b7280
     expect(json).toContain("#6b7280");
@@ -822,9 +812,7 @@ describe("Fretboard - Theme", () => {
   });
 
   it("uses light theme colors", () => {
-    const { toJSON } = render(
-      <Fretboard {...makeProps({ theme: "light", fretRange: [0, 2] })} />,
-    );
+    const { toJSON } = render(<Fretboard {...makeProps({ theme: "light", fretRange: [0, 2] })} />);
     const json = JSON.stringify(toJSON());
     // Light mode fret number color: #78716c
     expect(json).toContain("#78716c");
@@ -833,18 +821,14 @@ describe("Fretboard - Theme", () => {
   });
 
   it("uses dark theme string line color", () => {
-    const { toJSON } = render(
-      <Fretboard {...makeProps({ theme: "dark", fretRange: [0, 0] })} />,
-    );
+    const { toJSON } = render(<Fretboard {...makeProps({ theme: "dark", fretRange: [0, 0] })} />);
     const json = JSON.stringify(toJSON());
     // Dark mode string line: #6b7280
     expect(json).toContain("#6b7280");
   });
 
   it("uses light theme string line color", () => {
-    const { toJSON } = render(
-      <Fretboard {...makeProps({ theme: "light", fretRange: [0, 0] })} />,
-    );
+    const { toJSON } = render(<Fretboard {...makeProps({ theme: "light", fretRange: [0, 0] })} />);
     const json = JSON.stringify(toJSON());
     // Light mode string line: #a8a29e
     expect(json).toContain("#a8a29e");
@@ -855,9 +839,7 @@ describe("Fretboard - Theme", () => {
 
 describe("Fretboard - Position marks", () => {
   it("renders position marks for frets 3, 5, 7, 9", () => {
-    const { toJSON } = render(
-      <Fretboard {...makeProps({ fretRange: [0, 14] })} />,
-    );
+    const { toJSON } = render(<Fretboard {...makeProps({ fretRange: [0, 14] })} />);
     // Position marks are circles (borderRadius = markerSize/2 = 2)
     // They appear at frets 3, 5, 7, 9, 12
     const json = JSON.stringify(toJSON());
@@ -867,9 +849,7 @@ describe("Fretboard - Position marks", () => {
 
   it("does not render position marks for frets without marks", () => {
     // Only frets 3, 5, 7, 9, 12 have marks. Fret range 1-2 should have no marks.
-    const { toJSON } = render(
-      <Fretboard {...makeProps({ fretRange: [1, 2] })} />,
-    );
+    const { toJSON } = render(<Fretboard {...makeProps({ fretRange: [1, 2] })} />);
     const json = JSON.stringify(toJSON());
     // No marker dots (borderRadius: 2 for markers) - but other things might use borderRadius 2
     // Let's just verify it renders without error
@@ -919,9 +899,7 @@ describe("Fretboard - String labels", () => {
   });
 
   it("shows string labels in normal mode", () => {
-    const { getAllByText } = render(
-      <Fretboard {...makeProps({ fretRange: [0, 0] })} />,
-    );
+    const { getAllByText } = render(<Fretboard {...makeProps({ fretRange: [0, 0] })} />);
     // "E" appears as string label + note cell, "A" as label + cell, etc.
     expect(getAllByText("A").length).toBeGreaterThanOrEqual(1);
   });
@@ -931,18 +909,14 @@ describe("Fretboard - String labels", () => {
 
 describe("Fretboard - Nut marker", () => {
   it("renders thick right border at fret 0 (nut)", () => {
-    const { toJSON } = render(
-      <Fretboard {...makeProps({ fretRange: [0, 2] })} />,
-    );
+    const { toJSON } = render(<Fretboard {...makeProps({ fretRange: [0, 2] })} />);
     const json = JSON.stringify(toJSON());
     // Fret 0 has borderRightWidth: 4
     expect(json).toContain('"borderRightWidth":4');
   });
 
   it("does not render nut when fret 0 is not in range", () => {
-    const { toJSON } = render(
-      <Fretboard {...makeProps({ fretRange: [3, 7] })} />,
-    );
+    const { toJSON } = render(<Fretboard {...makeProps({ fretRange: [3, 7] })} />);
     const json = JSON.stringify(toJSON());
     // No nut marker (borderRightWidth: 4) should appear
     expect(json).not.toContain('"borderRightWidth":4');
@@ -1017,9 +991,7 @@ describe("Fretboard - Scale and Chord overlay interaction", () => {
 
 describe("Fretboard - Edge cases", () => {
   it("handles single fret range", () => {
-    const { toJSON } = render(
-      <Fretboard {...makeProps({ fretRange: [7, 7] })} />,
-    );
+    const { toJSON } = render(<Fretboard {...makeProps({ fretRange: [7, 7] })} />);
     expect(toJSON()).toBeTruthy();
   });
 
@@ -1108,8 +1080,20 @@ describe("Fretboard - Multiple scale types", () => {
 
 describe("Fretboard - Multiple chord types", () => {
   const chordTypes: ChordType[] = [
-    "Major", "Minor", "7th", "maj7", "m7", "m7(b5)", "dim7",
-    "m(maj7)", "sus2", "sus4", "6", "m6", "dim", "aug",
+    "Major",
+    "Minor",
+    "7th",
+    "maj7",
+    "m7",
+    "m7(b5)",
+    "dim7",
+    "m(maj7)",
+    "sus2",
+    "sus4",
+    "6",
+    "m6",
+    "dim",
+    "aug",
   ];
 
   type ChordType = FretboardProps["chordType"];

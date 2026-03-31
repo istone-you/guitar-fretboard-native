@@ -57,31 +57,22 @@ describe("QuizFretboard", () => {
         baseLabelMode: "note",
         fretRange: [0, 14],
         chordType: "Major",
-      })
+      }),
     );
   });
 
   it("forces showScale to false", () => {
     render(<QuizFretboard {...baseProps} showScale={true} />);
-    expect(mockFretboard).toHaveBeenCalledWith(
-      expect.objectContaining({ showScale: false })
-    );
+    expect(mockFretboard).toHaveBeenCalledWith(expect.objectContaining({ showScale: false }));
   });
 
   it("forces showCaged to false", () => {
     render(<QuizFretboard {...baseProps} showCaged={true} />);
-    expect(mockFretboard).toHaveBeenCalledWith(
-      expect.objectContaining({ showCaged: false })
-    );
+    expect(mockFretboard).toHaveBeenCalledWith(expect.objectContaining({ showCaged: false }));
   });
 
   it("forces highlightedDegrees to empty Set", () => {
-    render(
-      <QuizFretboard
-        {...baseProps}
-        highlightedDegrees={new Set(["P1", "P5"])}
-      />
-    );
+    render(<QuizFretboard {...baseProps} highlightedDegrees={new Set(["P1", "P5"])} />);
     const passedProps = mockFretboard.mock.calls[0][0];
     expect(passedProps.highlightedDegrees.size).toBe(0);
   });
@@ -89,34 +80,28 @@ describe("QuizFretboard", () => {
   it("forces suppressRegularDisplay to true", () => {
     render(<QuizFretboard {...baseProps} />);
     expect(mockFretboard).toHaveBeenCalledWith(
-      expect.objectContaining({ suppressRegularDisplay: true })
+      expect.objectContaining({ suppressRegularDisplay: true }),
     );
   });
 
   it("hides chord note labels when showChord is true and quizAnswerMode is false", () => {
-    render(
-      <QuizFretboard {...baseProps} showChord={true} quizAnswerMode={false} />
-    );
+    render(<QuizFretboard {...baseProps} showChord={true} quizAnswerMode={false} />);
     expect(mockFretboard).toHaveBeenCalledWith(
-      expect.objectContaining({ hideChordNoteLabels: true })
+      expect.objectContaining({ hideChordNoteLabels: true }),
     );
   });
 
   it("shows chord note labels when showChord is true and quizAnswerMode is true", () => {
-    render(
-      <QuizFretboard {...baseProps} showChord={true} quizAnswerMode={true} />
-    );
+    render(<QuizFretboard {...baseProps} showChord={true} quizAnswerMode={true} />);
     expect(mockFretboard).toHaveBeenCalledWith(
-      expect.objectContaining({ hideChordNoteLabels: false })
+      expect.objectContaining({ hideChordNoteLabels: false }),
     );
   });
 
   it("does not hide chord note labels when showChord is false", () => {
-    render(
-      <QuizFretboard {...baseProps} showChord={false} quizAnswerMode={false} />
-    );
+    render(<QuizFretboard {...baseProps} showChord={false} quizAnswerMode={false} />);
     expect(mockFretboard).toHaveBeenCalledWith(
-      expect.objectContaining({ hideChordNoteLabels: false })
+      expect.objectContaining({ hideChordNoteLabels: false }),
     );
   });
 
@@ -136,7 +121,7 @@ describe("QuizFretboard", () => {
         quizAnsweredCell={answeredCell}
         quizCorrectCell={correctCell}
         onQuizCellClick={onQuizCellClick}
-      />
+      />,
     );
     expect(mockFretboard).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -147,7 +132,7 @@ describe("QuizFretboard", () => {
         quizAnsweredCell: answeredCell,
         quizCorrectCell: correctCell,
         onQuizCellClick: onQuizCellClick,
-      })
+      }),
     );
   });
 
@@ -156,29 +141,23 @@ describe("QuizFretboard", () => {
       { stringIdx: 0, fret: 3 },
       { stringIdx: 1, fret: 5 },
     ];
-    render(
-      <QuizFretboard {...baseProps} quizSelectedCells={selectedCells} />
-    );
+    render(<QuizFretboard {...baseProps} quizSelectedCells={selectedCells} />);
     expect(mockFretboard).toHaveBeenCalledWith(
-      expect.objectContaining({ quizSelectedCells: selectedCells })
+      expect.objectContaining({ quizSelectedCells: selectedCells }),
     );
   });
 
   it("passes quizRevealNoteNames through", () => {
-    render(
-      <QuizFretboard {...baseProps} quizRevealNoteNames={["C", "E", "G"]} />
-    );
+    render(<QuizFretboard {...baseProps} quizRevealNoteNames={["C", "E", "G"]} />);
     expect(mockFretboard).toHaveBeenCalledWith(
-      expect.objectContaining({ quizRevealNoteNames: ["C", "E", "G"] })
+      expect.objectContaining({ quizRevealNoteNames: ["C", "E", "G"] }),
     );
   });
 
   it("passes onNoteClick through", () => {
     const onNoteClick = jest.fn();
     render(<QuizFretboard {...baseProps} onNoteClick={onNoteClick} />);
-    expect(mockFretboard).toHaveBeenCalledWith(
-      expect.objectContaining({ onNoteClick })
-    );
+    expect(mockFretboard).toHaveBeenCalledWith(expect.objectContaining({ onNoteClick }));
   });
 
   it("passes custom color props through", () => {
@@ -188,14 +167,14 @@ describe("QuizFretboard", () => {
         chordColor="#ff0000"
         scaleColor="#00ff00"
         cagedColor="#0000ff"
-      />
+      />,
     );
     expect(mockFretboard).toHaveBeenCalledWith(
       expect.objectContaining({
         chordColor: "#ff0000",
         scaleColor: "#00ff00",
         cagedColor: "#0000ff",
-      })
+      }),
     );
   });
 });

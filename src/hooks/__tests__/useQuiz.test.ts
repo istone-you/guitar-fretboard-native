@@ -1,19 +1,7 @@
 import { renderHook, act } from "@testing-library/react-native";
 import { useQuiz, CHORD_QUIZ_TYPES_ALL } from "../useQuiz";
-import {
-  getNoteIndex,
-  NOTES_SHARP,
-  NOTES_FLAT,
-  OPEN_STRINGS,
-  DIATONIC_CHORDS,
-} from "../../logic/fretboard";
-import type {
-  Accidental,
-  ScaleType,
-  ChordType,
-  QuizMode,
-  QuizType,
-} from "../../types";
+import { getNoteIndex, NOTES_SHARP, NOTES_FLAT } from "../../logic/fretboard";
+import type { Accidental, ScaleType, ChordType } from "../../types";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -464,8 +452,7 @@ describe("useQuiz", () => {
     it("submits wrong chord type", () => {
       const hook = startChordQuiz();
       const q = hook.result.current.quizQuestion!;
-      const wrongType: ChordType =
-        q.promptChordType === "Major" ? "Minor" : "Major";
+      const wrongType: ChordType = q.promptChordType === "Major" ? "Minor" : "Major";
       act(() => {
         hook.result.current.handleChordQuizRootSelect(q.promptChordRoot!);
       });
@@ -519,9 +506,7 @@ describe("useQuiz", () => {
       act(() => {
         hook.result.current.handleChordQuizRootSelect("F");
       });
-      expect(hook.result.current.quizSelectedChordRoot).toBe(
-        q.promptChordRoot,
-      );
+      expect(hook.result.current.quizSelectedChordRoot).toBe(q.promptChordRoot);
     });
 
     it("ignores type select after answer submitted", () => {
@@ -539,9 +524,7 @@ describe("useQuiz", () => {
       act(() => {
         hook.result.current.handleChordQuizTypeSelect("dim");
       });
-      expect(hook.result.current.quizSelectedChordType).toBe(
-        q.promptChordType,
-      );
+      expect(hook.result.current.quizSelectedChordType).toBe(q.promptChordType);
     });
 
     it("does not submit twice", () => {
@@ -585,9 +568,7 @@ describe("useQuiz", () => {
       act(() => {
         hook.result.current.handleFretboardQuizAnswer(0, 3);
       });
-      expect(hook.result.current.quizSelectedCells).toEqual([
-        { stringIdx: 0, fret: 3 },
-      ]);
+      expect(hook.result.current.quizSelectedCells).toEqual([{ stringIdx: 0, fret: 3 }]);
     });
 
     it("replaces cell for single-cell mode", () => {
@@ -601,9 +582,7 @@ describe("useQuiz", () => {
       act(() => {
         hook.result.current.handleFretboardQuizAnswer(1, 5);
       });
-      expect(hook.result.current.quizSelectedCells).toEqual([
-        { stringIdx: 1, fret: 5 },
-      ]);
+      expect(hook.result.current.quizSelectedCells).toEqual([{ stringIdx: 1, fret: 5 }]);
     });
 
     it("toggles cells for scale fretboard quiz (multi-cell)", () => {
@@ -625,9 +604,7 @@ describe("useQuiz", () => {
       act(() => {
         hook.result.current.handleFretboardQuizAnswer(0, 3);
       });
-      expect(hook.result.current.quizSelectedCells).toEqual([
-        { stringIdx: 1, fret: 5 },
-      ]);
+      expect(hook.result.current.quizSelectedCells).toEqual([{ stringIdx: 1, fret: 5 }]);
     });
 
     it("toggles cells for chord fretboard quiz (multi-cell)", () => {
@@ -694,10 +671,7 @@ describe("useQuiz", () => {
       const q = hook.result.current.quizQuestion!;
       // Select correct cell and submit
       act(() => {
-        hook.result.current.handleFretboardQuizAnswer(
-          q.stringIdx,
-          q.fret,
-        );
+        hook.result.current.handleFretboardQuizAnswer(q.stringIdx, q.fret);
       });
       act(() => {
         hook.result.current.handleSubmitFretboard();
@@ -738,10 +712,7 @@ describe("useQuiz", () => {
         const q = hook.result.current.quizQuestion!;
         // Select the correct cell
         act(() => {
-          hook.result.current.handleFretboardQuizAnswer(
-            q.stringIdx,
-            q.fret,
-          );
+          hook.result.current.handleFretboardQuizAnswer(q.stringIdx, q.fret);
         });
         act(() => {
           hook.result.current.handleSubmitFretboard();
@@ -770,10 +741,7 @@ describe("useQuiz", () => {
         // Find a wrong fret
         const wrongFret = q.fret === 0 ? 1 : q.fret - 1;
         act(() => {
-          hook.result.current.handleFretboardQuizAnswer(
-            q.stringIdx,
-            wrongFret,
-          );
+          hook.result.current.handleFretboardQuizAnswer(q.stringIdx, wrongFret);
         });
 
         const clickedNoteIdx = getNoteIndex(q.stringIdx, wrongFret);
@@ -805,10 +773,7 @@ describe("useQuiz", () => {
         });
         const q = hook.result.current.quizQuestion!;
         act(() => {
-          hook.result.current.handleFretboardQuizAnswer(
-            q.stringIdx,
-            q.fret,
-          );
+          hook.result.current.handleFretboardQuizAnswer(q.stringIdx, q.fret);
         });
         act(() => {
           hook.result.current.handleSubmitFretboard();
@@ -851,10 +816,7 @@ describe("useQuiz", () => {
           if (!selectedPerString.has(cell.stringIdx)) {
             selectedPerString.add(cell.stringIdx);
             act(() => {
-              hook.result.current.handleFretboardQuizAnswer(
-                cell.stringIdx,
-                cell.fret,
-              );
+              hook.result.current.handleFretboardQuizAnswer(cell.stringIdx, cell.fret);
             });
           }
         }
@@ -863,9 +825,7 @@ describe("useQuiz", () => {
           hook.result.current.handleSubmitFretboard();
         });
         expect(hook.result.current.quizScore.correct).toBe(1);
-        expect(hook.result.current.quizRevealNoteNames).toEqual(
-          correctNoteNames,
-        );
+        expect(hook.result.current.quizRevealNoteNames).toEqual(correctNoteNames);
       });
 
       it("judges wrong when a string is missing", () => {
@@ -914,10 +874,7 @@ describe("useQuiz", () => {
         const selectedPerString = new Set<number>();
         for (let s = 0; s < 6; s++) {
           for (let f = fretRange[0]; f <= fretRange[1]; f++) {
-            if (
-              correctNoteNames.includes(notes[getNoteIndex(s, f)]) &&
-              !selectedPerString.has(s)
-            ) {
+            if (correctNoteNames.includes(notes[getNoteIndex(s, f)]) && !selectedPerString.has(s)) {
               selectedPerString.add(s);
               act(() => {
                 hook.result.current.handleFretboardQuizAnswer(s, f);
@@ -976,9 +933,7 @@ describe("useQuiz", () => {
           correct: 1,
           total: 1,
         });
-        expect(hook.result.current.quizRevealNoteNames).toEqual(
-          correctNoteNames,
-        );
+        expect(hook.result.current.quizRevealNoteNames).toEqual(correctNoteNames);
       });
 
       it("judges wrong when scale cells are incomplete", () => {
@@ -1025,10 +980,7 @@ describe("useQuiz", () => {
         for (let s = 0; s < 6; s++) {
           for (let f = 0; f <= 14; f++) {
             const noteName = notes[getNoteIndex(s, f)];
-            if (
-              correctNoteNames.includes(noteName) &&
-              !selectedNotes.has(noteName)
-            ) {
+            if (correctNoteNames.includes(noteName) && !selectedNotes.has(noteName)) {
               selectedNotes.add(noteName);
               act(() => {
                 hook.result.current.handleFretboardQuizAnswer(s, f);
@@ -1042,9 +994,7 @@ describe("useQuiz", () => {
           hook.result.current.handleSubmitFretboard();
         });
         expect(hook.result.current.quizScore.correct).toBe(1);
-        expect(hook.result.current.quizRevealNoteNames).toEqual(
-          correctNoteNames,
-        );
+        expect(hook.result.current.quizRevealNoteNames).toEqual(correctNoteNames);
       });
 
       it("judges wrong chord fretboard when a wrong note is included", () => {
@@ -1061,10 +1011,7 @@ describe("useQuiz", () => {
         for (let s = 0; s < 6; s++) {
           for (let f = 0; f <= 14; f++) {
             const noteName = notes[getNoteIndex(s, f)];
-            if (
-              correctNoteNames.includes(noteName) &&
-              !selectedNotes.has(noteName)
-            ) {
+            if (correctNoteNames.includes(noteName) && !selectedNotes.has(noteName)) {
               selectedNotes.add(noteName);
               act(() => {
                 hook.result.current.handleFretboardQuizAnswer(s, f);
@@ -1145,10 +1092,7 @@ describe("useQuiz", () => {
       });
       const q = hook.result.current.quizQuestion!;
       act(() => {
-        hook.result.current.handleFretboardQuizAnswer(
-          q.stringIdx,
-          q.fret,
-        );
+        hook.result.current.handleFretboardQuizAnswer(q.stringIdx, q.fret);
       });
       act(() => {
         hook.result.current.handleSubmitFretboard();
@@ -1427,9 +1371,7 @@ describe("useQuiz", () => {
         hook.result.current.handleDiatonicAnswerRootSelect("C");
       });
       act(() => {
-        hook.result.current.handleDiatonicDegreeCardClick(
-          q.diatonicAnswers![0].degree,
-        );
+        hook.result.current.handleDiatonicDegreeCardClick(q.diatonicAnswers![0].degree);
       });
       expect(hook.result.current.diatonicSelectedRoot).toBeNull();
       expect(hook.result.current.diatonicSelectedChordType).toBeNull();
@@ -1463,13 +1405,9 @@ describe("useQuiz", () => {
         hook.result.current.handleDiatonicAnswerRootSelect(firstAnswer.root);
       });
       act(() => {
-        hook.result.current.handleDiatonicAnswerTypeSelect(
-          firstAnswer.chordType,
-        );
+        hook.result.current.handleDiatonicAnswerTypeSelect(firstAnswer.chordType);
       });
-      expect(
-        hook.result.current.diatonicAllAnswers[firstAnswer.degree],
-      ).toEqual({
+      expect(hook.result.current.diatonicAllAnswers[firstAnswer.degree]).toEqual({
         root: firstAnswer.root,
         chordType: firstAnswer.chordType,
       });
@@ -1480,9 +1418,7 @@ describe("useQuiz", () => {
       act(() => {
         hook.result.current.handleDiatonicAnswerTypeSelect("Major");
       });
-      expect(Object.keys(hook.result.current.diatonicAllAnswers).length).toBe(
-        0,
-      );
+      expect(Object.keys(hook.result.current.diatonicAllAnswers).length).toBe(0);
     });
 
     it("handleDiatonicSubmitAll judges all correct answers", () => {
@@ -1498,9 +1434,7 @@ describe("useQuiz", () => {
           hook.result.current.handleDiatonicAnswerRootSelect(answer.root);
         });
         act(() => {
-          hook.result.current.handleDiatonicAnswerTypeSelect(
-            answer.chordType,
-          );
+          hook.result.current.handleDiatonicAnswerTypeSelect(answer.chordType);
         });
       }
 
@@ -1524,9 +1458,7 @@ describe("useQuiz", () => {
           hook.result.current.handleDiatonicAnswerRootSelect(wrongRoot);
         });
         act(() => {
-          hook.result.current.handleDiatonicAnswerTypeSelect(
-            answer.chordType,
-          );
+          hook.result.current.handleDiatonicAnswerTypeSelect(answer.chordType);
         });
       }
 
@@ -1555,9 +1487,7 @@ describe("useQuiz", () => {
           hook.result.current.handleDiatonicAnswerRootSelect(answer.root);
         });
         act(() => {
-          hook.result.current.handleDiatonicAnswerTypeSelect(
-            answer.chordType,
-          );
+          hook.result.current.handleDiatonicAnswerTypeSelect(answer.chordType);
         });
       }
       act(() => {
@@ -1588,9 +1518,7 @@ describe("useQuiz", () => {
           hook.result.current.handleDiatonicAnswerRootSelect(answer.root);
         });
         act(() => {
-          hook.result.current.handleDiatonicAnswerTypeSelect(
-            answer.chordType,
-          );
+          hook.result.current.handleDiatonicAnswerTypeSelect(answer.chordType);
         });
       }
       act(() => {
@@ -1627,15 +1555,11 @@ describe("useQuiz", () => {
         hook.result.current.handleDiatonicAnswerRootSelect(answers[0].root);
       });
       act(() => {
-        hook.result.current.handleDiatonicAnswerTypeSelect(
-          answers[0].chordType,
-        );
+        hook.result.current.handleDiatonicAnswerTypeSelect(answers[0].chordType);
       });
 
       // Should auto-advance to 2nd degree
-      expect(hook.result.current.diatonicEditingDegree).toBe(
-        answers[1].degree,
-      );
+      expect(hook.result.current.diatonicEditingDegree).toBe(answers[1].degree);
     });
   });
 

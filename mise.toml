@@ -2,7 +2,11 @@
 "aqua:openai/codex" = "0.116.0"
 "npm:@anthropic-ai/claude-code" = "2.1.81"
 "npm:@google/gemini-cli" = "0.34.0"
-bun = "1.3.10"
+"bun" = "1.3.10"
+"lefthook" = "2.1.4"
+
+[hooks]
+postinstall = "lefthook install"
 
 [settings]
 experimental = true

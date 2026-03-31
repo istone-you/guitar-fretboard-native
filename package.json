@@ -7,6 +7,13 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
+    "fmt": "oxfmt --write src/ App.tsx",
+    "fmt:check": "oxfmt --check src/ App.tsx",
+    "lint": "oxlint src/ App.tsx",
+    "lint:fix": "oxlint --fix src/ App.tsx",
+    "check": "bun run fmt:check && bun run lint && bun run typecheck",
+    "check:fix": "bun run fmt && bun run lint:fix",
+    "typecheck": "tsc --noEmit",
     "test": "jest --coverage",
     "test:watch": "jest --watch"
   },
@@ -44,6 +51,8 @@
   "devDependencies": {
     "@babel/core": "^7.25.2",
     "@types/react": "~19.1.10",
+    "oxfmt": "^0.42.0",
+    "oxlint": "^1.57.0",
     "typescript": "^5.3.3"
   },
   "private": true,

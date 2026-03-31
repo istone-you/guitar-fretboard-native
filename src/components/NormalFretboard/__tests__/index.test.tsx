@@ -61,80 +61,66 @@ describe("NormalFretboard", () => {
         scaleType: "major",
         showCaged: false,
         chordType: "Major",
-      })
+      }),
     );
   });
 
   it("forces quizModeActive to false", () => {
     render(<NormalFretboard {...baseProps} />);
-    expect(mockFretboard).toHaveBeenCalledWith(
-      expect.objectContaining({ quizModeActive: false })
-    );
+    expect(mockFretboard).toHaveBeenCalledWith(expect.objectContaining({ quizModeActive: false }));
   });
 
   it("forces quizCell to undefined", () => {
     render(<NormalFretboard {...baseProps} />);
-    expect(mockFretboard).toHaveBeenCalledWith(
-      expect.objectContaining({ quizCell: undefined })
-    );
+    expect(mockFretboard).toHaveBeenCalledWith(expect.objectContaining({ quizCell: undefined }));
   });
 
   it("forces quizAnswerMode to false", () => {
     render(<NormalFretboard {...baseProps} />);
-    expect(mockFretboard).toHaveBeenCalledWith(
-      expect.objectContaining({ quizAnswerMode: false })
-    );
+    expect(mockFretboard).toHaveBeenCalledWith(expect.objectContaining({ quizAnswerMode: false }));
   });
 
   it("forces quizTargetString to undefined", () => {
     render(<NormalFretboard {...baseProps} />);
     expect(mockFretboard).toHaveBeenCalledWith(
-      expect.objectContaining({ quizTargetString: undefined })
+      expect.objectContaining({ quizTargetString: undefined }),
     );
   });
 
   it("forces quizAnsweredCell to null", () => {
     render(<NormalFretboard {...baseProps} />);
-    expect(mockFretboard).toHaveBeenCalledWith(
-      expect.objectContaining({ quizAnsweredCell: null })
-    );
+    expect(mockFretboard).toHaveBeenCalledWith(expect.objectContaining({ quizAnsweredCell: null }));
   });
 
   it("forces quizCorrectCell to null", () => {
     render(<NormalFretboard {...baseProps} />);
-    expect(mockFretboard).toHaveBeenCalledWith(
-      expect.objectContaining({ quizCorrectCell: null })
-    );
+    expect(mockFretboard).toHaveBeenCalledWith(expect.objectContaining({ quizCorrectCell: null }));
   });
 
   it("forces onQuizCellClick to undefined", () => {
     render(<NormalFretboard {...baseProps} />);
     expect(mockFretboard).toHaveBeenCalledWith(
-      expect.objectContaining({ onQuizCellClick: undefined })
+      expect.objectContaining({ onQuizCellClick: undefined }),
     );
   });
 
   it("forces suppressRegularDisplay to false", () => {
     render(<NormalFretboard {...baseProps} />);
     expect(mockFretboard).toHaveBeenCalledWith(
-      expect.objectContaining({ suppressRegularDisplay: false })
+      expect.objectContaining({ suppressRegularDisplay: false }),
     );
   });
 
   it("passes optional props like highlightedNotes", () => {
     const highlightedNotes = new Set(["C", "E"]);
     render(<NormalFretboard {...baseProps} highlightedNotes={highlightedNotes} />);
-    expect(mockFretboard).toHaveBeenCalledWith(
-      expect.objectContaining({ highlightedNotes })
-    );
+    expect(mockFretboard).toHaveBeenCalledWith(expect.objectContaining({ highlightedNotes }));
   });
 
   it("passes optional props like highlightedDegrees", () => {
     const highlightedDegrees = new Set(["P1", "P5"]);
     render(<NormalFretboard {...baseProps} highlightedDegrees={highlightedDegrees} />);
-    expect(mockFretboard).toHaveBeenCalledWith(
-      expect.objectContaining({ highlightedDegrees })
-    );
+    expect(mockFretboard).toHaveBeenCalledWith(expect.objectContaining({ highlightedDegrees }));
   });
 
   it("passes custom color props", () => {
@@ -144,14 +130,14 @@ describe("NormalFretboard", () => {
         chordColor="#ff0000"
         scaleColor="#00ff00"
         cagedColor="#0000ff"
-      />
+      />,
     );
     expect(mockFretboard).toHaveBeenCalledWith(
       expect.objectContaining({
         chordColor: "#ff0000",
         scaleColor: "#00ff00",
         cagedColor: "#0000ff",
-      })
+      }),
     );
   });
 });

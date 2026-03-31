@@ -23,17 +23,13 @@ describe("usePersistedSetting", () => {
   // --- initial state ---
 
   it("returns default value initially", () => {
-    const { result } = renderHook(() =>
-      usePersistedSetting("guiter:test", "default"),
-    );
+    const { result } = renderHook(() => usePersistedSetting("guiter:test", "default"));
 
     expect(result.current[0]).toBe("default");
   });
 
   it("returns default value for numeric type", () => {
-    const { result } = renderHook(() =>
-      usePersistedSetting("guiter:num", 42, String, Number),
-    );
+    const { result } = renderHook(() => usePersistedSetting("guiter:num", 42, String, Number));
 
     expect(result.current[0]).toBe(42);
   });
@@ -56,9 +52,7 @@ describe("usePersistedSetting", () => {
   it("loads stored value from AsyncStorage", async () => {
     mockedGetItem.mockResolvedValue("stored-value");
 
-    const { result } = renderHook(() =>
-      usePersistedSetting("guiter:key", "default"),
-    );
+    const { result } = renderHook(() => usePersistedSetting("guiter:key", "default"));
 
     expect(result.current[0]).toBe("default");
 
@@ -70,9 +64,7 @@ describe("usePersistedSetting", () => {
   it("loads and deserializes stored numeric value", async () => {
     mockedGetItem.mockResolvedValue("99");
 
-    const { result } = renderHook(() =>
-      usePersistedSetting("guiter:num", 0, String, Number),
-    );
+    const { result } = renderHook(() => usePersistedSetting("guiter:num", 0, String, Number));
 
     await waitFor(() => {
       expect(result.current[0]).toBe(99);
@@ -99,9 +91,7 @@ describe("usePersistedSetting", () => {
   it("keeps default value when storage returns null", async () => {
     mockedGetItem.mockResolvedValue(null);
 
-    const { result } = renderHook(() =>
-      usePersistedSetting("guiter:empty", "default"),
-    );
+    const { result } = renderHook(() => usePersistedSetting("guiter:empty", "default"));
 
     // Wait for async load to complete
     await act(async () => {
@@ -141,9 +131,7 @@ describe("usePersistedSetting", () => {
   // --- setting values ---
 
   it("updates value with direct value", () => {
-    const { result } = renderHook(() =>
-      usePersistedSetting("guiter:test", "initial"),
-    );
+    const { result } = renderHook(() => usePersistedSetting("guiter:test", "initial"));
 
     act(() => {
       result.current[1]("updated");
@@ -153,9 +141,7 @@ describe("usePersistedSetting", () => {
   });
 
   it("persists value to AsyncStorage on set", () => {
-    const { result } = renderHook(() =>
-      usePersistedSetting("guiter:test", "initial"),
-    );
+    const { result } = renderHook(() => usePersistedSetting("guiter:test", "initial"));
 
     act(() => {
       result.current[1]("persisted");
@@ -165,9 +151,7 @@ describe("usePersistedSetting", () => {
   });
 
   it("uses custom serialize when persisting", () => {
-    const { result } = renderHook(() =>
-      usePersistedSetting("guiter:num", 10, String, Number),
-    );
+    const { result } = renderHook(() => usePersistedSetting("guiter:num", 10, String, Number));
 
     act(() => {
       result.current[1](42);
@@ -178,9 +162,7 @@ describe("usePersistedSetting", () => {
   });
 
   it("supports updater function", () => {
-    const { result } = renderHook(() =>
-      usePersistedSetting("guiter:count", 5, String, Number),
-    );
+    const { result } = renderHook(() => usePersistedSetting("guiter:count", 5, String, Number));
 
     act(() => {
       result.current[1]((current) => current + 10);
@@ -191,9 +173,7 @@ describe("usePersistedSetting", () => {
   });
 
   it("updater function receives current value", () => {
-    const { result } = renderHook(() =>
-      usePersistedSetting("guiter:str", "hello"),
-    );
+    const { result } = renderHook(() => usePersistedSetting("guiter:str", "hello"));
 
     act(() => {
       result.current[1]((current) => current + " world");
@@ -203,9 +183,7 @@ describe("usePersistedSetting", () => {
   });
 
   it("handles multiple sequential updates correctly", () => {
-    const { result } = renderHook(() =>
-      usePersistedSetting("guiter:seq", 0, String, Number),
-    );
+    const { result } = renderHook(() => usePersistedSetting("guiter:seq", 0, String, Number));
 
     act(() => {
       result.current[1](1);
@@ -225,9 +203,7 @@ describe("usePersistedSetting", () => {
   it("handles updater after async load", async () => {
     mockedGetItem.mockResolvedValue("100");
 
-    const { result } = renderHook(() =>
-      usePersistedSetting("guiter:loaded", 0, String, Number),
-    );
+    const { result } = renderHook(() => usePersistedSetting("guiter:loaded", 0, String, Number));
 
     await waitFor(() => {
       expect(result.current[0]).toBe(100);
@@ -244,9 +220,7 @@ describe("usePersistedSetting", () => {
   // --- default serialize/deserialize ---
 
   it("uses String() as default serialize", () => {
-    const { result } = renderHook(() =>
-      usePersistedSetting("guiter:def", "value"),
-    );
+    const { result } = renderHook(() => usePersistedSetting("guiter:def", "value"));
 
     act(() => {
       result.current[1]("new-value");
@@ -258,9 +232,7 @@ describe("usePersistedSetting", () => {
   it("uses identity cast as default deserialize", async () => {
     mockedGetItem.mockResolvedValue("from-storage");
 
-    const { result } = renderHook(() =>
-      usePersistedSetting("guiter:def", "default"),
-    );
+    const { result } = renderHook(() => usePersistedSetting("guiter:def", "default"));
 
     await waitFor(() => {
       expect(result.current[0]).toBe("from-storage");
@@ -273,12 +245,7 @@ describe("usePersistedSetting", () => {
     mockedGetItem.mockResolvedValue(JSON.stringify({ theme: "dark" }));
 
     const { result } = renderHook(() =>
-      usePersistedSetting(
-        "guiter:obj",
-        { theme: "light" },
-        JSON.stringify,
-        JSON.parse,
-      ),
+      usePersistedSetting("guiter:obj", { theme: "light" }, JSON.stringify, JSON.parse),
     );
 
     await waitFor(() => {
@@ -289,18 +256,13 @@ describe("usePersistedSetting", () => {
       result.current[1]({ theme: "light" });
     });
 
-    expect(mockedSetItem).toHaveBeenCalledWith(
-      "guiter:obj",
-      JSON.stringify({ theme: "light" }),
-    );
+    expect(mockedSetItem).toHaveBeenCalledWith("guiter:obj", JSON.stringify({ theme: "light" }));
   });
 
   // --- return type ---
 
   it("returns a tuple of [value, setter]", () => {
-    const { result } = renderHook(() =>
-      usePersistedSetting("guiter:tuple", "val"),
-    );
+    const { result } = renderHook(() => usePersistedSetting("guiter:tuple", "val"));
 
     expect(Array.isArray(result.current)).toBe(true);
     expect(result.current).toHaveLength(2);

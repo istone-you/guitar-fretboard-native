@@ -7,7 +7,6 @@ import {
   Modal,
   StyleSheet,
   Pressable,
-  ScrollView,
   PanResponder,
   Animated,
 } from "react-native";
@@ -54,14 +53,14 @@ function RangeSlider({
         if (w <= THUMB) return;
         const dx = e.nativeEvent.pageX - minStart.current.x;
         const newV = Math.round(
-          Math.max(min, Math.min(
-            valRef.current[1] - 1,
-            minStart.current.v + (dx / (w - THUMB)) * (max - min)
-          ))
+          Math.max(
+            min,
+            Math.min(valRef.current[1] - 1, minStart.current.v + (dx / (w - THUMB)) * (max - min)),
+          ),
         );
         onChange([newV, valRef.current[1]]);
       },
-    })
+    }),
   ).current;
 
   const maxStart = useRef({ x: 0, v: 0 });
@@ -79,12 +78,12 @@ function RangeSlider({
         const newV = Math.round(
           Math.max(
             valRef.current[0] + 1,
-            Math.min(max, maxStart.current.v + (dx / (w - THUMB)) * (max - min))
-          )
+            Math.min(max, maxStart.current.v + (dx / (w - THUMB)) * (max - min)),
+          ),
         );
         onChange([valRef.current[0], newV]);
       },
-    })
+    }),
   ).current;
 
   const total = max - min;
@@ -105,14 +104,16 @@ function RangeSlider({
     >
       {/* Track */}
       <View style={{ height: 4, borderRadius: 2, backgroundColor: isDark ? "#374151" : "#d6d3d1" }}>
-        <View style={{
-          position: "absolute",
-          height: 4,
-          left: fillLeft,
-          width: fillWidth,
-          borderRadius: 2,
-          backgroundColor: isDark ? "#0284c7" : "#0ea5e9",
-        }} />
+        <View
+          style={{
+            position: "absolute",
+            height: 4,
+            left: fillLeft,
+            width: fillWidth,
+            borderRadius: 2,
+            backgroundColor: isDark ? "#0284c7" : "#0ea5e9",
+          }}
+        />
       </View>
       {/* Min thumb */}
       <View
@@ -120,12 +121,17 @@ function RangeSlider({
           position: "absolute",
           top: 16 - THUMB / 2 + 2,
           left: minLeft,
-          width: THUMB, height: THUMB,
+          width: THUMB,
+          height: THUMB,
           borderRadius: THUMB / 2,
           backgroundColor: isDark ? "#0284c7" : "#0ea5e9",
-          alignItems: "center", justifyContent: "center",
-          zIndex: 3, elevation: 3,
-          shadowColor: "#000", shadowOpacity: 0.2, shadowRadius: 3,
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 3,
+          elevation: 3,
+          shadowColor: "#000",
+          shadowOpacity: 0.2,
+          shadowRadius: 3,
         }}
         {...minPan.panHandlers}
       >
@@ -137,12 +143,17 @@ function RangeSlider({
           position: "absolute",
           top: 16 - THUMB / 2 + 2,
           left: maxLeft,
-          width: THUMB, height: THUMB,
+          width: THUMB,
+          height: THUMB,
           borderRadius: THUMB / 2,
           backgroundColor: isDark ? "#0284c7" : "#0ea5e9",
-          alignItems: "center", justifyContent: "center",
-          zIndex: 2, elevation: 3,
-          shadowColor: "#000", shadowOpacity: 0.2, shadowRadius: 3,
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 2,
+          elevation: 3,
+          shadowColor: "#000",
+          shadowOpacity: 0.2,
+          shadowRadius: 3,
         }}
         {...maxPan.panHandlers}
       >
@@ -207,16 +218,10 @@ export default function AppHeader({
     >
       <View style={styles.headerSide} />
 
-      <Text style={[styles.title, { color: isDark ? "#fff" : "#1c1917" }]}>
-        Guitar Fretboard
-      </Text>
+      <Text style={[styles.title, { color: isDark ? "#fff" : "#1c1917" }]}>Guitar Fretboard</Text>
 
       <View style={[styles.headerSide, styles.headerRight]}>
-        <TouchableOpacity
-          onPress={openSettings}
-          style={styles.headerBtn}
-          activeOpacity={0.7}
-        >
+        <TouchableOpacity onPress={openSettings} style={styles.headerBtn} activeOpacity={0.7}>
           <Image
             source={isDark ? SETTINGS_ICON_DARK : SETTINGS_ICON_LIGHT}
             style={styles.settingsIcon}

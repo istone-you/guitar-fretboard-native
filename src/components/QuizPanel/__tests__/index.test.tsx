@@ -1,14 +1,7 @@
 import React from "react";
 import { render, fireEvent } from "@testing-library/react-native";
 import QuizPanel from "../index";
-import type {
-  Theme,
-  ChordType,
-  ScaleType,
-  QuizMode,
-  QuizType,
-  QuizQuestion,
-} from "../../../types";
+import type { Theme, ChordType, ScaleType, QuizMode, QuizType, QuizQuestion } from "../../../types";
 
 jest.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key, i18n: { language: "en" } }),
@@ -44,8 +37,20 @@ const defaultProps = {
   diatonicQuizChordSize: "triad" as "triad" | "seventh",
   chordQuizTypes: ["Major", "Minor", "7th"] as ChordType[],
   availableChordQuizTypes: [
-    "Major", "Minor", "7th", "maj7", "m7", "m7(b5)", "dim7", "m(maj7)",
-    "sus2", "sus4", "6", "m6", "dim", "aug",
+    "Major",
+    "Minor",
+    "7th",
+    "maj7",
+    "m7",
+    "m7(b5)",
+    "dim7",
+    "m(maj7)",
+    "sus2",
+    "sus4",
+    "6",
+    "m6",
+    "dim",
+    "aug",
   ] as ChordType[],
   scaleType: "major" as ScaleType,
   onKindChange: jest.fn(),
@@ -453,9 +458,7 @@ describe("QuizPanel", () => {
     });
     const correctText = getByText("quiz.correct");
     expect(correctText).toBeTruthy();
-    expect(correctText.props.style).toEqual(
-      expect.objectContaining({ color: "#16a34a" })
-    );
+    expect(correctText.props.style).toEqual(expect.objectContaining({ color: "#16a34a" }));
   });
 
   it("displays incorrect text when answer is wrong", () => {
@@ -464,9 +467,7 @@ describe("QuizPanel", () => {
     });
     const incorrectText = getByText("quiz.incorrectOnly");
     expect(incorrectText).toBeTruthy();
-    expect(incorrectText.props.style).toEqual(
-      expect.objectContaining({ color: "#ef4444" })
-    );
+    expect(incorrectText.props.style).toEqual(expect.objectContaining({ color: "#ef4444" }));
   });
 
   it("displays answer label when incorrect", () => {
@@ -616,9 +617,7 @@ describe("QuizPanel", () => {
         ...baseQuestion,
         promptDiatonicKeyType: "major",
         promptDiatonicChordSize: "triad",
-        diatonicAnswers: [
-          { degree: "I", root: "C", chordType: "Major", label: "C" },
-        ],
+        diatonicAnswers: [{ degree: "I", root: "C", chordType: "Major", label: "C" }],
         diatonicChordTypeOptions: ["Major", "Minor"] as ChordType[],
       },
       diatonicEditingDegree: "I",
@@ -636,9 +635,7 @@ describe("QuizPanel", () => {
         ...baseQuestion,
         promptDiatonicKeyType: "major",
         promptDiatonicChordSize: "triad",
-        diatonicAnswers: [
-          { degree: "I", root: "C", chordType: "Major", label: "C" },
-        ],
+        diatonicAnswers: [{ degree: "I", root: "C", chordType: "Major", label: "C" }],
         diatonicChordTypeOptions: ["Major", "Minor"] as ChordType[],
       },
       diatonicEditingDegree: "I",
@@ -656,9 +653,7 @@ describe("QuizPanel", () => {
         ...baseQuestion,
         promptDiatonicKeyType: "major",
         promptDiatonicChordSize: "triad",
-        diatonicAnswers: [
-          { degree: "I", root: "C", chordType: "Major", label: "C" },
-        ],
+        diatonicAnswers: [{ degree: "I", root: "C", chordType: "Major", label: "C" }],
         diatonicChordTypeOptions: ["Major", "Minor"] as ChordType[],
       },
       diatonicEditingDegree: "I",
@@ -677,9 +672,7 @@ describe("QuizPanel", () => {
         ...baseQuestion,
         promptDiatonicKeyType: "major",
         promptDiatonicChordSize: "triad",
-        diatonicAnswers: [
-          { degree: "I", root: "C", chordType: "Major", label: "C" },
-        ],
+        diatonicAnswers: [{ degree: "I", root: "C", chordType: "Major", label: "C" }],
         diatonicChordTypeOptions: ["Major", "Minor"] as ChordType[],
       },
       diatonicEditingDegree: "I",
@@ -719,9 +712,7 @@ describe("QuizPanel", () => {
         ...baseQuestion,
         promptDiatonicKeyType: "major",
         promptDiatonicChordSize: "triad",
-        diatonicAnswers: [
-          { degree: "I", root: "C", chordType: "Major", label: "C" },
-        ],
+        diatonicAnswers: [{ degree: "I", root: "C", chordType: "Major", label: "C" }],
         diatonicChordTypeOptions: ["Major", "Minor"] as ChordType[],
       },
       diatonicEditingDegree: "I",
@@ -742,9 +733,7 @@ describe("QuizPanel", () => {
         ...baseQuestion,
         promptDiatonicKeyType: "major",
         promptDiatonicChordSize: "triad",
-        diatonicAnswers: [
-          { degree: "I", root: "C", chordType: "Major", label: "C" },
-        ],
+        diatonicAnswers: [{ degree: "I", root: "C", chordType: "Major", label: "C" }],
         diatonicChordTypeOptions: ["Major", "Minor"] as ChordType[],
       },
       diatonicEditingDegree: "I",
@@ -768,9 +757,7 @@ describe("QuizPanel", () => {
         correct: "answered",
         promptDiatonicKeyType: "major",
         promptDiatonicChordSize: "triad",
-        diatonicAnswers: [
-          { degree: "I", root: "C", chordType: "Major", label: "C" },
-        ],
+        diatonicAnswers: [{ degree: "I", root: "C", chordType: "Major", label: "C" }],
         diatonicChordTypeOptions: ["Major", "Minor"] as ChordType[],
       },
       diatonicAllAnswers: {
@@ -790,9 +777,7 @@ describe("QuizPanel", () => {
         ...baseQuestion,
         promptDiatonicKeyType: "major",
         promptDiatonicChordSize: "triad",
-        diatonicAnswers: [
-          { degree: "I", root: "C", chordType: "Major", label: "C" },
-        ],
+        diatonicAnswers: [{ degree: "I", root: "C", chordType: "Major", label: "C" }],
         diatonicChordTypeOptions: ["Major", "Minor"] as ChordType[],
       },
       diatonicAllAnswers: {
@@ -813,9 +798,7 @@ describe("QuizPanel", () => {
         ...baseQuestion,
         promptDiatonicKeyType: "major",
         promptDiatonicChordSize: "triad",
-        diatonicAnswers: [
-          { degree: "I", root: "C", chordType: "Major", label: "C" },
-        ],
+        diatonicAnswers: [{ degree: "I", root: "C", chordType: "Major", label: "C" }],
         diatonicChordTypeOptions: ["Major", "Minor"] as ChordType[],
       },
       diatonicAllAnswers: {},
@@ -838,9 +821,7 @@ describe("QuizPanel", () => {
         ...baseQuestion,
         promptDiatonicKeyType: "major",
         promptDiatonicChordSize: "triad",
-        diatonicAnswers: [
-          { degree: "I", root: "C", chordType: "Major", label: "C" },
-        ],
+        diatonicAnswers: [{ degree: "I", root: "C", chordType: "Major", label: "C" }],
         diatonicChordTypeOptions: ["Major", "Minor"] as ChordType[],
       },
     });
@@ -887,9 +868,7 @@ describe("QuizPanel", () => {
         ...baseQuestion,
         promptDiatonicKeyType: "major",
         promptDiatonicChordSize: "triad",
-        diatonicAnswers: [
-          { degree: "ii", root: "D", chordType: "Minor", label: "Dm" },
-        ],
+        diatonicAnswers: [{ degree: "ii", root: "D", chordType: "Minor", label: "Dm" }],
         diatonicChordTypeOptions: ["Major", "Minor"] as ChordType[],
       },
       diatonicAllAnswers: {

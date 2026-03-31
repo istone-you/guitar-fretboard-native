@@ -35,17 +35,13 @@ beforeEach(() => {
 describe("FretboardFooter", () => {
   describe("quiz mode", () => {
     it("renders empty spacer when showQuiz is true", () => {
-      const { queryByText } = render(
-        <FretboardFooter {...defaultProps} showQuiz={true} />
-      );
+      const { queryByText } = render(<FretboardFooter {...defaultProps} showQuiz={true} />);
       expect(queryByText("noteFilter.title")).toBeNull();
       expect(queryByText("degreeFilter.title")).toBeNull();
     });
 
     it("does not render any chips in quiz mode", () => {
-      const { queryByText } = render(
-        <FretboardFooter {...defaultProps} showQuiz={true} />
-      );
+      const { queryByText } = render(<FretboardFooter {...defaultProps} showQuiz={true} />);
       ALL_NOTES.forEach((note) => {
         expect(queryByText(note)).toBeNull();
       });
@@ -54,16 +50,12 @@ describe("FretboardFooter", () => {
 
   describe("note mode", () => {
     it("renders note filter title", () => {
-      const { getByText } = render(
-        <FretboardFooter {...defaultProps} baseLabelMode="note" />
-      );
+      const { getByText } = render(<FretboardFooter {...defaultProps} baseLabelMode="note" />);
       expect(getByText("noteFilter.title")).toBeTruthy();
     });
 
     it("renders all note chips", () => {
-      const { getByText } = render(
-        <FretboardFooter {...defaultProps} baseLabelMode="note" />
-      );
+      const { getByText } = render(<FretboardFooter {...defaultProps} baseLabelMode="note" />);
       ALL_NOTES.forEach((note) => {
         expect(getByText(note)).toBeTruthy();
       });
@@ -76,7 +68,7 @@ describe("FretboardFooter", () => {
           {...defaultProps}
           baseLabelMode="note"
           onToggleOverlayNoteHighlight={onToggleOverlayNoteHighlight}
-        />
+        />,
       );
       fireEvent.press(getByText("C"));
       expect(onToggleOverlayNoteHighlight).toHaveBeenCalledWith("C");
@@ -88,7 +80,7 @@ describe("FretboardFooter", () => {
           {...defaultProps}
           baseLabelMode="note"
           highlightedOverlayNotes={new Set(["C", "E"])}
-        />
+        />,
       );
       const chipC = getByText("C");
       // Active chip should have white text color
@@ -106,7 +98,7 @@ describe("FretboardFooter", () => {
           baseLabelMode="note"
           overlayNotes={["C", "E", "G"]}
           onSetOverlayNoteHighlights={onSetOverlayNoteHighlights}
-        />
+        />,
       );
       fireEvent.press(getByText("noteFilter.filter"));
       expect(onSetOverlayNoteHighlights).toHaveBeenCalledWith(["C", "E", "G"]);
@@ -118,7 +110,7 @@ describe("FretboardFooter", () => {
           {...defaultProps}
           baseLabelMode="note"
           highlightedOverlayNotes={new Set()}
-        />
+        />,
       );
       expect(getByText("noteFilter.highlightAll")).toBeTruthy();
     });
@@ -129,7 +121,7 @@ describe("FretboardFooter", () => {
           {...defaultProps}
           baseLabelMode="note"
           highlightedOverlayNotes={new Set(["C"])}
-        />
+        />,
       );
       expect(getByText("noteFilter.reset")).toBeTruthy();
     });
@@ -142,7 +134,7 @@ describe("FretboardFooter", () => {
           baseLabelMode="note"
           highlightedOverlayNotes={new Set()}
           onSetOverlayNoteHighlights={onSetOverlayNoteHighlights}
-        />
+        />,
       );
       fireEvent.press(getByText("noteFilter.highlightAll"));
       expect(onSetOverlayNoteHighlights).toHaveBeenCalledWith(ALL_NOTES);
@@ -158,7 +150,7 @@ describe("FretboardFooter", () => {
           highlightedOverlayNotes={new Set(["C"])}
           onSetOverlayNoteHighlights={onSetOverlayNoteHighlights}
           onAutoFilterChange={onAutoFilterChange}
-        />
+        />,
       );
       fireEvent.press(getByText("noteFilter.reset"));
       expect(onAutoFilterChange).toHaveBeenCalledWith(false);
@@ -173,7 +165,7 @@ describe("FretboardFooter", () => {
           baseLabelMode="note"
           autoFilter={false}
           onAutoFilterChange={onAutoFilterChange}
-        />
+        />,
       );
       fireEvent.press(getByText("noteFilter.autoFilter"));
       expect(onAutoFilterChange).toHaveBeenCalledWith(true);
@@ -187,7 +179,7 @@ describe("FretboardFooter", () => {
           baseLabelMode="note"
           autoFilter={true}
           onAutoFilter={onAutoFilter}
-        />
+        />,
       );
       // Filter button should have reduced opacity when autoFilter is on
       const filterBtn = getByText("noteFilter.filter");
@@ -196,25 +188,19 @@ describe("FretboardFooter", () => {
     });
 
     it("does not render degree chips in note mode", () => {
-      const { queryByText } = render(
-        <FretboardFooter {...defaultProps} baseLabelMode="note" />
-      );
+      const { queryByText } = render(<FretboardFooter {...defaultProps} baseLabelMode="note" />);
       expect(queryByText("degreeFilter.title")).toBeNull();
     });
   });
 
   describe("degree mode", () => {
     it("renders degree filter title", () => {
-      const { getByText } = render(
-        <FretboardFooter {...defaultProps} baseLabelMode="degree" />
-      );
+      const { getByText } = render(<FretboardFooter {...defaultProps} baseLabelMode="degree" />);
       expect(getByText("degreeFilter.title")).toBeTruthy();
     });
 
     it("renders all degree chips", () => {
-      const { getByText } = render(
-        <FretboardFooter {...defaultProps} baseLabelMode="degree" />
-      );
+      const { getByText } = render(<FretboardFooter {...defaultProps} baseLabelMode="degree" />);
       DEGREE_CHIPS.forEach((deg) => {
         expect(getByText(deg)).toBeTruthy();
       });
@@ -227,7 +213,7 @@ describe("FretboardFooter", () => {
           {...defaultProps}
           baseLabelMode="degree"
           onToggleDegree={onToggleDegree}
-        />
+        />,
       );
       fireEvent.press(getByText("P1"));
       expect(onToggleDegree).toHaveBeenCalledWith("P1");
@@ -239,7 +225,7 @@ describe("FretboardFooter", () => {
           {...defaultProps}
           baseLabelMode="degree"
           highlightedDegrees={new Set(["P1", "P5"])}
-        />
+        />,
       );
       expect(getByText("P1").props.style.color).toBe("#fff");
       expect(getByText("M2").props.style.color).not.toBe("#fff");
@@ -248,11 +234,7 @@ describe("FretboardFooter", () => {
     it("calls onAutoFilter when filter button pressed in degree mode", () => {
       const onAutoFilter = jest.fn();
       const { getByText } = render(
-        <FretboardFooter
-          {...defaultProps}
-          baseLabelMode="degree"
-          onAutoFilter={onAutoFilter}
-        />
+        <FretboardFooter {...defaultProps} baseLabelMode="degree" onAutoFilter={onAutoFilter} />,
       );
       fireEvent.press(getByText("degreeFilter.filter"));
       expect(onAutoFilter).toHaveBeenCalled();
@@ -266,7 +248,7 @@ describe("FretboardFooter", () => {
           baseLabelMode="degree"
           highlightedDegrees={new Set(["P1"])}
           onResetOrHighlightAll={onResetOrHighlightAll}
-        />
+        />,
       );
       fireEvent.press(getByText("degreeFilter.reset"));
       expect(onResetOrHighlightAll).toHaveBeenCalled();
@@ -274,19 +256,13 @@ describe("FretboardFooter", () => {
 
     it("shows highlightAll when no degrees highlighted", () => {
       const { getByText } = render(
-        <FretboardFooter
-          {...defaultProps}
-          baseLabelMode="degree"
-          highlightedDegrees={new Set()}
-        />
+        <FretboardFooter {...defaultProps} baseLabelMode="degree" highlightedDegrees={new Set()} />,
       );
       expect(getByText("degreeFilter.highlightAll")).toBeTruthy();
     });
 
     it("does not render note chips in degree mode", () => {
-      const { queryByText } = render(
-        <FretboardFooter {...defaultProps} baseLabelMode="degree" />
-      );
+      const { queryByText } = render(<FretboardFooter {...defaultProps} baseLabelMode="degree" />);
       expect(queryByText("noteFilter.title")).toBeNull();
     });
 
@@ -298,7 +274,7 @@ describe("FretboardFooter", () => {
           baseLabelMode="degree"
           autoFilter={true}
           onAutoFilterChange={onAutoFilterChange}
-        />
+        />,
       );
       fireEvent.press(getByText("degreeFilter.autoFilter"));
       expect(onAutoFilterChange).toHaveBeenCalledWith(false);
@@ -308,21 +284,21 @@ describe("FretboardFooter", () => {
   describe("theme", () => {
     it("applies light theme colors to title", () => {
       const { getByText } = render(
-        <FretboardFooter {...defaultProps} theme="light" baseLabelMode="note" />
+        <FretboardFooter {...defaultProps} theme="light" baseLabelMode="note" />,
       );
       const title = getByText("noteFilter.title");
       expect(title.props.style).toEqual(
-        expect.arrayContaining([expect.objectContaining({ color: "#78716c" })])
+        expect.arrayContaining([expect.objectContaining({ color: "#78716c" })]),
       );
     });
 
     it("applies dark theme colors to title", () => {
       const { getByText } = render(
-        <FretboardFooter {...defaultProps} theme="dark" baseLabelMode="note" />
+        <FretboardFooter {...defaultProps} theme="dark" baseLabelMode="note" />,
       );
       const title = getByText("noteFilter.title");
       expect(title.props.style).toEqual(
-        expect.arrayContaining([expect.objectContaining({ color: "#9ca3af" })])
+        expect.arrayContaining([expect.objectContaining({ color: "#9ca3af" })]),
       );
     });
   });

@@ -39,17 +39,9 @@ describe("SegmentedToggle", () => {
   });
 
   it("uses String(value) as label when label prop is omitted", () => {
-    const optionsNoLabel = [
-      { value: "alpha" },
-      { value: "beta" },
-    ];
+    const optionsNoLabel = [{ value: "alpha" }, { value: "beta" }];
     render(
-      <SegmentedToggle
-        theme="dark"
-        value="alpha"
-        onChange={jest.fn()}
-        options={optionsNoLabel}
-      />,
+      <SegmentedToggle theme="dark" value="alpha" onChange={jest.fn()} options={optionsNoLabel} />,
     );
     expect(screen.getByText("alpha")).toBeTruthy();
     expect(screen.getByText("beta")).toBeTruthy();
@@ -57,12 +49,7 @@ describe("SegmentedToggle", () => {
 
   it("renders boolean options with labels", () => {
     render(
-      <SegmentedToggle
-        theme="dark"
-        value={true}
-        onChange={jest.fn()}
-        options={booleanOptions}
-      />,
+      <SegmentedToggle theme="dark" value={true} onChange={jest.fn()} options={booleanOptions} />,
     );
     expect(screen.getByText("On")).toBeTruthy();
     expect(screen.getByText("Off")).toBeTruthy();
@@ -71,12 +58,7 @@ describe("SegmentedToggle", () => {
   it("uses String(boolean) as fallback label", () => {
     const boolNoLabel: { value: boolean }[] = [{ value: true }, { value: false }];
     render(
-      <SegmentedToggle
-        theme="dark"
-        value={true}
-        onChange={jest.fn()}
-        options={boolNoLabel}
-      />,
+      <SegmentedToggle theme="dark" value={true} onChange={jest.fn()} options={boolNoLabel} />,
     );
     expect(screen.getByText("true")).toBeTruthy();
     expect(screen.getByText("false")).toBeTruthy();
@@ -102,12 +84,7 @@ describe("SegmentedToggle", () => {
   it("calls onChange with boolean values", () => {
     const onChange = jest.fn();
     render(
-      <SegmentedToggle
-        theme="dark"
-        value={true}
-        onChange={onChange}
-        options={booleanOptions}
-      />,
+      <SegmentedToggle theme="dark" value={true} onChange={onChange} options={booleanOptions} />,
     );
     fireEvent.press(screen.getByText("Off"));
     expect(onChange).toHaveBeenCalledWith(false);
@@ -122,7 +99,9 @@ describe("SegmentedToggle", () => {
     const selectedButton = tree.children[0];
     const flatStyle = Object.assign(
       {},
-      ...(Array.isArray(selectedButton?.props?.style) ? selectedButton.props.style : [selectedButton?.props?.style]),
+      ...(Array.isArray(selectedButton?.props?.style)
+        ? selectedButton.props.style
+        : [selectedButton?.props?.style]),
     );
     expect(flatStyle.backgroundColor).toBe("#0284c7");
   });
@@ -133,7 +112,9 @@ describe("SegmentedToggle", () => {
     const selectedButton = tree.children[0];
     const flatStyle = Object.assign(
       {},
-      ...(Array.isArray(selectedButton?.props?.style) ? selectedButton.props.style : [selectedButton?.props?.style]),
+      ...(Array.isArray(selectedButton?.props?.style)
+        ? selectedButton.props.style
+        : [selectedButton?.props?.style]),
     );
     expect(flatStyle.backgroundColor).toBe("#0ea5e9");
   });
@@ -145,7 +126,9 @@ describe("SegmentedToggle", () => {
     const unselectedButton = tree.children[1];
     const flatStyle = Object.assign(
       {},
-      ...(Array.isArray(unselectedButton?.props?.style) ? unselectedButton.props.style : [unselectedButton?.props?.style]),
+      ...(Array.isArray(unselectedButton?.props?.style)
+        ? unselectedButton.props.style
+        : [unselectedButton?.props?.style]),
     );
     expect(flatStyle.backgroundColor).toBe("transparent");
   });
@@ -263,14 +246,7 @@ describe("SegmentedToggle", () => {
       value: `v${i}`,
       label: `Label ${i}`,
     }));
-    render(
-      <SegmentedToggle
-        theme="dark"
-        value="v0"
-        onChange={jest.fn()}
-        options={manyOptions}
-      />,
-    );
+    render(<SegmentedToggle theme="dark" value="v0" onChange={jest.fn()} options={manyOptions} />);
     expect(screen.getByText("Label 0")).toBeTruthy();
     expect(screen.getByText("Label 9")).toBeTruthy();
   });

@@ -30,9 +30,7 @@ describe("FretboardHeader", () => {
   });
 
   it("renders different root notes", () => {
-    const { getByText } = render(
-      <FretboardHeader {...defaultProps} rootNote="G" />
-    );
+    const { getByText } = render(<FretboardHeader {...defaultProps} rootNote="G" />);
     expect(getByText("G")).toBeTruthy();
   });
 
@@ -44,7 +42,7 @@ describe("FretboardHeader", () => {
         rootNote="C"
         accidental="sharp"
         onRootNoteChange={onRootNoteChange}
-      />
+      />,
     );
     fireEvent.press(getByText("\u203A")); // right arrow
     expect(onRootNoteChange).toHaveBeenCalledWith("C\u266F");
@@ -58,7 +56,7 @@ describe("FretboardHeader", () => {
         rootNote="C"
         accidental="sharp"
         onRootNoteChange={onRootNoteChange}
-      />
+      />,
     );
     fireEvent.press(getByText("\u2039")); // left arrow
     expect(onRootNoteChange).toHaveBeenCalledWith("B");
@@ -72,7 +70,7 @@ describe("FretboardHeader", () => {
         rootNote="B"
         accidental="sharp"
         onRootNoteChange={onRootNoteChange}
-      />
+      />,
     );
     fireEvent.press(getByText("\u203A"));
     expect(onRootNoteChange).toHaveBeenCalledWith("C");
@@ -86,7 +84,7 @@ describe("FretboardHeader", () => {
         rootNote="C"
         accidental="flat"
         onRootNoteChange={onRootNoteChange}
-      />
+      />,
     );
     fireEvent.press(getByText("\u203A"));
     expect(onRootNoteChange).toHaveBeenCalledWith("D\u266D");
@@ -99,7 +97,7 @@ describe("FretboardHeader", () => {
         {...defaultProps}
         rootChangeDisabled={true}
         onRootNoteChange={onRootNoteChange}
-      />
+      />,
     );
     fireEvent.press(getByText("\u203A"));
     fireEvent.press(getByText("\u2039"));
@@ -109,7 +107,11 @@ describe("FretboardHeader", () => {
   it("renders step buttons as non-functional when rootChangeDisabled", () => {
     const onRootNoteChange = jest.fn();
     const { getByText } = render(
-      <FretboardHeader {...defaultProps} rootChangeDisabled={true} onRootNoteChange={onRootNoteChange} />
+      <FretboardHeader
+        {...defaultProps}
+        rootChangeDisabled={true}
+        onRootNoteChange={onRootNoteChange}
+      />,
     );
     fireEvent.press(getByText("\u2039"));
     fireEvent.press(getByText("\u203A"));
@@ -117,17 +119,13 @@ describe("FretboardHeader", () => {
   });
 
   it("shows label mode toggle when not in quiz mode", () => {
-    const { getByText } = render(
-      <FretboardHeader {...defaultProps} showQuiz={false} />
-    );
+    const { getByText } = render(<FretboardHeader {...defaultProps} showQuiz={false} />);
     expect(getByText("header.note")).toBeTruthy();
     expect(getByText("header.degree")).toBeTruthy();
   });
 
   it("hides label mode toggle when in quiz mode", () => {
-    const { queryByText } = render(
-      <FretboardHeader {...defaultProps} showQuiz={true} />
-    );
+    const { queryByText } = render(<FretboardHeader {...defaultProps} showQuiz={true} />);
     expect(queryByText("header.note")).toBeNull();
     expect(queryByText("header.degree")).toBeNull();
   });
@@ -139,43 +137,36 @@ describe("FretboardHeader", () => {
         {...defaultProps}
         baseLabelMode="note"
         onBaseLabelModeChange={onBaseLabelModeChange}
-      />
+      />,
     );
     fireEvent.press(getByText("header.degree"));
     expect(onBaseLabelModeChange).toHaveBeenCalledWith("degree");
   });
 
   it("applies light theme colors", () => {
-    const { getByText } = render(
-      <FretboardHeader {...defaultProps} theme="light" />
-    );
+    const { getByText } = render(<FretboardHeader {...defaultProps} theme="light" />);
     const rootLabel = getByText("header.root:");
     expect(rootLabel.props.style).toEqual(
-      expect.arrayContaining([expect.objectContaining({ color: "#78716c" })])
+      expect.arrayContaining([expect.objectContaining({ color: "#78716c" })]),
     );
   });
 
   it("applies dark theme colors", () => {
-    const { getByText } = render(
-      <FretboardHeader {...defaultProps} theme="dark" />
-    );
+    const { getByText } = render(<FretboardHeader {...defaultProps} theme="dark" />);
     const rootLabel = getByText("header.root:");
     expect(rootLabel.props.style).toEqual(
-      expect.arrayContaining([expect.objectContaining({ color: "#9ca3af" })])
+      expect.arrayContaining([expect.objectContaining({ color: "#9ca3af" })]),
     );
     const rootNote = getByText("C");
     expect(rootNote.props.style).toEqual(
-      expect.arrayContaining([expect.objectContaining({ color: "#fff" })])
+      expect.arrayContaining([expect.objectContaining({ color: "#fff" })]),
     );
   });
 
   it("defaults rootChangeDisabled to false", () => {
     const onRootNoteChange = jest.fn();
     const { getByText } = render(
-      <FretboardHeader
-        {...defaultProps}
-        onRootNoteChange={onRootNoteChange}
-      />
+      <FretboardHeader {...defaultProps} onRootNoteChange={onRootNoteChange} />,
     );
     fireEvent.press(getByText("\u203A"));
     expect(onRootNoteChange).toHaveBeenCalled();
