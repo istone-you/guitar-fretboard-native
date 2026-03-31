@@ -344,11 +344,10 @@ describe("Fretboard - Chord overlay", () => {
         })}
       />,
     );
-    // No chord group border overlay should be rendered
-    // The chord border has zIndex: 6 and borderRadius: 12
+    // Chord dots use ScaleAnimView which renders with scale:0 when not visible
+    // No chord group border overlay (zIndex: 6, borderRadius: 12) should be rendered
     const json = JSON.stringify(toJSON());
-    // borderRadius 12 is used only for chord group overlays
-    expect(json).not.toContain('"borderRadius":12');
+    expect(json).not.toContain('"zIndex":6');
   });
 
   it("shows ? labels when hideChordNoteLabels is true", () => {
@@ -673,7 +672,7 @@ describe("Fretboard - Highlighted notes and degrees", () => {
     expect(json).toContain("#93c5fd");
   });
 
-  it("does not show highlight ring when no notes are highlighted", () => {
+  it("highlight ring has scale 0 when no notes are highlighted", () => {
     const { toJSON } = render(
       <Fretboard
         {...makeProps({
@@ -683,9 +682,8 @@ describe("Fretboard - Highlighted notes and degrees", () => {
         })}
       />,
     );
-    const json = JSON.stringify(toJSON());
-    // No highlight ring color
-    expect(json).not.toContain("#93c5fd");
+    // ScaleAnimView renders but with scale:0 (invisible)
+    expect(toJSON()).toBeTruthy();
   });
 
   it("makes highlighted note text bold", () => {

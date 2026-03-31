@@ -186,13 +186,8 @@ function AppContent() {
     setHighlightedOverlayNotes(new Set(notes));
   };
 
-  const {
-    highlightedDegrees,
-    handleAutoFilter,
-    toggleDegree,
-    resetHighlightedDegrees,
-    highlightAllDegrees,
-  } = useDegreeFilter();
+  const { highlightedDegrees, handleAutoFilter, toggleDegree, resetHighlightedDegrees } =
+    useDegreeFilter();
 
   const {
     quizMode,
@@ -514,13 +509,9 @@ function AppContent() {
           chordType,
         })
       }
-      onResetOrHighlightAll={() => {
-        if (effectiveHighlightedDegrees.size > 0) {
-          setAutoFilter(false);
-          resetHighlightedDegrees();
-        } else {
-          highlightAllDegrees();
-        }
+      onReset={() => {
+        setAutoFilter(false);
+        resetHighlightedDegrees();
       }}
       autoFilter={autoFilter}
       onAutoFilterChange={setAutoFilter}

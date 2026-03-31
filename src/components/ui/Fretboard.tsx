@@ -32,23 +32,23 @@ import type {
 
 const STRING_COUNT = 6;
 
-// Overlay dot with scale-in/out animation
-function OverlayDot({
+// Animated scale-in/out wrapper
+function ScaleAnimView({
   children,
   style,
   visible,
   color,
 }: {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   style: any;
   visible: boolean;
-  color: string;
+  color?: string;
 }) {
   const scale = useRef(new Animated.Value(0)).current;
   const prevVisible = useRef(false);
   const lastColor = useRef(color);
 
-  if (visible) lastColor.current = color;
+  if (visible && color) lastColor.current = color;
 
   if (visible && !prevVisible.current) {
     prevVisible.current = true;
@@ -70,13 +70,14 @@ function OverlayDot({
     }).start();
   }
 
+  const bgStyle = lastColor.current ? { backgroundColor: lastColor.current } : {};
+
   return (
-    <Animated.View style={[style, { backgroundColor: lastColor.current, transform: [{ scale }] }]}>
-      {children}
-    </Animated.View>
+    <Animated.View style={[style, bgStyle, { transform: [{ scale }] }]}>{children}</Animated.View>
   );
 }
 
+// Fade transition when text changes
 function PulseView({ children, style }: { children: React.ReactNode; style: any }) {
   const opacity = useRef(
     (() => {
@@ -672,21 +673,20 @@ function StringRow({
             )}
 
             {/* Highlight ring */}
-            {isHighlighted && (
-              <View
-                style={{
-                  position: "absolute",
-                  top: Math.max(0, overlayInset - 1),
-                  left: Math.max(0, overlayInset - 1),
-                  right: Math.max(0, overlayInset - 1),
-                  bottom: Math.max(0, overlayInset - 1),
-                  borderRadius: (overlaySize + 2) / 2,
-                  borderWidth: 2,
-                  borderColor: isDark ? "#93c5fd" : "#3b82f6",
-                  zIndex: 25,
-                }}
-              />
-            )}
+            <ScaleAnimView
+              visible={isHighlighted}
+              style={{
+                position: "absolute",
+                top: Math.max(0, overlayInset - 1),
+                left: Math.max(0, overlayInset - 1),
+                right: Math.max(0, overlayInset - 1),
+                bottom: Math.max(0, overlayInset - 1),
+                borderRadius: (overlaySize + 2) / 2,
+                borderWidth: 2,
+                borderColor: isDark ? "#93c5fd" : "#3b82f6",
+                zIndex: 25,
+              }}
+            />
 
             {/* Base label */}
             {!overlayColor && !inChord && !shouldSuppressRegularDisplay && (
@@ -705,7 +705,7 @@ function StringRow({
 
             {/* Scale overlay (behind CAGED) */}
             {!quizAnswerOverlay && !shouldRevealChoiceAnswer && !isSelectedCell && (
-              <OverlayDot
+              <ScaleAnimView
                 visible={inScale}
                 color={scaleColor}
                 style={{
@@ -730,11 +730,11 @@ function StringRow({
                 >
                   {labelText}
                 </Text>
-              </OverlayDot>
+              </ScaleAnimView>
             )}
             {/* CAGED overlay (in front of scale) */}
             {!quizAnswerOverlay && !shouldRevealChoiceAnswer && !isSelectedCell && (
-              <OverlayDot
+              <ScaleAnimView
                 visible={inCaged}
                 color={cagedColor}
                 style={{
@@ -759,12 +759,12 @@ function StringRow({
                 >
                   {labelText}
                 </Text>
-              </OverlayDot>
+              </ScaleAnimView>
             )}
 
             {/* Chord dot */}
             {!quizAnswerOverlay && (
-              <OverlayDot
+              <ScaleAnimView
                 visible={inChord}
                 color={chordColor}
                 style={{
@@ -789,7 +789,7 @@ function StringRow({
                 >
                   {hideChordNoteLabels ? "?" : labelText}
                 </Text>
-              </OverlayDot>
+              </ScaleAnimView>
             )}
 
             {/* Quiz target (pulsing) */}

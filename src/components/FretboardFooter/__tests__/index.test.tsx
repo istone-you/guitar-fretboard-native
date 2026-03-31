@@ -22,7 +22,7 @@ const defaultProps = {
   autoFilter: false,
   onAutoFilterChange: jest.fn(),
   onAutoFilter: jest.fn(),
-  onResetOrHighlightAll: jest.fn(),
+  onReset: jest.fn(),
   onSetOverlayNoteHighlights: jest.fn(),
   onToggleOverlayNoteHighlight: jest.fn(),
   onToggleDegree: jest.fn(),
@@ -100,50 +100,36 @@ describe("FretboardFooter", () => {
           onSetOverlayNoteHighlights={onSetOverlayNoteHighlights}
         />,
       );
-      fireEvent.press(getByText("noteFilter.filter"));
+      fireEvent.press(getByText(/noteFilter\.filter/));
       expect(onSetOverlayNoteHighlights).toHaveBeenCalledWith(["C", "E", "G"]);
     });
 
-    it("shows highlightAll text when no highlights are active", () => {
-      const { getByText } = render(
-        <FretboardFooter
-          {...defaultProps}
-          baseLabelMode="note"
-          highlightedOverlayNotes={new Set()}
-        />,
-      );
-      expect(getByText("noteFilter.highlightAll")).toBeTruthy();
-    });
-
-    it("shows reset text when highlights are active", () => {
-      const { getByText } = render(
+    it("shows reset button when notes are highlighted", () => {
+      const { getByTestId } = render(
         <FretboardFooter
           {...defaultProps}
           baseLabelMode="note"
           highlightedOverlayNotes={new Set(["C"])}
         />,
       );
-      expect(getByText("noteFilter.reset")).toBeTruthy();
+      expect(getByTestId("reset-btn")).toBeTruthy();
     });
 
-    it("calls onSetOverlayNoteHighlights with allNotes when highlight all is pressed", () => {
-      const onSetOverlayNoteHighlights = jest.fn();
-      const { getByText } = render(
+    it("hides reset button when no notes are highlighted", () => {
+      const { queryByTestId } = render(
         <FretboardFooter
           {...defaultProps}
           baseLabelMode="note"
           highlightedOverlayNotes={new Set()}
-          onSetOverlayNoteHighlights={onSetOverlayNoteHighlights}
         />,
       );
-      fireEvent.press(getByText("noteFilter.highlightAll"));
-      expect(onSetOverlayNoteHighlights).toHaveBeenCalledWith(ALL_NOTES);
+      expect(queryByTestId("reset-btn")).toBeNull();
     });
 
     it("calls onSetOverlayNoteHighlights with [] and disables autoFilter when reset is pressed", () => {
       const onSetOverlayNoteHighlights = jest.fn();
       const onAutoFilterChange = jest.fn();
-      const { getByText } = render(
+      const { getByTestId } = render(
         <FretboardFooter
           {...defaultProps}
           baseLabelMode="note"
@@ -152,12 +138,12 @@ describe("FretboardFooter", () => {
           onAutoFilterChange={onAutoFilterChange}
         />,
       );
-      fireEvent.press(getByText("noteFilter.reset"));
+      fireEvent.press(getByTestId("reset-btn"));
       expect(onAutoFilterChange).toHaveBeenCalledWith(false);
       expect(onSetOverlayNoteHighlights).toHaveBeenCalledWith([]);
     });
 
-    it("renders auto filter button and toggles autoFilter on press", () => {
+    it("long press on filter button enables auto filter", () => {
       const onAutoFilterChange = jest.fn();
       const { getByText } = render(
         <FretboardFooter
@@ -167,24 +153,22 @@ describe("FretboardFooter", () => {
           onAutoFilterChange={onAutoFilterChange}
         />,
       );
-      fireEvent.press(getByText("noteFilter.autoFilter"));
+      fireEvent(getByText(/noteFilter\.filter/), "longPress");
       expect(onAutoFilterChange).toHaveBeenCalledWith(true);
     });
 
-    it("disables filter button when autoFilter is true", () => {
-      const onAutoFilter = jest.fn();
+    it("tap on filter button disables auto filter when active", () => {
+      const onAutoFilterChange = jest.fn();
       const { getByText } = render(
         <FretboardFooter
           {...defaultProps}
           baseLabelMode="note"
           autoFilter={true}
-          onAutoFilter={onAutoFilter}
+          onAutoFilterChange={onAutoFilterChange}
         />,
       );
-      // Filter button should have reduced opacity when autoFilter is on
-      const filterBtn = getByText("noteFilter.filter");
-      fireEvent.press(filterBtn);
-      expect(onAutoFilter).not.toHaveBeenCalled();
+      fireEvent.press(getByText(/noteFilter\.filter/));
+      expect(onAutoFilterChange).toHaveBeenCalledWith(false);
     });
 
     it("does not render degree chips in note mode", () => {
@@ -236,29 +220,22 @@ describe("FretboardFooter", () => {
       const { getByText } = render(
         <FretboardFooter {...defaultProps} baseLabelMode="degree" onAutoFilter={onAutoFilter} />,
       );
-      fireEvent.press(getByText("degreeFilter.filter"));
+      fireEvent.press(getByText(/degreeFilter\.filter/));
       expect(onAutoFilter).toHaveBeenCalled();
     });
 
-    it("calls onResetOrHighlightAll when toggle all pressed in degree mode", () => {
-      const onResetOrHighlightAll = jest.fn();
-      const { getByText } = render(
+    it("calls onReset when reset pressed in degree mode", () => {
+      const onReset = jest.fn();
+      const { getByTestId } = render(
         <FretboardFooter
           {...defaultProps}
           baseLabelMode="degree"
           highlightedDegrees={new Set(["P1"])}
-          onResetOrHighlightAll={onResetOrHighlightAll}
+          onReset={onReset}
         />,
       );
-      fireEvent.press(getByText("degreeFilter.reset"));
-      expect(onResetOrHighlightAll).toHaveBeenCalled();
-    });
-
-    it("shows highlightAll when no degrees highlighted", () => {
-      const { getByText } = render(
-        <FretboardFooter {...defaultProps} baseLabelMode="degree" highlightedDegrees={new Set()} />,
-      );
-      expect(getByText("degreeFilter.highlightAll")).toBeTruthy();
+      fireEvent.press(getByTestId("reset-btn"));
+      expect(onReset).toHaveBeenCalled();
     });
 
     it("does not render note chips in degree mode", () => {
@@ -276,7 +253,7 @@ describe("FretboardFooter", () => {
           onAutoFilterChange={onAutoFilterChange}
         />,
       );
-      fireEvent.press(getByText("degreeFilter.autoFilter"));
+      fireEvent.press(getByText(/degreeFilter\.filter/));
       expect(onAutoFilterChange).toHaveBeenCalledWith(false);
     });
   });
