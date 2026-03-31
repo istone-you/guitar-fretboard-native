@@ -177,6 +177,8 @@ interface FretboardFooterProps {
   onSetOverlayNoteHighlights: (notes: string[]) => void;
   onToggleOverlayNoteHighlight: (note: string) => void;
   onToggleDegree: (name: string) => void;
+  filterBtnRef?: React.RefObject<View | null>;
+  chipAreaRef?: React.RefObject<View | null>;
 }
 
 const DEGREE_CHIPS = [
@@ -209,6 +211,8 @@ export default function FretboardFooter({
   onSetOverlayNoteHighlights,
   onToggleOverlayNoteHighlight,
   onToggleDegree,
+  filterBtnRef,
+  chipAreaRef,
 }: FretboardFooterProps) {
   const { t } = useTranslation();
   const isDark = theme === "dark";
@@ -221,17 +225,20 @@ export default function FretboardFooter({
     activeItems: Set<string>,
     onToggle: (v: string) => void,
   ) => (
-    <SwipeableChips
-      items={items}
-      activeItems={activeItems}
-      disabled={autoFilter}
-      isDark={isDark}
-      onToggle={onToggle}
-    />
+    <View ref={chipAreaRef as any}>
+      <SwipeableChips
+        items={items}
+        activeItems={activeItems}
+        disabled={autoFilter}
+        isDark={isDark}
+        onToggle={onToggle}
+      />
+    </View>
   );
 
-  const filterBtn = (onFilter: () => void, autoFilterKey: string) => (
+  const filterBtnEl = (onFilter: () => void, autoFilterKey: string) => (
     <TouchableOpacity
+      ref={filterBtnRef as any}
       onPress={() => {
         if (autoFilter) onAutoFilterChange(false);
         else onFilter();
@@ -270,7 +277,7 @@ export default function FretboardFooter({
             <Text style={[styles.title, { color: isDark ? "#9ca3af" : "#78716c" }]}>
               {t("noteFilter.title")}
             </Text>
-            {filterBtn(() => onSetOverlayNoteHighlights(overlayNotes), "noteFilter")}
+            {filterBtnEl(() => onSetOverlayNoteHighlights(overlayNotes), "noteFilter")}
             {hasHighlightedNotes && (
               <TouchableOpacity
                 testID="reset-btn"
@@ -305,7 +312,7 @@ export default function FretboardFooter({
             <Text style={[styles.title, { color: isDark ? "#9ca3af" : "#78716c" }]}>
               {t("degreeFilter.title")}
             </Text>
-            {filterBtn(onAutoFilter, "degreeFilter")}
+            {filterBtnEl(onAutoFilter, "degreeFilter")}
             {highlightedDegrees.size > 0 && (
               <TouchableOpacity
                 testID="reset-btn"

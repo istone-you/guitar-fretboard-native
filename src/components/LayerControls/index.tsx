@@ -191,6 +191,11 @@ export interface LayerControlsProps {
   setCagedColor: (value: string) => void;
   chordColor: string;
   setChordColor: (value: string) => void;
+  colorPickerRef?: React.RefObject<View | null>;
+  toggleRef?: React.RefObject<View | null>;
+  layerHeaderRef?: React.RefObject<View | null>;
+  tabRowRef?: React.RefObject<View | null>;
+  cardAreaRef?: React.RefObject<View | null>;
 }
 
 export default function LayerControls({
@@ -227,6 +232,11 @@ export default function LayerControls({
   setCagedColor,
   chordColor,
   setChordColor,
+  colorPickerRef,
+  toggleRef,
+  layerHeaderRef,
+  tabRowRef,
+  cardAreaRef,
 }: LayerControlsProps) {
   const { t } = useTranslation();
   const isDark = theme === "dark";
@@ -382,16 +392,20 @@ export default function LayerControls({
     <View style={[styles.card, getCardStyle(showScale)]}>
       <View style={{ opacity: getContentOpacity(showScale), flex: 1 }}>
         <View style={styles.cardTitleRow}>
-          <ColorSwatch
-            color={scaleColor}
-            onChange={setScaleColor}
-            disabled={!showLayers || !showScale}
-          />
-          <ToggleSwitch
-            active={showScale}
-            onPress={() => setShowScale(!showScale)}
-            disabled={!showLayers}
-          />
+          <View ref={colorPickerRef as any}>
+            <ColorSwatch
+              color={scaleColor}
+              onChange={setScaleColor}
+              disabled={!showLayers || !showScale}
+            />
+          </View>
+          <View ref={toggleRef as any}>
+            <ToggleSwitch
+              active={showScale}
+              onPress={() => setShowScale(!showScale)}
+              disabled={!showLayers}
+            />
+          </View>
         </View>
 
         {/* Content */}
@@ -555,7 +569,7 @@ export default function LayerControls({
   return (
     <View style={styles.container}>
       {/* "Layers" header with show/hide toggle */}
-      <View style={styles.headerRow}>
+      <View ref={layerHeaderRef as any} style={styles.headerRow}>
         <Text style={[styles.headingText, { color: isDark ? "#9ca3af" : "#78716c" }]}>
           {t("mobileControls.layers")}
         </Text>
@@ -568,7 +582,7 @@ export default function LayerControls({
 
       {/* Tab buttons (Scale / CAGED / Chord) — hidden when layers off */}
       {showLayers && (
-        <View style={styles.tabRow}>
+        <View ref={tabRowRef as any} style={styles.tabRow}>
           {[
             {
               tab: "scale" as MobileTab,
@@ -631,7 +645,7 @@ export default function LayerControls({
 
       {/* Swipeable card area */}
       {showLayers && (
-        <View {...panResponder.panHandlers} style={{ overflow: "hidden" }}>
+        <View ref={cardAreaRef as any} {...panResponder.panHandlers} style={{ overflow: "hidden" }}>
           <Animated.View style={{ transform: [{ translateX: slideAnim }] }}>
             {activeTab === "scale" && scaleCard}
             {activeTab === "caged" && cagedCard}

@@ -12,6 +12,8 @@ interface FretboardHeaderProps {
   baseLabelMode: BaseLabelMode;
   showQuiz: boolean;
   rootChangeDisabled?: boolean;
+  rootStepperRef?: React.RefObject<View | null>;
+  labelToggleRef?: React.RefObject<View | null>;
   onBaseLabelModeChange: (mode: BaseLabelMode) => void;
   onRootNoteChange: (note: string) => void;
 }
@@ -23,6 +25,8 @@ export default function FretboardHeader({
   baseLabelMode,
   showQuiz,
   rootChangeDisabled = false,
+  rootStepperRef,
+  labelToggleRef,
   onBaseLabelModeChange,
   onRootNoteChange,
 }: FretboardHeaderProps) {
@@ -40,7 +44,7 @@ export default function FretboardHeader({
 
   return (
     <View style={styles.container}>
-      <View style={styles.stepperRow}>
+      <View ref={rootStepperRef as any} style={styles.stepperRow}>
         <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c" }]}>
           {t("header.root")}:
         </Text>
@@ -66,16 +70,18 @@ export default function FretboardHeader({
       </View>
 
       {!showQuiz && (
-        <SegmentedToggle
-          theme={theme}
-          value={baseLabelMode}
-          onChange={onBaseLabelModeChange}
-          options={[
-            { value: "note" as BaseLabelMode, label: t("header.note") },
-            { value: "degree" as BaseLabelMode, label: t("header.degree") },
-          ]}
-          size="compact"
-        />
+        <View ref={labelToggleRef as any}>
+          <SegmentedToggle
+            theme={theme}
+            value={baseLabelMode}
+            onChange={onBaseLabelModeChange}
+            options={[
+              { value: "note" as BaseLabelMode, label: t("header.note") },
+              { value: "degree" as BaseLabelMode, label: t("header.degree") },
+            ]}
+            size="compact"
+          />
+        </View>
       )}
     </View>
   );

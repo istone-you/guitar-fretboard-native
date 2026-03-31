@@ -23,6 +23,7 @@ const defaultProps = {
   onThemeChange: jest.fn(),
   onFretRangeChange: jest.fn(),
   onAccidentalChange: jest.fn(),
+  onShowHowToUse: jest.fn(),
 };
 
 function renderHeader(overrides: Partial<typeof defaultProps> = {}) {

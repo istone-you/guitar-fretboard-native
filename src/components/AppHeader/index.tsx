@@ -170,6 +170,7 @@ interface AppHeaderProps {
   onThemeChange: (theme: Theme) => void;
   onFretRangeChange: (range: [number, number]) => void;
   onAccidentalChange: (accidental: Accidental) => void;
+  onShowHowToUse: () => void;
 }
 
 export default function AppHeader({
@@ -179,6 +180,7 @@ export default function AppHeader({
   onThemeChange,
   onFretRangeChange,
   onAccidentalChange,
+  onShowHowToUse,
 }: AppHeaderProps) {
   const { t, i18n } = useTranslation();
   const [settingsVisible, setSettingsVisible] = useState(false);
@@ -331,6 +333,22 @@ export default function AppHeader({
                 isDark={isDark}
               />
             </View>
+
+            {/* How to use button */}
+            <TouchableOpacity
+              onPress={() => {
+                closeSettings();
+                onShowHowToUse();
+              }}
+              style={[styles.settingRow, { justifyContent: "center", borderBottomWidth: 0 }]}
+              activeOpacity={0.7}
+            >
+              <Text
+                style={{ fontSize: 14, fontWeight: "600", color: isDark ? "#38bdf8" : "#0ea5e9" }}
+              >
+                {t("howToUse")}
+              </Text>
+            </TouchableOpacity>
           </View>
         </Animated.View>
       </Modal>

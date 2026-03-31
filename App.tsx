@@ -19,6 +19,10 @@ import LayerControls from "./src/components/LayerControls/index";
 import NormalFretboard from "./src/components/NormalFretboard/index";
 import QuizFretboard from "./src/components/QuizFretboard/index";
 import QuizPanel from "./src/components/QuizPanel/index";
+import HowToUseOverlay, {
+  type HowToUsePositions,
+  type ElementPosition,
+} from "./src/components/HowToUseOverlay";
 import { useDegreeFilter } from "./src/hooks/useDegreeFilter";
 import { useDiatonicSelection } from "./src/hooks/useDiatonicSelection";
 import { usePersistedSetting } from "./src/hooks/usePersistedSetting";
@@ -101,6 +105,70 @@ function AppContent() {
   const [autoFilter, setAutoFilter] = useState(false);
   // Quiz
   const [showQuiz, setShowQuiz] = useState(false);
+  const [showHowToUse, setShowHowToUse] = useState(false);
+  const [howToUsePositions, setHowToUsePositions] = useState<HowToUsePositions>({});
+
+  // Refs for measuring UI element positions
+  const rootStepperRef = useRef<View>(null);
+  const labelToggleRef = useRef<View>(null);
+  const fretboardAreaRef = useRef<View>(null);
+  const chipAreaRef = useRef<View>(null);
+  const filterBtnRef = useRef<View>(null);
+  const layerToggleRef = useRef<View>(null);
+  const layerToggleSwitchRef = useRef<View>(null);
+  const layerHeaderRef = useRef<View>(null);
+  const layerTabRowRef = useRef<View>(null);
+  const layerCardRef = useRef<View>(null);
+
+  const measureElement = (
+    ref: React.RefObject<View | null>,
+  ): Promise<ElementPosition | undefined> =>
+    new Promise((resolve) => {
+      if (!ref.current) {
+        resolve(undefined);
+        return;
+      }
+      ref.current.measureInWindow((x, y, w, h) => resolve({ x, y, w, h }));
+    });
+
+  const openHowToUse = async () => {
+    const [
+      rootStepper,
+      labelToggle,
+      fretboard,
+      chipArea,
+      filterBtn,
+      colorPicker,
+      layerToggle,
+      layerHeader,
+      layerTabRow,
+      layerCard,
+    ] = await Promise.all([
+      measureElement(rootStepperRef),
+      measureElement(labelToggleRef),
+      measureElement(fretboardAreaRef),
+      measureElement(chipAreaRef),
+      measureElement(filterBtnRef),
+      measureElement(layerToggleRef),
+      measureElement(layerToggleSwitchRef),
+      measureElement(layerHeaderRef),
+      measureElement(layerTabRowRef),
+      measureElement(layerCardRef),
+    ]);
+    setHowToUsePositions({
+      rootStepper,
+      labelToggle,
+      fretboard,
+      chipArea,
+      filterBtn,
+      colorPicker,
+      layerToggle,
+      layerHeader,
+      layerTabRow,
+      layerCard,
+    });
+    setShowHowToUse(true);
+  };
   const [chordQuizTypes, setChordQuizTypes] = useState<ChordType[]>(DEFAULT_CHORD_QUIZ_TYPES);
   // Display settings
   const [accidental, setAccidental] = usePersistedSetting<Accidental>(
@@ -361,6 +429,8 @@ function AppContent() {
       baseLabelMode={baseLabelMode}
       showQuiz={showQuiz}
       rootChangeDisabled={!quizRootChangeEnabled}
+      rootStepperRef={rootStepperRef}
+      labelToggleRef={labelToggleRef}
       onBaseLabelModeChange={setBaseLabelMode}
       onRootNoteChange={quizRootChangeEnabled ? handleNoteClick : () => {}}
     />
@@ -527,6 +597,8 @@ function AppContent() {
       onSetOverlayNoteHighlights={handleSetOverlayNoteHighlights}
       onToggleOverlayNoteHighlight={handleToggleOverlayNoteHighlight}
       onToggleDegree={toggleDegree}
+      filterBtnRef={filterBtnRef}
+      chipAreaRef={chipAreaRef}
     />
   );
 
@@ -565,6 +637,11 @@ function AppContent() {
       setCagedColor={setCagedColor}
       chordColor={chordColor}
       setChordColor={setChordColor}
+      colorPickerRef={layerToggleRef}
+      toggleRef={layerToggleSwitchRef}
+      layerHeaderRef={layerHeaderRef}
+      tabRowRef={layerTabRowRef}
+      cardAreaRef={layerCardRef}
     />
   ) : null;
 
@@ -780,18 +857,27 @@ function AppContent() {
           onThemeChange={setTheme}
           onFretRangeChange={setFretRange}
           onAccidentalChange={handleAccidentalChange}
+          onShowHowToUse={openHowToUse}
         />
       </View>
 
       <View style={{ flex: 1, overflow: "hidden" }}>
         {fretboardHeaderEl}
-        {fretboardEl}
+        <View ref={fretboardAreaRef}>{fretboardEl}</View>
         {quizPanelEl}
         {footerFilterEl}
         {layerControlsEl}
       </View>
 
       {tabBarEl}
+
+      {showHowToUse && (
+        <HowToUseOverlay
+          theme={theme}
+          positions={howToUsePositions}
+          onClose={() => setShowHowToUse(false)}
+        />
+      )}
     </View>
   );
 }
