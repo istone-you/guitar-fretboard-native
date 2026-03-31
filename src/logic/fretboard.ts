@@ -1243,6 +1243,17 @@ export function isInPenta(semitone: number, type: "minor" | "major"): boolean {
 // ブルーノートスケール: R, m3, P4, b5, P5, m7 → 半音: 0, 3, 5, 6, 7, 10
 export const BLUES_SCALE_DEGREES = new Set([0, 3, 5, 6, 7, 10]);
 
+// フリジアンドミナント: R, m2, M3, P4, P5, m6, m7
+export const PHRYGIAN_DOMINANT_SCALE_DEGREES = new Set([0, 1, 4, 5, 7, 8, 10]);
+// リディアンドミナント: R, M2, M3, b5, P5, M6, m7
+export const LYDIAN_DOMINANT_SCALE_DEGREES = new Set([0, 2, 4, 6, 7, 9, 10]);
+// オルタード: R, m2, m3, M3, b5, m6, m7
+export const ALTERED_SCALE_DEGREES = new Set([0, 1, 3, 4, 6, 8, 10]);
+// ホールトーン: R, M2, M3, b5, m6, m7
+export const WHOLE_TONE_SCALE_DEGREES = new Set([0, 2, 4, 6, 8, 10]);
+// ディミニッシュ（コンディミ）: R, M2, m3, P4, b5, m6, M6, M7
+export const DIMINISHED_SCALE_DEGREES = new Set([0, 2, 3, 5, 6, 8, 9, 11]);
+
 export const SCALE_DEGREES: Record<ScaleType, Set<number>> = {
   major: MAJOR_SCALE_DEGREES,
   "natural-minor": NATURAL_MINOR_SCALE_DEGREES,
@@ -1258,6 +1269,11 @@ export const SCALE_DEGREES: Record<ScaleType, Set<number>> = {
   mixolydian: MIXOLYDIAN_SCALE_DEGREES,
   aeolian: NATURAL_MINOR_SCALE_DEGREES,
   locrian: LOCRIAN_SCALE_DEGREES,
+  "phrygian-dominant": PHRYGIAN_DOMINANT_SCALE_DEGREES,
+  "lydian-dominant": LYDIAN_DOMINANT_SCALE_DEGREES,
+  altered: ALTERED_SCALE_DEGREES,
+  "whole-tone": WHOLE_TONE_SCALE_DEGREES,
+  diminished: DIMINISHED_SCALE_DEGREES,
 };
 
 export function isInScale(semitone: number, scaleType: ScaleType): boolean {

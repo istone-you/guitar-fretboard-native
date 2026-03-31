@@ -29,6 +29,11 @@ export function buildScaleOptions(t: (key: string) => string): {
     { value: "mixolydian", label: t("options.scale.mixolydian") },
     { value: "aeolian", label: t("options.scale.aeolian") },
     { value: "locrian", label: t("options.scale.locrian") },
+    { value: "phrygian-dominant", label: t("options.scale.phrygianDominant") },
+    { value: "lydian-dominant", label: t("options.scale.lydianDominant") },
+    { value: "altered", label: t("options.scale.altered") },
+    { value: "whole-tone", label: t("options.scale.wholeTone") },
+    { value: "diminished", label: t("options.scale.diminished") },
   ];
 
   const groups: ScaleOptionGroup[] = [
@@ -48,6 +53,14 @@ export function buildScaleOptions(t: (key: string) => string): {
       title: t("scaleGroups.modes"),
       options: options.filter((option) =>
         ["ionian", "dorian", "phrygian", "lydian", "mixolydian", "aeolian", "locrian"].includes(
+          option.value,
+        ),
+      ),
+    },
+    {
+      title: t("scaleGroups.advanced"),
+      options: options.filter((option) =>
+        ["phrygian-dominant", "lydian-dominant", "altered", "whole-tone", "diminished"].includes(
           option.value,
         ),
       ),

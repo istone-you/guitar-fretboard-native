@@ -16,7 +16,12 @@ export type ScaleType =
   | "lydian"
   | "mixolydian"
   | "aeolian"
-  | "locrian";
+  | "locrian"
+  | "phrygian-dominant"
+  | "lydian-dominant"
+  | "altered"
+  | "whole-tone"
+  | "diminished";
 export type ChordType =
   | "Major"
   | "Minor"

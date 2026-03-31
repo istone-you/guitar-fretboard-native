@@ -81,7 +81,8 @@
   "scaleGroups": {
     "basics": "基本",
     "minorDerived": "マイナー派生",
-    "modes": "モード"
+    "modes": "モード",
+    "advanced": "応用"
   },
   "scaleDialog": "スケール一覧",
   "options": {
@@ -129,7 +130,12 @@
       "lydian": "リディアン",
       "mixolydian": "ミクソリディアン",
       "aeolian": "エオリアン",
-      "locrian": "ロクリアン"
+      "locrian": "ロクリアン",
+      "phrygianDominant": "フリジアンドミナント",
+      "lydianDominant": "リディアンドミナント",
+      "altered": "オルタード",
+      "wholeTone": "ホールトーン",
+      "diminished": "ディミニッシュ"
     }
   },
   "quiz": {

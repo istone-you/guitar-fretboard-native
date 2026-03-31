@@ -21,8 +21,8 @@ describe("buildScaleOptions", () => {
 
   // --- Options ---
 
-  it("returns 14 scale options", () => {
-    expect(result.options).toHaveLength(14);
+  it("returns 19 scale options", () => {
+    expect(result.options).toHaveLength(19);
   });
 
   it("each option has value and label properties", () => {
@@ -51,6 +51,11 @@ describe("buildScaleOptions", () => {
       "mixolydian",
       "aeolian",
       "locrian",
+      "phrygian-dominant",
+      "lydian-dominant",
+      "altered",
+      "whole-tone",
+      "diminished",
     ]);
   });
 
@@ -67,8 +72,8 @@ describe("buildScaleOptions", () => {
 
   // --- Groups ---
 
-  it("returns 3 groups", () => {
-    expect(result.groups).toHaveLength(3);
+  it("returns 4 groups", () => {
+    expect(result.groups).toHaveLength(4);
   });
 
   it("each group has title and options properties", () => {
@@ -144,7 +149,7 @@ describe("buildScaleOptions", () => {
   it("calls t function for each option label", () => {
     const mockT = jest.fn((key: string) => key);
     buildScaleOptions(mockT);
-    expect(mockT).toHaveBeenCalledTimes(17); // 14 options + 3 group titles
+    expect(mockT).toHaveBeenCalledTimes(23); // 19 options + 4 group titles
   });
 
   it("calls t function for each group title", () => {

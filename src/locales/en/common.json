@@ -81,7 +81,8 @@
   "scaleGroups": {
     "basics": "Basics",
     "minorDerived": "Minor Derived",
-    "modes": "Modes"
+    "modes": "Modes",
+    "advanced": "Advanced"
   },
   "scaleDialog": "Scale list",
   "options": {
@@ -129,7 +130,12 @@
       "lydian": "Lydian",
       "mixolydian": "Mixolydian",
       "aeolian": "Aeolian",
-      "locrian": "Locrian"
+      "locrian": "Locrian",
+      "phrygianDominant": "Phrygian Dominant",
+      "lydianDominant": "Lydian Dominant",
+      "altered": "Altered",
+      "wholeTone": "Whole Tone",
+      "diminished": "Diminished"
     }
   },
   "quiz": {
