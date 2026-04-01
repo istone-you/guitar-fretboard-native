@@ -49,11 +49,6 @@ describe("FretboardFooter", () => {
   });
 
   describe("note mode", () => {
-    it("renders note filter title", () => {
-      const { getByText } = render(<FretboardFooter {...defaultProps} baseLabelMode="note" />);
-      expect(getByText("noteFilter.title")).toBeTruthy();
-    });
-
     it("renders all note chips", () => {
       const { getByText } = render(<FretboardFooter {...defaultProps} baseLabelMode="note" />);
       ALL_NOTES.forEach((note) => {
@@ -92,7 +87,7 @@ describe("FretboardFooter", () => {
 
     it("renders filter button and calls onSetOverlayNoteHighlights with overlay notes", () => {
       const onSetOverlayNoteHighlights = jest.fn();
-      const { getByText } = render(
+      const { getByTestId } = render(
         <FretboardFooter
           {...defaultProps}
           baseLabelMode="note"
@@ -100,7 +95,7 @@ describe("FretboardFooter", () => {
           onSetOverlayNoteHighlights={onSetOverlayNoteHighlights}
         />,
       );
-      fireEvent.press(getByText(/noteFilter\.filter/));
+      fireEvent.press(getByTestId("filter-btn"));
       expect(onSetOverlayNoteHighlights).toHaveBeenCalledWith(["C", "E", "G"]);
     });
 
@@ -115,15 +110,15 @@ describe("FretboardFooter", () => {
       expect(getByTestId("reset-btn")).toBeTruthy();
     });
 
-    it("hides reset button when no notes are highlighted", () => {
-      const { queryByTestId } = render(
+    it("always shows reset button", () => {
+      const { getByTestId } = render(
         <FretboardFooter
           {...defaultProps}
           baseLabelMode="note"
           highlightedOverlayNotes={new Set()}
         />,
       );
-      expect(queryByTestId("reset-btn")).toBeNull();
+      expect(getByTestId("reset-btn")).toBeTruthy();
     });
 
     it("calls onSetOverlayNoteHighlights with [] and disables autoFilter when reset is pressed", () => {
@@ -145,7 +140,7 @@ describe("FretboardFooter", () => {
 
     it("long press on filter button enables auto filter", () => {
       const onAutoFilterChange = jest.fn();
-      const { getByText } = render(
+      const { getByTestId } = render(
         <FretboardFooter
           {...defaultProps}
           baseLabelMode="note"
@@ -153,13 +148,13 @@ describe("FretboardFooter", () => {
           onAutoFilterChange={onAutoFilterChange}
         />,
       );
-      fireEvent(getByText(/noteFilter\.filter/), "longPress");
+      fireEvent(getByTestId("filter-btn"), "longPress");
       expect(onAutoFilterChange).toHaveBeenCalledWith(true);
     });
 
     it("tap on filter button disables auto filter when active", () => {
       const onAutoFilterChange = jest.fn();
-      const { getByText } = render(
+      const { getByTestId } = render(
         <FretboardFooter
           {...defaultProps}
           baseLabelMode="note"
@@ -167,7 +162,7 @@ describe("FretboardFooter", () => {
           onAutoFilterChange={onAutoFilterChange}
         />,
       );
-      fireEvent.press(getByText(/noteFilter\.filter/));
+      fireEvent.press(getByTestId("filter-btn"));
       expect(onAutoFilterChange).toHaveBeenCalledWith(false);
     });
 
@@ -178,11 +173,6 @@ describe("FretboardFooter", () => {
   });
 
   describe("degree mode", () => {
-    it("renders degree filter title", () => {
-      const { getByText } = render(<FretboardFooter {...defaultProps} baseLabelMode="degree" />);
-      expect(getByText("degreeFilter.title")).toBeTruthy();
-    });
-
     it("renders all degree chips", () => {
       const { getByText } = render(<FretboardFooter {...defaultProps} baseLabelMode="degree" />);
       DEGREE_CHIPS.forEach((deg) => {
@@ -217,10 +207,10 @@ describe("FretboardFooter", () => {
 
     it("calls onAutoFilter when filter button pressed in degree mode", () => {
       const onAutoFilter = jest.fn();
-      const { getByText } = render(
+      const { getByTestId } = render(
         <FretboardFooter {...defaultProps} baseLabelMode="degree" onAutoFilter={onAutoFilter} />,
       );
-      fireEvent.press(getByText(/degreeFilter\.filter/));
+      fireEvent.press(getByTestId("filter-btn"));
       expect(onAutoFilter).toHaveBeenCalled();
     });
 
@@ -245,7 +235,7 @@ describe("FretboardFooter", () => {
 
     it("auto filter toggle works in degree mode", () => {
       const onAutoFilterChange = jest.fn();
-      const { getByText } = render(
+      const { getByTestId } = render(
         <FretboardFooter
           {...defaultProps}
           baseLabelMode="degree"
@@ -253,30 +243,8 @@ describe("FretboardFooter", () => {
           onAutoFilterChange={onAutoFilterChange}
         />,
       );
-      fireEvent.press(getByText(/degreeFilter\.filter/));
+      fireEvent.press(getByTestId("filter-btn"));
       expect(onAutoFilterChange).toHaveBeenCalledWith(false);
-    });
-  });
-
-  describe("theme", () => {
-    it("applies light theme colors to title", () => {
-      const { getByText } = render(
-        <FretboardFooter {...defaultProps} theme="light" baseLabelMode="note" />,
-      );
-      const title = getByText("noteFilter.title");
-      expect(title.props.style).toEqual(
-        expect.arrayContaining([expect.objectContaining({ color: "#78716c" })]),
-      );
-    });
-
-    it("applies dark theme colors to title", () => {
-      const { getByText } = render(
-        <FretboardFooter {...defaultProps} theme="dark" baseLabelMode="note" />,
-      );
-      const title = getByText("noteFilter.title");
-      expect(title.props.style).toEqual(
-        expect.arrayContaining([expect.objectContaining({ color: "#9ca3af" })]),
-      );
     });
   });
 });

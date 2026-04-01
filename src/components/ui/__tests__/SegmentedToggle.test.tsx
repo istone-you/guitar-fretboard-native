@@ -193,9 +193,9 @@ describe("SegmentedToggle", () => {
       {},
       ...(Array.isArray(button?.props?.style) ? button.props.style : [button?.props?.style]),
     );
-    expect(flatStyle.paddingHorizontal).toBe(10);
-    expect(flatStyle.paddingVertical).toBe(6);
-    expect(flatStyle.minWidth).toBe(56);
+    expect(flatStyle.paddingHorizontal).toBe(8);
+    expect(flatStyle.paddingVertical).toBe(4);
+    expect(flatStyle.minWidth).toBe(48);
   });
 
   it("defaults to 'default' size when size prop is omitted", () => {

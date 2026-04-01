@@ -12,8 +12,7 @@ import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-cont
 import * as ScreenOrientation from "expo-screen-orientation";
 import "./src/i18n";
 import { useTranslation } from "react-i18next";
-import AppHeader from "./src/components/AppHeader/index";
-import FretboardHeader from "./src/components/FretboardHeader/index";
+import HeaderBar from "./src/components/AppHeader/index";
 import FretboardFooter from "./src/components/FretboardFooter/index";
 import LayerControls from "./src/components/LayerControls/index";
 import NormalFretboard from "./src/components/NormalFretboard/index";
@@ -40,6 +39,8 @@ import type {
   ChordDisplayMode,
   ScaleType,
   ChordType,
+  QuizMode,
+  QuizType,
 } from "./src/types";
 
 const GUITAR_ICON_DARK = require("./public/guiter_dark.png");
@@ -116,7 +117,6 @@ function AppContent() {
   const filterBtnRef = useRef<View>(null);
   const layerToggleRef = useRef<View>(null);
   const layerToggleSwitchRef = useRef<View>(null);
-  const layerHeaderRef = useRef<View>(null);
   const layerTabRowRef = useRef<View>(null);
   const layerCardRef = useRef<View>(null);
 
@@ -140,7 +140,6 @@ function AppContent() {
       filterBtn,
       colorPicker,
       layerToggle,
-      layerHeader,
       layerTabRow,
       layerCard,
     ] = await Promise.all([
@@ -151,7 +150,6 @@ function AppContent() {
       measureElement(filterBtnRef),
       measureElement(layerToggleRef),
       measureElement(layerToggleSwitchRef),
-      measureElement(layerHeaderRef),
       measureElement(layerTabRowRef),
       measureElement(layerCardRef),
     ]);
@@ -163,7 +161,6 @@ function AppContent() {
       filterBtn,
       colorPicker,
       layerToggle,
-      layerHeader,
       layerTabRow,
       layerCard,
     });
@@ -210,7 +207,6 @@ function AppContent() {
   const [showChord, setShowChord] = useState(false);
   const [showScale, setShowScale] = useState(false);
   const [showCaged, setShowCaged] = useState(false);
-  const [showLayers, setShowLayers] = useState(true);
 
   // Chord settings
   const [chordDisplayMode, setChordDisplayMode] = useState<ChordDisplayMode>("form");
@@ -314,9 +310,9 @@ function AppContent() {
   });
 
   const diatonicScaleType = `${diatonicKeyType}-${diatonicChordSize}`;
-  const effectiveShowScale = showLayers && showScale;
-  const effectiveShowCaged = showLayers && showCaged;
-  const effectiveShowChord = showLayers && showChord;
+  const effectiveShowScale = showScale;
+  const effectiveShowCaged = showCaged;
+  const effectiveShowChord = showChord;
 
   const overlaySemitones = useMemo(
     () =>
@@ -392,6 +388,26 @@ function AppContent() {
   const bgColor = isDark ? "#030712" : "#f3f4f6";
   const headerBg = isDark ? "#111111" : "#fafaf9";
 
+  // Quiz kind selector for header
+  const quizKindValue = `${quizMode}-${quizType}`;
+  const quizKindOptions = [
+    { value: "note-choice", label: t("quiz.kind.noteChoice") },
+    { value: "note-fretboard", label: t("quiz.kind.noteFretboard") },
+    { value: "degree-choice", label: t("quiz.kind.degreeChoice") },
+    { value: "degree-fretboard", label: t("quiz.kind.degreeFretboard") },
+    { value: "chord-choice", label: t("quiz.kind.chordChoice") },
+    { value: "chord-fretboard", label: t("quiz.kind.chordFretboard") },
+    { value: "scale-choice", label: t("quiz.kind.scaleChoice") },
+    { value: "scale-fretboard", label: t("quiz.kind.scaleFretboard") },
+    { value: "diatonic-all", label: t("quiz.kind.diatonicAll") },
+  ];
+  const handleQuizKindDropdownChange = (value: string) => {
+    const parts = value.split("-");
+    const newType = parts[parts.length - 1] as QuizType;
+    const newMode = parts.slice(0, -1).join("-") as QuizMode;
+    handleQuizKindChange(newMode, newType);
+  };
+
   // Common fretboard props
   const commonFretboardProps = {
     theme,
@@ -420,21 +436,6 @@ function AppContent() {
       : rootNote;
 
   // ── Shared JSX pieces ──────────────────────────────────────────
-
-  const fretboardHeaderEl = (
-    <FretboardHeader
-      theme={theme}
-      rootNote={rootNote}
-      accidental={accidental}
-      baseLabelMode={baseLabelMode}
-      showQuiz={showQuiz}
-      rootChangeDisabled={!quizRootChangeEnabled}
-      rootStepperRef={rootStepperRef}
-      labelToggleRef={labelToggleRef}
-      onBaseLabelModeChange={setBaseLabelMode}
-      onRootNoteChange={quizRootChangeEnabled ? handleNoteClick : () => {}}
-    />
-  );
 
   const lastTapRef = useRef(0);
   const handleFretboardDoubleTap = useCallback(() => {
@@ -531,7 +532,6 @@ function AppContent() {
         chordQuizTypes={chordQuizTypes}
         availableChordQuizTypes={CHORD_QUIZ_TYPES_ALL}
         scaleType={scaleType}
-        onKindChange={handleQuizKindChange}
         onChordQuizTypesChange={(v) => {
           setChordQuizTypes(v);
           regenerateQuiz();
@@ -607,8 +607,6 @@ function AppContent() {
       theme={theme}
       rootNote={rootNote}
       accidental={accidental}
-      showLayers={showLayers}
-      setShowLayers={setShowLayers}
       showChord={showChord}
       setShowChord={setShowChord}
       chordDisplayMode={chordDisplayMode}
@@ -632,14 +630,10 @@ function AppContent() {
       diatonicDegree={diatonicDegree}
       setDiatonicDegree={setDiatonicDegree}
       scaleColor={scaleColor}
-      setScaleColor={setScaleColor}
       cagedColor={cagedColor}
-      setCagedColor={setCagedColor}
       chordColor={chordColor}
-      setChordColor={setChordColor}
       colorPickerRef={layerToggleRef}
       toggleRef={layerToggleSwitchRef}
-      layerHeaderRef={layerHeaderRef}
       tabRowRef={layerTabRowRef}
       cardAreaRef={layerCardRef}
     />
@@ -850,19 +844,35 @@ function AppContent() {
         backgroundColor="transparent"
       />
       <View style={{ backgroundColor: headerBg, paddingTop: insets.top }}>
-        <AppHeader
+        <HeaderBar
           theme={theme}
-          fretRange={fretRange}
+          rootNote={rootNote}
           accidental={accidental}
+          baseLabelMode={baseLabelMode}
+          showQuiz={showQuiz}
+          rootChangeDisabled={!quizRootChangeEnabled}
+          rootStepperRef={rootStepperRef}
+          labelToggleRef={labelToggleRef}
+          onBaseLabelModeChange={setBaseLabelMode}
+          onRootNoteChange={quizRootChangeEnabled ? handleNoteClick : () => {}}
+          quizKindValue={quizKindValue}
+          quizKindOptions={quizKindOptions}
+          onQuizKindChange={handleQuizKindDropdownChange}
+          fretRange={fretRange}
           onThemeChange={setTheme}
           onFretRangeChange={setFretRange}
           onAccidentalChange={handleAccidentalChange}
           onShowHowToUse={openHowToUse}
+          scaleColor={scaleColor}
+          onScaleColorChange={setScaleColor}
+          cagedColor={cagedColor}
+          onCagedColorChange={setCagedColor}
+          chordColor={chordColor}
+          onChordColorChange={setChordColor}
         />
       </View>
 
       <View style={{ flex: 1, overflow: "hidden" }}>
-        {fretboardHeaderEl}
         <View ref={fretboardAreaRef}>{fretboardEl}</View>
         {quizPanelEl}
         {footerFilterEl}

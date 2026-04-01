@@ -12,8 +12,25 @@ import {
 } from "react-native";
 import { useTranslation } from "react-i18next";
 import "../../i18n";
-import type { Accidental, Theme } from "../../types";
+import type { Accidental, BaseLabelMode, Theme } from "../../types";
 import { SegmentedToggle } from "../ui/SegmentedToggle";
+import { DropdownSelect } from "../ui/DropdownSelect";
+import { NOTES_SHARP, NOTES_FLAT } from "../../logic/fretboard";
+
+const COLOR_PRESETS = [
+  "#ff69b6",
+  "#ff4d4d",
+  "#ff8c00",
+  "#ffd700",
+  "#40e0d0",
+  "#00bfff",
+  "#0ea5e9",
+  "#7c3aed",
+  "#10b981",
+  "#84cc16",
+  "#f97316",
+  "#ec4899",
+];
 import { changeLocale } from "../../i18n";
 
 const SETTINGS_ICON_DARK = require("../../../public/settings_dark.jpg");
@@ -163,27 +180,64 @@ function RangeSlider({
   );
 }
 
-interface AppHeaderProps {
+export interface HeaderBarProps {
   theme: Theme;
-  fretRange: [number, number];
+  rootNote: string;
   accidental: Accidental;
+  baseLabelMode: BaseLabelMode;
+  showQuiz: boolean;
+  rootChangeDisabled?: boolean;
+  rootStepperRef?: React.RefObject<View | null>;
+  labelToggleRef?: React.RefObject<View | null>;
+  onBaseLabelModeChange: (mode: BaseLabelMode) => void;
+  onRootNoteChange: (note: string) => void;
+  quizKindValue?: string;
+  quizKindOptions?: { value: string; label: string }[];
+  onQuizKindChange?: (value: string) => void;
+  fretRange: [number, number];
   onThemeChange: (theme: Theme) => void;
   onFretRangeChange: (range: [number, number]) => void;
   onAccidentalChange: (accidental: Accidental) => void;
   onShowHowToUse: () => void;
+  scaleColor: string;
+  onScaleColorChange: (color: string) => void;
+  cagedColor: string;
+  onCagedColorChange: (color: string) => void;
+  chordColor: string;
+  onChordColorChange: (color: string) => void;
 }
 
-export default function AppHeader({
+export default function HeaderBar({
   theme,
-  fretRange,
+  rootNote,
   accidental,
+  baseLabelMode,
+  showQuiz,
+  rootChangeDisabled = false,
+  rootStepperRef,
+  labelToggleRef,
+  onBaseLabelModeChange,
+  onRootNoteChange,
+  quizKindValue,
+  quizKindOptions,
+  onQuizKindChange,
+  fretRange,
   onThemeChange,
   onFretRangeChange,
   onAccidentalChange,
   onShowHowToUse,
-}: AppHeaderProps) {
+  scaleColor,
+  onScaleColorChange,
+  cagedColor,
+  onCagedColorChange,
+  chordColor,
+  onChordColorChange,
+}: HeaderBarProps) {
   const { t, i18n } = useTranslation();
   const [settingsVisible, setSettingsVisible] = useState(false);
+  const [colorPickerTarget, setColorPickerTarget] = useState<"scale" | "caged" | "chord" | null>(
+    null,
+  );
   const isDark = theme === "dark";
 
   const overlayAnim = useRef(new Animated.Value(0)).current;
@@ -208,6 +262,14 @@ export default function AppHeader({
     void changeLocale(locale);
   };
 
+  const notes: string[] = [...(accidental === "sharp" ? NOTES_SHARP : NOTES_FLAT)];
+  const currentIndex = notes.indexOf(rootNote);
+  const stepNote = (dir: 1 | -1) => {
+    if (rootChangeDisabled) return;
+    const next = (currentIndex + dir + 12) % 12;
+    onRootNoteChange(notes[next]);
+  };
+
   return (
     <View
       style={[
@@ -218,19 +280,115 @@ export default function AppHeader({
         },
       ]}
     >
-      <View style={styles.headerSide} />
-
-      <Text style={[styles.title, { color: isDark ? "#fff" : "#1c1917" }]}>Guitar Fretboard</Text>
-
-      <View style={[styles.headerSide, styles.headerRight]}>
-        <TouchableOpacity onPress={openSettings} style={styles.headerBtn} activeOpacity={0.7}>
-          <Image
-            source={isDark ? SETTINGS_ICON_DARK : SETTINGS_ICON_LIGHT}
-            style={styles.settingsIcon}
-            resizeMode="contain"
-          />
+      {/* Root stepper (absolute left) */}
+      <View ref={rootStepperRef as any} style={styles.stepperRow}>
+        <TouchableOpacity
+          onPress={() => stepNote(-1)}
+          disabled={rootChangeDisabled}
+          style={[styles.stepBtn, rootChangeDisabled && styles.disabled]}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.stepBtnText, { color: isDark ? "#9ca3af" : "#78716c" }]}>‹</Text>
+        </TouchableOpacity>
+        <Text style={[styles.rootNote, { color: isDark ? "#fff" : "#1c1917" }]}>{rootNote}</Text>
+        <TouchableOpacity
+          onPress={() => stepNote(1)}
+          disabled={rootChangeDisabled}
+          style={[styles.stepBtn, rootChangeDisabled && styles.disabled]}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.stepBtnText, { color: isDark ? "#9ca3af" : "#78716c" }]}>›</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Quiz kind selector (center) */}
+      {showQuiz && quizKindValue && quizKindOptions && onQuizKindChange && (
+        <DropdownSelect
+          theme={theme}
+          value={quizKindValue}
+          onChange={onQuizKindChange}
+          options={quizKindOptions}
+          variant="plain"
+        />
+      )}
+
+      {/* Note / Degree toggle (center) */}
+      {!showQuiz && (
+        <View ref={labelToggleRef as any} style={styles.labelToggle}>
+          <TouchableOpacity
+            onPress={() => onBaseLabelModeChange("note")}
+            activeOpacity={0.7}
+            hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+          >
+            <Text
+              style={[
+                styles.labelToggleText,
+                {
+                  color:
+                    baseLabelMode === "note"
+                      ? isDark
+                        ? "#fff"
+                        : "#1c1917"
+                      : isDark
+                        ? "#6b7280"
+                        : "#a8a29e",
+                  fontWeight: baseLabelMode === "note" ? "700" : "400",
+                },
+              ]}
+            >
+              {t("header.note")}
+            </Text>
+            {baseLabelMode === "note" && (
+              <View
+                style={[styles.labelUnderline, { backgroundColor: isDark ? "#fff" : "#1c1917" }]}
+              />
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => onBaseLabelModeChange("degree")}
+            activeOpacity={0.7}
+            hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+          >
+            <Text
+              style={[
+                styles.labelToggleText,
+                {
+                  color:
+                    baseLabelMode === "degree"
+                      ? isDark
+                        ? "#fff"
+                        : "#1c1917"
+                      : isDark
+                        ? "#6b7280"
+                        : "#a8a29e",
+                  fontWeight: baseLabelMode === "degree" ? "700" : "400",
+                },
+              ]}
+            >
+              {t("header.degree")}
+            </Text>
+            {baseLabelMode === "degree" && (
+              <View
+                style={[styles.labelUnderline, { backgroundColor: isDark ? "#fff" : "#1c1917" }]}
+              />
+            )}
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Settings button (absolute right) */}
+      <TouchableOpacity
+        testID="settings-button"
+        onPress={openSettings}
+        style={styles.headerBtn}
+        activeOpacity={0.7}
+      >
+        <Image
+          source={isDark ? SETTINGS_ICON_DARK : SETTINGS_ICON_LIGHT}
+          style={styles.settingsIcon}
+          resizeMode="contain"
+        />
+      </TouchableOpacity>
 
       <Modal
         visible={settingsVisible}
@@ -315,6 +473,68 @@ export default function AppHeader({
               />
             </View>
 
+            {/* Layer colors */}
+            <View style={styles.settingRow}>
+              <Text style={[styles.settingLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
+                {t("layerColors")}
+              </Text>
+              <View style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
+                <TouchableOpacity
+                  onPress={() => setColorPickerTarget("scale")}
+                  style={[styles.colorDot, { backgroundColor: scaleColor }]}
+                />
+                <TouchableOpacity
+                  onPress={() => setColorPickerTarget("caged")}
+                  style={[styles.colorDot, { backgroundColor: cagedColor }]}
+                />
+                <TouchableOpacity
+                  onPress={() => setColorPickerTarget("chord")}
+                  style={[styles.colorDot, { backgroundColor: chordColor }]}
+                />
+              </View>
+            </View>
+            <Modal
+              visible={colorPickerTarget != null}
+              transparent
+              animationType="fade"
+              onRequestClose={() => setColorPickerTarget(null)}
+            >
+              <Pressable style={styles.colorOverlay} onPress={() => setColorPickerTarget(null)}>
+                <View
+                  style={[styles.colorPicker, { backgroundColor: isDark ? "#1f2937" : "#fff" }]}
+                >
+                  <Text
+                    style={[styles.colorPickerTitle, { color: isDark ? "#e5e7eb" : "#1c1917" }]}
+                  >
+                    {colorPickerTarget && t(`layers.${colorPickerTarget}`)}
+                  </Text>
+                  <View style={styles.colorGrid}>
+                    {COLOR_PRESETS.map((preset) => (
+                      <TouchableOpacity
+                        key={preset}
+                        onPress={() => {
+                          if (colorPickerTarget === "scale") onScaleColorChange(preset);
+                          else if (colorPickerTarget === "caged") onCagedColorChange(preset);
+                          else onChordColorChange(preset);
+                          setColorPickerTarget(null);
+                        }}
+                        style={[
+                          styles.colorPresetDot,
+                          { backgroundColor: preset },
+                          preset ===
+                            (colorPickerTarget === "scale"
+                              ? scaleColor
+                              : colorPickerTarget === "caged"
+                                ? cagedColor
+                                : chordColor) && styles.colorPresetSelected,
+                        ]}
+                      />
+                    ))}
+                  </View>
+                </View>
+              </Pressable>
+            </Modal>
+
             {/* Fret range */}
             <View style={[styles.settingRow, { borderBottomWidth: 0, paddingBottom: 4 }]}>
               <Text style={[styles.settingLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
@@ -360,25 +580,54 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    justifyContent: "center",
+    paddingHorizontal: 12,
+    height: 44,
     borderBottomWidth: 1,
   },
-  headerSide: {
-    width: 36,
-  },
-  headerRight: {
-    alignItems: "flex-end",
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: "700",
-    flex: 1,
-    textAlign: "center",
+  stepperRow: {
+    position: "absolute",
+    left: 4,
+    flexDirection: "row",
+    alignItems: "center",
   },
   headerBtn: {
+    position: "absolute",
+    right: 12,
     padding: 6,
+  },
+  stepBtn: {
+    width: 36,
+    height: 36,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 18,
+  },
+  stepBtnText: {
+    fontSize: 20,
+  },
+  rootNote: {
+    width: 28,
+    textAlign: "center",
+    fontSize: 14,
+    fontWeight: "bold",
+    fontFamily: "monospace",
+  },
+  disabled: {
+    opacity: 0.4,
+  },
+  labelToggle: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+  },
+  labelToggleText: {
+    fontSize: 15,
+  },
+  labelUnderline: {
+    height: 2,
+    borderRadius: 1,
+    marginTop: 2,
   },
   settingsIcon: {
     width: 22,
@@ -423,5 +672,44 @@ const styles = StyleSheet.create({
   fretRangeValue: {
     fontSize: 14,
     fontWeight: "600",
+  },
+  colorDot: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.2)",
+  },
+  colorOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  colorPicker: {
+    borderRadius: 20,
+    padding: 20,
+    alignItems: "center",
+    gap: 14,
+  },
+  colorPickerTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  colorGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+    width: 192,
+    justifyContent: "center",
+  },
+  colorPresetDot: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+  },
+  colorPresetSelected: {
+    borderWidth: 3,
+    borderColor: "#fff",
   },
 });

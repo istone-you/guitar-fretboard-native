@@ -590,7 +590,6 @@ function StringRow({
         const semitone = calcDegree(noteIdx, rootIndex);
         const degreeName = getDegreeName(noteIdx, rootIndex);
 
-        const isRoot = semitone === 0;
         const inChord = chordPositions.has(`${stringIdx}-${fret}`);
         const cagedCell = cagedPositions.get(`${stringIdx}-${fret}`);
         const labelText = baseLabelMode === "degree" ? degreeName : noteName;
@@ -670,23 +669,6 @@ function StringRow({
               }}
             />
 
-            {/* Root ring */}
-            {isRoot && !shouldSuppressRegularDisplay && (
-              <View
-                style={{
-                  position: "absolute",
-                  top: overlayInset,
-                  left: overlayInset,
-                  right: overlayInset,
-                  bottom: overlayInset,
-                  borderRadius: overlaySize / 2,
-                  borderWidth: 2,
-                  borderColor: "#ef4444",
-                  zIndex: 18,
-                }}
-              />
-            )}
-
             {/* Highlight ring */}
             <ScaleAnimView
               skipAnimation={disableAnimation}
@@ -699,7 +681,7 @@ function StringRow({
                 bottom: Math.max(0, overlayInset - 1),
                 borderRadius: (overlaySize + 2) / 2,
                 borderWidth: 2,
-                borderColor: isDark ? "#93c5fd" : "#3b82f6",
+                borderColor: isDark ? "#0284c7" : "#0ea5e9",
                 zIndex: 25,
               }}
             />

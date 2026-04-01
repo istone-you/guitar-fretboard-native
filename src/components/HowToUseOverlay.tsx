@@ -19,7 +19,6 @@ export interface HowToUsePositions {
   filterBtn?: ElementPosition;
   colorPicker?: ElementPosition;
   layerToggle?: ElementPosition;
-  layerHeader?: ElementPosition;
   layerTabRow?: ElementPosition;
   layerCard?: ElementPosition;
 }
@@ -61,7 +60,7 @@ function CenteredLabel({
 
   return (
     <View
-      style={[styles.label, { left: left - width / 2, top }]}
+      style={[styles.label, { left: Math.max(8, left - width / 2), top }]}
       onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
     >
       {arrow === "up" && (
@@ -117,12 +116,12 @@ export default function HowToUseOverlay({ theme, positions, onClose }: HowToUseO
         />
       )}
 
-      {/* Highlight toggle — just above chip area, no arrow */}
+      {/* Highlight toggle — centered on chip area */}
       {p.chipArea && (
         <CenteredLabel
           text={t("howToUseItems.highlightToggle")}
           left={cx(p.chipArea)}
-          top={p.chipArea.y - 18}
+          top={p.chipArea.y + p.chipArea.h / 2 - 12}
         />
       )}
 
@@ -136,16 +135,6 @@ export default function HowToUseOverlay({ theme, positions, onClose }: HowToUseO
         />
       )}
 
-      {/* Layer master toggle — above layer header */}
-      {p.layerHeader && (
-        <CenteredLabel
-          text={t("howToUseItems.layerMaster")}
-          left={cx(p.layerHeader)}
-          top={p.layerHeader.y - 34}
-          arrow="down"
-        />
-      )}
-
       {/* Layer card switch — below tab row */}
       {p.layerTabRow && (
         <CenteredLabel
@@ -155,13 +144,12 @@ export default function HowToUseOverlay({ theme, positions, onClose }: HowToUseO
         />
       )}
 
-      {/* Toggle + color picker — below card title row with up arrow */}
-      {p.colorPicker && p.layerToggle && (
+      {/* Toggle — centered on card */}
+      {p.layerCard && (
         <CenteredLabel
           text={t("howToUseItems.togglePanel")}
-          left={(cx(p.colorPicker) + cx(p.layerToggle)) / 2}
-          top={p.colorPicker.y + p.colorPicker.h + 4}
-          arrow="up"
+          left={cx(p.layerCard)}
+          top={p.layerCard.y + p.layerCard.h / 2 - 12}
         />
       )}
 

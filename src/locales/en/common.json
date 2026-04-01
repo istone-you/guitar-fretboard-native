@@ -8,8 +8,7 @@
   "howToUseItems": {
     "changeRoot": "‹ › to change root",
     "switchLabels": "Switch Notes / Degrees",
-    "togglePanel": "Toggle each layer to show/hide\nColor button to choose layer color",
-    "layerMaster": "Toggle all layers ON/OFF",
+    "togglePanel": "Tap toggle or double-tap tab to show/hide each layer\nSwipe tabs right to show all, left to hide all",
     "layerCardSwitch": "Tap tab or swipe to switch layer settings panel",
     "colorPicker": "",
     "switchMode": "",
@@ -25,6 +24,7 @@
   "displaySize": "Fretboard Size",
   "language": "Language",
   "accidental": "♯/♭",
+  "layerColors": "Layer Colors",
   "settingsPanel": {
     "fretRange": "Fret Range",
     "fretStart": "Start",

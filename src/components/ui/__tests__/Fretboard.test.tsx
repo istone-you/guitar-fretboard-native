@@ -166,45 +166,6 @@ describe("Fretboard - Degree display", () => {
 
 // ==================== 5. Root highlight ====================
 
-describe("Fretboard - Root highlight", () => {
-  it("renders root note ring (border color #ef4444) for root notes", () => {
-    const { toJSON } = render(<Fretboard {...makeProps({ rootNote: "E", fretRange: [0, 0] })} />);
-    // Root ring has borderColor: "#ef4444"
-    const json = JSON.stringify(toJSON());
-    expect(json).toContain("#ef4444");
-  });
-
-  it("does not render root ring when suppressRegularDisplay is true", () => {
-    const { toJSON } = render(
-      <Fretboard
-        {...makeProps({
-          rootNote: "E",
-          fretRange: [0, 0],
-          suppressRegularDisplay: true,
-        })}
-      />,
-    );
-    const json = JSON.stringify(toJSON());
-    // Root ring color should not appear
-    expect(json).not.toContain("#ef4444");
-  });
-
-  it("does not render root ring during quiz mode", () => {
-    const { toJSON } = render(
-      <Fretboard
-        {...makeProps({
-          rootNote: "E",
-          fretRange: [0, 0],
-          quizModeActive: true,
-          quizCell: { stringIdx: 0, fret: 0 },
-        })}
-      />,
-    );
-    const json = JSON.stringify(toJSON());
-    expect(json).not.toContain("#ef4444");
-  });
-});
-
 // ==================== 6. Scale overlay ====================
 
 describe("Fretboard - Scale overlay", () => {
@@ -499,8 +460,8 @@ describe("Fretboard - Quiz mode", () => {
       />,
     );
     const json = JSON.stringify(toJSON());
-    // Root ring should not appear
-    expect(json).not.toContain("#ef4444");
+    // Root ring should be hidden (scale 0) during quiz
+    expect(json).toContain('"scale":0');
   });
 
   it("shows correct answer overlay (green) when answered correctly", () => {
@@ -636,8 +597,8 @@ describe("Fretboard - Highlighted notes and degrees", () => {
       />,
     );
     const json = JSON.stringify(toJSON());
-    // Highlight ring uses #93c5fd in dark mode
-    expect(json).toContain("#93c5fd");
+    // Highlight ring uses #0284c7 in dark mode
+    expect(json).toContain("#0284c7");
   });
 
   it("shows highlight ring with light mode color", () => {
@@ -652,8 +613,8 @@ describe("Fretboard - Highlighted notes and degrees", () => {
       />,
     );
     const json = JSON.stringify(toJSON());
-    // Highlight ring uses #3b82f6 in light mode
-    expect(json).toContain("#3b82f6");
+    // Highlight ring uses #0ea5e9 in light mode
+    expect(json).toContain("#0ea5e9");
   });
 
   it("shows highlight ring for highlighted degrees in degree mode", () => {
@@ -669,7 +630,7 @@ describe("Fretboard - Highlighted notes and degrees", () => {
     );
     const json = JSON.stringify(toJSON());
     // Open 6th string = E, which is M3 from C => should be highlighted
-    expect(json).toContain("#93c5fd");
+    expect(json).toContain("#0284c7");
   });
 
   it("highlight ring has scale 0 when no notes are highlighted", () => {

@@ -8,9 +8,8 @@
   "howToUseItems": {
     "changeRoot": "‹ › でルート音を変更",
     "switchLabels": "音名 / 度数を切り替え",
-    "togglePanel": "各レイヤーのトグルでレイヤーを表示/非表示\nカラーボタンでレイヤーの色を選択",
-    "layerMaster": "トグルで全レイヤーの表示/非表示",
-    "layerCardSwitch": "タブをタップ or パネルをスワイプでレイヤーの設定パネルを切り替え",
+    "togglePanel": "トグルをタップ or タブをダブルタップでレイヤーの表示/非表示\nタブを右スワイプで全表示、左スワイプで全非表示",
+    "layerCardSwitch": "タブをタップ or パネルをスワイプで設定パネルを切り替え",
     "colorPicker": "",
     "switchMode": "",
     "toggleNotes": "",
@@ -25,6 +24,7 @@
   "displaySize": "指板表示サイズ",
   "language": "言語",
   "accidental": "♯/♭",
+  "layerColors": "レイヤーカラー",
   "settingsPanel": {
     "fretRange": "フレット範囲",
     "fretStart": "開始",

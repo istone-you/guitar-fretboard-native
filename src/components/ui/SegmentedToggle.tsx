@@ -144,12 +144,12 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   buttonCompact: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    minWidth: 56,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    minWidth: 48,
   },
   buttonText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "500",
   },
 });

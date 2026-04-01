@@ -1,7 +1,6 @@
 import { useRef } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Animated, PanResponder } from "react-native";
-import { useTranslation } from "react-i18next";
-import "../../i18n";
+import Svg, { Path } from "react-native-svg";
 import type { BaseLabelMode, Theme } from "../../types";
 
 // Chip with bounce animation on active change
@@ -133,9 +132,12 @@ function SwipeableChips({
     }),
   ).current;
 
+  const topRow = items.slice(0, 6);
+  const bottomRow = items.slice(6);
+
   return (
     <View
-      style={styles.chipsContainer}
+      style={styles.chipsWrapper}
       onLayout={(e) => {
         e.target.measureInWindow((x, y) => {
           containerOffset.current = { x, y };
@@ -143,21 +145,40 @@ function SwipeableChips({
       }}
       {...panResponder.panHandlers}
     >
-      {items.map((item) => (
-        <AnimatedChip
-          key={item}
-          item={item}
-          active={activeItems.has(item)}
-          disabled={disabled}
-          isDark={isDark}
-          onPress={() => {
-            if (!disabled) onToggle(item);
-          }}
-          onLayout={(x, y, w, h) => {
-            chipLayouts.current[item] = { x, y, w, h };
-          }}
-        />
-      ))}
+      <View style={styles.chipsRow}>
+        {topRow.map((item) => (
+          <AnimatedChip
+            key={item}
+            item={item}
+            active={activeItems.has(item)}
+            disabled={disabled}
+            isDark={isDark}
+            onPress={() => {
+              if (!disabled) onToggle(item);
+            }}
+            onLayout={(x, y, w, h) => {
+              chipLayouts.current[item] = { x, y, w, h };
+            }}
+          />
+        ))}
+      </View>
+      <View style={styles.chipsRow}>
+        {bottomRow.map((item) => (
+          <AnimatedChip
+            key={item}
+            item={item}
+            active={activeItems.has(item)}
+            disabled={disabled}
+            isDark={isDark}
+            onPress={() => {
+              if (!disabled) onToggle(item);
+            }}
+            onLayout={(x, y, w, h) => {
+              chipLayouts.current[item] = { x, y, w, h };
+            }}
+          />
+        ))}
+      </View>
     </View>
   );
 }
@@ -214,7 +235,6 @@ export default function FretboardFooter({
   filterBtnRef,
   chipAreaRef,
 }: FretboardFooterProps) {
-  const { t } = useTranslation();
   const isDark = theme === "dark";
   const hasHighlightedNotes = highlightedOverlayNotes.size > 0;
 
@@ -236,8 +256,9 @@ export default function FretboardFooter({
     </View>
   );
 
-  const filterBtnEl = (onFilter: () => void, autoFilterKey: string) => (
+  const filterBtnEl = (onFilter: () => void) => (
     <TouchableOpacity
+      testID="filter-btn"
       ref={filterBtnRef as any}
       onPress={() => {
         if (autoFilter) onAutoFilterChange(false);
@@ -245,27 +266,27 @@ export default function FretboardFooter({
       }}
       onLongPress={() => onAutoFilterChange(!autoFilter)}
       style={[
-        styles.actionBtn,
-        {
-          borderColor: isDark ? "rgba(56,189,248,0.3)" : "rgba(14,165,233,0.25)",
-          backgroundColor: isDark ? "rgba(14,165,233,0.08)" : "rgba(186,230,253,0.7)",
-        },
-        autoFilter && {
-          backgroundColor: isDark ? "#0284c7" : "#0ea5e9",
-          borderColor: isDark ? "#0284c7" : "#0ea5e9",
-        },
+        styles.iconBtn,
+        autoFilter
+          ? {
+              borderColor: isDark ? "#0284c7" : "#0ea5e9",
+              backgroundColor: isDark ? "#0284c7" : "#0ea5e9",
+            }
+          : {
+              borderColor: isDark ? "rgba(255,255,255,0.10)" : "#e7e5e4",
+              backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(250,250,249,0.95)",
+            },
       ]}
       activeOpacity={0.7}
     >
-      <Text
-        style={{
-          fontSize: 13,
-          fontWeight: "600",
-          color: autoFilter ? "#fff" : isDark ? "#38bdf8" : "#0ea5e9",
-        }}
-      >
-        {t(`${autoFilterKey}.filter`)}
-      </Text>
+      <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+        <Path
+          d="M3 4h18l-7 8.5V18l-4 2V12.5L3 4Z"
+          stroke={autoFilter ? "#fff" : isDark ? "#9ca3af" : "#78716c"}
+          strokeWidth={2}
+          strokeLinejoin="round"
+        />
+      </Svg>
     </TouchableOpacity>
   );
 
@@ -274,33 +295,46 @@ export default function FretboardFooter({
       {baseLabelMode === "note" && (
         <>
           <View style={styles.titleRow}>
-            <Text style={[styles.title, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-              {t("noteFilter.title")}
-            </Text>
-            {filterBtnEl(() => onSetOverlayNoteHighlights(overlayNotes), "noteFilter")}
-            {hasHighlightedNotes && (
-              <TouchableOpacity
-                testID="reset-btn"
-                onPress={() => {
-                  onAutoFilterChange(false);
-                  onSetOverlayNoteHighlights([]);
-                }}
-                style={[
-                  styles.actionBtn,
-                  {
-                    borderColor: isDark ? "rgba(251,146,60,0.3)" : "rgba(249,115,22,0.25)",
-                    backgroundColor: isDark ? "rgba(249,115,22,0.08)" : "rgba(255,237,213,0.7)",
-                  },
-                ]}
-                activeOpacity={0.7}
-              >
-                <Text
-                  style={{ fontSize: 13, fontWeight: "600", color: isDark ? "#fb923c" : "#ea580c" }}
-                >
-                  {t("noteFilter.reset")}
-                </Text>
-              </TouchableOpacity>
-            )}
+            {filterBtnEl(() => onSetOverlayNoteHighlights(overlayNotes))}
+            <TouchableOpacity
+              testID="reset-btn"
+              onPress={() => {
+                onAutoFilterChange(false);
+                onSetOverlayNoteHighlights([]);
+              }}
+              disabled={!hasHighlightedNotes}
+              style={[
+                styles.iconBtn,
+                hasHighlightedNotes
+                  ? {
+                      borderColor: isDark ? "rgba(239,68,68,0.3)" : "rgba(239,68,68,0.25)",
+                      backgroundColor: isDark ? "rgba(239,68,68,0.08)" : "rgba(254,226,226,0.7)",
+                    }
+                  : {
+                      borderColor: isDark ? "rgba(255,255,255,0.10)" : "#e7e5e4",
+                      backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(250,250,249,0.95)",
+                      opacity: 0.35,
+                    },
+              ]}
+              activeOpacity={0.7}
+            >
+              <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+                <Path
+                  d="M18 6L6 18M6 6l12 12"
+                  stroke={
+                    hasHighlightedNotes
+                      ? isDark
+                        ? "#f87171"
+                        : "#ef4444"
+                      : isDark
+                        ? "#9ca3af"
+                        : "#78716c"
+                  }
+                  strokeWidth={2.5}
+                  strokeLinecap="round"
+                />
+              </Svg>
+            </TouchableOpacity>
           </View>
           {renderChips(allNotes, highlightedOverlayNotes, onToggleOverlayNoteHighlight)}
         </>
@@ -309,30 +343,43 @@ export default function FretboardFooter({
       {baseLabelMode === "degree" && (
         <>
           <View style={styles.titleRow}>
-            <Text style={[styles.title, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-              {t("degreeFilter.title")}
-            </Text>
-            {filterBtnEl(onAutoFilter, "degreeFilter")}
-            {highlightedDegrees.size > 0 && (
-              <TouchableOpacity
-                testID="reset-btn"
-                onPress={onReset}
-                style={[
-                  styles.actionBtn,
-                  {
-                    borderColor: isDark ? "rgba(251,146,60,0.3)" : "rgba(249,115,22,0.25)",
-                    backgroundColor: isDark ? "rgba(249,115,22,0.08)" : "rgba(255,237,213,0.7)",
-                  },
-                ]}
-                activeOpacity={0.7}
-              >
-                <Text
-                  style={{ fontSize: 13, fontWeight: "600", color: isDark ? "#fb923c" : "#ea580c" }}
-                >
-                  {t("degreeFilter.reset")}
-                </Text>
-              </TouchableOpacity>
-            )}
+            {filterBtnEl(onAutoFilter)}
+            <TouchableOpacity
+              testID="reset-btn"
+              onPress={onReset}
+              disabled={highlightedDegrees.size === 0}
+              style={[
+                styles.iconBtn,
+                highlightedDegrees.size > 0
+                  ? {
+                      borderColor: isDark ? "rgba(239,68,68,0.3)" : "rgba(239,68,68,0.25)",
+                      backgroundColor: isDark ? "rgba(239,68,68,0.08)" : "rgba(254,226,226,0.7)",
+                    }
+                  : {
+                      borderColor: isDark ? "rgba(255,255,255,0.10)" : "#e7e5e4",
+                      backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(250,250,249,0.95)",
+                      opacity: 0.35,
+                    },
+              ]}
+              activeOpacity={0.7}
+            >
+              <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+                <Path
+                  d="M18 6L6 18M6 6l12 12"
+                  stroke={
+                    highlightedDegrees.size > 0
+                      ? isDark
+                        ? "#f87171"
+                        : "#ef4444"
+                      : isDark
+                        ? "#9ca3af"
+                        : "#78716c"
+                  }
+                  strokeWidth={2.5}
+                  strokeLinecap="round"
+                />
+              </Svg>
+            </TouchableOpacity>
           </View>
           {renderChips([...DEGREE_CHIPS], highlightedDegrees, onToggleDegree)}
         </>
@@ -355,22 +402,19 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 12,
   },
-  actionRow: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  title: {
-    fontSize: 15,
-  },
-  actionBtn: {
+  iconBtn: {
     borderWidth: 1,
     borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    width: 34,
+    height: 34,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
-  chipsContainer: {
+  chipsWrapper: {
+    gap: 8,
+  },
+  chipsRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
     justifyContent: "center",
     gap: 8,
   },

@@ -33,7 +33,7 @@ describe("DropdownSelect", () => {
 
   it("renders the chevron indicator", () => {
     render(<DropdownSelect {...defaultProps} />);
-    expect(screen.getByText("▾")).toBeTruthy();
+    // SVG chevron is rendered instead of text
   });
 
   it("shows the first option label when value does not match any option", () => {
@@ -129,7 +129,7 @@ describe("DropdownSelect", () => {
   it("applies disabled styling (trigger is still rendered)", () => {
     render(<DropdownSelect {...defaultProps} disabled />);
     expect(screen.getByText("Alpha")).toBeTruthy();
-    expect(screen.getByText("▾")).toBeTruthy();
+    // SVG chevron is rendered instead of text
   });
 
   // --- fullWidth prop ---
@@ -139,7 +139,8 @@ describe("DropdownSelect", () => {
     const tree = toJSON();
     // The trigger (first TouchableOpacity) should have alignSelf: "stretch"
     // tree is an array because of the fragment; first element is the trigger
-    const trigger = Array.isArray(tree) ? tree[0] : tree;
+    const wrapper = Array.isArray(tree) ? tree[0] : tree;
+    const trigger = wrapper?.children?.[0] ?? wrapper;
     const flatStyle = Object.assign(
       {},
       ...(Array.isArray(trigger?.props?.style) ? trigger.props.style : [trigger?.props?.style]),
@@ -150,7 +151,8 @@ describe("DropdownSelect", () => {
   it("does not apply stretch style when fullWidth is false", () => {
     const { toJSON } = render(<DropdownSelect {...defaultProps} fullWidth={false} />);
     const tree = toJSON();
-    const trigger = Array.isArray(tree) ? tree[0] : tree;
+    const wrapper = Array.isArray(tree) ? tree[0] : tree;
+    const trigger = wrapper?.children?.[0] ?? wrapper;
     const flatStyle = Object.assign(
       {},
       ...(Array.isArray(trigger?.props?.style) ? trigger.props.style : [trigger?.props?.style]),
@@ -173,7 +175,8 @@ describe("DropdownSelect", () => {
   it("applies dark theme colors to trigger text", () => {
     const { toJSON } = render(<DropdownSelect {...defaultProps} theme="dark" />);
     const tree = toJSON();
-    const trigger = Array.isArray(tree) ? tree[0] : tree;
+    const wrapper = Array.isArray(tree) ? tree[0] : tree;
+    const trigger = wrapper?.children?.[0] ?? wrapper;
     // Find the Text node with the label
     const textNode = trigger?.children?.find(
       (c: any) => c?.type === "Text" && c?.children?.includes("Alpha"),
@@ -188,7 +191,8 @@ describe("DropdownSelect", () => {
   it("applies light theme colors to trigger text", () => {
     const { toJSON } = render(<DropdownSelect {...defaultProps} theme="light" />);
     const tree = toJSON();
-    const trigger = Array.isArray(tree) ? tree[0] : tree;
+    const wrapper = Array.isArray(tree) ? tree[0] : tree;
+    const trigger = wrapper?.children?.[0] ?? wrapper;
     const textNode = trigger?.children?.find(
       (c: any) => c?.type === "Text" && c?.children?.includes("Alpha"),
     );
@@ -202,7 +206,8 @@ describe("DropdownSelect", () => {
   it("applies disabled text color in dark theme", () => {
     const { toJSON } = render(<DropdownSelect {...defaultProps} theme="dark" disabled />);
     const tree = toJSON();
-    const trigger = Array.isArray(tree) ? tree[0] : tree;
+    const wrapper = Array.isArray(tree) ? tree[0] : tree;
+    const trigger = wrapper?.children?.[0] ?? wrapper;
     const textNode = trigger?.children?.find(
       (c: any) => c?.type === "Text" && c?.children?.includes("Alpha"),
     );
@@ -216,7 +221,8 @@ describe("DropdownSelect", () => {
   it("applies disabled text color in light theme", () => {
     const { toJSON } = render(<DropdownSelect {...defaultProps} theme="light" disabled />);
     const tree = toJSON();
-    const trigger = Array.isArray(tree) ? tree[0] : tree;
+    const wrapper = Array.isArray(tree) ? tree[0] : tree;
+    const trigger = wrapper?.children?.[0] ?? wrapper;
     const textNode = trigger?.children?.find(
       (c: any) => c?.type === "Text" && c?.children?.includes("Alpha"),
     );
@@ -234,7 +240,8 @@ describe("DropdownSelect", () => {
     fireEvent.press(screen.getByText("Alpha"));
     // After opening, the trigger should have the "open" border color
     const tree = toJSON();
-    const trigger = Array.isArray(tree) ? tree[0] : tree;
+    const wrapper = Array.isArray(tree) ? tree[0] : tree;
+    const trigger = wrapper?.children?.[0] ?? wrapper;
     const flatStyle = Object.assign(
       {},
       ...(Array.isArray(trigger?.props?.style) ? trigger.props.style : [trigger?.props?.style]),

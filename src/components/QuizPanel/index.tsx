@@ -27,7 +27,6 @@ interface QuizPanelProps {
   chordQuizTypes: ChordType[];
   availableChordQuizTypes: ChordType[];
   scaleType: ScaleType;
-  onKindChange: (mode: QuizMode, type: QuizType) => void;
   onChordQuizTypesChange: (value: ChordType[]) => void;
   onScaleTypeChange: (value: ScaleType) => void;
   onDiatonicQuizKeyTypeChange: (value: "major" | "natural-minor") => void;
@@ -70,7 +69,6 @@ export default function QuizPanel({
   chordQuizTypes,
   availableChordQuizTypes,
   scaleType,
-  onKindChange,
   onChordQuizTypesChange,
   onScaleTypeChange,
   onDiatonicQuizKeyTypeChange,
@@ -109,26 +107,6 @@ export default function QuizPanel({
     { value: "triad", label: t("options.diatonicChordSize.triad") },
     { value: "seventh", label: t("options.diatonicChordSize.seventh") },
   ];
-
-  const quizKindValue = `${mode}-${quizType}`;
-  const quizKindOptions = [
-    { value: "note-choice", label: t("quiz.kind.noteChoice") },
-    { value: "note-fretboard", label: t("quiz.kind.noteFretboard") },
-    { value: "degree-choice", label: t("quiz.kind.degreeChoice") },
-    { value: "degree-fretboard", label: t("quiz.kind.degreeFretboard") },
-    { value: "chord-choice", label: t("quiz.kind.chordChoice") },
-    { value: "chord-fretboard", label: t("quiz.kind.chordFretboard") },
-    { value: "scale-choice", label: t("quiz.kind.scaleChoice") },
-    { value: "scale-fretboard", label: t("quiz.kind.scaleFretboard") },
-    { value: "diatonic-all", label: t("quiz.kind.diatonicAll") },
-  ];
-
-  const handleKindChange = (value: string) => {
-    const parts = value.split("-");
-    const newType = parts[parts.length - 1] as QuizType;
-    const newMode = parts.slice(0, -1).join("-") as QuizMode;
-    onKindChange(newMode, newType);
-  };
 
   const handleChordTypeToggle = (value: ChordType) => {
     if (answered) return;
@@ -203,17 +181,8 @@ export default function QuizPanel({
 
   return (
     <View style={styles.card}>
-      {/* Header: Kind selector + Score */}
+      {/* Score */}
       <View style={styles.headerRow}>
-        <View style={{ minWidth: 170, marginBottom: 8 }}>
-          <DropdownSelect
-            theme={theme}
-            value={quizKindValue}
-            onChange={handleKindChange}
-            options={quizKindOptions}
-            fullWidth
-          />
-        </View>
         <Text style={[styles.score, { color: isDark ? "#9ca3af" : "#78716c" }]}>
           ✓ {score.correct} / {score.total}
         </Text>

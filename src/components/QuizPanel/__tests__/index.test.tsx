@@ -53,7 +53,6 @@ const defaultProps = {
     "aug",
   ] as ChordType[],
   scaleType: "major" as ScaleType,
-  onKindChange: jest.fn(),
   onChordQuizTypesChange: jest.fn(),
   onScaleTypeChange: jest.fn(),
   onDiatonicQuizKeyTypeChange: jest.fn(),
@@ -93,21 +92,6 @@ describe("QuizPanel", () => {
   it("displays updated score", () => {
     const { getByText } = renderPanel({ score: { correct: 10, total: 15 } });
     expect(getByText("\u2713 10 / 15")).toBeTruthy();
-  });
-
-  // ── Quiz kind dropdown ────────────────────────────────────────────
-  it("renders quiz kind dropdown", () => {
-    const { getByText } = renderPanel();
-    // The dropdown should show the current kind label
-    expect(getByText("quiz.kind.noteChoice")).toBeTruthy();
-  });
-
-  it("renders different quiz kind for degree-fretboard", () => {
-    const { getByText } = renderPanel({
-      mode: "degree",
-      quizType: "fretboard",
-    });
-    expect(getByText("quiz.kind.degreeFretboard")).toBeTruthy();
   });
 
   // ── Question display ──────────────────────────────────────────────
