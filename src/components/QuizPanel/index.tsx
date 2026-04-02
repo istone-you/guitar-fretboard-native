@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
+import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 import "../../i18n";
 import type { Theme, ChordType, ScaleType, QuizMode, QuizType, QuizQuestion } from "../../types";
@@ -362,7 +363,10 @@ export default function QuizPanel({
           </View>
           {!answered && quizSelectedChoices.length > 0 && (
             <TouchableOpacity
-              onPress={onSubmitChoice}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                onSubmitChoice();
+              }}
               style={[styles.submitBtn, { backgroundColor: isDark ? "#e5e7eb" : "#1c1917" }]}
               activeOpacity={0.8}
             >
@@ -476,7 +480,10 @@ export default function QuizPanel({
               </View>
               {quizSelectedChordType != null && (
                 <TouchableOpacity
-                  onPress={onSubmitChordChoice}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    onSubmitChordChoice();
+                  }}
                   style={[styles.submitBtn, { backgroundColor: isDark ? "#e5e7eb" : "#1c1917" }]}
                   activeOpacity={0.8}
                 >
@@ -700,7 +707,10 @@ export default function QuizPanel({
               )}
               {diatonicAllFilled && (
                 <TouchableOpacity
-                  onPress={onDiatonicSubmitAll}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    onDiatonicSubmitAll();
+                  }}
                   style={[styles.submitBtn, { backgroundColor: isDark ? "#e5e7eb" : "#1c1917" }]}
                   activeOpacity={0.8}
                 >
@@ -722,7 +732,10 @@ export default function QuizPanel({
           </Text>
           {quizSelectedCells.length > 0 && (
             <TouchableOpacity
-              onPress={onSubmitFretboard}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                onSubmitFretboard();
+              }}
               style={[styles.submitBtn, { backgroundColor: isDark ? "#e5e7eb" : "#1c1917" }]}
               activeOpacity={0.8}
             >

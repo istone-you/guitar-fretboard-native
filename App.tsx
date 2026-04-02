@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ScreenOrientation from "expo-screen-orientation";
+import * as Haptics from "expo-haptics";
 import "./src/i18n";
 import { useTranslation } from "react-i18next";
 import HeaderBar from "./src/components/AppHeader/index";
@@ -241,6 +242,9 @@ function AppContent() {
   };
 
   const handleNoteClick = (noteName: string) => {
+    if (noteName !== rootNote && (showScale || showCaged || showChord)) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
     setRootNote(noteName);
     regenerateQuiz();
   };
@@ -372,6 +376,19 @@ function AppContent() {
     if (!autoFilter) return highlightedOverlayNotes;
     return new Set(overlayNotes);
   }, [autoFilter, highlightedOverlayNotes, overlayNotes]);
+
+  const prevAutoFilterKey = useRef("");
+  const autoFilterKey = autoFilter
+    ? `${[...overlayNotes].sort().join()}|${[...overlaySemitones].sort().join()}`
+    : "";
+  if (
+    autoFilter &&
+    autoFilterKey !== prevAutoFilterKey.current &&
+    prevAutoFilterKey.current !== ""
+  ) {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  }
+  prevAutoFilterKey.current = autoFilterKey;
 
   const quizRootChangeEnabled =
     !showQuiz || quizMode === "degree" || quizMode === "scale" || quizMode === "diatonic";

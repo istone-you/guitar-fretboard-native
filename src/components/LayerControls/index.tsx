@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, PanResponder, Animated } from "react-native";
+import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 import "../../i18n";
 import {
@@ -63,6 +64,7 @@ function ToggleSwitch({
     // Mark as already handled so the external sync doesn't override the animation
     prevActive.current = !active;
     Animated.timing(anim, { toValue, duration: 300, useNativeDriver: false }).start();
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onPress();
   };
 
@@ -96,12 +98,14 @@ function CagedButton({
   active,
   disabled,
   isDark,
+  activeColor,
   onPress,
 }: {
   label: string;
   active: boolean;
   disabled: boolean;
   isDark: boolean;
+  activeColor: string;
   onPress: () => void;
 }) {
   const scale = useRef(new Animated.Value(active ? 1.05 : 1)).current;
@@ -127,13 +131,7 @@ function CagedButton({
         style={[
           styles.cagedBtn,
           {
-            backgroundColor: active
-              ? isDark
-                ? "#6b7280"
-                : "#4b5563"
-              : isDark
-                ? "#374151"
-                : "#fff",
+            backgroundColor: active ? activeColor : isDark ? "#374151" : "#fff",
             borderColor: active ? "transparent" : isDark ? "#6b7280" : "#d6d3d1",
           },
         ]}
@@ -289,6 +287,7 @@ export default function LayerControls({
         Math.abs(gs.dx) > 20 && Math.abs(gs.dx) > Math.abs(gs.dy) * 2,
       onPanResponderRelease: (_, gs) => {
         if (Math.abs(gs.dx) < 40) return;
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         if (gs.dx > 0) {
           // Swipe right → all layers ON
           setShowScale(true);
@@ -448,6 +447,7 @@ export default function LayerControls({
                     active={active}
                     disabled={cagedDisabled}
                     isDark={isDark}
+                    activeColor={cagedColor}
                     onPress={() => !cagedDisabled && toggleCagedForm(key)}
                   />
                 );
@@ -567,6 +567,7 @@ export default function LayerControls({
         ].map(({ tab, label, on, color }) => {
           const isCurrent = activeTab === tab;
           const toggleLayer = () => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             if (tab === "scale") setShowScale(!showScale);
             else if (tab === "caged") setShowCaged(!showCaged);
             else setShowChord(!showChord);

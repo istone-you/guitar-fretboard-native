@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Animated, PanResponder } from "react-native";
+import * as Haptics from "expo-haptics";
 import Svg, { Path } from "react-native-svg";
 import type { BaseLabelMode, Theme } from "../../types";
 
@@ -117,6 +118,7 @@ function SwipeableChips({
         findChipAt(e.nativeEvent.pageX, e.nativeEvent.pageY).then((item) => {
           if (item && !toggledDuringSwipe.current.has(item)) {
             toggledDuringSwipe.current.add(item);
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             onToggle(item);
           }
         });
@@ -125,6 +127,7 @@ function SwipeableChips({
         findChipAt(e.nativeEvent.pageX, e.nativeEvent.pageY).then((item) => {
           if (item && !toggledDuringSwipe.current.has(item)) {
             toggledDuringSwipe.current.add(item);
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             onToggle(item);
           }
         });
@@ -149,7 +152,10 @@ function SwipeableChips({
             disabled={disabled}
             isDark={isDark}
             onPress={() => {
-              if (!disabled) onToggle(item);
+              if (!disabled) {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                onToggle(item);
+              }
             }}
             chipRef={(ref) => {
               chipRefs.current[item] = ref;
@@ -166,7 +172,10 @@ function SwipeableChips({
             disabled={disabled}
             isDark={isDark}
             onPress={() => {
-              if (!disabled) onToggle(item);
+              if (!disabled) {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                onToggle(item);
+              }
             }}
             chipRef={(ref) => {
               chipRefs.current[item] = ref;
@@ -256,10 +265,14 @@ export default function FretboardFooter({
       testID="filter-btn"
       ref={filterBtnRef as any}
       onPress={() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         if (autoFilter) onAutoFilterChange(false);
         else onFilter();
       }}
-      onLongPress={() => onAutoFilterChange(!autoFilter)}
+      onLongPress={() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        onAutoFilterChange(!autoFilter);
+      }}
       style={[
         styles.iconBtn,
         autoFilter

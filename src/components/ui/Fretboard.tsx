@@ -1,5 +1,6 @@
 import { useRef, useMemo } from "react";
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Animated } from "react-native";
+import * as Haptics from "expo-haptics";
 import {
   FRET_COUNT,
   NOTES_SHARP,
@@ -630,6 +631,7 @@ function StringRow({
         const handlePress = () => {
           if (quizAnswerMode) {
             if (isTargetString && !isAnswered && onQuizCellClick) {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               onQuizCellClick(stringIdx, fret);
             }
             return;
