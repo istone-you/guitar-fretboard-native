@@ -37,11 +37,22 @@ export function DropdownSelect({
 }: DropdownSelectProps) {
   const [visible, setVisible] = useState(false);
   const listRef = useRef<FlatList>(null);
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-  const prevValue = useRef(value);
+  const menuScale = useRef(new Animated.Value(1)).current;
+  const scaleAnim = useRef(new Animated.Value(variant === "plain" ? 0.8 : 1)).current;
+  const mounted = useRef(false);
+  const prevKey = useRef(`${value}:${disabled}`);
+  const currentKey = `${value}:${disabled}`;
 
-  if (prevValue.current !== value) {
-    prevValue.current = value;
+  if (!mounted.current && variant === "plain") {
+    mounted.current = true;
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      friction: 5,
+      tension: 150,
+      useNativeDriver: true,
+    }).start();
+  } else if (prevKey.current !== currentKey) {
+    prevKey.current = currentKey;
     scaleAnim.stopAnimation();
     scaleAnim.setValue(0.8);
     Animated.spring(scaleAnim, {
@@ -91,7 +102,11 @@ export function DropdownSelect({
         }
       >
         <TouchableOpacity
-          onPress={() => !disabled && setVisible(true)}
+          onPress={() => {
+            if (disabled) return;
+            menuScale.setValue(0.5);
+            setVisible(true);
+          }}
           disabled={disabled}
           style={[
             isPlain ? styles.plainTrigger : styles.trigger,
@@ -112,8 +127,8 @@ export function DropdownSelect({
           </Text>
           {!disabled && (
             <Svg
-              width={isPlain ? 12 : 8}
-              height={isPlain ? 12 : 8}
+              width={fullWidth ? 10 : 12}
+              height={fullWidth ? 10 : 12}
               viewBox="0 0 16 16"
               fill="none"
               style={{ transform: [{ rotate: open ? "180deg" : "0deg" }] }}
@@ -133,16 +148,31 @@ export function DropdownSelect({
       <Modal
         visible={open}
         transparent
-        animationType="fade"
+        animationType="none"
         onRequestClose={() => setVisible(false)}
+        onShow={() => {
+          Animated.timing(menuScale, {
+            toValue: 1.05,
+            duration: 100,
+            useNativeDriver: true,
+          }).start(() => {
+            Animated.spring(menuScale, {
+              toValue: 1,
+              friction: 4,
+              tension: 200,
+              useNativeDriver: true,
+            }).start();
+          });
+        }}
       >
         <Pressable style={styles.overlay} onPress={() => setVisible(false)}>
-          <Pressable
+          <Animated.View
             style={[
               styles.menu,
               {
                 backgroundColor: isDark ? "rgba(17,24,39,0.97)" : "rgba(250,250,249,0.97)",
                 borderColor: isDark ? "rgba(255,255,255,0.08)" : "#e7e5e4",
+                transform: [{ scale: menuScale }],
               },
             ]}
           >
@@ -153,7 +183,11 @@ export function DropdownSelect({
               showsVerticalScrollIndicator
               indicatorStyle={isDark ? "white" : "black"}
               initialScrollIndex={Math.max(0, options.findIndex((o) => o.value === value) - 2)}
-              getItemLayout={(_, index) => ({ length: 38, offset: 38 * index, index })}
+              getItemLayout={(_, index) => ({
+                length: 38,
+                offset: 38 * index,
+                index,
+              })}
               onLayout={() => listRef.current?.flashScrollIndicators()}
               renderItem={({ item }) => {
                 const selected = item.value === value;
@@ -189,7 +223,7 @@ export function DropdownSelect({
                 );
               }}
             />
-          </Pressable>
+          </Animated.View>
         </Pressable>
       </Modal>
     </>

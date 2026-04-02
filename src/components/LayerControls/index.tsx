@@ -109,10 +109,11 @@ function CagedButton({
   onPress: () => void;
 }) {
   const scale = useRef(new Animated.Value(active ? 1.05 : 1)).current;
-  const prevActive = useRef(active);
+  const prevKey = useRef(`${active}:${disabled}`);
+  const currentKey = `${active}:${disabled}`;
 
-  if (prevActive.current !== active) {
-    prevActive.current = active;
+  if (prevKey.current !== currentKey) {
+    prevKey.current = currentKey;
     scale.stopAnimation();
     scale.setValue(0.8);
     Animated.spring(scale, {

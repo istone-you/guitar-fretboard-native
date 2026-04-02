@@ -1,5 +1,5 @@
-import { useMemo } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
+import { useMemo, useRef } from "react";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Animated } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 import "../../i18n";
@@ -7,9 +7,90 @@ import type { Theme, ChordType, ScaleType, QuizMode, QuizType, QuizQuestion } fr
 import { DropdownSelect } from "../ui/DropdownSelect";
 import { buildScaleOptions } from "../ui/scaleOptions";
 
+function BounceButton({
+  selected,
+  onPress,
+  style,
+  activeOpacity = 0.7,
+  children,
+}: {
+  selected: boolean;
+  onPress: () => void;
+  style: any;
+  activeOpacity?: number;
+  children: React.ReactNode;
+}) {
+  const scale = useRef(new Animated.Value(0.8)).current;
+  const mounted = useRef(false);
+  const prevSelected = useRef(selected);
+
+  if (!mounted.current) {
+    mounted.current = true;
+    Animated.spring(scale, {
+      toValue: 1,
+      friction: 5,
+      tension: 150,
+      useNativeDriver: true,
+    }).start();
+  } else if (prevSelected.current !== selected) {
+    prevSelected.current = selected;
+    scale.stopAnimation();
+    scale.setValue(0.8);
+    Animated.spring(scale, {
+      toValue: 1,
+      friction: 5,
+      tension: 150,
+      useNativeDriver: true,
+    }).start();
+  }
+
+  return (
+    <Animated.View style={{ transform: [{ scale }] }}>
+      <TouchableOpacity onPress={onPress} style={style} activeOpacity={activeOpacity}>
+        {children}
+      </TouchableOpacity>
+    </Animated.View>
+  );
+}
+
+function BounceView({ children, style }: { children: React.ReactNode; style?: any }) {
+  const scale = useRef(new Animated.Value(0.8)).current;
+  const mounted = useRef(false);
+
+  if (!mounted.current) {
+    mounted.current = true;
+    Animated.spring(scale, {
+      toValue: 1,
+      friction: 5,
+      tension: 150,
+      useNativeDriver: true,
+    }).start();
+  }
+
+  return <Animated.View style={[style, { transform: [{ scale }] }]}>{children}</Animated.View>;
+}
+
+function ResultSection({ children }: { children: React.ReactNode }) {
+  const scale = useRef(new Animated.Value(0.8)).current;
+  const mounted = useRef(false);
+
+  if (!mounted.current) {
+    mounted.current = true;
+    Animated.spring(scale, {
+      toValue: 1,
+      friction: 5,
+      tension: 150,
+      useNativeDriver: true,
+    }).start();
+  }
+
+  return (
+    <Animated.View style={[styles.resultRow, { transform: [{ scale }] }]}>{children}</Animated.View>
+  );
+}
+
 interface QuizPanelProps {
   theme: Theme;
-  quizColor: string;
   mode: QuizMode;
   quizType: QuizType;
   question: QuizQuestion;
@@ -52,7 +133,6 @@ interface QuizPanelProps {
 
 export default function QuizPanel({
   theme,
-  quizColor,
   mode,
   quizType,
   question,
@@ -194,7 +274,7 @@ export default function QuizPanel({
       {/* Chord quiz types filter */}
       {mode === "chord" && (
         <View style={styles.filterRow}>
-          <Text style={[styles.filterLabel, { color: isDark ? "#d1d5db" : "#44403c" }]}>
+          <Text style={[styles.filterLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
             {t("quiz.chordTypes.label")}
           </Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -202,10 +282,10 @@ export default function QuizPanel({
               {availableChordQuizTypes.map((ct) => {
                 const active = chordQuizTypes.includes(ct);
                 return (
-                  <TouchableOpacity
-                    key={ct}
+                  <BounceButton
+                    key={`${ct}-${quizType}`}
+                    selected={active}
                     onPress={() => handleChordTypeToggle(ct)}
-                    disabled={answered}
                     style={[
                       styles.chip,
                       {
@@ -219,7 +299,6 @@ export default function QuizPanel({
                         borderColor: active ? "transparent" : isDark ? "#4b5563" : "#d6d3d1",
                       },
                     ]}
-                    activeOpacity={0.7}
                   >
                     <Text
                       style={{
@@ -235,7 +314,7 @@ export default function QuizPanel({
                     >
                       {ct}
                     </Text>
-                  </TouchableOpacity>
+                  </BounceButton>
                 );
               })}
             </View>
@@ -246,7 +325,7 @@ export default function QuizPanel({
       {/* Scale type selector */}
       {mode === "scale" && (
         <View style={styles.filterRow}>
-          <Text style={[styles.filterLabel, { color: isDark ? "#d1d5db" : "#44403c" }]}>
+          <Text style={[styles.filterLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
             {t("layers.scale")}
           </Text>
           <DropdownSelect
@@ -254,6 +333,7 @@ export default function QuizPanel({
             value={scaleType}
             onChange={(v) => onScaleTypeChange(v as ScaleType)}
             options={scaleOptions}
+            variant="plain"
           />
         </View>
       )}
@@ -270,6 +350,7 @@ export default function QuizPanel({
               { value: "true", label: t("quiz.fretboardMode.allStrings") },
             ]}
             disabled={answered}
+            variant="plain"
           />
         </View>
       )}
@@ -279,7 +360,7 @@ export default function QuizPanel({
         <View style={styles.filterRow}>
           <View style={styles.diatonicSettingsRow}>
             <View style={{ alignItems: "center", gap: 4 }}>
-              <Text style={[styles.filterLabel, { color: isDark ? "#d1d5db" : "#44403c" }]}>
+              <Text style={[styles.filterLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
                 {t("controls.key")}
               </Text>
               <DropdownSelect
@@ -288,10 +369,11 @@ export default function QuizPanel({
                 onChange={(v) => onDiatonicQuizKeyTypeChange(v as "major" | "natural-minor")}
                 options={diatonicKeyOptions}
                 disabled={answered}
+                variant="plain"
               />
             </View>
             <View style={{ alignItems: "center", gap: 4 }}>
-              <Text style={[styles.filterLabel, { color: isDark ? "#d1d5db" : "#44403c" }]}>
+              <Text style={[styles.filterLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
                 {t("controls.chordType")}
               </Text>
               <DropdownSelect
@@ -300,6 +382,7 @@ export default function QuizPanel({
                 onChange={(v) => onDiatonicQuizChordSizeChange(v as "triad" | "seventh")}
                 options={diatonicChordSizeOptions}
                 disabled={answered}
+                variant="plain"
               />
             </View>
           </View>
@@ -308,9 +391,11 @@ export default function QuizPanel({
 
       {/* Question text */}
       {questionText !== "" && (
-        <Text style={[styles.questionText, { color: isDark ? "#fff" : "#1c1917" }]}>
-          {questionText}
-        </Text>
+        <BounceView key={questionText}>
+          <Text style={[styles.questionText, { color: isDark ? "#fff" : "#1c1917" }]}>
+            {questionText}
+          </Text>
+        </BounceView>
       )}
 
       {/* Choices for note/degree/scale modes */}
@@ -346,23 +431,23 @@ export default function QuizPanel({
                 }
               }
               return (
-                <TouchableOpacity
+                <BounceButton
                   key={choice}
+                  selected={isSelected}
                   onPress={() => !answered && onAnswer(choice)}
-                  disabled={answered}
                   style={[
                     styles.choiceBtn,
                     { backgroundColor: bgColor, borderColor, borderWidth: 1 },
                   ]}
-                  activeOpacity={0.7}
                 >
                   <Text style={[styles.choiceBtnText, { color: textColor }]}>{choice}</Text>
-                </TouchableOpacity>
+                </BounceButton>
               );
             })}
           </View>
           {!answered && quizSelectedChoices.length > 0 && (
-            <TouchableOpacity
+            <BounceButton
+              selected={false}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                 onSubmitChoice();
@@ -373,7 +458,7 @@ export default function QuizPanel({
               <Text style={[styles.submitBtnText, { color: isDark ? "#1c1917" : "#fff" }]}>
                 {t("quiz.submit")}
               </Text>
-            </TouchableOpacity>
+            </BounceButton>
           )}
         </View>
       )}
@@ -418,18 +503,17 @@ export default function QuizPanel({
                 }
               }
               return (
-                <TouchableOpacity
+                <BounceButton
                   key={choice}
+                  selected={isSelectedChoice}
                   onPress={() => onChordQuizRootSelect(choice)}
-                  disabled={answered}
                   style={[
                     styles.choiceBtn,
                     { backgroundColor: bgColor, borderColor, borderWidth: 1 },
                   ]}
-                  activeOpacity={0.7}
                 >
                   <Text style={[styles.choiceBtnText, { color: textColor }]}>{choice}</Text>
-                </TouchableOpacity>
+                </BounceButton>
               );
             })}
           </View>
@@ -439,8 +523,9 @@ export default function QuizPanel({
                 {(question.diatonicChordTypeOptions ?? chordQuizTypes).map((ct) => {
                   const isSelected = ct === quizSelectedChordType;
                   return (
-                    <TouchableOpacity
+                    <BounceButton
                       key={ct}
+                      selected={isSelected}
                       onPress={() => onChordQuizTypeSelect(ct)}
                       style={[
                         styles.choiceBtn,
@@ -456,7 +541,6 @@ export default function QuizPanel({
                           borderWidth: 1,
                         },
                       ]}
-                      activeOpacity={0.7}
                     >
                       <Text
                         style={[
@@ -474,12 +558,13 @@ export default function QuizPanel({
                       >
                         {ct}
                       </Text>
-                    </TouchableOpacity>
+                    </BounceButton>
                   );
                 })}
               </View>
               {quizSelectedChordType != null && (
-                <TouchableOpacity
+                <BounceButton
+                  selected={false}
                   onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                     onSubmitChordChoice();
@@ -490,7 +575,7 @@ export default function QuizPanel({
                   <Text style={[styles.submitBtnText, { color: isDark ? "#1c1917" : "#fff" }]}>
                     {t("quiz.submit")}
                   </Text>
-                </TouchableOpacity>
+                </BounceButton>
               )}
             </>
           )}
@@ -546,10 +631,10 @@ export default function QuizPanel({
                 const answer = diatonicAllAnswers[entry.degree];
                 const isEditing = currentDiatonicDegree === entry.degree;
                 return (
-                  <TouchableOpacity
+                  <BounceButton
                     key={entry.degree}
+                    selected={false}
                     onPress={() => !answered && onDiatonicDegreeCardClick(entry.degree)}
-                    disabled={answered}
                     style={[
                       styles.diatonicCard,
                       {
@@ -574,7 +659,6 @@ export default function QuizPanel({
                             : "#fff",
                       },
                     ]}
-                    activeOpacity={0.7}
                   >
                     <Text style={{ fontSize: 13, color: isDark ? "#9ca3af" : "#78716c" }}>
                       {entry.degree}
@@ -609,7 +693,7 @@ export default function QuizPanel({
                             : entry.chordType}
                       </Text>
                     )}
-                  </TouchableOpacity>
+                  </BounceButton>
                 );
               })}
             </View>
@@ -620,8 +704,9 @@ export default function QuizPanel({
             <View style={{ gap: 8 }}>
               <View style={styles.choicesGrid}>
                 {noteOptions.slice(0, 12).map((note) => (
-                  <TouchableOpacity
+                  <BounceButton
                     key={note}
+                    selected={note === diatonicSelectedRoot}
                     onPress={() => onDiatonicAnswerRootSelect(note)}
                     style={[
                       styles.choiceBtn,
@@ -643,7 +728,6 @@ export default function QuizPanel({
                         borderWidth: 1,
                       },
                     ]}
-                    activeOpacity={0.7}
                   >
                     <Text
                       style={{
@@ -660,14 +744,15 @@ export default function QuizPanel({
                     >
                       {note}
                     </Text>
-                  </TouchableOpacity>
+                  </BounceButton>
                 ))}
               </View>
               {diatonicSelectedRoot != null && (
                 <View style={styles.choicesGrid}>
                   {(question.diatonicChordTypeOptions ?? []).map((ct) => (
-                    <TouchableOpacity
+                    <BounceButton
                       key={ct}
+                      selected={ct === diatonicSelectedChordType}
                       onPress={() => onDiatonicAnswerTypeSelect(ct)}
                       style={[
                         styles.choiceBtn,
@@ -684,7 +769,6 @@ export default function QuizPanel({
                           borderWidth: 1,
                         },
                       ]}
-                      activeOpacity={0.7}
                     >
                       <Text
                         style={{
@@ -701,12 +785,13 @@ export default function QuizPanel({
                       >
                         {ct}
                       </Text>
-                    </TouchableOpacity>
+                    </BounceButton>
                   ))}
                 </View>
               )}
               {diatonicAllFilled && (
-                <TouchableOpacity
+                <BounceButton
+                  selected={false}
                   onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                     onDiatonicSubmitAll();
@@ -717,7 +802,7 @@ export default function QuizPanel({
                   <Text style={[styles.submitBtnText, { color: isDark ? "#1c1917" : "#fff" }]}>
                     {t("quiz.submit")}
                   </Text>
-                </TouchableOpacity>
+                </BounceButton>
               )}
             </View>
           )}
@@ -727,11 +812,14 @@ export default function QuizPanel({
       {/* Fretboard quiz: tap instruction + submit */}
       {quizType === "fretboard" && mode !== "diatonic" && !answered && (
         <View style={{ alignItems: "center", gap: 10 }}>
-          <Text style={{ fontSize: 15, color: isDark ? "#9ca3af" : "#78716c" }}>
-            {t("quiz.tapInstruction")}
-          </Text>
+          <BounceView>
+            <Text style={{ fontSize: 15, color: isDark ? "#9ca3af" : "#78716c" }}>
+              {t("quiz.tapInstruction")}
+            </Text>
+          </BounceView>
           {quizSelectedCells.length > 0 && (
-            <TouchableOpacity
+            <BounceButton
+              selected={false}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                 onSubmitFretboard();
@@ -742,14 +830,14 @@ export default function QuizPanel({
               <Text style={[styles.submitBtnText, { color: isDark ? "#1c1917" : "#fff" }]}>
                 {t("quiz.submit")}
               </Text>
-            </TouchableOpacity>
+            </BounceButton>
           )}
         </View>
       )}
 
       {/* Result + navigation */}
       {answered && (
-        <View style={styles.resultRow}>
+        <ResultSection>
           <Text
             style={{ fontSize: 17, fontWeight: "bold", color: isCorrect ? "#16a34a" : "#ef4444" }}
           >
@@ -789,7 +877,7 @@ export default function QuizPanel({
               </Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </ResultSection>
       )}
     </View>
   );
@@ -817,8 +905,10 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   filterLabel: {
-    fontSize: 15,
+    fontSize: 12,
     fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
   },
   diatonicSettingsRow: {
     flexDirection: "row",

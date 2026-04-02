@@ -178,7 +178,7 @@ function AppContent() {
   const [baseLabelMode, setBaseLabelMode] = useState<BaseLabelMode>("note");
   const [theme, setTheme] = usePersistedSetting<Theme>(
     STORAGE_KEYS.theme,
-    "dark",
+    "light",
     (v) => v,
     (v) => v as Theme,
   );
@@ -533,7 +533,6 @@ function AppContent() {
     showQuiz && quizQuestion != null ? (
       <QuizPanel
         theme={theme}
-        quizColor={quizAccentColor}
         mode={quizMode}
         quizType={quizType}
         question={quizQuestion}
@@ -959,6 +958,8 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingHorizontal: 8,
     paddingVertical: 2,
+    borderWidth: 1.5,
+    borderColor: "rgba(0,0,0,0.15)",
   },
   infoPillText: {
     fontSize: 14,

@@ -81,7 +81,13 @@ function ScaleAnimView({
     }
   }
 
-  const bgStyle = lastColor.current ? { backgroundColor: lastColor.current } : {};
+  const bgStyle = lastColor.current
+    ? {
+        backgroundColor: lastColor.current,
+        borderWidth: 1.5,
+        borderColor: "rgba(0,0,0,0.15)",
+      }
+    : {};
 
   return (
     <Animated.View style={[style, bgStyle, { transform: [{ scale }] }]}>{children}</Animated.View>
@@ -222,6 +228,22 @@ export default function Fretboard({
 }: FretboardProps) {
   const [fretMin, fretMax] = fretRange;
   const quizActive = quizModeActive && quizCell !== undefined;
+
+  // Label switch animation
+  const labelScale = useRef(new Animated.Value(1)).current;
+  const prevBaseLabelMode = useRef(baseLabelMode);
+  if (prevBaseLabelMode.current !== baseLabelMode) {
+    prevBaseLabelMode.current = baseLabelMode;
+    if (!disableAnimation) {
+      labelScale.setValue(0.8);
+      Animated.spring(labelScale, {
+        toValue: 1,
+        friction: 5,
+        tension: 150,
+        useNativeDriver: true,
+      }).start();
+    }
+  }
   const size = FRETBOARD_SIZE;
   const isDark = theme === "dark";
   const rootIndex = getRootIndex(rootNote);
@@ -479,6 +501,7 @@ export default function Fretboard({
               accidental={accidental}
               rootIndex={rootIndex}
               baseLabelMode={baseLabelMode}
+              labelScale={labelScale}
               showScale={showScale}
               scaleType={scaleType}
               cagedPositions={cagedPositions}
@@ -518,6 +541,7 @@ interface StringRowProps {
   accidental: Accidental;
   rootIndex: number;
   baseLabelMode: BaseLabelMode;
+  labelScale: Animated.Value;
   showScale: boolean;
   scaleType: ScaleType;
   cagedPositions: Map<string, CagedPositionValue>;
@@ -551,6 +575,7 @@ function StringRow({
   accidental,
   rootIndex,
   baseLabelMode,
+  labelScale,
   showScale,
   scaleType,
   cagedPositions,
@@ -693,17 +718,18 @@ function StringRow({
 
             {/* Base label */}
             {!overlayColor && !inChord && !shouldSuppressRegularDisplay && (
-              <Text
+              <Animated.Text
                 style={{
                   fontSize: size.baseFontSize,
                   color: "#6b7280",
                   fontFamily: "monospace",
                   fontWeight: isHighlighted ? "bold" : "normal",
                   zIndex: 0,
+                  transform: [{ scale: labelScale }],
                 }}
               >
                 {labelText}
-              </Text>
+              </Animated.Text>
             )}
 
             {/* Scale overlay (behind CAGED) */}
@@ -725,15 +751,16 @@ function StringRow({
                   opacity: 0.92,
                 }}
               >
-                <Text
+                <Animated.Text
                   style={{
                     fontSize: size.overlayFontSize,
                     color: "#fff",
                     fontWeight: "bold",
+                    transform: [{ scale: labelScale }],
                   }}
                 >
                   {labelText}
-                </Text>
+                </Animated.Text>
               </ScaleAnimView>
             )}
             {/* CAGED overlay (in front of scale) */}
@@ -755,15 +782,16 @@ function StringRow({
                   opacity: 0.92,
                 }}
               >
-                <Text
+                <Animated.Text
                   style={{
                     fontSize: size.overlayFontSize,
                     color: "#fff",
                     fontWeight: "bold",
+                    transform: [{ scale: labelScale }],
                   }}
                 >
                   {labelText}
-                </Text>
+                </Animated.Text>
               </ScaleAnimView>
             )}
 
@@ -786,15 +814,16 @@ function StringRow({
                   opacity: 0.92,
                 }}
               >
-                <Text
+                <Animated.Text
                   style={{
                     fontSize: size.overlayFontSize,
                     color: "#fff",
                     fontWeight: "bold",
+                    transform: [{ scale: labelScale }],
                   }}
                 >
                   {hideChordNoteLabels ? "?" : labelText}
-                </Text>
+                </Animated.Text>
               </ScaleAnimView>
             )}
 
@@ -809,6 +838,8 @@ function StringRow({
                   bottom: overlayInset,
                   borderRadius: overlaySize / 2,
                   backgroundColor: quizColor ?? (isDark ? "#e5e7eb" : "#1c1917"),
+                  borderWidth: 1.5,
+                  borderColor: "rgba(0,0,0,0.15)",
                   alignItems: "center",
                   justifyContent: "center",
                   zIndex: 30,

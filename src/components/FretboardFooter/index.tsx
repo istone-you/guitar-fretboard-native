@@ -12,6 +12,7 @@ function AnimatedChip({
   isDark,
   onPress,
   chipRef,
+  groupKey,
 }: {
   item: string;
   active: boolean;
@@ -19,12 +20,24 @@ function AnimatedChip({
   isDark: boolean;
   onPress: () => void;
   chipRef?: (ref: View | null) => void;
+  groupKey?: string;
 }) {
-  const scale = useRef(new Animated.Value(1)).current;
+  const scale = useRef(new Animated.Value(0.8)).current;
+  const mounted = useRef(false);
   const prevActive = useRef(active);
+  const prevGroupKey = useRef(groupKey);
 
-  if (prevActive.current !== active) {
+  if (!mounted.current) {
+    mounted.current = true;
+    Animated.spring(scale, {
+      toValue: 1,
+      friction: 5,
+      tension: 150,
+      useNativeDriver: true,
+    }).start();
+  } else if (prevActive.current !== active || prevGroupKey.current !== groupKey) {
     prevActive.current = active;
+    prevGroupKey.current = groupKey;
     scale.stopAnimation();
     scale.setValue(0.8);
     Animated.spring(scale, {
@@ -75,12 +88,14 @@ function SwipeableChips({
   disabled,
   isDark,
   onToggle,
+  groupKey,
 }: {
   items: string[];
   activeItems: Set<string>;
   disabled: boolean;
   isDark: boolean;
   onToggle: (item: string) => void;
+  groupKey?: string;
 }) {
   const chipRefs = useRef<Record<string, View | null>>({});
   const toggledDuringSwipe = useRef(new Set<string>());
@@ -151,6 +166,7 @@ function SwipeableChips({
             active={activeItems.has(item)}
             disabled={disabled}
             isDark={isDark}
+            groupKey={groupKey}
             onPress={() => {
               if (!disabled) {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -171,6 +187,7 @@ function SwipeableChips({
             active={activeItems.has(item)}
             disabled={disabled}
             isDark={isDark}
+            groupKey={groupKey}
             onPress={() => {
               if (!disabled) {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -248,6 +265,7 @@ export default function FretboardFooter({
     items: string[],
     activeItems: Set<string>,
     onToggle: (v: string) => void,
+    groupKey?: string,
   ) => (
     <View ref={chipAreaRef as any}>
       <SwipeableChips
@@ -255,6 +273,7 @@ export default function FretboardFooter({
         activeItems={activeItems}
         disabled={autoFilter}
         isDark={isDark}
+        groupKey={groupKey}
         onToggle={onToggle}
       />
     </View>
@@ -344,7 +363,12 @@ export default function FretboardFooter({
               </Svg>
             </TouchableOpacity>
           </View>
-          {renderChips(allNotes, highlightedOverlayNotes, onToggleOverlayNoteHighlight)}
+          {renderChips(
+            allNotes,
+            highlightedOverlayNotes,
+            onToggleOverlayNoteHighlight,
+            allNotes[0],
+          )}
         </>
       )}
 

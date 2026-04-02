@@ -243,6 +243,39 @@ export default function HeaderBar({
   const overlayAnim = useRef(new Animated.Value(0)).current;
   const panelAnim = useRef(new Animated.Value(700)).current;
 
+  // Label underline slide animation
+  const underlineLeft = useRef(new Animated.Value(0)).current;
+  const underlineWidth = useRef(new Animated.Value(0)).current;
+  const labelLayouts = useRef<Record<string, { x: number; w: number }>>({});
+  const prevMode = useRef(baseLabelMode);
+  const underlineReady = useRef(false);
+
+  if (prevMode.current !== baseLabelMode) {
+    prevMode.current = baseLabelMode;
+    const l = labelLayouts.current[baseLabelMode];
+    if (l) {
+      Animated.parallel([
+        Animated.timing(underlineLeft, { toValue: l.x, duration: 300, useNativeDriver: false }),
+        Animated.timing(underlineWidth, { toValue: l.w, duration: 300, useNativeDriver: false }),
+      ]).start();
+    }
+  }
+
+  // Root note bounce animation
+  const rootScale = useRef(new Animated.Value(1)).current;
+  const prevRootNote = useRef(rootNote);
+  if (prevRootNote.current !== rootNote) {
+    prevRootNote.current = rootNote;
+    rootScale.stopAnimation();
+    rootScale.setValue(0.8);
+    Animated.spring(rootScale, {
+      toValue: 1,
+      friction: 5,
+      tension: 150,
+      useNativeDriver: true,
+    }).start();
+  }
+
   const openSettings = () => {
     setSettingsVisible(true);
     Animated.parallel([
@@ -290,7 +323,14 @@ export default function HeaderBar({
         >
           <Text style={[styles.stepBtnText, { color: isDark ? "#9ca3af" : "#78716c" }]}>‹</Text>
         </TouchableOpacity>
-        <Text style={[styles.rootNote, { color: isDark ? "#fff" : "#1c1917" }]}>{rootNote}</Text>
+        <Animated.Text
+          style={[
+            styles.rootNote,
+            { color: isDark ? "#fff" : "#1c1917", transform: [{ scale: rootScale }] },
+          ]}
+        >
+          {rootNote}
+        </Animated.Text>
         <TouchableOpacity
           onPress={() => stepNote(1)}
           disabled={rootChangeDisabled}
@@ -317,6 +357,15 @@ export default function HeaderBar({
         <View ref={labelToggleRef as any} style={styles.labelToggle}>
           <TouchableOpacity
             onPress={() => onBaseLabelModeChange("note")}
+            onLayout={(e) => {
+              const { x, width } = e.nativeEvent.layout;
+              labelLayouts.current.note = { x, w: width };
+              if (!underlineReady.current && baseLabelMode === "note") {
+                underlineReady.current = true;
+                underlineLeft.setValue(x);
+                underlineWidth.setValue(width);
+              }
+            }}
             activeOpacity={0.7}
             hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
           >
@@ -338,14 +387,19 @@ export default function HeaderBar({
             >
               {t("header.note")}
             </Text>
-            {baseLabelMode === "note" && (
-              <View
-                style={[styles.labelUnderline, { backgroundColor: isDark ? "#fff" : "#1c1917" }]}
-              />
-            )}
+            <View style={[styles.labelUnderline, { opacity: 0 }]} />
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => onBaseLabelModeChange("degree")}
+            onLayout={(e) => {
+              const { x, width } = e.nativeEvent.layout;
+              labelLayouts.current.degree = { x, w: width };
+              if (!underlineReady.current && baseLabelMode === "degree") {
+                underlineReady.current = true;
+                underlineLeft.setValue(x);
+                underlineWidth.setValue(width);
+              }
+            }}
             activeOpacity={0.7}
             hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
           >
@@ -367,12 +421,19 @@ export default function HeaderBar({
             >
               {t("header.degree")}
             </Text>
-            {baseLabelMode === "degree" && (
-              <View
-                style={[styles.labelUnderline, { backgroundColor: isDark ? "#fff" : "#1c1917" }]}
-              />
-            )}
+            <View style={[styles.labelUnderline, { opacity: 0 }]} />
           </TouchableOpacity>
+          <Animated.View
+            style={{
+              position: "absolute",
+              bottom: 0,
+              height: 2,
+              borderRadius: 1,
+              left: underlineLeft,
+              width: underlineWidth,
+              backgroundColor: isDark ? "#fff" : "#1c1917",
+            }}
+          />
         </View>
       )}
 
@@ -620,6 +681,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 16,
+    position: "relative",
   },
   labelToggleText: {
     fontSize: 15,
