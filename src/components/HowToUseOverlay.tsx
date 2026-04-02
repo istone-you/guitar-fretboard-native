@@ -185,7 +185,7 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 13,
     fontWeight: "600",
-    backgroundColor: "rgba(14,165,233,0.85)",
+    backgroundColor: "rgba(28,25,23,0.85)",
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 8,
@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   arrow: {
-    color: "#0ea5e9",
+    color: "#9ca3af",
     fontSize: 18,
   },
   closeHint: {

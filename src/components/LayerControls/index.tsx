@@ -40,10 +40,14 @@ function ToggleSwitch({
   active,
   onPress,
   disabled,
+  isDark,
+  activeColor,
 }: {
   active: boolean;
   onPress: () => void;
   disabled: boolean;
+  isDark: boolean;
+  activeColor?: string;
 }) {
   const anim = useRef(new Animated.Value(active ? 1 : 0)).current;
   const prevActive = useRef(active);
@@ -68,7 +72,7 @@ function ToggleSwitch({
   });
   const bgColor = anim.interpolate({
     inputRange: [0, 1],
-    outputRange: ["#4b5563", "#0ea5e9"],
+    outputRange: [isDark ? "#4b5563" : "#d6d3d1", activeColor ?? (isDark ? "#d1d5db" : "#1c1917")],
   });
 
   return (
@@ -125,8 +129,8 @@ function CagedButton({
           {
             backgroundColor: active
               ? isDark
-                ? "#0284c7"
-                : "#0ea5e9"
+                ? "#6b7280"
+                : "#4b5563"
               : isDark
                 ? "#374151"
                 : "#fff",
@@ -393,6 +397,8 @@ export default function LayerControls({
           active={showScale}
           onPress={() => setShowScale(!showScale)}
           disabled={false}
+          isDark={isDark}
+          activeColor={scaleColor}
         />
       </View>
       <View style={{ opacity: getContentOpacity(showScale), flex: 1 }}>
@@ -423,6 +429,8 @@ export default function LayerControls({
           active={showCaged}
           onPress={() => setShowCaged(!showCaged)}
           disabled={false}
+          isDark={isDark}
+          activeColor={cagedColor}
         />
       </View>
       <View style={{ opacity: getContentOpacity(showCaged), flex: 1 }}>
@@ -459,6 +467,8 @@ export default function LayerControls({
           active={showChord}
           onPress={() => setShowChord(!showChord)}
           disabled={false}
+          isDark={isDark}
+          activeColor={chordColor}
         />
       </View>
       <View style={{ opacity: getContentOpacity(showChord), flex: 1 }}>

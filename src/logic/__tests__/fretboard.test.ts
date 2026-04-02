@@ -287,7 +287,7 @@ describe("DEGREE_COLORS", () => {
 
   it("has color for P5", () => {
     expect(DEGREE_COLORS.P5).toBeDefined();
-    expect(DEGREE_COLORS.P5!.bg).toBe("#3b82f6");
+    expect(DEGREE_COLORS.P5!.bg).toBe("#6b7280");
   });
 
   it("has color for all 12 degrees", () => {

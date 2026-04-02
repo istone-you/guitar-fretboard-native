@@ -92,11 +92,11 @@ describe("SegmentedToggle", () => {
 
   // --- Theme variants ---
 
-  it("applies white text to selected option in dark theme", () => {
+  it("applies dark text to selected option in dark theme", () => {
     const { getByText } = render(<SegmentedToggle {...defaultProps} theme="dark" value="one" />);
     const style = getByText("One").props.style;
     const flat = Object.assign({}, ...(Array.isArray(style) ? style : [style]));
-    expect(flat.color).toBe("#fff");
+    expect(flat.color).toBe("#1c1917");
   });
 
   it("applies white text to selected option in light theme", () => {
@@ -124,7 +124,7 @@ describe("SegmentedToggle", () => {
       {},
       ...(Array.isArray(textNode?.props?.style) ? textNode.props.style : [textNode?.props?.style]),
     );
-    expect(flatStyle.color).toBe("#fff");
+    expect(flatStyle.color).toBe("#1c1917");
   });
 
   it("applies dark theme text color to unselected option", () => {

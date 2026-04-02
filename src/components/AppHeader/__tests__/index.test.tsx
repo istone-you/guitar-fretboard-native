@@ -34,7 +34,7 @@ const defaultProps = {
   onScaleColorChange: jest.fn(),
   cagedColor: "#40e0d0",
   onCagedColorChange: jest.fn(),
-  chordColor: "#0ea5e9",
+  chordColor: "#ffd700",
   onChordColorChange: jest.fn(),
 };
 

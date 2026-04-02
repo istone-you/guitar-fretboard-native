@@ -443,8 +443,8 @@ describe("Fretboard - Quiz mode", () => {
       />,
     );
     const json = JSON.stringify(toJSON());
-    // Quiz target uses #0ea5e9 background
-    expect(json).toContain("#0ea5e9");
+    // Quiz target background (dark theme = light)
+    expect(json).toContain("#e5e7eb");
     // Quiz target shows "?" text
     expect(getAllByText("?").length).toBeGreaterThanOrEqual(1);
   });
@@ -515,8 +515,8 @@ describe("Fretboard - Quiz mode", () => {
       />,
     );
     const json = JSON.stringify(toJSON());
-    // Target hint ring uses rgba(56,189,248,0.5)
-    expect(json).toContain("rgba(56,189,248,0.5)");
+    // Target hint ring
+    expect(json).toContain("rgba(229,231,235,0.5)");
   });
 
   it("dims non-target strings in answer mode", () => {
@@ -556,11 +556,11 @@ describe("Fretboard - Quiz selected cells", () => {
       />,
     );
     const json = JSON.stringify(toJSON());
-    // Selected cells use #0ea5e9 (sky blue)
-    expect(json).toContain("#0ea5e9");
+    // Selected cells use base color (dark theme = light)
+    expect(json).toContain("#e5e7eb");
   });
 
-  it("shows sky blue overlay on selected cells without note name", () => {
+  it("shows overlay on selected cells without note name", () => {
     const { UNSAFE_root } = render(
       <Fretboard
         {...makeProps({
@@ -577,7 +577,7 @@ describe("Fretboard - Quiz selected cells", () => {
     const allViews = UNSAFE_root.findAll((node: any) => node.type === "View");
     const greenOverlay = allViews.find((v: any) => {
       const style = v.props.style;
-      return style?.backgroundColor === "#0ea5e9" && style?.zIndex === 29;
+      return style?.backgroundColor === "#e5e7eb" && style?.zIndex === 29;
     });
     expect(greenOverlay).toBeTruthy();
   });
@@ -597,8 +597,8 @@ describe("Fretboard - Highlighted notes and degrees", () => {
       />,
     );
     const json = JSON.stringify(toJSON());
-    // Highlight ring uses #0284c7 in dark mode
-    expect(json).toContain("#0284c7");
+    // Highlight ring in dark mode
+    expect(json).toContain("#e5e7eb");
   });
 
   it("shows highlight ring with light mode color", () => {
@@ -613,8 +613,8 @@ describe("Fretboard - Highlighted notes and degrees", () => {
       />,
     );
     const json = JSON.stringify(toJSON());
-    // Highlight ring uses #0ea5e9 in light mode
-    expect(json).toContain("#0ea5e9");
+    // Highlight ring in light mode
+    expect(json).toContain("#1c1917");
   });
 
   it("shows highlight ring for highlighted degrees in degree mode", () => {
@@ -630,7 +630,7 @@ describe("Fretboard - Highlighted notes and degrees", () => {
     );
     const json = JSON.stringify(toJSON());
     // Open 6th string = E, which is M3 from C => should be highlighted
-    expect(json).toContain("#0284c7");
+    expect(json).toContain("#e5e7eb");
   });
 
   it("highlight ring has scale 0 when no notes are highlighted", () => {
@@ -768,9 +768,9 @@ describe("Fretboard - Theme", () => {
   it("uses dark theme colors", () => {
     const { toJSON } = render(<Fretboard {...makeProps({ theme: "dark", fretRange: [0, 2] })} />);
     const json = JSON.stringify(toJSON());
-    // Dark mode fret number color: #6b7280
+    // Dark mode fret number color
     expect(json).toContain("#6b7280");
-    // Dark mode border color: #4b5563
+    // Dark mode border color
     expect(json).toContain("#4b5563");
   });
 
@@ -787,7 +787,7 @@ describe("Fretboard - Theme", () => {
     const { toJSON } = render(<Fretboard {...makeProps({ theme: "dark", fretRange: [0, 0] })} />);
     const json = JSON.stringify(toJSON());
     // Dark mode string line: #6b7280
-    expect(json).toContain("#6b7280");
+    expect(json).toContain("#e5e7eb");
   });
 
   it("uses light theme string line color", () => {
@@ -1081,7 +1081,7 @@ describe("Fretboard - Multiple chord types", () => {
 // ==================== 24. Chord border styling with hideChordNoteLabels ====================
 
 describe("Fretboard - Chord border with hideChordNoteLabels", () => {
-  it("uses blue border color when hideChordNoteLabels is true", () => {
+  it("uses chordColor for border even when hideChordNoteLabels is true", () => {
     const { toJSON } = render(
       <Fretboard
         {...makeProps({
@@ -1090,13 +1090,13 @@ describe("Fretboard - Chord border with hideChordNoteLabels", () => {
           rootNote: "E",
           fretRange: [0, 4],
           hideChordNoteLabels: true,
+          chordColor: "#ff0000",
         })}
       />,
     );
     const json = JSON.stringify(toJSON());
-    // hideChordNoteLabels uses rgba(14,165,233,0.7) for border
-    expect(json).toContain("rgba(14,165,233,0.7)");
-    // and rgba(14,165,233,0.1) for background
-    expect(json).toContain("rgba(14,165,233,0.1)");
+    // hideChordNoteLabels still uses chordColor for border and background
+    expect(json).toContain("#ff000099");
+    expect(json).toContain("#ff000014");
   });
 });

@@ -8,6 +8,7 @@ import { buildScaleOptions } from "../ui/scaleOptions";
 
 interface QuizPanelProps {
   theme: Theme;
+  quizColor: string;
   mode: QuizMode;
   quizType: QuizType;
   question: QuizQuestion;
@@ -50,6 +51,7 @@ interface QuizPanelProps {
 
 export default function QuizPanel({
   theme,
+  quizColor,
   mode,
   quizType,
   question,
@@ -208,8 +210,8 @@ export default function QuizPanel({
                       {
                         backgroundColor: active
                           ? isDark
-                            ? "#0284c7"
-                            : "#0ea5e9"
+                            ? "#e5e7eb"
+                            : "#1c1917"
                           : isDark
                             ? "#374151"
                             : "#fff",
@@ -221,7 +223,13 @@ export default function QuizPanel({
                     <Text
                       style={{
                         fontSize: 13,
-                        color: active ? "#fff" : isDark ? "#e5e7eb" : "#44403c",
+                        color: active
+                          ? isDark
+                            ? "#1c1917"
+                            : "#fff"
+                          : isDark
+                            ? "#e5e7eb"
+                            : "#44403c",
                       }}
                     >
                       {ct}
@@ -318,9 +326,9 @@ export default function QuizPanel({
               let textColor: string;
               if (!answered) {
                 const sel = quizSelectedChoices.includes(choice);
-                bgColor = sel ? (isDark ? "#0284c7" : "#0ea5e9") : isDark ? "#374151" : "#fff";
+                bgColor = sel ? (isDark ? "#e5e7eb" : "#1c1917") : isDark ? "#374151" : "#fff";
                 borderColor = sel ? "transparent" : isDark ? "#4b5563" : "#d6d3d1";
-                textColor = sel ? "#fff" : isDark ? "#e5e7eb" : "#1c1917";
+                textColor = sel ? (isDark ? "#1c1917" : "#fff") : isDark ? "#e5e7eb" : "#1c1917";
               } else {
                 if (isCorrectChoice) {
                   bgColor = "#16a34a";
@@ -355,10 +363,12 @@ export default function QuizPanel({
           {!answered && quizSelectedChoices.length > 0 && (
             <TouchableOpacity
               onPress={onSubmitChoice}
-              style={[styles.submitBtn, { backgroundColor: isDark ? "#0284c7" : "#0ea5e9" }]}
+              style={[styles.submitBtn, { backgroundColor: isDark ? "#e5e7eb" : "#1c1917" }]}
               activeOpacity={0.8}
             >
-              <Text style={styles.submitBtnText}>{t("quiz.submit")}</Text>
+              <Text style={[styles.submitBtnText, { color: isDark ? "#1c1917" : "#fff" }]}>
+                {t("quiz.submit")}
+              </Text>
             </TouchableOpacity>
           )}
         </View>
@@ -375,13 +385,19 @@ export default function QuizPanel({
               if (!answered) {
                 bgColor = isSelectedChoice
                   ? isDark
-                    ? "#0284c7"
-                    : "#0ea5e9"
+                    ? "#e5e7eb"
+                    : "#1c1917"
                   : isDark
                     ? "#374151"
                     : "#fff";
                 borderColor = isSelectedChoice ? "transparent" : isDark ? "#4b5563" : "#d6d3d1";
-                textColor = isSelectedChoice ? "#fff" : isDark ? "#e5e7eb" : "#1c1917";
+                textColor = isSelectedChoice
+                  ? isDark
+                    ? "#1c1917"
+                    : "#fff"
+                  : isDark
+                    ? "#e5e7eb"
+                    : "#1c1917";
               } else {
                 if (isCorrectChoice) {
                   bgColor = "#16a34a";
@@ -427,8 +443,8 @@ export default function QuizPanel({
                         {
                           backgroundColor: isSelected
                             ? isDark
-                              ? "#0284c7"
-                              : "#0ea5e9"
+                              ? "#e5e7eb"
+                              : "#1c1917"
                             : isDark
                               ? "#374151"
                               : "#fff",
@@ -441,7 +457,15 @@ export default function QuizPanel({
                       <Text
                         style={[
                           styles.choiceBtnText,
-                          { color: isSelected ? "#fff" : isDark ? "#e5e7eb" : "#1c1917" },
+                          {
+                            color: isSelected
+                              ? isDark
+                                ? "#1c1917"
+                                : "#fff"
+                              : isDark
+                                ? "#e5e7eb"
+                                : "#1c1917",
+                          },
                         ]}
                       >
                         {ct}
@@ -453,10 +477,12 @@ export default function QuizPanel({
               {quizSelectedChordType != null && (
                 <TouchableOpacity
                   onPress={onSubmitChordChoice}
-                  style={[styles.submitBtn, { backgroundColor: isDark ? "#0284c7" : "#0ea5e9" }]}
+                  style={[styles.submitBtn, { backgroundColor: isDark ? "#e5e7eb" : "#1c1917" }]}
                   activeOpacity={0.8}
                 >
-                  <Text style={styles.submitBtnText}>{t("quiz.submit")}</Text>
+                  <Text style={[styles.submitBtnText, { color: isDark ? "#1c1917" : "#fff" }]}>
+                    {t("quiz.submit")}
+                  </Text>
                 </TouchableOpacity>
               )}
             </>
@@ -523,8 +549,8 @@ export default function QuizPanel({
                         borderColor:
                           isEditing && !answered
                             ? isDark
-                              ? "#0284c7"
-                              : "#0ea5e9"
+                              ? "#e5e7eb"
+                              : "#1c1917"
                             : isDark
                               ? "#374151"
                               : "#d6d3d1",
@@ -596,8 +622,8 @@ export default function QuizPanel({
                         backgroundColor:
                           note === diatonicSelectedRoot
                             ? isDark
-                              ? "#0284c7"
-                              : "#0ea5e9"
+                              ? "#e5e7eb"
+                              : "#1c1917"
                             : isDark
                               ? "#374151"
                               : "#fff",
@@ -616,7 +642,13 @@ export default function QuizPanel({
                       style={{
                         fontSize: 13,
                         color:
-                          note === diatonicSelectedRoot ? "#fff" : isDark ? "#e5e7eb" : "#1c1917",
+                          note === diatonicSelectedRoot
+                            ? isDark
+                              ? "#1c1917"
+                              : "#fff"
+                            : isDark
+                              ? "#e5e7eb"
+                              : "#1c1917",
                       }}
                     >
                       {note}
@@ -636,8 +668,8 @@ export default function QuizPanel({
                           backgroundColor:
                             ct === diatonicSelectedChordType
                               ? isDark
-                                ? "#0284c7"
-                                : "#0ea5e9"
+                                ? "#e5e7eb"
+                                : "#1c1917"
                               : isDark
                                 ? "#374151"
                                 : "#fff",
@@ -652,7 +684,9 @@ export default function QuizPanel({
                           fontSize: 13,
                           color:
                             ct === diatonicSelectedChordType
-                              ? "#fff"
+                              ? isDark
+                                ? "#1c1917"
+                                : "#fff"
                               : isDark
                                 ? "#e5e7eb"
                                 : "#1c1917",
@@ -667,10 +701,12 @@ export default function QuizPanel({
               {diatonicAllFilled && (
                 <TouchableOpacity
                   onPress={onDiatonicSubmitAll}
-                  style={[styles.submitBtn, { backgroundColor: isDark ? "#0284c7" : "#0ea5e9" }]}
+                  style={[styles.submitBtn, { backgroundColor: isDark ? "#e5e7eb" : "#1c1917" }]}
                   activeOpacity={0.8}
                 >
-                  <Text style={styles.submitBtnText}>{t("quiz.submit")}</Text>
+                  <Text style={[styles.submitBtnText, { color: isDark ? "#1c1917" : "#fff" }]}>
+                    {t("quiz.submit")}
+                  </Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -687,10 +723,12 @@ export default function QuizPanel({
           {quizSelectedCells.length > 0 && (
             <TouchableOpacity
               onPress={onSubmitFretboard}
-              style={[styles.submitBtn, { backgroundColor: isDark ? "#0284c7" : "#0ea5e9" }]}
+              style={[styles.submitBtn, { backgroundColor: isDark ? "#e5e7eb" : "#1c1917" }]}
               activeOpacity={0.8}
             >
-              <Text style={styles.submitBtnText}>{t("quiz.submit")}</Text>
+              <Text style={[styles.submitBtnText, { color: isDark ? "#1c1917" : "#fff" }]}>
+                {t("quiz.submit")}
+              </Text>
             </TouchableOpacity>
           )}
         </View>
@@ -729,11 +767,11 @@ export default function QuizPanel({
               onPress={onNextQuestion}
               style={[
                 styles.navBtn,
-                { backgroundColor: isDark ? "#0284c7" : "#0ea5e9", borderColor: "transparent" },
+                { backgroundColor: isDark ? "#e5e7eb" : "#1c1917", borderColor: "transparent" },
               ]}
               activeOpacity={0.7}
             >
-              <Text style={{ fontSize: 15, color: "#fff", fontWeight: "600" }}>
+              <Text style={{ fontSize: 15, color: isDark ? "#1c1917" : "#fff", fontWeight: "600" }}>
                 {t("quiz.next")}
               </Text>
             </TouchableOpacity>
@@ -846,7 +884,6 @@ const styles = StyleSheet.create({
     alignSelf: "center",
   },
   submitBtnText: {
-    color: "#fff",
     fontWeight: "600",
     fontSize: 14,
   },

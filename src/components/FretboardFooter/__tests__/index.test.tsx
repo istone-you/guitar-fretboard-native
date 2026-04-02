@@ -78,11 +78,11 @@ describe("FretboardFooter", () => {
         />,
       );
       const chipC = getByText("C");
-      // Active chip should have white text color
-      expect(chipC.props.style.color).toBe("#fff");
-      // Inactive chip should not have white text
+      // Active chip should have dark text color in dark theme
+      expect(chipC.props.style.color).toBe("#1c1917");
+      // Inactive chip should have light text color
       const chipD = getByText("D");
-      expect(chipD.props.style.color).not.toBe("#fff");
+      expect(chipD.props.style.color).not.toBe("#1c1917");
     });
 
     it("renders filter button and calls onSetOverlayNoteHighlights with overlay notes", () => {
@@ -201,8 +201,8 @@ describe("FretboardFooter", () => {
           highlightedDegrees={new Set(["P1", "P5"])}
         />,
       );
-      expect(getByText("P1").props.style.color).toBe("#fff");
-      expect(getByText("M2").props.style.color).not.toBe("#fff");
+      expect(getByText("P1").props.style.color).toBe("#1c1917");
+      expect(getByText("M2").props.style.color).not.toBe("#1c1917");
     });
 
     it("calls onAutoFilter when filter button pressed in degree mode", () => {

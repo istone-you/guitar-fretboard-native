@@ -10,14 +10,14 @@ function AnimatedChip({
   disabled,
   isDark,
   onPress,
-  onLayout,
+  chipRef,
 }: {
   item: string;
   active: boolean;
   disabled: boolean;
   isDark: boolean;
   onPress: () => void;
-  onLayout?: (x: number, y: number, w: number, h: number) => void;
+  chipRef?: (ref: View | null) => void;
 }) {
   const scale = useRef(new Animated.Value(1)).current;
   const prevActive = useRef(active);
@@ -35,27 +35,17 @@ function AnimatedChip({
   }
 
   return (
-    <Animated.View
-      style={{ transform: [{ scale }], opacity: disabled ? 0.6 : 1 }}
-      onLayout={
-        onLayout
-          ? (e) => {
-              const { x, y, width, height } = e.nativeEvent.layout;
-              onLayout(x, y, width, height);
-            }
-          : undefined
-      }
-    >
+    <Animated.View ref={chipRef} style={{ transform: [{ scale }], opacity: disabled ? 0.6 : 1 }}>
       <TouchableOpacity
         onPress={onPress}
         style={[
           styles.chip,
           {
-            borderColor: active ? (isDark ? "#0284c7" : "#0ea5e9") : isDark ? "#374151" : "#d6d3d1",
+            borderColor: active ? (isDark ? "#e5e7eb" : "#1c1917") : isDark ? "#374151" : "#d6d3d1",
             backgroundColor: active
               ? isDark
-                ? "#0284c7"
-                : "#0ea5e9"
+                ? "#e5e7eb"
+                : "#1c1917"
               : isDark
                 ? "#1f2937"
                 : "#fafaf9",
@@ -67,7 +57,7 @@ function AnimatedChip({
           style={{
             fontSize: 14,
             fontWeight: "500",
-            color: active ? "#fff" : isDark ? "#e5e7eb" : "#44403c",
+            color: active ? (isDark ? "#1c1917" : "#fff") : isDark ? "#e5e7eb" : "#44403c",
           }}
         >
           {item}
@@ -91,40 +81,53 @@ function SwipeableChips({
   isDark: boolean;
   onToggle: (item: string) => void;
 }) {
-  const chipLayouts = useRef<Record<string, { x: number; y: number; w: number; h: number }>>({});
-  const containerOffset = useRef({ x: 0, y: 0 });
+  const chipRefs = useRef<Record<string, View | null>>({});
   const toggledDuringSwipe = useRef(new Set<string>());
 
-  const findChipAt = (pageX: number, pageY: number): string | null => {
-    const cx = pageX - containerOffset.current.x;
-    const cy = pageY - containerOffset.current.y;
-    for (const [item, rect] of Object.entries(chipLayouts.current)) {
-      if (cx >= rect.x && cx <= rect.x + rect.w && cy >= rect.y && cy <= rect.y + rect.h) {
-        return item;
+  const findChipAt = (pageX: number, pageY: number): Promise<string | null> => {
+    const entries = Object.entries(chipRefs.current).filter(([, ref]) => ref != null);
+    return new Promise((resolve) => {
+      let remaining = entries.length;
+      if (remaining === 0) {
+        resolve(null);
+        return;
       }
-    }
-    return null;
+      let found: string | null = null;
+      for (const [item, ref] of entries) {
+        ref!.measureInWindow((x, y, w, h) => {
+          if (!found && pageX >= x && pageX <= x + w && pageY >= y && pageY <= y + h) {
+            found = item;
+          }
+          remaining--;
+          if (remaining === 0) resolve(found);
+        });
+      }
+    });
   };
 
   const panResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => !disabled,
-      onMoveShouldSetPanResponder: (_, gs) => !disabled && Math.abs(gs.dx) > 5,
-      onMoveShouldSetPanResponderCapture: (_, gs) => !disabled && Math.abs(gs.dx) > 10,
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_, gs) =>
+        !disabled && (Math.abs(gs.dx) > 5 || Math.abs(gs.dy) > 5),
+      onMoveShouldSetPanResponderCapture: (_, gs) =>
+        !disabled && (Math.abs(gs.dx) > 10 || Math.abs(gs.dy) > 10),
       onPanResponderGrant: (e) => {
         toggledDuringSwipe.current = new Set();
-        const item = findChipAt(e.nativeEvent.pageX, e.nativeEvent.pageY);
-        if (item && !toggledDuringSwipe.current.has(item)) {
-          toggledDuringSwipe.current.add(item);
-          onToggle(item);
-        }
+        findChipAt(e.nativeEvent.pageX, e.nativeEvent.pageY).then((item) => {
+          if (item && !toggledDuringSwipe.current.has(item)) {
+            toggledDuringSwipe.current.add(item);
+            onToggle(item);
+          }
+        });
       },
       onPanResponderMove: (e) => {
-        const item = findChipAt(e.nativeEvent.pageX, e.nativeEvent.pageY);
-        if (item && !toggledDuringSwipe.current.has(item)) {
-          toggledDuringSwipe.current.add(item);
-          onToggle(item);
-        }
+        findChipAt(e.nativeEvent.pageX, e.nativeEvent.pageY).then((item) => {
+          if (item && !toggledDuringSwipe.current.has(item)) {
+            toggledDuringSwipe.current.add(item);
+            onToggle(item);
+          }
+        });
       },
       onPanResponderRelease: () => {
         toggledDuringSwipe.current = new Set();
@@ -136,15 +139,7 @@ function SwipeableChips({
   const bottomRow = items.slice(6);
 
   return (
-    <View
-      style={styles.chipsWrapper}
-      onLayout={(e) => {
-        e.target.measureInWindow((x, y) => {
-          containerOffset.current = { x, y };
-        });
-      }}
-      {...panResponder.panHandlers}
-    >
+    <View style={styles.chipsWrapper} {...panResponder.panHandlers}>
       <View style={styles.chipsRow}>
         {topRow.map((item) => (
           <AnimatedChip
@@ -156,8 +151,8 @@ function SwipeableChips({
             onPress={() => {
               if (!disabled) onToggle(item);
             }}
-            onLayout={(x, y, w, h) => {
-              chipLayouts.current[item] = { x, y, w, h };
+            chipRef={(ref) => {
+              chipRefs.current[item] = ref;
             }}
           />
         ))}
@@ -173,8 +168,8 @@ function SwipeableChips({
             onPress={() => {
               if (!disabled) onToggle(item);
             }}
-            onLayout={(x, y, w, h) => {
-              chipLayouts.current[item] = { x, y, w, h };
+            chipRef={(ref) => {
+              chipRefs.current[item] = ref;
             }}
           />
         ))}
@@ -269,8 +264,8 @@ export default function FretboardFooter({
         styles.iconBtn,
         autoFilter
           ? {
-              borderColor: isDark ? "#0284c7" : "#0ea5e9",
-              backgroundColor: isDark ? "#0284c7" : "#0ea5e9",
+              borderColor: isDark ? "#e5e7eb" : "#1c1917",
+              backgroundColor: isDark ? "#e5e7eb" : "#1c1917",
             }
           : {
               borderColor: isDark ? "rgba(255,255,255,0.10)" : "#e7e5e4",

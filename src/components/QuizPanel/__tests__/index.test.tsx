@@ -72,6 +72,7 @@ const defaultProps = {
   quizSelectedCells: [] as { stringIdx: number; fret: number }[],
   fretboardAllStrings: false,
   onFretboardAllStringsChange: jest.fn(),
+  quizColor: "#ffd700",
 };
 
 function renderPanel(overrides: Partial<typeof defaultProps> = {}) {

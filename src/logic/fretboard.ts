@@ -103,7 +103,7 @@ export function getDegreeName(noteIndex: number, rootIndex: number): DegreeName 
 // 度数の色マッピング
 export const DEGREE_COLORS: Partial<Record<DegreeName, { bg: string; text: string }>> = {
   P1: { bg: "#ef4444", text: "#fff" }, // 赤: 完全1度
-  P5: { bg: "#3b82f6", text: "#fff" }, // 青: 5度
+  P5: { bg: "#6b7280", text: "#fff" }, // グレー: 5度
   M3: { bg: "#22c55e", text: "#fff" }, // 緑: 長3度
   m3: { bg: "#a855f7", text: "#fff" }, // 紫: 短3度
   M7: { bg: "#f59e0b", text: "#fff" }, // 橙: 長7度

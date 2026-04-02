@@ -84,7 +84,7 @@ export function SegmentedToggle<T extends string | boolean>({
             styles.indicator,
             {
               width: selectedWidth,
-              backgroundColor: isDark ? "#0284c7" : "#0ea5e9",
+              backgroundColor: isDark ? "#e5e7eb" : "#1c1917",
               transform: [{ translateX: slideAnim }],
             },
           ]}
@@ -104,7 +104,9 @@ export function SegmentedToggle<T extends string | boolean>({
             <Text
               style={[
                 styles.buttonText,
-                { color: selected ? "#fff" : isDark ? "#d1d5db" : "#57534e" },
+                {
+                  color: selected ? (isDark ? "#1c1917" : "#fff") : isDark ? "#d1d5db" : "#57534e",
+                },
               ]}
             >
               {label}

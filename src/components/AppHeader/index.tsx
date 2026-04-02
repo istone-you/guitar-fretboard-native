@@ -128,7 +128,7 @@ function RangeSlider({
             left: fillLeft,
             width: fillWidth,
             borderRadius: 2,
-            backgroundColor: isDark ? "#0284c7" : "#0ea5e9",
+            backgroundColor: isDark ? "#e5e7eb" : "#1c1917",
           }}
         />
       </View>
@@ -141,7 +141,7 @@ function RangeSlider({
           width: THUMB,
           height: THUMB,
           borderRadius: THUMB / 2,
-          backgroundColor: isDark ? "#0284c7" : "#0ea5e9",
+          backgroundColor: isDark ? "#e5e7eb" : "#1c1917",
           alignItems: "center",
           justifyContent: "center",
           zIndex: 3,
@@ -163,7 +163,7 @@ function RangeSlider({
           width: THUMB,
           height: THUMB,
           borderRadius: THUMB / 2,
-          backgroundColor: isDark ? "#0284c7" : "#0ea5e9",
+          backgroundColor: isDark ? "#e5e7eb" : "#1c1917",
           alignItems: "center",
           justifyContent: "center",
           zIndex: 2,
@@ -564,7 +564,7 @@ export default function HeaderBar({
               activeOpacity={0.7}
             >
               <Text
-                style={{ fontSize: 14, fontWeight: "600", color: isDark ? "#38bdf8" : "#0ea5e9" }}
+                style={{ fontSize: 14, fontWeight: "600", color: isDark ? "#9ca3af" : "#4b5563" }}
               >
                 {t("howToUse")}
               </Text>

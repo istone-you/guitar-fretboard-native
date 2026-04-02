@@ -179,6 +179,7 @@ export interface FretboardProps {
   chordColor?: string;
   scaleColor?: string;
   cagedColor?: string;
+  quizColor?: string;
   disableAnimation?: boolean;
 }
 
@@ -215,6 +216,7 @@ export default function Fretboard({
   chordColor = "#ffd700",
   scaleColor = "#ff69b6",
   cagedColor = "#40e0d0",
+  quizColor,
   disableAnimation = false,
 }: FretboardProps) {
   const [fretMin, fretMax] = fretRange;
@@ -461,10 +463,8 @@ export default function Fretboard({
                     borderRadius: 12,
                     borderWidth: 2,
                     zIndex: 6,
-                    borderColor: hideChordNoteLabels ? "rgba(14,165,233,0.7)" : `${chordColor}99`,
-                    backgroundColor: hideChordNoteLabels
-                      ? "rgba(14,165,233,0.1)"
-                      : `${chordColor}14`,
+                    borderColor: `${chordColor}99`,
+                    backgroundColor: `${chordColor}14`,
                   }}
                 />
               );
@@ -501,6 +501,7 @@ export default function Fretboard({
               chordColor={chordColor}
               scaleColor={scaleColor}
               cagedColor={cagedColor}
+              quizColor={quizColor}
               disableAnimation={disableAnimation}
             />
           ))}
@@ -539,6 +540,7 @@ interface StringRowProps {
   chordColor?: string;
   scaleColor?: string;
   cagedColor?: string;
+  quizColor?: string;
   disableAnimation?: boolean;
 }
 
@@ -571,6 +573,7 @@ function StringRow({
   chordColor = "#ffd700",
   scaleColor = "#ff69b6",
   cagedColor = "#40e0d0",
+  quizColor,
   disableAnimation = false,
 }: StringRowProps) {
   const isDark = theme === "dark";
@@ -681,7 +684,7 @@ function StringRow({
                 bottom: Math.max(0, overlayInset - 1),
                 borderRadius: (overlaySize + 2) / 2,
                 borderWidth: 2,
-                borderColor: isDark ? "#0284c7" : "#0ea5e9",
+                borderColor: isDark ? "#e5e7eb" : "#1c1917",
                 zIndex: 25,
               }}
             />
@@ -803,7 +806,7 @@ function StringRow({
                   right: overlayInset,
                   bottom: overlayInset,
                   borderRadius: overlaySize / 2,
-                  backgroundColor: "#0ea5e9",
+                  backgroundColor: quizColor ?? (isDark ? "#e5e7eb" : "#1c1917"),
                   alignItems: "center",
                   justifyContent: "center",
                   zIndex: 30,
@@ -812,7 +815,7 @@ function StringRow({
                 <Text
                   style={{
                     fontSize: size.overlayFontSize,
-                    color: "#fff",
+                    color: quizColor ? "#fff" : isDark ? "#1c1917" : "#fff",
                     fontWeight: "bold",
                   }}
                 >
@@ -832,7 +835,7 @@ function StringRow({
                   bottom: overlayInset,
                   borderRadius: overlaySize / 2,
                   borderWidth: 2,
-                  borderColor: "rgba(56,189,248,0.5)",
+                  borderColor: isDark ? "rgba(229,231,235,0.5)" : "rgba(28,25,23,0.5)",
                   zIndex: 15,
                 }}
               />
@@ -843,7 +846,7 @@ function StringRow({
               <ScaleAnimView
                 skipAnimation={disableAnimation}
                 visible={isSelectedCell}
-                color="#0ea5e9"
+                color={quizColor ?? (isDark ? "#e5e7eb" : "#1c1917")}
                 style={{
                   position: "absolute",
                   top: overlayInset,

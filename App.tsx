@@ -447,6 +447,8 @@ function AppContent() {
     lastTapRef.current = now;
   }, [showQuiz, toggleLayout]);
 
+  const quizAccentColor = quizMode === "chord" || quizMode === "diatonic" ? chordColor : scaleColor;
+
   const fretboardEl = (
     <View style={{ paddingVertical: isLandscape ? 2 : 8 }} onTouchEnd={handleFretboardDoubleTap}>
       {showQuiz ? (
@@ -466,9 +468,10 @@ function AppContent() {
           diatonicScaleType="major-triad"
           diatonicDegree="I"
           scaleType="major"
-          chordColor="#0ea5e9"
+          chordColor={quizAccentColor}
           scaleColor="#ff69b6"
           cagedColor="#40e0d0"
+          quizColor={quizAccentColor}
           onNoteClick={() => {}}
           quizModeActive={quizQuestion != null}
           quizCell={
@@ -513,6 +516,7 @@ function AppContent() {
     showQuiz && quizQuestion != null ? (
       <QuizPanel
         theme={theme}
+        quizColor={quizAccentColor}
         mode={quizMode}
         quizType={quizType}
         question={quizQuestion}
@@ -665,8 +669,8 @@ function AppContent() {
             {
               tintColor: !showQuiz
                 ? isDark
-                  ? "#38bdf8"
-                  : "#0284c7"
+                  ? "#e5e7eb"
+                  : "#1c1917"
                 : isDark
                   ? "#6b7280"
                   : "#a8a29e",
@@ -690,8 +694,8 @@ function AppContent() {
             {
               tintColor: showQuiz
                 ? isDark
-                  ? "#38bdf8"
-                  : "#0284c7"
+                  ? "#e5e7eb"
+                  : "#1c1917"
                 : isDark
                   ? "#6b7280"
                   : "#a8a29e",
@@ -746,9 +750,9 @@ function AppContent() {
                 {[...effectiveHighlightedNotes].map((n) => (
                   <View
                     key={n}
-                    style={[styles.infoChip, { borderColor: isDark ? "#93c5fd" : "#3b82f6" }]}
+                    style={[styles.infoChip, { borderColor: isDark ? "#d1d5db" : "#44403c" }]}
                   >
-                    <Text style={[styles.infoChipText, { color: isDark ? "#93c5fd" : "#3b82f6" }]}>
+                    <Text style={[styles.infoChipText, { color: isDark ? "#d1d5db" : "#44403c" }]}>
                       {n}
                     </Text>
                   </View>
@@ -760,9 +764,9 @@ function AppContent() {
                 {[...effectiveHighlightedDegrees].map((d) => (
                   <View
                     key={d}
-                    style={[styles.infoChip, { borderColor: isDark ? "#93c5fd" : "#3b82f6" }]}
+                    style={[styles.infoChip, { borderColor: isDark ? "#d1d5db" : "#44403c" }]}
                   >
-                    <Text style={[styles.infoChipText, { color: isDark ? "#93c5fd" : "#3b82f6" }]}>
+                    <Text style={[styles.infoChipText, { color: isDark ? "#d1d5db" : "#44403c" }]}>
                       {d}
                     </Text>
                   </View>

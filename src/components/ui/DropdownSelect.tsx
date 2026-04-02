@@ -166,7 +166,7 @@ export function DropdownSelect({
                     style={[
                       styles.menuItem,
                       selected && {
-                        backgroundColor: isDark ? "#0284c7" : "#0ea5e9",
+                        backgroundColor: isDark ? "#e5e7eb" : "#1c1917",
                       },
                     ]}
                     activeOpacity={0.7}
@@ -174,7 +174,13 @@ export function DropdownSelect({
                     <Text
                       style={{
                         fontSize: 14,
-                        color: selected ? "#fff" : isDark ? "#d1d5db" : "#44403c",
+                        color: selected
+                          ? isDark
+                            ? "#1c1917"
+                            : "#fff"
+                          : isDark
+                            ? "#d1d5db"
+                            : "#44403c",
                       }}
                     >
                       {item.label}

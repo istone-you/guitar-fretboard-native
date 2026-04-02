@@ -64,7 +64,7 @@ const defaultProps: LayerControlsProps = {
   diatonicDegree: "I",
   setDiatonicDegree: jest.fn(),
   scaleColor: "#ff69b6",
-  cagedColor: "#0ea5e9",
+  cagedColor: "#40e0d0",
   chordColor: "#10b981",
 };
 
