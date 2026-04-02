@@ -23,3 +23,7 @@ backend = "npm:@anthropic-ai/claude-code"
 [[tools."npm:@google/gemini-cli"]]
 version = "0.34.0"
 backend = "npm:@google/gemini-cli"
+
+[[tools."npm:eas-cli"]]
+version = "18.4.0"
+backend = "npm:eas-cli"
