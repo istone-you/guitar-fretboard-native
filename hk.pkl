@@ -1,0 +1,29 @@
+amends "package://github.com/jdx/hk/releases/download/v1.40.0/hk@1.40.0#/Config.pkl"
+
+hooks {
+    ["pre-commit"] {
+        steps {
+            ["fmt"] {
+                check = "bun run fmt:check"
+                exclusive = true
+            }
+            ["lint"] {
+                depends = List("fmt")
+                check = "bun run lint"
+                exclusive = true
+            }
+            ["typecheck"] {
+                depends = List("lint")
+                check = "bun run typecheck"
+                exclusive = true
+            }
+        }
+    }
+    ["pre-push"] {
+        steps {
+            ["test"] {
+                check = "bun run test"
+            }
+        }
+    }
+}

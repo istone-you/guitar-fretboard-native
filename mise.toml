@@ -3,10 +3,14 @@
 "npm:@anthropic-ai/claude-code" = "2.1.81"
 "npm:@google/gemini-cli" = "0.34.0"
 "bun" = "1.3.10"
-"lefthook" = "2.1.4"
+"hk" = "1.40.0"
+
+[env]
+HK_MISE = "1"
+HK_PKL_BACKEND = "pklr"
 
 [hooks]
-postinstall = "lefthook install"
+postinstall = "hk install --mise"
 
 [settings]
 experimental = true
