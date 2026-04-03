@@ -14,6 +14,7 @@ export interface ElementPosition {
 export interface HowToUsePositions {
   rootStepper?: ElementPosition;
   labelToggle?: ElementPosition;
+  quizSelector?: ElementPosition;
   fretboard?: ElementPosition;
   chipArea?: ElementPosition;
   filterBtn?: ElementPosition;
@@ -25,6 +26,7 @@ export interface HowToUsePositions {
 
 interface HowToUseOverlayProps {
   theme: Theme;
+  showQuiz: boolean;
   positions: HowToUsePositions;
   onClose: () => void;
 }
@@ -74,7 +76,12 @@ function CenteredLabel({
   );
 }
 
-export default function HowToUseOverlay({ theme, positions, onClose }: HowToUseOverlayProps) {
+export default function HowToUseOverlay({
+  theme,
+  showQuiz,
+  positions,
+  onClose,
+}: HowToUseOverlayProps) {
   const { t } = useTranslation();
   const isDark = theme === "dark";
   const p = positions;
@@ -85,7 +92,9 @@ export default function HowToUseOverlay({ theme, positions, onClose }: HowToUseO
       activeOpacity={1}
       onPress={onClose}
     >
-      {p.rootStepper &&
+      {/* Normal mode: root + label toggle */}
+      {!showQuiz &&
+        p.rootStepper &&
         p.labelToggle &&
         (() => {
           const topY =
@@ -108,7 +117,33 @@ export default function HowToUseOverlay({ theme, positions, onClose }: HowToUseO
           );
         })()}
 
-      {p.fretboard && (
+      {/* Quiz mode: root + quiz selector */}
+      {showQuiz &&
+        p.rootStepper &&
+        p.quizSelector &&
+        (() => {
+          const topY =
+            Math.max(p.rootStepper.y + p.rootStepper.h, p.quizSelector.y + p.quizSelector.h) + 4;
+          return (
+            <>
+              <CenteredLabel
+                text={t("howToUseItems.changeRootQuiz")}
+                left={cx(p.rootStepper)}
+                top={topY}
+                arrow="up"
+              />
+              <CenteredLabel
+                text={t("howToUseItems.switchQuiz")}
+                left={cx(p.quizSelector)}
+                top={topY}
+                arrow="up"
+              />
+            </>
+          );
+        })()}
+
+      {/* Double tap to zoom — normal mode only */}
+      {!showQuiz && p.fretboard && (
         <CenteredLabel
           text={t("howToUseItems.doubleTap")}
           left={cx(p.fretboard)}

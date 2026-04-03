@@ -201,6 +201,7 @@ export interface HeaderBarProps {
   quizKindValue?: string;
   quizKindOptions?: { value: string; label: string }[];
   onQuizKindChange?: (value: string) => void;
+  quizSelectorRef?: React.RefObject<View | null>;
   fretRange: [number, number];
   onThemeChange: (theme: Theme) => void;
   onFretRangeChange: (range: [number, number]) => void;
@@ -228,6 +229,7 @@ export default function HeaderBar({
   quizKindValue,
   quizKindOptions,
   onQuizKindChange,
+  quizSelectorRef,
   fretRange,
   onThemeChange,
   onFretRangeChange,
@@ -333,7 +335,16 @@ export default function HeaderBar({
         <Animated.Text
           style={[
             styles.rootNote,
-            { color: isDark ? "#fff" : "#1c1917", transform: [{ scale: rootScale }] },
+            {
+              color: rootChangeDisabled
+                ? isDark
+                  ? "#6b7280"
+                  : "#a8a29e"
+                : isDark
+                  ? "#fff"
+                  : "#1c1917",
+              transform: [{ scale: rootScale }],
+            },
           ]}
         >
           {rootNote}
@@ -350,13 +361,15 @@ export default function HeaderBar({
 
       {/* Quiz kind selector (center) */}
       {showQuiz && quizKindValue && quizKindOptions && onQuizKindChange && (
-        <DropdownSelect
-          theme={theme}
-          value={quizKindValue}
-          onChange={onQuizKindChange}
-          options={quizKindOptions}
-          variant="plain"
-        />
+        <View ref={quizSelectorRef as any}>
+          <DropdownSelect
+            theme={theme}
+            value={quizKindValue}
+            onChange={onQuizKindChange}
+            options={quizKindOptions}
+            variant="plain"
+          />
+        </View>
       )}
 
       {/* Note / Degree toggle (center) */}

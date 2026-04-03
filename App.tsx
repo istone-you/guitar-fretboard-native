@@ -118,6 +118,7 @@ function AppContent() {
   const filterBtnRef = useRef<View>(null);
   const layerToggleRef = useRef<View>(null);
   const layerToggleSwitchRef = useRef<View>(null);
+  const quizSelectorRef = useRef<View>(null);
   const layerTabRowRef = useRef<View>(null);
   const layerCardRef = useRef<View>(null);
 
@@ -136,6 +137,7 @@ function AppContent() {
     const [
       rootStepper,
       labelToggle,
+      quizSelector,
       fretboard,
       chipArea,
       filterBtn,
@@ -146,6 +148,7 @@ function AppContent() {
     ] = await Promise.all([
       measureElement(rootStepperRef),
       measureElement(labelToggleRef),
+      measureElement(quizSelectorRef),
       measureElement(fretboardAreaRef),
       measureElement(chipAreaRef),
       measureElement(filterBtnRef),
@@ -157,6 +160,7 @@ function AppContent() {
     setHowToUsePositions({
       rootStepper,
       labelToggle,
+      quizSelector,
       fretboard,
       chipArea,
       filterBtn,
@@ -878,6 +882,7 @@ function AppContent() {
           quizKindValue={quizKindValue}
           quizKindOptions={quizKindOptions}
           onQuizKindChange={handleQuizKindDropdownChange}
+          quizSelectorRef={quizSelectorRef}
           fretRange={fretRange}
           onThemeChange={setTheme}
           onFretRangeChange={setFretRange}
@@ -904,6 +909,7 @@ function AppContent() {
       {showHowToUse && (
         <HowToUseOverlay
           theme={theme}
+          showQuiz={showQuiz}
           positions={howToUsePositions}
           onClose={() => setShowHowToUse(false)}
         />
