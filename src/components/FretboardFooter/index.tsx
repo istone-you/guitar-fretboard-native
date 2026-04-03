@@ -326,6 +326,7 @@ export default function FretboardFooter({
             <TouchableOpacity
               testID="reset-btn"
               onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 onAutoFilterChange(false);
                 onSetOverlayNoteHighlights([]);
               }}
@@ -378,7 +379,10 @@ export default function FretboardFooter({
             {filterBtnEl(onAutoFilter)}
             <TouchableOpacity
               testID="reset-btn"
-              onPress={onReset}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                onReset();
+              }}
               disabled={highlightedDegrees.size === 0}
               style={[
                 styles.iconBtn,

@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import * as Haptics from "expo-haptics";
 import {
   View,
   Text,
@@ -63,6 +64,7 @@ export function SegmentedToggle<T extends string | boolean>({
       buttonWidths.length === options.length
         ? buttonWidths.slice(0, newIndex).reduce((sum, bw) => sum + bw + 4, 0)
         : 0;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     Animated.timing(slideAnim, { toValue: newLeft, duration: 300, useNativeDriver: false }).start();
     onChange(newValue);
   };

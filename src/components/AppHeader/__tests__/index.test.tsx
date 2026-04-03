@@ -159,17 +159,10 @@ describe("HeaderBar", () => {
   });
 
   // ── Fret range slider ─────────────────────────────────────────────
-  it("displays fret range value", () => {
+  it("displays fret range label", () => {
     const result = renderHeader();
     openSettings(result);
     expect(result.getByText("settingsPanel.fretRange")).toBeTruthy();
-    expect(result.getByText("0 \u2013 14")).toBeTruthy();
-  });
-
-  it("displays custom fret range", () => {
-    const result = renderHeader({ fretRange: [3, 12] });
-    openSettings(result);
-    expect(result.getByText("3 \u2013 12")).toBeTruthy();
   });
 
   it("renders range slider thumbs with min/max values", () => {

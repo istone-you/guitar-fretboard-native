@@ -232,8 +232,13 @@ export default function Fretboard({
   // Label switch animation
   const labelScale = useRef(new Animated.Value(1)).current;
   const prevBaseLabelMode = useRef(baseLabelMode);
-  if (prevBaseLabelMode.current !== baseLabelMode) {
-    prevBaseLabelMode.current = baseLabelMode;
+  const prevRootForDegree = useRef(rootNote);
+  const labelChanged =
+    prevBaseLabelMode.current !== baseLabelMode ||
+    (baseLabelMode === "degree" && prevRootForDegree.current !== rootNote);
+  prevBaseLabelMode.current = baseLabelMode;
+  prevRootForDegree.current = rootNote;
+  if (labelChanged) {
     if (!disableAnimation) {
       labelScale.setValue(0.8);
       Animated.spring(labelScale, {

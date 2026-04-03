@@ -449,7 +449,12 @@ export default function LayerControls({
                     disabled={cagedDisabled}
                     isDark={isDark}
                     activeColor={cagedColor}
-                    onPress={() => !cagedDisabled && toggleCagedForm(key)}
+                    onPress={() => {
+                      if (!cagedDisabled) {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        toggleCagedForm(key);
+                      }
+                    }}
                   />
                 );
               })}

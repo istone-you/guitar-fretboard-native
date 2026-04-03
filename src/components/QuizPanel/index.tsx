@@ -46,7 +46,14 @@ function BounceButton({
 
   return (
     <Animated.View style={{ transform: [{ scale }] }}>
-      <TouchableOpacity onPress={onPress} style={style} activeOpacity={activeOpacity}>
+      <TouchableOpacity
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          onPress();
+        }}
+        style={style}
+        activeOpacity={activeOpacity}
+      >
         {children}
       </TouchableOpacity>
     </Animated.View>

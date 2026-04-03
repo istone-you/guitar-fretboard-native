@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import * as Haptics from "expo-haptics";
 import {
   Text,
   TouchableOpacity,
@@ -194,6 +195,7 @@ export function DropdownSelect({
                 return (
                   <TouchableOpacity
                     onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                       onChange(item.value);
                       setVisible(false);
                     }}

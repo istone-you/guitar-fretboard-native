@@ -10,6 +10,7 @@ import {
   PanResponder,
   Animated,
 } from "react-native";
+import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 import "../../i18n";
 import type { Accidental, BaseLabelMode, Theme } from "../../types";
@@ -75,6 +76,9 @@ function RangeSlider({
             Math.min(valRef.current[1] - 1, minStart.current.v + (dx / (w - THUMB)) * (max - min)),
           ),
         );
+        if (newV !== valRef.current[0]) {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
         onChange([newV, valRef.current[1]]);
       },
     }),
@@ -98,6 +102,9 @@ function RangeSlider({
             Math.min(max, maxStart.current.v + (dx / (w - THUMB)) * (max - min)),
           ),
         );
+        if (newV !== valRef.current[1]) {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
         onChange([valRef.current[0], newV]);
       },
     }),
@@ -574,6 +581,7 @@ export default function HeaderBar({
                       <TouchableOpacity
                         key={preset}
                         onPress={() => {
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                           if (colorPickerTarget === "scale") onScaleColorChange(preset);
                           else if (colorPickerTarget === "caged") onCagedColorChange(preset);
                           else onChordColorChange(preset);
@@ -601,11 +609,8 @@ export default function HeaderBar({
               <Text style={[styles.settingLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
                 {t("settingsPanel.fretRange")}
               </Text>
-              <Text style={[styles.fretRangeValue, { color: isDark ? "#e5e7eb" : "#1c1917" }]}>
-                {fretRange[0]} – {fretRange[1]}
-              </Text>
             </View>
-            <View style={{ paddingBottom: 16, paddingHorizontal: 4 }}>
+            <View style={{ paddingTop: 4, paddingBottom: 16, paddingHorizontal: 4 }}>
               <RangeSlider
                 value={fretRange}
                 min={0}
@@ -730,10 +735,6 @@ const styles = StyleSheet.create({
   },
   settingLabel: {
     fontSize: 14,
-  },
-  fretRangeValue: {
-    fontSize: 14,
-    fontWeight: "600",
   },
   colorDot: {
     width: 24,
