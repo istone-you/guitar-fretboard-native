@@ -27,7 +27,7 @@ function LayerToggle({
     Animated.timing(anim, {
       toValue: active ? 1 : 0,
       duration: 300,
-      useNativeDriver: false,
+      useNativeDriver: true,
     }).start();
   }
 

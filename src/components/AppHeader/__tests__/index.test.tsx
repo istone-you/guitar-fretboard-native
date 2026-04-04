@@ -25,13 +25,6 @@ const defaultProps = {
   onThemeChange: jest.fn(),
   onFretRangeChange: jest.fn(),
   onAccidentalChange: jest.fn(),
-  onShowHowToUse: jest.fn(),
-  scaleColor: "#ff69b6",
-  onScaleColorChange: jest.fn(),
-  cagedColor: "#40e0d0",
-  onCagedColorChange: jest.fn(),
-  chordColor: "#ffd700",
-  onChordColorChange: jest.fn(),
 };
 
 function renderHeader(overrides: Partial<typeof defaultProps> = {}) {

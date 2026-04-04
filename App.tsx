@@ -19,10 +19,7 @@ import HeaderBar from "./src/components/AppHeader/index";
 import NormalFretboard from "./src/components/NormalFretboard/index";
 import QuizFretboard from "./src/components/QuizFretboard/index";
 import QuizPanel from "./src/components/QuizPanel/index";
-import HowToUseOverlay, {
-  type HowToUsePositions,
-  type ElementPosition,
-} from "./src/components/HowToUseOverlay";
+
 import { usePersistedSetting } from "./src/hooks/usePersistedSetting";
 import { CHORD_QUIZ_TYPES_ALL, useQuiz } from "./src/hooks/useQuiz";
 import {
@@ -146,41 +143,6 @@ function AppContent() {
 
   // Quiz
   const [showQuiz, setShowQuiz] = useState(false);
-  const [showHowToUse, setShowHowToUse] = useState(false);
-  const [howToUsePositions, setHowToUsePositions] = useState<HowToUsePositions>({});
-
-  // Refs for measuring UI element positions
-  const rootStepperRef = useRef<View>(null);
-  const labelToggleRef = useRef<View>(null);
-  const fretboardAreaRef = useRef<View>(null);
-  const quizSelectorRef = useRef<View>(null);
-
-  const measureElement = (
-    ref: React.RefObject<View | null>,
-  ): Promise<ElementPosition | undefined> =>
-    new Promise((resolve) => {
-      if (!ref.current) {
-        resolve(undefined);
-        return;
-      }
-      ref.current.measureInWindow((x, y, w, h) => resolve({ x, y, w, h }));
-    });
-
-  const openHowToUse = async () => {
-    const [rootStepper, labelToggle, quizSelector, fretboard] = await Promise.all([
-      measureElement(rootStepperRef),
-      measureElement(labelToggleRef),
-      measureElement(quizSelectorRef),
-      measureElement(fretboardAreaRef),
-    ]);
-    setHowToUsePositions({
-      rootStepper,
-      labelToggle,
-      quizSelector,
-      fretboard,
-    });
-    setShowHowToUse(true);
-  };
   const [chordQuizTypes, setChordQuizTypes] = useState<ChordType[]>(DEFAULT_CHORD_QUIZ_TYPES);
   // Display settings
   const [accidental, setAccidental] = usePersistedSetting<Accidental>(
@@ -726,24 +688,20 @@ function AppContent() {
           baseLabelMode={baseLabelMode}
           showQuiz={showQuiz}
           rootChangeDisabled={!quizRootChangeEnabled}
-          rootStepperRef={rootStepperRef}
-          labelToggleRef={labelToggleRef}
           onBaseLabelModeChange={setBaseLabelMode}
           onRootNoteChange={quizRootChangeEnabled ? handleNoteClick : () => {}}
           quizKindValue={quizKindValue}
           quizKindOptions={quizKindOptions}
           onQuizKindChange={handleQuizKindDropdownChange}
-          quizSelectorRef={quizSelectorRef}
           fretRange={fretRange}
           onThemeChange={setTheme}
           onFretRangeChange={setFretRange}
           onAccidentalChange={handleAccidentalChange}
-          onShowHowToUse={openHowToUse}
         />
       </View>
 
       <View style={{ flex: 1, overflow: "hidden" }}>
-        <View ref={fretboardAreaRef}>{fretboardEl}</View>
+        <View>{fretboardEl}</View>
         {!showQuiz && <LayerLabels labels={layerNoteLabels} isDark={isDark} />}
         {quizPanelEl}
         {showQuiz && <View style={{ height: 100 }} />}
@@ -766,15 +724,6 @@ function AppContent() {
       </View>
 
       {tabBarEl}
-
-      {showHowToUse && (
-        <HowToUseOverlay
-          theme={theme}
-          showQuiz={showQuiz}
-          positions={howToUsePositions}
-          onClose={() => setShowHowToUse(false)}
-        />
-      )}
     </View>
   );
 }

@@ -4,22 +4,6 @@
     "quiz": "Quiz"
   },
   "settings": "Settings",
-  "howToUse": "How to Use",
-  "howToUseItems": {
-    "changeRoot": "‹ › to change root",
-    "changeRootQuiz": "‹ › to change root\n(some quizzes only)",
-    "switchLabels": "Switch Notes / Degrees",
-    "togglePanel": "Tap toggle or double-tap tab to show/hide each layer\nSwipe tabs right to show all, left to hide all",
-    "layerCardSwitch": "Tap tab or swipe to switch layer settings panel",
-    "colorPicker": "",
-    "switchMode": "",
-    "toggleNotes": "",
-    "filterNotes": "Tap to filter and highlight layer tones\nLong press for auto filter",
-    "highlightToggle": "Tap each note (degree) to toggle individually",
-    "switchQuiz": "Switch quiz type",
-    "doubleTap": "Double-tap fretboard to zoom",
-    "tapToClose": "Tap to close"
-  },
   "dark": "Dark",
   "light": "Light",
   "theme": "Theme",

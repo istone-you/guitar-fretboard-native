@@ -4,22 +4,6 @@
     "quiz": "クイズ"
   },
   "settings": "設定",
-  "howToUse": "使い方",
-  "howToUseItems": {
-    "changeRoot": "‹ › でルート音を変更",
-    "changeRootQuiz": "‹ › でルート音を変更\n（一部クイズのみ）",
-    "switchLabels": "音名 / 度数を切り替え",
-    "togglePanel": "トグルをタップ or タブをダブルタップでレイヤーの表示/非表示\nタブを右スワイプで全表示、左スワイプで全非表示",
-    "layerCardSwitch": "タブをタップ or パネルをスワイプで設定パネルを切り替え",
-    "colorPicker": "",
-    "switchMode": "",
-    "toggleNotes": "",
-    "filterNotes": "タップでレイヤーの構成音を抽出して強調\n長押しで自動抽出",
-    "highlightToggle": "各音名（度数）をタップで個別切り替え",
-    "switchQuiz": "クイズの種類を切り替え",
-    "doubleTap": "指板をダブルタップで拡大表示",
-    "tapToClose": "タップして閉じる"
-  },
   "dark": "ダーク",
   "light": "ライト",
   "theme": "テーマ",

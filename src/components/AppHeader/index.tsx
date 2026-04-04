@@ -177,19 +177,15 @@ interface HeaderBarProps {
   baseLabelMode: BaseLabelMode;
   showQuiz: boolean;
   rootChangeDisabled?: boolean;
-  rootStepperRef?: React.RefObject<View | null>;
-  labelToggleRef?: React.RefObject<View | null>;
   onBaseLabelModeChange: (mode: BaseLabelMode) => void;
   onRootNoteChange: (note: string) => void;
   quizKindValue?: string;
   quizKindOptions?: { value: string; label: string }[];
   onQuizKindChange?: (value: string) => void;
-  quizSelectorRef?: React.RefObject<View | null>;
   fretRange: [number, number];
   onThemeChange: (theme: Theme) => void;
   onFretRangeChange: (range: [number, number]) => void;
   onAccidentalChange: (accidental: Accidental) => void;
-  onShowHowToUse: () => void;
 }
 
 export default function HeaderBar({
@@ -199,19 +195,15 @@ export default function HeaderBar({
   baseLabelMode,
   showQuiz,
   rootChangeDisabled = false,
-  rootStepperRef,
-  labelToggleRef,
   onBaseLabelModeChange,
   onRootNoteChange,
   quizKindValue,
   quizKindOptions,
   onQuizKindChange,
-  quizSelectorRef,
   fretRange,
   onThemeChange,
   onFretRangeChange,
   onAccidentalChange,
-  onShowHowToUse,
 }: HeaderBarProps) {
   const { t, i18n } = useTranslation();
   const [settingsVisible, setSettingsVisible] = useState(false);
@@ -291,7 +283,7 @@ export default function HeaderBar({
       ]}
     >
       {/* Root stepper (absolute left) */}
-      <View ref={rootStepperRef as any} style={styles.stepperRow}>
+      <View style={styles.stepperRow}>
         <TouchableOpacity
           onPress={() => stepNote(-1)}
           disabled={rootChangeDisabled}
@@ -329,7 +321,7 @@ export default function HeaderBar({
 
       {/* Quiz kind selector (center) */}
       {showQuiz && quizKindValue && quizKindOptions && onQuizKindChange && (
-        <View ref={quizSelectorRef as any}>
+        <View>
           <DropdownSelect
             theme={theme}
             value={quizKindValue}
@@ -342,7 +334,7 @@ export default function HeaderBar({
 
       {/* Note / Degree toggle (center) */}
       {!showQuiz && (
-        <View ref={labelToggleRef as any} style={styles.labelToggle}>
+        <View style={styles.labelToggle}>
           <TouchableOpacity
             onPress={() => onBaseLabelModeChange("note")}
             onLayout={(e) => {
@@ -541,22 +533,6 @@ export default function HeaderBar({
                 isDark={isDark}
               />
             </View>
-
-            {/* How to use button */}
-            <TouchableOpacity
-              onPress={() => {
-                closeSettings();
-                onShowHowToUse();
-              }}
-              style={[styles.settingRow, { justifyContent: "center", borderBottomWidth: 0 }]}
-              activeOpacity={0.7}
-            >
-              <Text
-                style={{ fontSize: 14, fontWeight: "600", color: isDark ? "#9ca3af" : "#4b5563" }}
-              >
-                {t("howToUse")}
-              </Text>
-            </TouchableOpacity>
           </View>
         </Animated.View>
       </Modal>
