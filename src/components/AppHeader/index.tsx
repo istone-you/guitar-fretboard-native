@@ -18,20 +18,6 @@ import { SegmentedToggle } from "../ui/SegmentedToggle";
 import { DropdownSelect } from "../ui/DropdownSelect";
 import { NOTES_SHARP, NOTES_FLAT } from "../../logic/fretboard";
 
-const COLOR_PRESETS = [
-  "#ff69b6",
-  "#ff4d4d",
-  "#ff8c00",
-  "#ffd700",
-  "#40e0d0",
-  "#00bfff",
-  "#0ea5e9",
-  "#7c3aed",
-  "#10b981",
-  "#84cc16",
-  "#f97316",
-  "#ec4899",
-];
 import { changeLocale } from "../../i18n";
 
 const SETTINGS_ICON_DARK = require("../../../public/settings_dark.jpg");
@@ -207,12 +193,6 @@ export interface HeaderBarProps {
   onFretRangeChange: (range: [number, number]) => void;
   onAccidentalChange: (accidental: Accidental) => void;
   onShowHowToUse: () => void;
-  scaleColor: string;
-  onScaleColorChange: (color: string) => void;
-  cagedColor: string;
-  onCagedColorChange: (color: string) => void;
-  chordColor: string;
-  onChordColorChange: (color: string) => void;
 }
 
 export default function HeaderBar({
@@ -235,18 +215,9 @@ export default function HeaderBar({
   onFretRangeChange,
   onAccidentalChange,
   onShowHowToUse,
-  scaleColor,
-  onScaleColorChange,
-  cagedColor,
-  onCagedColorChange,
-  chordColor,
-  onChordColorChange,
 }: HeaderBarProps) {
   const { t, i18n } = useTranslation();
   const [settingsVisible, setSettingsVisible] = useState(false);
-  const [colorPickerTarget, setColorPickerTarget] = useState<"scale" | "caged" | "chord" | null>(
-    null,
-  );
   const isDark = theme === "dark";
 
   const overlayAnim = useRef(new Animated.Value(0)).current;
@@ -554,69 +525,6 @@ export default function HeaderBar({
               />
             </View>
 
-            {/* Layer colors */}
-            <View style={styles.settingRow}>
-              <Text style={[styles.settingLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-                {t("layerColors")}
-              </Text>
-              <View style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
-                <TouchableOpacity
-                  onPress={() => setColorPickerTarget("scale")}
-                  style={[styles.colorDot, { backgroundColor: scaleColor }]}
-                />
-                <TouchableOpacity
-                  onPress={() => setColorPickerTarget("caged")}
-                  style={[styles.colorDot, { backgroundColor: cagedColor }]}
-                />
-                <TouchableOpacity
-                  onPress={() => setColorPickerTarget("chord")}
-                  style={[styles.colorDot, { backgroundColor: chordColor }]}
-                />
-              </View>
-            </View>
-            <Modal
-              visible={colorPickerTarget != null}
-              transparent
-              animationType="fade"
-              onRequestClose={() => setColorPickerTarget(null)}
-            >
-              <Pressable style={styles.colorOverlay} onPress={() => setColorPickerTarget(null)}>
-                <View
-                  style={[styles.colorPicker, { backgroundColor: isDark ? "#1f2937" : "#fff" }]}
-                >
-                  <Text
-                    style={[styles.colorPickerTitle, { color: isDark ? "#e5e7eb" : "#1c1917" }]}
-                  >
-                    {colorPickerTarget && t(`layers.${colorPickerTarget}`)}
-                  </Text>
-                  <View style={styles.colorGrid}>
-                    {COLOR_PRESETS.map((preset) => (
-                      <TouchableOpacity
-                        key={preset}
-                        onPress={() => {
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                          if (colorPickerTarget === "scale") onScaleColorChange(preset);
-                          else if (colorPickerTarget === "caged") onCagedColorChange(preset);
-                          else onChordColorChange(preset);
-                          setColorPickerTarget(null);
-                        }}
-                        style={[
-                          styles.colorPresetDot,
-                          { backgroundColor: preset },
-                          preset ===
-                            (colorPickerTarget === "scale"
-                              ? scaleColor
-                              : colorPickerTarget === "caged"
-                                ? cagedColor
-                                : chordColor) && styles.colorPresetSelected,
-                        ]}
-                      />
-                    ))}
-                  </View>
-                </View>
-              </Pressable>
-            </Modal>
-
             {/* Fret range */}
             <View style={[styles.settingRow, { borderBottomWidth: 0, paddingBottom: 4 }]}>
               <Text style={[styles.settingLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
@@ -748,44 +656,5 @@ const styles = StyleSheet.create({
   },
   settingLabel: {
     fontSize: 14,
-  },
-  colorDot: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.2)",
-  },
-  colorOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  colorPicker: {
-    borderRadius: 20,
-    padding: 20,
-    alignItems: "center",
-    gap: 14,
-  },
-  colorPickerTitle: {
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  colorGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-    width: 192,
-    justifyContent: "center",
-  },
-  colorPresetDot: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-  },
-  colorPresetSelected: {
-    borderWidth: 3,
-    borderColor: "#fff",
   },
 });

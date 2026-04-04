@@ -39,6 +39,14 @@ export function DropdownSelect({
   const [visible, setVisible] = useState(false);
   const listRef = useRef<FlatList>(null);
   const menuScale = useRef(new Animated.Value(1)).current;
+  const menuOpacity = useRef(new Animated.Value(1)).current;
+
+  const closeWithAnimation = (callback?: () => void) => {
+    Animated.timing(menuOpacity, { toValue: 0, duration: 150, useNativeDriver: true }).start(() => {
+      setVisible(false);
+      callback?.();
+    });
+  };
   const scaleAnim = useRef(new Animated.Value(variant === "plain" ? 0.8 : 1)).current;
   const mounted = useRef(false);
   const prevKey = useRef(`${value}:${disabled}`);
@@ -65,6 +73,7 @@ export function DropdownSelect({
   }
   const isDark = theme === "dark";
   const current = options.find((o) => o.value === value) ?? options[0];
+  const triggerLabel = current?.label ?? value;
   const open = visible && !disabled;
 
   const isPlain = variant === "plain";
@@ -106,6 +115,7 @@ export function DropdownSelect({
           onPress={() => {
             if (disabled) return;
             menuScale.setValue(0.5);
+            menuOpacity.setValue(1);
             setVisible(true);
           }}
           disabled={disabled}
@@ -124,7 +134,7 @@ export function DropdownSelect({
             ]}
             numberOfLines={1}
           >
-            {current?.label ?? value}
+            {triggerLabel}
           </Text>
           {!disabled && (
             <Svg
@@ -150,7 +160,7 @@ export function DropdownSelect({
         visible={open}
         transparent
         animationType="none"
-        onRequestClose={() => setVisible(false)}
+        onRequestClose={() => closeWithAnimation()}
         onShow={() => {
           Animated.timing(menuScale, {
             toValue: 1.05,
@@ -166,7 +176,7 @@ export function DropdownSelect({
           });
         }}
       >
-        <Pressable style={styles.overlay} onPress={() => setVisible(false)}>
+        <Pressable style={styles.overlay} onPress={() => closeWithAnimation()}>
           <Animated.View
             style={[
               styles.menu,
@@ -174,6 +184,7 @@ export function DropdownSelect({
                 backgroundColor: isDark ? "rgba(17,24,39,0.97)" : "rgba(250,250,249,0.97)",
                 borderColor: isDark ? "rgba(255,255,255,0.08)" : "#e7e5e4",
                 transform: [{ scale: menuScale }],
+                opacity: menuOpacity,
               },
             ]}
           >
@@ -197,7 +208,7 @@ export function DropdownSelect({
                     onPress={() => {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                       onChange(item.value);
-                      setVisible(false);
+                      closeWithAnimation();
                     }}
                     style={[
                       styles.menuItem,

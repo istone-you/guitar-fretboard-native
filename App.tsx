@@ -15,7 +15,6 @@ import "./src/i18n";
 import { useTranslation } from "react-i18next";
 import HeaderBar from "./src/components/AppHeader/index";
 import FretboardFooter from "./src/components/FretboardFooter/index";
-import LayerControls from "./src/components/LayerControls/index";
 import NormalFretboard from "./src/components/NormalFretboard/index";
 import QuizFretboard from "./src/components/QuizFretboard/index";
 import QuizPanel from "./src/components/QuizPanel/index";
@@ -24,25 +23,27 @@ import HowToUseOverlay, {
   type ElementPosition,
 } from "./src/components/HowToUseOverlay";
 import { useDegreeFilter } from "./src/hooks/useDegreeFilter";
-import { useDiatonicSelection } from "./src/hooks/useDiatonicSelection";
 import { usePersistedSetting } from "./src/hooks/usePersistedSetting";
 import { CHORD_QUIZ_TYPES_ALL, useQuiz } from "./src/hooks/useQuiz";
 import {
   NOTES_SHARP,
   NOTES_FLAT,
-  getActiveOverlaySemitones,
+  CHORD_SEMITONES,
+  SCALE_DEGREES,
+  getDiatonicChordSemitones,
   getRootIndex,
 } from "./src/logic/fretboard";
 import type {
   Theme,
   Accidental,
   BaseLabelMode,
-  ChordDisplayMode,
   ScaleType,
   ChordType,
   QuizMode,
   QuizType,
+  LayerConfig,
 } from "./src/types";
+import LayerList from "./src/components/LayerSystem/LayerList";
 
 const GUITAR_ICON_DARK = require("./public/guiter_dark.png");
 const GUITAR_ICON_LIGHT = require("./public/guiter.png");
@@ -116,11 +117,7 @@ function AppContent() {
   const fretboardAreaRef = useRef<View>(null);
   const chipAreaRef = useRef<View>(null);
   const filterBtnRef = useRef<View>(null);
-  const layerToggleRef = useRef<View>(null);
-  const layerToggleSwitchRef = useRef<View>(null);
   const quizSelectorRef = useRef<View>(null);
-  const layerTabRowRef = useRef<View>(null);
-  const layerCardRef = useRef<View>(null);
 
   const measureElement = (
     ref: React.RefObject<View | null>,
@@ -134,29 +131,15 @@ function AppContent() {
     });
 
   const openHowToUse = async () => {
-    const [
-      rootStepper,
-      labelToggle,
-      quizSelector,
-      fretboard,
-      chipArea,
-      filterBtn,
-      colorPicker,
-      layerToggle,
-      layerTabRow,
-      layerCard,
-    ] = await Promise.all([
-      measureElement(rootStepperRef),
-      measureElement(labelToggleRef),
-      measureElement(quizSelectorRef),
-      measureElement(fretboardAreaRef),
-      measureElement(chipAreaRef),
-      measureElement(filterBtnRef),
-      measureElement(layerToggleRef),
-      measureElement(layerToggleSwitchRef),
-      measureElement(layerTabRowRef),
-      measureElement(layerCardRef),
-    ]);
+    const [rootStepper, labelToggle, quizSelector, fretboard, chipArea, filterBtn] =
+      await Promise.all([
+        measureElement(rootStepperRef),
+        measureElement(labelToggleRef),
+        measureElement(quizSelectorRef),
+        measureElement(fretboardAreaRef),
+        measureElement(chipAreaRef),
+        measureElement(filterBtnRef),
+      ]);
     setHowToUsePositions({
       rootStepper,
       labelToggle,
@@ -164,10 +147,6 @@ function AppContent() {
       fretboard,
       chipArea,
       filterBtn,
-      colorPicker,
-      layerToggle,
-      layerTabRow,
-      layerCard,
     });
     setShowHowToUse(true);
   };
@@ -208,35 +187,26 @@ function AppContent() {
 
   const [highlightedOverlayNotes, setHighlightedOverlayNotes] = useState<Set<string>>(new Set());
 
-  // Layer display flags
-  const [showChord, setShowChord] = useState(false);
-  const [showScale, setShowScale] = useState(false);
-  const [showCaged, setShowCaged] = useState(false);
+  // New layer system
+  const [layers, setLayers] = useState<LayerConfig[]>([]);
+  const handleAddLayer = (layer: LayerConfig) => setLayers((prev) => [...prev, layer]);
+  const handleUpdateLayer = (id: string, layer: LayerConfig) =>
+    setLayers((prev) => prev.map((l) => (l.id === id ? { ...layer, id } : l)));
+  const handleRemoveLayer = (id: string) => setLayers((prev) => prev.filter((l) => l.id !== id));
+  const handleToggleLayer = (id: string) =>
+    setLayers((prev) => prev.map((l) => (l.id === id ? { ...l, enabled: !l.enabled } : l)));
+  const handleReorderLayers = (reordered: LayerConfig[]) => setLayers(reordered);
+  const [previewLayer, setPreviewLayer] = useState<LayerConfig | null>(null);
 
-  // Chord settings
-  const [chordDisplayMode, setChordDisplayMode] = useState<ChordDisplayMode>("form");
-  const [chordType, setChordType] = useState<ChordType>("Major");
-  const [triadInversion, setTriadInversion] = useState("root");
-  const {
-    diatonicKeyType,
-    diatonicChordSize,
-    diatonicDegree,
-    setDiatonicDegree,
-    handleDiatonicKeyTypeChange,
-    handleDiatonicChordSizeChange,
-  } = useDiatonicSelection();
+  // Layers with preview merged
+  const effectiveLayers = useMemo(() => {
+    if (!previewLayer) return layers;
+    const existing = layers.find((l) => l.id === previewLayer.id);
+    if (existing) return layers.map((l) => (l.id === previewLayer.id ? previewLayer : l));
+    return [...layers, previewLayer];
+  }, [layers, previewLayer]);
 
   const [scaleType, setScaleType] = useState<ScaleType>("major");
-  const [cagedForms, setCagedForms] = useState(new Set(["E", "A"]));
-
-  const toggleCagedForm = (key: string) => {
-    setCagedForms((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
-  };
 
   const handleAccidentalChange = (mode: Accidental) => {
     const idx = getRootIndex(rootNote);
@@ -246,7 +216,7 @@ function AppContent() {
   };
 
   const handleNoteClick = (noteName: string) => {
-    if (noteName !== rootNote && (showScale || showCaged || showChord)) {
+    if (noteName !== rootNote && effectiveLayers.some((layer) => layer.enabled)) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     setRootNote(noteName);
@@ -266,7 +236,7 @@ function AppContent() {
     setHighlightedOverlayNotes(new Set(notes));
   };
 
-  const { highlightedDegrees, handleAutoFilter, toggleDegree, resetHighlightedDegrees } =
+  const { highlightedDegrees, toggleDegree, resetHighlightedDegrees, setHighlightedDegrees } =
     useDegreeFilter();
 
   const {
@@ -317,36 +287,40 @@ function AppContent() {
     showQuiz,
   });
 
-  const diatonicScaleType = `${diatonicKeyType}-${diatonicChordSize}`;
-  const effectiveShowScale = showScale;
-  const effectiveShowCaged = showCaged;
-  const effectiveShowChord = showChord;
-
-  const overlaySemitones = useMemo(
-    () =>
-      getActiveOverlaySemitones({
-        rootNote,
-        showScale: effectiveShowScale,
-        scaleType,
-        showCaged: effectiveShowCaged,
-        showChord: effectiveShowChord,
-        chordDisplayMode,
-        diatonicScaleType,
-        diatonicDegree,
-        chordType,
-      }),
-    [
-      rootNote,
-      effectiveShowScale,
-      scaleType,
-      effectiveShowCaged,
-      effectiveShowChord,
-      chordDisplayMode,
-      diatonicScaleType,
-      diatonicDegree,
-      chordType,
-    ],
+  const enabledCustomLayers = useMemo(
+    () => effectiveLayers.filter((layer) => layer.enabled),
+    [effectiveLayers],
   );
+
+  const overlaySemitones = useMemo(() => {
+    const active = new Set<number>();
+    const keyRootIndex = getRootIndex(rootNote);
+    for (const layer of enabledCustomLayers) {
+      if (layer.type === "scale") {
+        for (const semitone of SCALE_DEGREES[layer.scaleType] ?? []) active.add(semitone);
+        continue;
+      }
+
+      let semitones: Set<number> | undefined;
+      if (layer.chordDisplayMode === "power") {
+        semitones = CHORD_SEMITONES.power;
+      } else if (layer.chordDisplayMode === "diatonic") {
+        semitones = getDiatonicChordSemitones(
+          keyRootIndex,
+          `${layer.diatonicKeyType}-${layer.diatonicChordSize}`,
+          layer.diatonicDegree,
+        );
+      } else if (layer.chordDisplayMode === "caged") {
+        semitones = CHORD_SEMITONES.Major;
+      } else {
+        semitones = CHORD_SEMITONES[layer.chordType];
+      }
+
+      for (const semitone of semitones ?? []) active.add(semitone);
+    }
+
+    return active;
+  }, [rootNote, enabledCustomLayers]);
 
   const overlayNotes = useMemo(() => {
     const notes = accidental === "sharp" ? NOTES_SHARP : NOTES_FLAT;
@@ -435,19 +409,20 @@ function AppContent() {
     accidental,
     baseLabelMode,
     fretRange,
-    showChord: effectiveShowChord,
-    chordDisplayMode,
-    showScale: effectiveShowScale,
+    showChord: false,
+    chordDisplayMode: "form" as const,
+    showScale: false,
     scaleType,
-    showCaged: effectiveShowCaged,
-    cagedForms,
-    chordType,
-    triadPosition: triadInversion,
-    diatonicScaleType,
-    diatonicDegree,
+    showCaged: false,
+    cagedForms: new Set<string>(),
+    chordType: "Major" as const,
+    triadPosition: "root",
+    diatonicScaleType: "major-triad",
+    diatonicDegree: "I",
     chordColor,
     scaleColor,
     cagedColor,
+    layers: effectiveLayers,
     disableAnimation: isLandscape || animDisabled,
   };
 
@@ -600,17 +575,7 @@ function AppContent() {
       highlightedOverlayNotes={effectiveHighlightedNotes}
       highlightedDegrees={effectiveHighlightedDegrees}
       onAutoFilter={() =>
-        handleAutoFilter({
-          rootNote,
-          showScale: effectiveShowScale,
-          scaleType,
-          showCaged: effectiveShowCaged,
-          showChord: effectiveShowChord,
-          chordDisplayMode,
-          diatonicScaleType,
-          diatonicDegree,
-          chordType,
-        })
+        setHighlightedDegrees(new Set(DEGREE_BY_SEMITONE.filter((_, i) => overlaySemitones.has(i))))
       }
       onReset={() => {
         setAutoFilter(false);
@@ -625,43 +590,6 @@ function AppContent() {
       chipAreaRef={chipAreaRef}
     />
   );
-
-  const layerControlsEl = !showQuiz ? (
-    <LayerControls
-      theme={theme}
-      rootNote={rootNote}
-      accidental={accidental}
-      showChord={showChord}
-      setShowChord={setShowChord}
-      chordDisplayMode={chordDisplayMode}
-      setChordDisplayMode={(v) => setChordDisplayMode(v as ChordDisplayMode)}
-      showScale={showScale}
-      setShowScale={setShowScale}
-      scaleType={scaleType}
-      setScaleType={(v) => setScaleType(v as ScaleType)}
-      showCaged={showCaged}
-      setShowCaged={setShowCaged}
-      cagedForms={cagedForms}
-      toggleCagedForm={toggleCagedForm}
-      chordType={chordType}
-      setChordType={(v) => setChordType(v as ChordType)}
-      triadInversion={triadInversion}
-      setTriadInversion={setTriadInversion}
-      diatonicKeyType={diatonicKeyType}
-      setDiatonicKeyType={handleDiatonicKeyTypeChange}
-      diatonicChordSize={diatonicChordSize}
-      setDiatonicChordSize={handleDiatonicChordSizeChange}
-      diatonicDegree={diatonicDegree}
-      setDiatonicDegree={setDiatonicDegree}
-      scaleColor={scaleColor}
-      cagedColor={cagedColor}
-      chordColor={chordColor}
-      colorPickerRef={layerToggleRef}
-      toggleRef={layerToggleSwitchRef}
-      tabRowRef={layerTabRowRef}
-      cardAreaRef={layerCardRef}
-    />
-  ) : null;
 
   const tabBarEl = (
     <View
@@ -794,52 +722,37 @@ function AppContent() {
               </View>
             )}
           </View>
-          {/* Info bar — line 2: layers */}
-          {(effectiveShowScale || effectiveShowCaged || effectiveShowChord) && (
+          {/* New layer system info pills */}
+          {effectiveLayers.some((l) => l.enabled) && (
             <View style={styles.landscapeInfoBar}>
-              {effectiveShowScale && (
-                <View style={[styles.infoPill, { backgroundColor: scaleColor }]}>
-                  <Text style={styles.infoPillText}>
-                    {t(
-                      `options.scale.${scaleType.replace(/-([a-z])/g, (_: string, c: string) => c.toUpperCase())}`,
-                    )}
-                  </Text>
-                </View>
-              )}
-              {effectiveShowCaged && (
-                <View style={[styles.infoPill, { backgroundColor: cagedColor }]}>
-                  <Text style={styles.infoPillText}>{[...cagedForms].join("")}</Text>
-                </View>
-              )}
-              {effectiveShowChord && chordDisplayMode === "form" && (
-                <View style={[styles.infoPill, { backgroundColor: chordColor }]}>
-                  <Text style={styles.infoPillText}>{chordType}</Text>
-                </View>
-              )}
-              {effectiveShowChord && chordDisplayMode === "power" && (
-                <View style={[styles.infoPill, { backgroundColor: chordColor }]}>
-                  <Text style={styles.infoPillText}>{t("options.chordDisplayMode.power")}</Text>
-                </View>
-              )}
-              {effectiveShowChord && chordDisplayMode === "triad" && (
-                <View style={[styles.infoPill, { backgroundColor: chordColor }]}>
-                  <Text style={styles.infoPillText}>
-                    {t("options.chordDisplayMode.triad")}({chordType}{" "}
-                    {t(`options.triadInversions.${triadInversion}`)})
-                  </Text>
-                </View>
-              )}
-              {effectiveShowChord && chordDisplayMode === "diatonic" && (
-                <View style={[styles.infoPill, { backgroundColor: chordColor }]}>
-                  <Text style={styles.infoPillText}>
-                    {t("options.chordDisplayMode.diatonic")}({diatonicDegree}{" "}
-                    {t(
-                      `options.diatonicKey.${diatonicKeyType === "natural-minor" ? "naturalMinor" : "major"}`,
-                    )}{" "}
-                    {t(`options.diatonicChordSize.${diatonicChordSize}`)})
-                  </Text>
-                </View>
-              )}
+              {effectiveLayers
+                .filter((l) => l.enabled)
+                .map((l) => {
+                  let label: string;
+                  if (l.type === "scale") {
+                    label = t(
+                      `options.scale.${l.scaleType.replace(/-([a-z])/g, (_: string, c: string) => c.toUpperCase())}`,
+                    );
+                  } else {
+                    const mode = t(`options.chordDisplayMode.${l.chordDisplayMode}`);
+                    if (l.chordDisplayMode === "power") {
+                      label = mode;
+                    } else if (l.chordDisplayMode === "caged") {
+                      label = `${mode}: ${[...l.cagedForms].join(", ")}`;
+                    } else if (l.chordDisplayMode === "diatonic") {
+                      label = `${mode}(${l.diatonicDegree} ${t(`options.diatonicKey.${l.diatonicKeyType === "natural-minor" ? "naturalMinor" : "major"}`)} ${t(`options.diatonicChordSize.${l.diatonicChordSize}`)})`;
+                    } else if (l.chordDisplayMode === "triad") {
+                      label = `${mode}(${l.chordType} ${t(`options.triadInversions.${l.triadInversion}`)})`;
+                    } else {
+                      label = `${mode}: ${l.chordType}`;
+                    }
+                  }
+                  return (
+                    <View key={l.id} style={[styles.infoPill, { backgroundColor: l.color }]}>
+                      <Text style={styles.infoPillText}>{label}</Text>
+                    </View>
+                  );
+                })}
             </View>
           )}
         </View>
@@ -888,12 +801,6 @@ function AppContent() {
           onFretRangeChange={setFretRange}
           onAccidentalChange={handleAccidentalChange}
           onShowHowToUse={openHowToUse}
-          scaleColor={scaleColor}
-          onScaleColorChange={setScaleColor}
-          cagedColor={cagedColor}
-          onCagedColorChange={setCagedColor}
-          chordColor={chordColor}
-          onChordColorChange={setChordColor}
         />
       </View>
 
@@ -901,7 +808,20 @@ function AppContent() {
         <View ref={fretboardAreaRef}>{fretboardEl}</View>
         {quizPanelEl}
         {footerFilterEl}
-        {layerControlsEl}
+        {!showQuiz && (
+          <LayerList
+            theme={theme}
+            rootNote={rootNote}
+            accidental={accidental}
+            layers={layers}
+            onAddLayer={handleAddLayer}
+            onUpdateLayer={handleUpdateLayer}
+            onRemoveLayer={handleRemoveLayer}
+            onToggleLayer={handleToggleLayer}
+            onReorderLayers={handleReorderLayers}
+            onPreviewLayer={setPreviewLayer}
+          />
+        )}
       </View>
 
       {tabBarEl}

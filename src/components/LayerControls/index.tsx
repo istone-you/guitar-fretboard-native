@@ -1,10 +1,21 @@
 import { useRef, useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, PanResponder, Animated } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  PanResponder,
+  Animated,
+  Modal,
+  Pressable,
+} from "react-native";
+import Svg, { Path } from "react-native-svg";
 import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 import "../../i18n";
 import {
   CAGED_ORDER,
+  CHORD_CAGED_ORDER,
   DIATONIC_CHORDS,
   NOTES_FLAT,
   NOTES_SHARP,
@@ -152,6 +163,69 @@ function CagedButton({
   );
 }
 
+// コードレイヤーCAGEDモード用ボタン（CAGEDレイヤーとは独立）
+function ChordCagedButton({
+  label,
+  active,
+  isDark,
+  onPress,
+}: {
+  label: string;
+  active: boolean;
+  isDark: boolean;
+  onPress: () => void;
+}) {
+  const scale = useRef(new Animated.Value(active ? 1.05 : 1)).current;
+  const prevActive = useRef(active);
+
+  if (prevActive.current !== active) {
+    prevActive.current = active;
+    scale.stopAnimation();
+    scale.setValue(0.8);
+    Animated.spring(scale, {
+      toValue: active ? 1.05 : 1,
+      friction: 5,
+      tension: 150,
+      useNativeDriver: true,
+    }).start();
+  }
+
+  return (
+    <Animated.View style={{ transform: [{ scale }] }}>
+      <TouchableOpacity
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          onPress();
+        }}
+        style={[
+          styles.cagedBtn,
+          {
+            backgroundColor: active
+              ? isDark
+                ? "#e5e7eb"
+                : "#1c1917"
+              : isDark
+                ? "#1f2937"
+                : "#fafaf9",
+            borderColor: active ? "transparent" : isDark ? "#374151" : "#d6d3d1",
+          },
+        ]}
+        activeOpacity={0.7}
+      >
+        <Text
+          style={{
+            fontSize: 14,
+            fontWeight: "bold",
+            color: active ? (isDark ? "#1c1917" : "#fff") : isDark ? "#f3f4f6" : "#44403c",
+          }}
+        >
+          {label}
+        </Text>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+}
+
 export interface LayerControlsProps {
   theme: Theme;
   rootNote: string;
@@ -224,6 +298,7 @@ export default function LayerControls({
   const { t } = useTranslation();
   const isDark = theme === "dark";
   const [activeTab, setActiveTab] = useState<MobileTab>("scale");
+  const [cagedPickerVisible, setCagedPickerVisible] = useState(false);
   const slideAnim = useRef(new Animated.Value(0)).current;
   const prevTabIdx = useRef(0);
   const touchStartX = useRef(0);
@@ -320,6 +395,7 @@ export default function LayerControls({
   const chordDisplayOptions: { value: ChordDisplayMode; label: string }[] = [
     { value: "form", label: t("options.chordDisplayMode.form") },
     { value: "power", label: t("options.chordDisplayMode.power") },
+    { value: "caged", label: t("options.chordDisplayMode.caged") },
     { value: "triad", label: t("options.chordDisplayMode.triad") },
     { value: "diatonic", label: t("options.chordDisplayMode.diatonic") },
   ];
@@ -494,21 +570,89 @@ export default function LayerControls({
           </View>
           <View style={styles.chordGridCell}>
             {sectionLabel(
-              chordDisplayMode === "power"
+              chordDisplayMode === "power" || chordDisplayMode === "caged"
                 ? ""
                 : chordDisplayMode === "diatonic"
                   ? t("controls.degree")
                   : t("controls.chord"),
             )}
-            <DropdownSelect
-              theme={theme}
-              value={chordValue}
-              onChange={chordDisplayMode === "diatonic" ? setDiatonicDegree : setChordType}
-              options={chordValueOptions}
-              disabled={!showChord || chordDisplayMode === "power"}
-              fullWidth
-              variant="plain"
-            />
+            {chordDisplayMode === "caged" ? (
+              <>
+                <TouchableOpacity
+                  onPress={() => setCagedPickerVisible(true)}
+                  disabled={!showChord}
+                  style={[styles.cagedTrigger, { opacity: showChord ? 1 : 0.45 }]}
+                  activeOpacity={0.7}
+                >
+                  <Text
+                    style={{
+                      fontSize: 15,
+                      fontWeight: "600",
+                      color: isDark ? "#fff" : "#1c1917",
+                    }}
+                  >
+                    {[...cagedForms].join(", ") || "—"}
+                  </Text>
+                  <Svg width={12} height={12} viewBox="0 0 16 16" fill="none">
+                    <Path
+                      d="M3 6l5 5 5-5"
+                      stroke={isDark ? "#6b7280" : "#a8a29e"}
+                      strokeWidth={2}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </Svg>
+                </TouchableOpacity>
+                <Modal
+                  visible={cagedPickerVisible}
+                  transparent
+                  animationType="none"
+                  onRequestClose={() => setCagedPickerVisible(false)}
+                >
+                  <Pressable
+                    style={styles.cagedPickerOverlay}
+                    onPress={() => setCagedPickerVisible(false)}
+                  >
+                    <Pressable
+                      style={[
+                        styles.cagedPickerMenu,
+                        {
+                          backgroundColor: isDark
+                            ? "rgba(17,24,39,0.97)"
+                            : "rgba(250,250,249,0.97)",
+                          borderColor: isDark ? "rgba(255,255,255,0.08)" : "#e7e5e4",
+                        },
+                      ]}
+                    >
+                      <View style={styles.cagedPickerRow}>
+                        {CHORD_CAGED_ORDER.map((key) => {
+                          const active = cagedForms.has(key);
+                          return (
+                            <ChordCagedButton
+                              key={key}
+                              label={key}
+                              active={active}
+                              isDark={isDark}
+                              onPress={() => toggleCagedForm(key)}
+                            />
+                          );
+                        })}
+                      </View>
+                    </Pressable>
+                  </Pressable>
+                </Modal>
+              </>
+            ) : (
+              <DropdownSelect
+                theme={theme}
+                value={chordValue}
+                onChange={chordDisplayMode === "diatonic" ? setDiatonicDegree : setChordType}
+                options={chordValueOptions}
+                disabled={!showChord || chordDisplayMode === "power"}
+                fullWidth
+                variant="plain"
+              />
+            )}
           </View>
           <View style={styles.chordGridCell}>
             {sectionLabel(
@@ -742,5 +886,27 @@ const styles = StyleSheet.create({
     width: "48%",
     gap: 4,
     alignItems: "center",
+  },
+  cagedTrigger: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 8,
+  },
+  cagedPickerOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.35)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cagedPickerMenu: {
+    borderWidth: 1,
+    borderRadius: 20,
+    padding: 16,
+  },
+  cagedPickerRow: {
+    flexDirection: "row",
+    gap: 8,
   },
 });

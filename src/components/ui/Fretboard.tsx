@@ -18,6 +18,9 @@ import {
   getOpenChordForm,
   isInScale,
   calcCagedPositions,
+  getCagedFormCells,
+  getChordLayerCells,
+  CHORD_CAGED_ORDER,
   getRootIndex,
   type FretCell,
   type CagedPositionValue,
@@ -29,7 +32,9 @@ import type {
   ChordDisplayMode,
   ScaleType,
   ChordType,
+  LayerConfig,
 } from "../../types";
+import { MAX_LAYERS } from "../../types";
 
 const STRING_COUNT = 6;
 
@@ -53,19 +58,23 @@ function ScaleAnimView({
 
   if (visible && color) lastColor.current = color;
 
+  const runShowSpring = () => {
+    if (skipAnimation) {
+      scale.setValue(1);
+      return;
+    }
+    Animated.spring(scale, {
+      toValue: 1,
+      friction: 6,
+      tension: 120,
+      useNativeDriver: true,
+    }).start();
+  };
+
   if (visible && !prevVisible.current) {
     prevVisible.current = true;
     scale.stopAnimation();
-    if (skipAnimation) {
-      scale.setValue(1);
-    } else {
-      Animated.spring(scale, {
-        toValue: 1,
-        friction: 6,
-        tension: 120,
-        useNativeDriver: true,
-      }).start();
-    }
+    runShowSpring();
   } else if (!visible && prevVisible.current) {
     prevVisible.current = false;
     scale.stopAnimation();
@@ -118,6 +127,67 @@ function PulseView({ children, style }: { children: React.ReactNode; style: any 
   ).current;
 
   return <Animated.View style={[style, { opacity }]}>{children}</Animated.View>;
+}
+
+function LayerOverlayDot({
+  idx,
+  overlay,
+  overlayInset,
+  overlaySize,
+  overlayFontSize,
+  labelText,
+  disableAnimation,
+}: {
+  idx: number;
+  overlay?: { color: string; zIndex: number };
+  overlayInset: number;
+  overlaySize: number;
+  overlayFontSize: number;
+  labelText: string;
+  disableAnimation: boolean;
+}) {
+  const remountSeed = useRef(0);
+  const prevColor = useRef<string | undefined>(overlay?.color);
+
+  if (overlay?.color && prevColor.current && prevColor.current !== overlay.color) {
+    remountSeed.current += 1;
+  }
+  if (overlay?.color) {
+    prevColor.current = overlay.color;
+  }
+
+  return (
+    <ScaleAnimView
+      key={`layer-anim-${idx}-${remountSeed.current}`}
+      skipAnimation={disableAnimation}
+      visible={overlay != null}
+      color={overlay?.color}
+      style={{
+        position: "absolute",
+        top: overlayInset + idx * 2,
+        left: overlayInset + idx * 2,
+        right: overlayInset + idx * 2,
+        bottom: overlayInset + idx * 2,
+        borderRadius: overlaySize / 2,
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: overlay?.zIndex ?? 12 + idx,
+        opacity: 0.92,
+      }}
+    >
+      {overlay && (
+        <Text
+          style={{
+            fontSize: overlayFontSize,
+            color: "#fff",
+            fontWeight: "bold",
+          }}
+        >
+          {labelText}
+        </Text>
+      )}
+    </ScaleAnimView>
+  );
 }
 
 const FRETBOARD_SIZE = {
@@ -187,6 +257,7 @@ export interface FretboardProps {
   scaleColor?: string;
   cagedColor?: string;
   quizColor?: string;
+  layers?: LayerConfig[];
   disableAnimation?: boolean;
 }
 
@@ -224,6 +295,7 @@ export default function Fretboard({
   scaleColor = "#ff69b6",
   cagedColor = "#40e0d0",
   quizColor,
+  layers = [],
   disableAnimation = false,
 }: FretboardProps) {
   const [fretMin, fretMax] = fretRange;
@@ -274,6 +346,27 @@ export default function Fretboard({
         groups.push({
           id: `triad-${stringSetOpt.value}-${rootIndex}-${chordType}-${triadPosition}`,
           kind: "triad",
+          cells,
+          minFret: Math.min(...frets),
+          maxFret: Math.max(...frets),
+          minString: Math.min(...strings),
+          maxString: Math.max(...strings),
+        });
+      }
+      return groups;
+    }
+
+    if (chordDisplayMode === "caged") {
+      const groups: ChordGroup[] = [];
+      for (const key of CHORD_CAGED_ORDER) {
+        if (!cagedForms.has(key)) continue;
+        const cells = getCagedFormCells(key, rootIndex);
+        if (cells.length === 0) continue;
+        const frets = cells.map((c) => c.fret);
+        const strings = cells.map((c) => c.string);
+        groups.push({
+          id: `caged-${key}-${rootIndex}`,
+          kind: "caged",
           cells,
           minFret: Math.min(...frets),
           maxFret: Math.max(...frets),
@@ -357,6 +450,7 @@ export default function Fretboard({
     effectiveDisplayMode,
     effectiveChordType,
     effectiveRootIndex,
+    cagedForms,
   ]);
 
   const chordPositions = useMemo(() => {
@@ -381,6 +475,46 @@ export default function Fretboard({
     }
     return merged;
   }, [showCaged, cagedForms, rootIndex]);
+
+  // New layer system overlays
+  const layerOverlays = useMemo(() => {
+    const map = new Map<string, { color: string; zIndex: number }[]>();
+    layers.forEach((layer, idx) => {
+      if (!layer.enabled) return;
+      const cells: { string: number; fret: number }[] = [];
+      if (layer.type === "scale") {
+        // Generate all cells where the note is in the scale
+        for (let s = 0; s < 6; s++) {
+          for (let f = fretMin; f <= fretMax; f++) {
+            const noteIdx = getNoteIndex(s, f);
+            const semitone = calcDegree(noteIdx, rootIndex);
+            if (isInScale(semitone, layer.scaleType)) {
+              cells.push({ string: s, fret: f });
+            }
+          }
+        }
+      } else if (layer.type === "chord") {
+        const diatonicScale = `${layer.diatonicKeyType}-${layer.diatonicChordSize}`;
+        cells.push(
+          ...getChordLayerCells(
+            rootIndex,
+            layer.chordDisplayMode,
+            layer.chordType,
+            layer.triadInversion,
+            diatonicScale,
+            layer.diatonicDegree,
+            layer.cagedForms,
+          ),
+        );
+      }
+      for (const cell of cells) {
+        const key = `${cell.string}-${cell.fret}`;
+        if (!map.has(key)) map.set(key, []);
+        map.get(key)!.push({ color: layer.color, zIndex: 12 + idx });
+      }
+    });
+    return map;
+  }, [layers, rootIndex, fretMin, fretMax]);
 
   const visibleFrets = Array.from({ length: fretMax - fretMin + 1 }, (_, i) => fretMin + i);
 
@@ -531,6 +665,7 @@ export default function Fretboard({
               scaleColor={scaleColor}
               cagedColor={cagedColor}
               quizColor={quizColor}
+              layerOverlays={layerOverlays}
               disableAnimation={disableAnimation}
             />
           ))}
@@ -571,6 +706,7 @@ interface StringRowProps {
   scaleColor?: string;
   cagedColor?: string;
   quizColor?: string;
+  layerOverlays?: Map<string, { color: string; zIndex: number }[]>;
   disableAnimation?: boolean;
 }
 
@@ -605,6 +741,7 @@ function StringRow({
   scaleColor = "#ff69b6",
   cagedColor = "#40e0d0",
   quizColor,
+  layerOverlays,
   disableAnimation = false,
 }: StringRowProps) {
   const isDark = theme === "dark";
@@ -710,11 +847,11 @@ function StringRow({
               visible={isHighlighted}
               style={{
                 position: "absolute",
-                top: Math.max(0, overlayInset - 1),
-                left: Math.max(0, overlayInset - 1),
-                right: Math.max(0, overlayInset - 1),
-                bottom: Math.max(0, overlayInset - 1),
-                borderRadius: (overlaySize + 2) / 2,
+                top: overlayInset - 2,
+                left: overlayInset - 2,
+                right: overlayInset - 2,
+                bottom: overlayInset - 2,
+                borderRadius: (overlaySize + 4) / 2,
                 borderWidth: 2,
                 borderColor: isDark ? "#e5e7eb" : "#1c1917",
                 zIndex: 25,
@@ -723,23 +860,36 @@ function StringRow({
 
             {/* Base label */}
             {!overlayColor && !inChord && !shouldSuppressRegularDisplay && (
-              <Animated.Text
+              <Animated.View
                 style={{
-                  fontSize: size.baseFontSize,
-                  color: "#6b7280",
-                  fontFamily: "monospace",
-                  fontWeight: isHighlighted ? "bold" : "normal",
+                  backgroundColor: isDark ? "#111827" : "#f5f5f4",
+                  borderRadius:
+                    (baseLabelMode === "degree" ? overlaySize - 4 : overlaySize - 8) / 2,
+                  width: baseLabelMode === "degree" ? overlaySize - 4 : overlaySize - 8,
+                  height: baseLabelMode === "degree" ? overlaySize - 4 : overlaySize - 8,
+                  alignItems: "center",
+                  justifyContent: "center",
                   zIndex: 0,
                   transform: [{ scale: labelScale }],
                 }}
               >
-                {labelText}
-              </Animated.Text>
+                <Text
+                  style={{
+                    fontSize: size.baseFontSize,
+                    color: "#6b7280",
+                    fontFamily: "monospace",
+                    fontWeight: "500",
+                  }}
+                >
+                  {labelText}
+                </Text>
+              </Animated.View>
             )}
 
             {/* Scale overlay (behind CAGED) */}
             {!quizAnswerOverlay && !shouldRevealChoiceAnswer && !isSelectedCell && (
               <ScaleAnimView
+                key={`scale-${scaleColor}`}
                 skipAnimation={disableAnimation}
                 visible={inScale}
                 color={scaleColor}
@@ -771,6 +921,7 @@ function StringRow({
             {/* CAGED overlay (in front of scale) */}
             {!quizAnswerOverlay && !shouldRevealChoiceAnswer && !isSelectedCell && (
               <ScaleAnimView
+                key={`caged-${cagedColor}`}
                 skipAnimation={disableAnimation}
                 visible={inCaged}
                 color={cagedColor}
@@ -803,6 +954,7 @@ function StringRow({
             {/* Chord dot */}
             {!quizAnswerOverlay && (
               <ScaleAnimView
+                key={`chord-${chordColor}`}
                 skipAnimation={disableAnimation}
                 visible={inChord}
                 color={chordColor}
@@ -831,6 +983,23 @@ function StringRow({
                 </Animated.Text>
               </ScaleAnimView>
             )}
+
+            {/* New layer system overlays */}
+            {Array.from({ length: MAX_LAYERS }, (_, idx) => {
+              const overlay = layerOverlays?.get(`${stringIdx}-${fret}`)?.[idx];
+              return (
+                <LayerOverlayDot
+                  key={`layer-slot-${idx}`}
+                  idx={idx}
+                  overlay={overlay}
+                  overlayInset={overlayInset}
+                  overlaySize={overlaySize}
+                  overlayFontSize={size.overlayFontSize}
+                  labelText={labelText}
+                  disableAnimation={disableAnimation}
+                />
+              );
+            })}
 
             {/* Quiz target (pulsing) */}
             {fret === quizTargetFret && !quizAnswerMode && (

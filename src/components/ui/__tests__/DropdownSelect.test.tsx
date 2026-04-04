@@ -12,6 +12,14 @@ const options = [
   { value: "c", label: "Gamma" },
 ];
 
+const getTriggerNode = (tree: unknown): any => {
+  const wrapper: any = Array.isArray(tree) ? tree[0] : tree;
+  return wrapper?.children?.[0] ?? wrapper;
+};
+
+const getLabelTextNode = (trigger: any, label: string): any =>
+  trigger?.children?.find((c: any) => c?.type === "Text" && c?.children?.includes(label));
+
 describe("DropdownSelect", () => {
   const defaultProps = {
     theme: "dark" as const,
@@ -53,45 +61,51 @@ describe("DropdownSelect", () => {
   });
 
   it("closes the modal when an option is selected", () => {
+    jest.useFakeTimers();
     const onChange = jest.fn();
     render(<DropdownSelect {...defaultProps} onChange={onChange} />);
-    // Open
     fireEvent.press(screen.getByText("Alpha"));
-    // Select Beta
     fireEvent.press(screen.getByText("Beta"));
     expect(onChange).toHaveBeenCalledWith("b");
-    // Modal should be closed — only the trigger "Alpha" should remain
-    // After selecting "b", the parent controls the value so trigger still shows "Alpha"
+    act(() => {
+      jest.runAllTimers();
+    });
     expect(screen.queryAllByText("Gamma")).toHaveLength(0);
+    jest.useRealTimers();
   });
 
   it("closes the modal via onRequestClose (Android back button)", () => {
+    jest.useFakeTimers();
     const { UNSAFE_getByType } = render(<DropdownSelect {...defaultProps} />);
     const { Modal: RNModal } = require("react-native");
-    // Open
     fireEvent.press(screen.getByText("Alpha"));
     expect(screen.getByText("Beta")).toBeTruthy();
-    // Trigger onRequestClose on the Modal (wrapping in act since it calls setState)
     act(() => {
       const modal = UNSAFE_getByType(RNModal);
       modal.props.onRequestClose();
     });
-    // After onRequestClose, modal should close
+    act(() => {
+      jest.runAllTimers();
+    });
     expect(screen.queryByText("Beta")).toBeNull();
+    jest.useRealTimers();
   });
 
   it("closes the modal when the overlay backdrop is pressed", () => {
+    jest.useFakeTimers();
     const { UNSAFE_getByType } = render(<DropdownSelect {...defaultProps} />);
     const { Modal: RNModal } = require("react-native");
-    // Open
     fireEvent.press(screen.getByText("Alpha"));
     expect(screen.getByText("Beta")).toBeTruthy();
-    // Access the overlay Pressable's onPress via the Modal's children tree
     act(() => {
       const modal = UNSAFE_getByType(RNModal);
       modal.props.children.props.onPress();
     });
+    act(() => {
+      jest.runAllTimers();
+    });
     expect(screen.queryByText("Beta")).toBeNull();
+    jest.useRealTimers();
   });
 
   // --- Selecting options ---
@@ -137,10 +151,7 @@ describe("DropdownSelect", () => {
   it("applies fullWidth stretch style when fullWidth is true", () => {
     const { toJSON } = render(<DropdownSelect {...defaultProps} fullWidth />);
     const tree = toJSON();
-    // The trigger (first TouchableOpacity) should have alignSelf: "stretch"
-    // tree is an array because of the fragment; first element is the trigger
-    const wrapper = Array.isArray(tree) ? tree[0] : tree;
-    const trigger = wrapper?.children?.[0] ?? wrapper;
+    const trigger = getTriggerNode(tree);
     const flatStyle = Object.assign(
       {},
       ...(Array.isArray(trigger?.props?.style) ? trigger.props.style : [trigger?.props?.style]),
@@ -151,8 +162,7 @@ describe("DropdownSelect", () => {
   it("does not apply stretch style when fullWidth is false", () => {
     const { toJSON } = render(<DropdownSelect {...defaultProps} fullWidth={false} />);
     const tree = toJSON();
-    const wrapper = Array.isArray(tree) ? tree[0] : tree;
-    const trigger = wrapper?.children?.[0] ?? wrapper;
+    const trigger = getTriggerNode(tree);
     const flatStyle = Object.assign(
       {},
       ...(Array.isArray(trigger?.props?.style) ? trigger.props.style : [trigger?.props?.style]),
@@ -175,12 +185,8 @@ describe("DropdownSelect", () => {
   it("applies dark theme colors to trigger text", () => {
     const { toJSON } = render(<DropdownSelect {...defaultProps} theme="dark" />);
     const tree = toJSON();
-    const wrapper = Array.isArray(tree) ? tree[0] : tree;
-    const trigger = wrapper?.children?.[0] ?? wrapper;
-    // Find the Text node with the label
-    const textNode = trigger?.children?.find(
-      (c: any) => c?.type === "Text" && c?.children?.includes("Alpha"),
-    );
+    const trigger = getTriggerNode(tree);
+    const textNode = getLabelTextNode(trigger, "Alpha");
     const flatStyle = Object.assign(
       {},
       ...(Array.isArray(textNode?.props?.style) ? textNode.props.style : [textNode?.props?.style]),
@@ -191,11 +197,8 @@ describe("DropdownSelect", () => {
   it("applies light theme colors to trigger text", () => {
     const { toJSON } = render(<DropdownSelect {...defaultProps} theme="light" />);
     const tree = toJSON();
-    const wrapper = Array.isArray(tree) ? tree[0] : tree;
-    const trigger = wrapper?.children?.[0] ?? wrapper;
-    const textNode = trigger?.children?.find(
-      (c: any) => c?.type === "Text" && c?.children?.includes("Alpha"),
-    );
+    const trigger = getTriggerNode(tree);
+    const textNode = getLabelTextNode(trigger, "Alpha");
     const flatStyle = Object.assign(
       {},
       ...(Array.isArray(textNode?.props?.style) ? textNode.props.style : [textNode?.props?.style]),
@@ -206,11 +209,8 @@ describe("DropdownSelect", () => {
   it("applies disabled text color in dark theme", () => {
     const { toJSON } = render(<DropdownSelect {...defaultProps} theme="dark" disabled />);
     const tree = toJSON();
-    const wrapper = Array.isArray(tree) ? tree[0] : tree;
-    const trigger = wrapper?.children?.[0] ?? wrapper;
-    const textNode = trigger?.children?.find(
-      (c: any) => c?.type === "Text" && c?.children?.includes("Alpha"),
-    );
+    const trigger = getTriggerNode(tree);
+    const textNode = getLabelTextNode(trigger, "Alpha");
     const flatStyle = Object.assign(
       {},
       ...(Array.isArray(textNode?.props?.style) ? textNode.props.style : [textNode?.props?.style]),
@@ -221,11 +221,8 @@ describe("DropdownSelect", () => {
   it("applies disabled text color in light theme", () => {
     const { toJSON } = render(<DropdownSelect {...defaultProps} theme="light" disabled />);
     const tree = toJSON();
-    const wrapper = Array.isArray(tree) ? tree[0] : tree;
-    const trigger = wrapper?.children?.[0] ?? wrapper;
-    const textNode = trigger?.children?.find(
-      (c: any) => c?.type === "Text" && c?.children?.includes("Alpha"),
-    );
+    const trigger = getTriggerNode(tree);
+    const textNode = getLabelTextNode(trigger, "Alpha");
     const flatStyle = Object.assign(
       {},
       ...(Array.isArray(textNode?.props?.style) ? textNode.props.style : [textNode?.props?.style]),
@@ -240,8 +237,7 @@ describe("DropdownSelect", () => {
     fireEvent.press(screen.getByText("Alpha"));
     // After opening, the trigger should have the "open" border color
     const tree = toJSON();
-    const wrapper = Array.isArray(tree) ? tree[0] : tree;
-    const trigger = wrapper?.children?.[0] ?? wrapper;
+    const trigger = getTriggerNode(tree);
     const flatStyle = Object.assign(
       {},
       ...(Array.isArray(trigger?.props?.style) ? trigger.props.style : [trigger?.props?.style]),

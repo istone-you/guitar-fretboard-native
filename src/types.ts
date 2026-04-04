@@ -1,7 +1,7 @@
 export type Theme = "dark" | "light";
 export type Accidental = "sharp" | "flat";
 export type BaseLabelMode = "note" | "degree";
-export type ChordDisplayMode = "form" | "power" | "triad" | "diatonic";
+export type ChordDisplayMode = "form" | "power" | "triad" | "diatonic" | "caged";
 export type ScaleType =
   | "major"
   | "natural-minor"
@@ -51,6 +51,47 @@ export type DegreeName =
   | "M6"
   | "m7"
   | "M7";
+
+// ===== Layer system =====
+export type LayerType = "scale" | "chord";
+
+export const MAX_LAYERS = 2;
+
+export interface LayerConfig {
+  id: string;
+  type: LayerType;
+  color: string;
+  enabled: boolean;
+  // Scale settings
+  scaleType: ScaleType;
+  // Chord settings
+  chordDisplayMode: ChordDisplayMode;
+  chordType: ChordType;
+  triadInversion: string;
+  diatonicKeyType: string;
+  diatonicChordSize: string;
+  diatonicDegree: string;
+  cagedForms: Set<string>;
+}
+
+export function createDefaultLayer(type: LayerType, id: string, color: string): LayerConfig {
+  return {
+    id,
+    type,
+    color,
+    enabled: true,
+    scaleType: "major",
+    chordDisplayMode: "form",
+    chordType: "Major",
+    triadInversion: "root",
+    diatonicKeyType: "major",
+    diatonicChordSize: "triad",
+    diatonicDegree: "I",
+    cagedForms: new Set(["C", "A", "G", "E", "D"]),
+  };
+}
+
+export const DEFAULT_LAYER_COLORS = ["#ff69b6", "#40e0d0", "#ffd700", "#7c3aed"];
 
 export type QuizMode = "note" | "degree" | "chord" | "scale" | "diatonic";
 export type QuizType = "choice" | "fretboard" | "all";

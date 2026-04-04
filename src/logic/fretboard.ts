@@ -234,8 +234,6 @@ export const CHORD_FORMS_6TH: Partial<Record<ChordType, FretPosition[]>> = {
     { string: 1, fretOffset: 1 },
     { string: 2, fretOffset: 2 },
     { string: 3, fretOffset: 0 },
-    { string: 4, fretOffset: 2 },
-    { string: 5, fretOffset: -1 },
   ],
   aug: [
     { string: 0, fretOffset: 0 },
@@ -1104,14 +1102,7 @@ export const OPEN_CHORD_FORMS: Partial<Record<ChordType, Record<string, FretCell
       { string: 5, fret: 1 },
     ],
   },
-  dim: {
-    B: [
-      { string: 1, fret: 2 },
-      { string: 2, fret: 3 },
-      { string: 3, fret: 1 },
-      { string: 4, fret: 3 },
-    ],
-  },
+  dim: {},
   aug: {
     E: [
       { string: 0, fret: 0 },
@@ -1451,6 +1442,162 @@ export const CAGED_FORMS: Record<string, CagedForm> = {
 
 // CAGED表示順（ネック上で低フレット→高フレットの順）
 export const CAGED_ORDER = ["C", "A", "G", "E", "D"] as const;
+
+// コードレイヤーCAGEDモード用: フォームのセル一覧を返す
+// コードレイヤーCAGEDモード用（CAGEDレイヤーとは独立）
+const CHORD_CAGED_FORMS: Record<
+  string,
+  { anchorString: number; positions: { string: number; fretOffset: number }[] }
+> = {
+  E: {
+    anchorString: 0,
+    positions: [
+      { string: 0, fretOffset: 0 },
+      { string: 1, fretOffset: 2 },
+      { string: 2, fretOffset: 2 },
+      { string: 3, fretOffset: 1 },
+      { string: 4, fretOffset: 0 },
+      { string: 5, fretOffset: 0 },
+    ],
+  },
+  D: {
+    anchorString: 2,
+    positions: [
+      { string: 2, fretOffset: 0 },
+      { string: 3, fretOffset: 2 },
+      { string: 4, fretOffset: 3 },
+      { string: 5, fretOffset: 2 },
+    ],
+  },
+  C: {
+    anchorString: 1,
+    positions: [
+      { string: 1, fretOffset: 0 },
+      { string: 2, fretOffset: -1 },
+      { string: 3, fretOffset: -3 },
+      { string: 4, fretOffset: -2 },
+      { string: 5, fretOffset: -3 },
+    ],
+  },
+  A: {
+    anchorString: 1,
+    positions: [
+      { string: 1, fretOffset: 0 },
+      { string: 2, fretOffset: 2 },
+      { string: 3, fretOffset: 2 },
+      { string: 4, fretOffset: 2 },
+      { string: 5, fretOffset: 0 },
+    ],
+  },
+  G: {
+    anchorString: 0,
+    positions: [
+      { string: 0, fretOffset: 0 },
+      { string: 1, fretOffset: -1 },
+      { string: 2, fretOffset: -3 },
+      { string: 3, fretOffset: -3 },
+      { string: 4, fretOffset: -3 },
+      { string: 5, fretOffset: 0 },
+    ],
+  },
+};
+
+export const CHORD_CAGED_ORDER = ["C", "A", "G", "E", "D"] as const;
+
+export function getCagedFormCells(formKey: string, rootIndex: number): FretCell[] {
+  const form = CHORD_CAGED_FORMS[formKey];
+  if (!form) return [];
+  let anchorFret = -1;
+  for (let f = 0; f < FRET_COUNT; f++) {
+    if (getNoteIndex(form.anchorString, f) === rootIndex) {
+      anchorFret = f;
+      break;
+    }
+  }
+  if (anchorFret === -1) return [];
+  return form.positions
+    .map(({ string, fretOffset }) => ({ string, fret: anchorFret + fretOffset }))
+    .filter(({ fret }) => fret >= 0 && fret < FRET_COUNT);
+}
+
+// コードレイヤー用: コードフォームのセル一覧を返す（既存レイヤーとは独立）
+export function getChordLayerCells(
+  rootIndex: number,
+  chordDisplayMode: ChordDisplayMode,
+  chordType: ChordType,
+  triadInversion: string,
+  diatonicScaleType: string,
+  diatonicDegree: string,
+  cagedForms: Set<string>,
+): FretCell[] {
+  const dedupeCells = (input: FretCell[]): FretCell[] => {
+    const uniq = new Map<string, FretCell>();
+    for (const cell of input) {
+      const key = `${cell.string}-${cell.fret}`;
+      if (!uniq.has(key)) uniq.set(key, cell);
+    }
+    return [...uniq.values()];
+  };
+
+  if (chordDisplayMode === "caged") {
+    const cells: FretCell[] = [];
+    for (const key of cagedForms) {
+      cells.push(...getCagedFormCells(key, rootIndex));
+    }
+    return dedupeCells(cells);
+  }
+
+  const effectiveDisplayMode = chordDisplayMode === "diatonic" ? "form" : chordDisplayMode;
+  let effectiveRootIndex = rootIndex;
+  let effectiveChordType = chordType;
+  if (chordDisplayMode === "diatonic") {
+    const chord = getDiatonicChord(rootIndex, diatonicScaleType, diatonicDegree);
+    effectiveRootIndex = chord.rootIndex;
+    effectiveChordType = chord.chordType;
+  }
+
+  if (chordDisplayMode === "triad") {
+    const cells: FretCell[] = [];
+    for (const opt of TRIAD_STRING_SET_OPTIONS) {
+      const layoutValue = `${opt.value}-${triadInversion}`;
+      cells.push(...buildTriadVoicing(rootIndex, chordType, layoutValue));
+    }
+    return dedupeCells(cells);
+  }
+
+  const cells: FretCell[] = [];
+  for (const rootStringIdx of [0, 1]) {
+    const fullForm =
+      effectiveDisplayMode === "power"
+        ? POWER_CHORD_FORMS[rootStringIdx]
+        : (rootStringIdx === 0 ? CHORD_FORMS_6TH : CHORD_FORMS_5TH)[effectiveChordType];
+    if (!fullForm) continue;
+    let rootFret = -1;
+    for (let f = 0; f < FRET_COUNT; f++) {
+      if (getNoteIndex(rootStringIdx, f) === effectiveRootIndex) {
+        rootFret = f;
+        break;
+      }
+    }
+    if (rootFret === -1) continue;
+    for (const { string, fretOffset } of fullForm) {
+      const fret = rootFret + fretOffset;
+      if (fret >= 0 && fret < FRET_COUNT) cells.push({ string, fret });
+    }
+  }
+
+  // Open chord form
+  if (effectiveDisplayMode === "form") {
+    const openForm = getOpenChordForm(effectiveRootIndex, effectiveChordType);
+    if (openForm) {
+      const existingKeys = new Set(cells.map((c) => `${c.string}-${c.fret}`));
+      const isOverlap = openForm.every((c) => existingKeys.has(`${c.string}-${c.fret}`));
+      if (!isOverlap) cells.push(...openForm);
+    }
+  }
+
+  return dedupeCells(cells);
+}
 
 // 指定フォームの表示セルを返す: Map<"string-fret", { color, degree }>
 export function calcCagedPositions(

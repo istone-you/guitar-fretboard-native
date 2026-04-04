@@ -18,10 +18,6 @@ export interface HowToUsePositions {
   fretboard?: ElementPosition;
   chipArea?: ElementPosition;
   filterBtn?: ElementPosition;
-  colorPicker?: ElementPosition;
-  layerToggle?: ElementPosition;
-  layerTabRow?: ElementPosition;
-  layerCard?: ElementPosition;
 }
 
 interface HowToUseOverlayProps {
@@ -167,24 +163,6 @@ export default function HowToUseOverlay({
           left={cx(p.filterBtn)}
           top={p.filterBtn.y - 50}
           arrow="down"
-        />
-      )}
-
-      {/* Layer card switch — below tab row */}
-      {p.layerTabRow && (
-        <CenteredLabel
-          text={t("howToUseItems.layerCardSwitch")}
-          left={cx(p.layerTabRow)}
-          top={p.layerTabRow.y + p.layerTabRow.h}
-        />
-      )}
-
-      {/* Toggle — centered on card */}
-      {p.layerCard && (
-        <CenteredLabel
-          text={t("howToUseItems.togglePanel")}
-          left={cx(p.layerCard)}
-          top={p.layerCard.y + p.layerCard.h / 2 - 12}
         />
       )}
 

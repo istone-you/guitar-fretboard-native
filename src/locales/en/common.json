@@ -36,7 +36,9 @@
     "scale": "Scale",
     "caged": "CAGED",
     "chord": "Chord",
-    "quiz": "Quiz"
+    "quiz": "Quiz",
+    "addLayer": "Add Layer",
+    "confirm": "Done"
   },
   "controls": {
     "displayMode": "Display",
@@ -92,7 +94,8 @@
       "form": "Chord Forms",
       "power": "Power Chords",
       "triad": "Triads",
-      "diatonic": "Diatonic"
+      "diatonic": "Diatonic",
+      "caged": "CAGED"
     },
     "diatonicKey": {
       "major": "Major",

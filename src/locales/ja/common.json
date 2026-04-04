@@ -36,7 +36,9 @@
     "scale": "スケール",
     "caged": "CAGED",
     "chord": "コード",
-    "quiz": "クイズ"
+    "quiz": "クイズ",
+    "addLayer": "レイヤーを追加",
+    "confirm": "決定"
   },
   "controls": {
     "displayMode": "表示形式",
@@ -92,7 +94,8 @@
       "form": "コードフォーム",
       "power": "パワーコード",
       "triad": "トライアド",
-      "diatonic": "ダイアトニック"
+      "diatonic": "ダイアトニック",
+      "caged": "CAGED"
     },
     "diatonicKey": {
       "major": "メジャー",
