@@ -12,10 +12,6 @@ jest.mock("react-i18next", () => ({
 
 jest.mock("../../../i18n", () => ({ changeLocale: jest.fn() }));
 
-// Mock image requires
-jest.mock("../../../../public/settings_dark.jpg", () => "settings_dark", { virtual: true });
-jest.mock("../../../../public/settings.png", () => "settings_light", { virtual: true });
-
 const defaultProps = {
   theme: "dark" as Theme,
   rootNote: "C",

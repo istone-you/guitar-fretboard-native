@@ -9,6 +9,7 @@ import {
   Animated,
   useWindowDimensions,
 } from "react-native";
+import Svg, { Path, Line, Text as SvgText } from "react-native-svg";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ScreenOrientation from "expo-screen-orientation";
 import * as Haptics from "expo-haptics";
@@ -44,11 +45,6 @@ import type {
 } from "./src/types";
 import { createDefaultLayer } from "./src/types";
 import LayerList from "./src/components/LayerSystem/LayerList";
-
-const GUITAR_ICON_DARK = require("./public/guiter_dark.png");
-const GUITAR_ICON_LIGHT = require("./public/guiter.png");
-const QUIZ_ICON_DARK = require("./public/quiz_dark.png");
-const QUIZ_ICON_LIGHT = require("./public/quiz.png");
 
 const DEFAULT_CHORD_QUIZ_TYPES: ChordType[] = ["Major", "Minor", "7th", "maj7", "m7"];
 
@@ -575,7 +571,7 @@ function AppContent() {
         activeOpacity={0.7}
       >
         <Image
-          source={isDark ? GUITAR_ICON_DARK : GUITAR_ICON_LIGHT}
+          source={isDark ? require("./public/guiter_dark.png") : require("./public/guiter.png")}
           style={[
             styles.tabIcon,
             {
@@ -599,22 +595,24 @@ function AppContent() {
         }}
         activeOpacity={0.7}
       >
-        <Image
-          source={isDark ? QUIZ_ICON_DARK : QUIZ_ICON_LIGHT}
-          style={[
-            styles.tabIcon,
-            {
-              tintColor: showQuiz
-                ? isDark
-                  ? "#e5e7eb"
-                  : "#1c1917"
-                : isDark
-                  ? "#6b7280"
-                  : "#a8a29e",
-            },
-          ]}
-          resizeMode="contain"
-        />
+        <Svg width={28} height={28} viewBox="0 0 24 24" fill="none">
+          <Path
+            d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"
+            stroke={showQuiz ? (isDark ? "#e5e7eb" : "#1c1917") : isDark ? "#6b7280" : "#a8a29e"}
+            strokeWidth={1.5}
+            strokeLinejoin="round"
+          />
+          <SvgText
+            x="12"
+            y="16"
+            textAnchor="middle"
+            fontSize="13"
+            fontWeight="bold"
+            fill={showQuiz ? (isDark ? "#e5e7eb" : "#1c1917") : isDark ? "#6b7280" : "#a8a29e"}
+          >
+            Q
+          </SvgText>
+        </Svg>
       </TouchableOpacity>
     </View>
   );

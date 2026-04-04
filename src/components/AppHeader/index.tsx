@@ -2,7 +2,6 @@ import { useRef, useState } from "react";
 import {
   View,
   Text,
-  Image,
   TouchableOpacity,
   Modal,
   StyleSheet,
@@ -11,6 +10,7 @@ import {
   Animated,
 } from "react-native";
 import * as Haptics from "expo-haptics";
+import Svg, { Path } from "react-native-svg";
 import { useTranslation } from "react-i18next";
 import "../../i18n";
 import type { Accidental, BaseLabelMode, Theme } from "../../types";
@@ -19,9 +19,6 @@ import { DropdownSelect } from "../ui/DropdownSelect";
 import { NOTES_SHARP, NOTES_FLAT } from "../../logic/fretboard";
 
 import { changeLocale } from "../../i18n";
-
-const SETTINGS_ICON_DARK = require("../../../public/settings_dark.jpg");
-const SETTINGS_ICON_LIGHT = require("../../../public/settings.png");
 
 const THUMB = 24;
 
@@ -435,11 +432,15 @@ export default function HeaderBar({
         style={styles.headerBtn}
         activeOpacity={0.7}
       >
-        <Image
-          source={isDark ? SETTINGS_ICON_DARK : SETTINGS_ICON_LIGHT}
-          style={styles.settingsIcon}
-          resizeMode="contain"
-        />
+        <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+          <Path
+            d="M12 15.5A3.5 3.5 0 1 0 12 8.5a3.5 3.5 0 0 0 0 7ZM19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"
+            stroke={isDark ? "#e5e7eb" : "#1c1917"}
+            strokeWidth={1.5}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </Svg>
       </TouchableOpacity>
 
       <Modal
