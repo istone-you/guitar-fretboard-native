@@ -29,7 +29,7 @@ export const NOTES_FLAT = [
   "B♭",
   "B",
 ] as const;
-export const NOTES = NOTES_FLAT; // 後方互換
+const NOTES = NOTES_FLAT; // 後方互換
 
 // スタンダードチューニング（6弦から1弦、開放弦の音名インデックス）
 // 6弦=E2, 5弦=A2, 4弦=D3, 3弦=G3, 2弦=B3, 1弦=E4
@@ -121,7 +121,7 @@ export const DEGREE_COLORS: Partial<Record<DegreeName, { bg: string; text: strin
 // rootString: 0=6弦, 1=5弦
 // positions: [{string, fretOffset}] fretOffsetはルートフレットからの差分
 
-export interface FretPosition {
+interface FretPosition {
   string: number;
   fretOffset: number;
 }
@@ -356,7 +356,7 @@ export const POWER_CHORD_FORMS: Record<number, FretPosition[]> = {
   ],
 };
 
-export interface TriadOption {
+interface TriadOption {
   value: string;
   label: string;
   strings: number[];
@@ -369,7 +369,7 @@ export const TRIAD_STRING_SET_OPTIONS: TriadOption[] = [
   { value: "4-6", label: "4~6弦", strings: [0, 1, 2] },
 ];
 
-export interface InversionOption {
+interface InversionOption {
   value: string;
   label: string;
 }
@@ -380,7 +380,7 @@ export const TRIAD_INVERSION_OPTIONS: InversionOption[] = [
   { value: "second", label: "第二転回" },
 ];
 
-export interface TriadLayoutOption {
+interface TriadLayoutOption {
   value: string;
   label: string;
   strings: number[];
@@ -1119,7 +1119,7 @@ export function getOpenChordForm(rootIndex: number, chordType: ChordType): FretC
   return OPEN_CHORD_FORMS[chordType]?.[NOTES[rootIndex]] ?? null;
 }
 
-export interface DiatonicChordEntry {
+interface DiatonicChordEntry {
   value: string;
   offset: number;
   chordType: ChordType;
@@ -1164,7 +1164,7 @@ export const DIATONIC_CHORDS: Record<string, DiatonicChordEntry[]> = {
   ],
 };
 
-export interface DiatonicChordResult {
+interface DiatonicChordResult {
   rootIndex: number;
   chordType: ChordType;
 }
@@ -1235,15 +1235,15 @@ export function isInPenta(semitone: number, type: "minor" | "major"): boolean {
 export const BLUES_SCALE_DEGREES = new Set([0, 3, 5, 6, 7, 10]);
 
 // フリジアンドミナント: R, m2, M3, P4, P5, m6, m7
-export const PHRYGIAN_DOMINANT_SCALE_DEGREES = new Set([0, 1, 4, 5, 7, 8, 10]);
+const PHRYGIAN_DOMINANT_SCALE_DEGREES = new Set([0, 1, 4, 5, 7, 8, 10]);
 // リディアンドミナント: R, M2, M3, b5, P5, M6, m7
-export const LYDIAN_DOMINANT_SCALE_DEGREES = new Set([0, 2, 4, 6, 7, 9, 10]);
+const LYDIAN_DOMINANT_SCALE_DEGREES = new Set([0, 2, 4, 6, 7, 9, 10]);
 // オルタード: R, m2, m3, M3, b5, m6, m7
-export const ALTERED_SCALE_DEGREES = new Set([0, 1, 3, 4, 6, 8, 10]);
+const ALTERED_SCALE_DEGREES = new Set([0, 1, 3, 4, 6, 8, 10]);
 // ホールトーン: R, M2, M3, b5, m6, m7
-export const WHOLE_TONE_SCALE_DEGREES = new Set([0, 2, 4, 6, 8, 10]);
+const WHOLE_TONE_SCALE_DEGREES = new Set([0, 2, 4, 6, 8, 10]);
 // ディミニッシュ（コンディミ）: R, M2, m3, P4, b5, m6, M6, M7
-export const DIMINISHED_SCALE_DEGREES = new Set([0, 2, 3, 5, 6, 8, 9, 11]);
+const DIMINISHED_SCALE_DEGREES = new Set([0, 2, 3, 5, 6, 8, 9, 11]);
 
 export const SCALE_DEGREES: Record<ScaleType, Set<number>> = {
   major: MAJOR_SCALE_DEGREES,
@@ -1353,13 +1353,13 @@ export function isInBluesScale(semitone: number): boolean {
 //   degree: 'R'=ルート, '3'=長3度, '5'=完全5度
 const CAGED_COLOR = "#6366f1";
 
-export interface CagedFormPosition {
+interface CagedFormPosition {
   string: number;
   fretOffset: number;
   degree: string;
 }
 
-export interface CagedForm {
+interface CagedForm {
   label: string;
   color: string;
   anchorString: number;

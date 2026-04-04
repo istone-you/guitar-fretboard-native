@@ -173,7 +173,7 @@ function RangeSlider({
   );
 }
 
-export interface HeaderBarProps {
+interface HeaderBarProps {
   theme: Theme;
   rootNote: string;
   accidental: Accidental;

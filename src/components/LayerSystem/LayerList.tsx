@@ -57,6 +57,8 @@ interface LayerListProps {
   onToggleLayer: (id: string) => void;
   onReorderLayers: (layers: LayerConfig[]) => void;
   onPreviewLayer: (layer: LayerConfig | null) => void;
+  overlayNotes: string[];
+  overlaySemitones: Set<number>;
 }
 
 export default function LayerList({
@@ -70,12 +72,15 @@ export default function LayerList({
   onToggleLayer,
   onReorderLayers,
   onPreviewLayer,
+  overlayNotes,
+  overlaySemitones,
 }: LayerListProps) {
   const { t } = useTranslation();
   const isDark = theme === "dark";
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editingLayer, setEditingLayer] = useState<LayerConfig | null>(null);
   const [draggingLayerId, setDraggingLayerId] = useState<string | null>(null);
+  const rowHeight = useRef(56);
   const [, setDeleteAnimTick] = useState(0);
   const dragY = useRef(new Animated.Value(0)).current;
   const liftScale = useRef(new Animated.Value(1)).current;
@@ -171,7 +176,7 @@ export default function LayerList({
       const removedIdx = removedId != null ? prevOrder.indexOf(removedId) : -1;
       if (removedIdx >= 0) {
         currentOrder.slice(removedIdx).forEach((id) => {
-          const shift = new Animated.Value(ROW_HEIGHT);
+          const shift = new Animated.Value(ROW_STRIDE);
           deleteShiftMapRef.current.set(id, shift);
           Animated.timing(shift, {
             toValue: 0,
@@ -228,6 +233,11 @@ export default function LayerList({
   const nextColor = DEFAULT_LAYER_COLORS[layers.length % DEFAULT_LAYER_COLORS.length];
 
   const getSummary = (layer: LayerConfig): string => {
+    if (layer.type === "custom") {
+      const items =
+        layer.customMode === "note" ? [...layer.selectedNotes] : [...layer.selectedDegrees];
+      return items.length > 0 ? items.join(", ") : "-";
+    }
     if (layer.type === "scale") {
       return t(
         `options.scale.${layer.scaleType.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase())}`,
@@ -252,7 +262,7 @@ export default function LayerList({
     return `${mode}: ${layer.chordType}`;
   };
 
-  const ROW_HEIGHT = 56;
+  const ROW_STRIDE = rowHeight.current + ROW_GAP;
 
   const createDragResponder = (idx: number, layerId: string) =>
     PanResponder.create({
@@ -271,15 +281,22 @@ export default function LayerList({
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       },
       onPanResponderMove: (_, gs) => {
-        dragY.setValue(gs.dy);
+        const maxUp = -idx * ROW_STRIDE;
+        const maxDown = (layers.length - 1 - idx) * ROW_STRIDE;
+        dragY.setValue(Math.max(maxUp, Math.min(maxDown, gs.dy)));
       },
       onPanResponderRelease: (_, gs) => {
         const sourceIdx = layers.findIndex((l) => l.id === layerId);
-        if (sourceIdx >= 0 && Math.abs(gs.dy) > ROW_HEIGHT * 0.4 && layers.length > 1) {
-          const targetIdx =
-            gs.dy > 0 ? Math.min(sourceIdx + 1, layers.length - 1) : Math.max(sourceIdx - 1, 0);
+        if (sourceIdx >= 0 && Math.abs(gs.dy) > ROW_STRIDE * 0.4 && layers.length > 1) {
+          const offset = Math.round(gs.dy / ROW_STRIDE);
+          const targetIdx = Math.max(0, Math.min(sourceIdx + offset, layers.length - 1));
           if (targetIdx !== sourceIdx) {
-            const targetLayerId = layers[targetIdx]?.id;
+            // Collect IDs of all affected rows (between source and target, inclusive)
+            const minIdx = Math.min(sourceIdx, targetIdx);
+            const maxIdx = Math.max(sourceIdx, targetIdx);
+            const affectedIds = layers
+              .filter((_, i) => i >= minIdx && i <= maxIdx && layers[i].id !== layerId)
+              .map((l) => l.id);
             const reordered = [...layers];
             const [moved] = reordered.splice(sourceIdx, 1);
             reordered.splice(targetIdx, 0, moved);
@@ -290,7 +307,7 @@ export default function LayerList({
               setDraggingLayerId(null);
               dragY.setValue(0);
               replayRowSnap(layerId);
-              if (targetLayerId) replayRowAppear(targetLayerId);
+              for (const id of affectedIds) replayRowAppear(id);
             });
             Animated.spring(liftScale, {
               toValue: 1,
@@ -328,6 +345,9 @@ export default function LayerList({
         return (
           <Animated.View
             key={layer.id}
+            onLayout={(e) => {
+              rowHeight.current = e.nativeEvent.layout.height;
+            }}
             style={[
               styles.layerRow,
               {
@@ -366,7 +386,11 @@ export default function LayerList({
             {/* Summary */}
             <View style={styles.summaryArea}>
               <Text style={[styles.layerType, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-                {layer.type === "scale" ? t("layers.scale") : t("layers.chord")}
+                {layer.type === "scale"
+                  ? t("layers.scale")
+                  : layer.type === "custom"
+                    ? t("layers.custom")
+                    : t("layers.chord")}
               </Text>
               <Text
                 style={[
@@ -474,16 +498,20 @@ export default function LayerList({
         }}
         onSave={handleSave}
         onPreview={onPreviewLayer}
+        overlayNotes={overlayNotes}
+        overlaySemitones={overlaySemitones}
       />
     </View>
   );
 }
 
+const ROW_GAP = 8;
+
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 12,
     paddingVertical: 8,
-    gap: 8,
+    gap: ROW_GAP,
   },
   layerRow: {
     flexDirection: "row",

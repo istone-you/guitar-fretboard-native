@@ -1,6 +1,7 @@
 import React from "react";
 import { render, fireEvent } from "@testing-library/react-native";
 import Fretboard, { type FretboardProps } from "../Fretboard";
+import { createDefaultLayer } from "../../../types";
 
 jest.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key, i18n: { language: "en" } }),
@@ -14,16 +15,6 @@ function makeProps(overrides: Partial<FretboardProps> = {}): FretboardProps {
     accidental: "sharp",
     baseLabelMode: "note",
     fretRange: [0, 14] as [number, number],
-    showChord: false,
-    chordDisplayMode: "form",
-    showScale: false,
-    scaleType: "major",
-    showCaged: false,
-    cagedForms: new Set<string>(),
-    chordType: "Major",
-    triadPosition: "root",
-    diatonicScaleType: "major-triad",
-    diatonicDegree: "I",
     onNoteClick: jest.fn(),
     ...overrides,
   };
@@ -166,34 +157,34 @@ describe("Fretboard - Degree display", () => {
 
 // ==================== 5. Root highlight ====================
 
-// ==================== 6. Scale overlay ====================
+// ==================== 6. Scale overlay (layer system) ====================
 
-describe("Fretboard - Scale overlay", () => {
-  it("shows scale overlay color when showScale is true", () => {
+describe("Fretboard - Scale overlay via layers", () => {
+  it("shows scale overlay color when a scale layer is enabled", () => {
+    const layer = createDefaultLayer("scale", "s1", "#ff69b6");
+    layer.scaleType = "major";
     const { toJSON } = render(
       <Fretboard
         {...makeProps({
-          showScale: true,
-          scaleType: "major",
           rootNote: "C",
           fretRange: [0, 2],
+          layers: [layer],
         })}
       />,
     );
     const json = JSON.stringify(toJSON());
-    // Default scale color is #ff69b6
     expect(json).toContain("#ff69b6");
   });
 
-  it("uses custom scale color when provided", () => {
+  it("uses custom scale color via layer", () => {
+    const layer = createDefaultLayer("scale", "s1", "#00ff00");
+    layer.scaleType = "major";
     const { toJSON } = render(
       <Fretboard
         {...makeProps({
-          showScale: true,
-          scaleType: "major",
           rootNote: "C",
           fretRange: [0, 2],
-          scaleColor: "#00ff00",
+          layers: [layer],
         })}
       />,
     );
@@ -201,92 +192,81 @@ describe("Fretboard - Scale overlay", () => {
     expect(json).toContain("#00ff00");
   });
 
-  it("does not show scale overlay when showScale is false", () => {
+  it("does not show scale overlay when no layers provided", () => {
     const { toJSON } = render(
       <Fretboard
         {...makeProps({
-          showScale: false,
-          scaleType: "major",
           rootNote: "C",
           fretRange: [0, 2],
+          layers: [],
         })}
       />,
     );
     const json = JSON.stringify(toJSON());
-    // Scale color should not appear as overlay background
-    // Note: it may appear in style definitions but not as active overlays
-    // We check that the overlay text (white bold on scale color) is not rendered
-    // Actually the default scaleColor prop still gets passed. Let's check differently.
-    // With showScale=false, no overlay circles with scaleColor background should render.
-    // This is tricky to test via JSON. Let's just verify no crash.
     expect(json).toBeTruthy();
   });
 
   it("displays note labels on scale overlay circles", () => {
-    // C major scale includes C, D, E, F, G, A, B
-    // At fret 0, 6th string = E which is in C major scale
+    const layer = createDefaultLayer("scale", "s1", "#ff69b6");
+    layer.scaleType = "major";
     const { getAllByText } = render(
       <Fretboard
         {...makeProps({
-          showScale: true,
-          scaleType: "major",
           rootNote: "C",
           fretRange: [0, 0],
           baseLabelMode: "note",
+          layers: [layer],
         })}
       />,
     );
-    // E, A, D, G, B are all in C major scale. They should appear as overlay text.
-    // C is NOT an open string, so won't appear at fret 0.
     expect(getAllByText("E").length).toBeGreaterThanOrEqual(1);
   });
 
   it("shows degree labels on scale overlay when baseLabelMode is degree", () => {
+    const layer = createDefaultLayer("scale", "s1", "#ff69b6");
+    layer.scaleType = "major";
     const { getAllByText } = render(
       <Fretboard
         {...makeProps({
-          showScale: true,
-          scaleType: "major",
           rootNote: "C",
           fretRange: [0, 0],
           baseLabelMode: "degree",
+          layers: [layer],
         })}
       />,
     );
-    // Open strings with root C: E=M3, A=M6, D=M2, G=P5, B=M7
-    // All are in C major scale
     expect(getAllByText("M3").length).toBeGreaterThanOrEqual(1);
   });
 });
 
-// ==================== 7. Chord overlay ====================
+// ==================== 7. Chord overlay (layer system) ====================
 
-describe("Fretboard - Chord overlay", () => {
-  it("shows chord overlay when showChord is true with Major chord", () => {
+describe("Fretboard - Chord overlay via layers", () => {
+  it("shows chord overlay when a chord layer is enabled", () => {
+    const layer = createDefaultLayer("chord", "c1", "#ffd700");
+    layer.chordType = "Major";
     const { toJSON } = render(
       <Fretboard
         {...makeProps({
-          showChord: true,
-          chordType: "Major",
           rootNote: "E",
           fretRange: [0, 4],
+          layers: [layer],
         })}
       />,
     );
     const json = JSON.stringify(toJSON());
-    // Chord default color is #ffd700
     expect(json).toContain("#ffd700");
   });
 
-  it("uses custom chord color", () => {
+  it("uses custom chord color via layer", () => {
+    const layer = createDefaultLayer("chord", "c1", "#123456");
+    layer.chordType = "Major";
     const { toJSON } = render(
       <Fretboard
         {...makeProps({
-          showChord: true,
-          chordType: "Major",
           rootNote: "E",
           fretRange: [0, 4],
-          chordColor: "#123456",
+          layers: [layer],
         })}
       />,
     );
@@ -294,63 +274,61 @@ describe("Fretboard - Chord overlay", () => {
     expect(json).toContain("#123456");
   });
 
-  it("does not show chord overlay when showChord is false", () => {
+  it("does not show chord overlay when no layers provided", () => {
     const { toJSON } = render(
       <Fretboard
         {...makeProps({
-          showChord: false,
-          chordType: "Major",
           rootNote: "E",
           fretRange: [0, 4],
+          layers: [],
         })}
       />,
     );
-    // Chord dots use ScaleAnimView which renders with scale:0 when not visible
-    // No chord group border overlay (zIndex: 6, borderRadius: 12) should be rendered
     const json = JSON.stringify(toJSON());
     expect(json).not.toContain('"zIndex":6');
   });
 
-  it("shows ? labels when hideChordNoteLabels is true", () => {
+  it("shows ? labels when hideChordNoteLabels is true with chord layer", () => {
+    const layer = createDefaultLayer("chord", "c1", "#ffd700");
+    layer.chordType = "Major";
     const { getAllByText } = render(
       <Fretboard
         {...makeProps({
-          showChord: true,
-          chordType: "Major",
           rootNote: "E",
           fretRange: [0, 4],
           hideChordNoteLabels: true,
+          layers: [layer],
         })}
       />,
     );
-    // Chord cells should show "?" instead of note names
     expect(getAllByText("?").length).toBeGreaterThanOrEqual(1);
   });
 
-  it("renders chord group border overlay", () => {
+  it("renders chord group border overlay via layer", () => {
+    const layer = createDefaultLayer("chord", "c1", "#ffd700");
+    layer.chordType = "Major";
     const { toJSON } = render(
       <Fretboard
         {...makeProps({
-          showChord: true,
-          chordType: "Major",
           rootNote: "E",
           fretRange: [0, 4],
+          layers: [layer],
         })}
       />,
     );
     const json = JSON.stringify(toJSON());
-    // Chord group border uses chordColor + "99" for border
     expect(json).toContain("#ffd70099");
   });
 
-  it("renders power chord when chordDisplayMode is power", () => {
+  it("renders power chord via layer", () => {
+    const layer = createDefaultLayer("chord", "c1", "#ffd700");
+    layer.chordDisplayMode = "power";
     const { toJSON } = render(
       <Fretboard
         {...makeProps({
-          showChord: true,
-          chordDisplayMode: "power",
           rootNote: "E",
           fretRange: [0, 4],
+          layers: [layer],
         })}
       />,
     );
@@ -359,34 +337,36 @@ describe("Fretboard - Chord overlay", () => {
   });
 });
 
-// ==================== 8. CAGED overlay ====================
+// ==================== 8. CAGED overlay (layer system) ====================
 
-describe("Fretboard - CAGED overlay", () => {
-  it("shows CAGED overlay when showCaged is true with forms selected", () => {
+describe("Fretboard - CAGED overlay via layers", () => {
+  it("shows CAGED overlay when a chord layer with caged mode is enabled", () => {
+    const layer = createDefaultLayer("chord", "cg1", "#40e0d0");
+    layer.chordDisplayMode = "caged";
+    layer.cagedForms = new Set(["C"]);
     const { toJSON } = render(
       <Fretboard
         {...makeProps({
-          showCaged: true,
-          cagedForms: new Set(["C"]),
           rootNote: "C",
           fretRange: [0, 5],
+          layers: [layer],
         })}
       />,
     );
     const json = JSON.stringify(toJSON());
-    // Default CAGED color is #40e0d0
     expect(json).toContain("#40e0d0");
   });
 
-  it("uses custom CAGED color", () => {
+  it("uses custom CAGED color via layer", () => {
+    const layer = createDefaultLayer("chord", "cg1", "#abcdef");
+    layer.chordDisplayMode = "caged";
+    layer.cagedForms = new Set(["C"]);
     const { toJSON } = render(
       <Fretboard
         {...makeProps({
-          showCaged: true,
-          cagedForms: new Set(["C"]),
           rootNote: "C",
           fretRange: [0, 5],
-          cagedColor: "#abcdef",
+          layers: [layer],
         })}
       />,
     );
@@ -394,33 +374,33 @@ describe("Fretboard - CAGED overlay", () => {
     expect(json).toContain("#abcdef");
   });
 
-  it("does not show CAGED overlay when no forms are selected", () => {
+  it("does not show CAGED overlay when no forms are selected in layer", () => {
+    const layer = createDefaultLayer("chord", "cg1", "#40e0d0");
+    layer.chordDisplayMode = "caged";
+    layer.cagedForms = new Set();
     const { toJSON } = render(
       <Fretboard
         {...makeProps({
-          showCaged: true,
-          cagedForms: new Set(),
           rootNote: "C",
           fretRange: [0, 5],
+          layers: [layer],
         })}
       />,
     );
     const json = JSON.stringify(toJSON());
-    // CAGED color should not appear as overlay
-    // (it may appear as a prop value, so we check that it doesn't appear as backgroundColor)
-    // With empty cagedForms, calcCagedPositions returns empty map
-    // so no cells should have CAGED overlay background
     expect(json).toBeTruthy();
   });
 
-  it("shows CAGED overlay for multiple forms", () => {
+  it("shows CAGED overlay for multiple forms via layer", () => {
+    const layer = createDefaultLayer("chord", "cg1", "#40e0d0");
+    layer.chordDisplayMode = "caged";
+    layer.cagedForms = new Set(["C", "A", "G"]);
     const { toJSON } = render(
       <Fretboard
         {...makeProps({
-          showCaged: true,
-          cagedForms: new Set(["C", "A", "G"]),
           rootNote: "C",
           fretRange: [0, 14],
+          layers: [layer],
         })}
       />,
     );
@@ -580,85 +560,6 @@ describe("Fretboard - Quiz selected cells", () => {
       return style?.backgroundColor === "#e5e7eb" && style?.zIndex === 29;
     });
     expect(greenOverlay).toBeTruthy();
-  });
-});
-
-// ==================== 11. Highlighted notes/degrees ====================
-
-describe("Fretboard - Highlighted notes and degrees", () => {
-  it("shows highlight ring for highlighted notes in note mode", () => {
-    const { toJSON } = render(
-      <Fretboard
-        {...makeProps({
-          highlightedNotes: new Set(["E"]),
-          fretRange: [0, 0],
-          baseLabelMode: "note",
-        })}
-      />,
-    );
-    const json = JSON.stringify(toJSON());
-    // Highlight ring in dark mode
-    expect(json).toContain("#e5e7eb");
-  });
-
-  it("shows highlight ring with light mode color", () => {
-    const { toJSON } = render(
-      <Fretboard
-        {...makeProps({
-          theme: "light",
-          highlightedNotes: new Set(["E"]),
-          fretRange: [0, 0],
-          baseLabelMode: "note",
-        })}
-      />,
-    );
-    const json = JSON.stringify(toJSON());
-    // Highlight ring in light mode
-    expect(json).toContain("#1c1917");
-  });
-
-  it("shows highlight ring for highlighted degrees in degree mode", () => {
-    const { toJSON } = render(
-      <Fretboard
-        {...makeProps({
-          highlightedDegrees: new Set(["M3"]),
-          fretRange: [0, 0],
-          baseLabelMode: "degree",
-          rootNote: "C",
-        })}
-      />,
-    );
-    const json = JSON.stringify(toJSON());
-    // Open 6th string = E, which is M3 from C => should be highlighted
-    expect(json).toContain("#e5e7eb");
-  });
-
-  it("highlight ring has scale 0 when no notes are highlighted", () => {
-    const { toJSON } = render(
-      <Fretboard
-        {...makeProps({
-          highlightedNotes: new Set(),
-          fretRange: [0, 0],
-          baseLabelMode: "note",
-        })}
-      />,
-    );
-    // ScaleAnimView renders but with scale:0 (invisible)
-    expect(toJSON()).toBeTruthy();
-  });
-
-  it("makes highlighted note text bold", () => {
-    const { toJSON } = render(
-      <Fretboard
-        {...makeProps({
-          highlightedNotes: new Set(["E"]),
-          fretRange: [0, 0],
-          baseLabelMode: "note",
-        })}
-      />,
-    );
-    const json = JSON.stringify(toJSON());
-    expect(json).toContain('"fontWeight":"bold"');
   });
 });
 
@@ -886,67 +787,67 @@ describe("Fretboard - Nut marker", () => {
   });
 });
 
-// ==================== 19. Chord display modes ====================
+// ==================== 19. Chord display modes (layer system) ====================
 
-describe("Fretboard - Chord display modes", () => {
-  it("renders triad chord positions", () => {
+describe("Fretboard - Chord display modes via layers", () => {
+  it("renders triad chord positions via layer", () => {
+    const layer = createDefaultLayer("chord", "c1", "#ffd700");
+    layer.chordDisplayMode = "triad";
+    layer.chordType = "Major";
+    layer.triadInversion = "root";
     const { toJSON } = render(
       <Fretboard
         {...makeProps({
-          showChord: true,
-          chordDisplayMode: "triad",
-          chordType: "Major",
-          triadPosition: "root",
           rootNote: "C",
           fretRange: [0, 14],
+          layers: [layer],
         })}
       />,
     );
     const json = JSON.stringify(toJSON());
-    // Should render chord group borders
-    expect(json).toContain("#ffd70099"); // chord border
+    expect(json).toContain("#ffd70099");
   });
 
-  it("renders diatonic chord mode", () => {
+  it("renders diatonic chord mode via layer", () => {
+    const layer = createDefaultLayer("chord", "c1", "#ffd700");
+    layer.chordDisplayMode = "diatonic";
+    layer.diatonicKeyType = "major";
+    layer.diatonicChordSize = "triad";
+    layer.diatonicDegree = "I";
     const { toJSON } = render(
       <Fretboard
         {...makeProps({
-          showChord: true,
-          chordDisplayMode: "diatonic",
-          diatonicScaleType: "major-triad",
-          diatonicDegree: "I",
           rootNote: "C",
           fretRange: [0, 14],
+          layers: [layer],
         })}
       />,
     );
     const json = JSON.stringify(toJSON());
-    // Diatonic mode should render chord overlays
     expect(json).toContain("#ffd700");
   });
 });
 
-// ==================== 20. Scale and Chord overlay interaction ====================
+// ==================== 20. Scale and Chord layer interaction ====================
 
-describe("Fretboard - Scale and Chord overlay interaction", () => {
-  it("chord overlay takes precedence over scale overlay for same cell", () => {
-    // When both showScale and showChord are true, chord cells show chord color
+describe("Fretboard - Scale and Chord layer interaction", () => {
+  it("both scale and chord layer colors appear when both layers are enabled", () => {
+    const scaleLayer = createDefaultLayer("scale", "s1", "#ff69b6");
+    scaleLayer.scaleType = "major";
+    const chordLayer = createDefaultLayer("chord", "c1", "#ffd700");
+    chordLayer.chordType = "Major";
     const { toJSON } = render(
       <Fretboard
         {...makeProps({
-          showScale: true,
-          scaleType: "major",
-          showChord: true,
-          chordType: "Major",
           rootNote: "C",
           fretRange: [0, 5],
+          layers: [scaleLayer, chordLayer],
         })}
       />,
     );
     const json = JSON.stringify(toJSON());
-    // Both colors should be present
-    expect(json).toContain("#ffd700"); // chord
-    expect(json).toContain("#ff69b6"); // scale (for non-chord cells)
+    expect(json).toContain("#ffd700");
+    expect(json).toContain("#ff69b6");
   });
 });
 
@@ -1003,9 +904,9 @@ describe("Fretboard - Edge cases", () => {
   });
 });
 
-// ==================== 22. Multiple scale types ====================
+// ==================== 22. Multiple scale types (layer system) ====================
 
-describe("Fretboard - Multiple scale types", () => {
+describe("Fretboard - Multiple scale types via layers", () => {
   const scaleTypes: Array<{ type: string; label: string }> = [
     { type: "major", label: "Major" },
     { type: "natural-minor", label: "Natural Minor" },
@@ -1024,13 +925,14 @@ describe("Fretboard - Multiple scale types", () => {
 
   scaleTypes.forEach(({ type, label }) => {
     it(`renders ${label} scale without crashing`, () => {
+      const layer = createDefaultLayer("scale", "s1", "#ff69b6");
+      layer.scaleType = type as any;
       const { toJSON } = render(
         <Fretboard
           {...makeProps({
-            showScale: true,
-            scaleType: type as any,
             rootNote: "C",
             fretRange: [0, 7],
+            layers: [layer],
           })}
         />,
       );
@@ -1039,10 +941,10 @@ describe("Fretboard - Multiple scale types", () => {
   });
 });
 
-// ==================== 23. Multiple chord types ====================
+// ==================== 23. Multiple chord types (layer system) ====================
 
-describe("Fretboard - Multiple chord types", () => {
-  const chordTypes: ChordType[] = [
+describe("Fretboard - Multiple chord types via layers", () => {
+  const chordTypes = [
     "Major",
     "Minor",
     "7th",
@@ -1057,19 +959,18 @@ describe("Fretboard - Multiple chord types", () => {
     "m6",
     "dim",
     "aug",
-  ];
-
-  type ChordType = FretboardProps["chordType"];
+  ] as const;
 
   chordTypes.forEach((chordType) => {
     it(`renders ${chordType} chord without crashing`, () => {
+      const layer = createDefaultLayer("chord", "c1", "#ffd700");
+      layer.chordType = chordType;
       const { toJSON } = render(
         <Fretboard
           {...makeProps({
-            showChord: true,
-            chordType,
             rootNote: "A",
             fretRange: [0, 14],
+            layers: [layer],
           })}
         />,
       );
@@ -1078,24 +979,23 @@ describe("Fretboard - Multiple chord types", () => {
   });
 });
 
-// ==================== 24. Chord border styling with hideChordNoteLabels ====================
+// ==================== 24. Chord border styling with hideChordNoteLabels (layer system) ====================
 
-describe("Fretboard - Chord border with hideChordNoteLabels", () => {
-  it("uses chordColor for border even when hideChordNoteLabels is true", () => {
+describe("Fretboard - Chord border with hideChordNoteLabels via layers", () => {
+  it("uses layer color for border even when hideChordNoteLabels is true", () => {
+    const layer = createDefaultLayer("chord", "c1", "#ff0000");
+    layer.chordType = "Major";
     const { toJSON } = render(
       <Fretboard
         {...makeProps({
-          showChord: true,
-          chordType: "Major",
           rootNote: "E",
           fretRange: [0, 4],
           hideChordNoteLabels: true,
-          chordColor: "#ff0000",
+          layers: [layer],
         })}
       />,
     );
     const json = JSON.stringify(toJSON());
-    // hideChordNoteLabels still uses chordColor for border and background
     expect(json).toContain("#ff000099");
     expect(json).toContain("#ff000014");
   });

@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StatusBar,
   StyleSheet,
+  Animated,
   useWindowDimensions,
 } from "react-native";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -14,7 +15,6 @@ import * as Haptics from "expo-haptics";
 import "./src/i18n";
 import { useTranslation } from "react-i18next";
 import HeaderBar from "./src/components/AppHeader/index";
-import FretboardFooter from "./src/components/FretboardFooter/index";
 import NormalFretboard from "./src/components/NormalFretboard/index";
 import QuizFretboard from "./src/components/QuizFretboard/index";
 import QuizPanel from "./src/components/QuizPanel/index";
@@ -22,7 +22,6 @@ import HowToUseOverlay, {
   type HowToUsePositions,
   type ElementPosition,
 } from "./src/components/HowToUseOverlay";
-import { useDegreeFilter } from "./src/hooks/useDegreeFilter";
 import { usePersistedSetting } from "./src/hooks/usePersistedSetting";
 import { CHORD_QUIZ_TYPES_ALL, useQuiz } from "./src/hooks/useQuiz";
 import {
@@ -43,6 +42,7 @@ import type {
   QuizType,
   LayerConfig,
 } from "./src/types";
+import { createDefaultLayer } from "./src/types";
 import LayerList from "./src/components/LayerSystem/LayerList";
 
 const GUITAR_ICON_DARK = require("./public/guiter_dark.png");
@@ -52,14 +52,58 @@ const QUIZ_ICON_LIGHT = require("./public/quiz.png");
 
 const DEFAULT_CHORD_QUIZ_TYPES: ChordType[] = ["Major", "Minor", "7th", "maj7", "m7"];
 
+const DEGREE_BY_SEMITONE = ["P1", "m2", "M2", "m3", "M3", "P4", "b5", "P5", "m6", "M6", "m7", "M7"];
+
 const STORAGE_KEYS = {
   theme: "guiter:theme",
   accidental: "guiter:accidental",
   fretRange: "guiter:fret-range",
-  scaleColor: "guiter:scale-color",
-  cagedColor: "guiter:caged-color",
-  chordColor: "guiter:chord-color",
 } as const;
+
+const CHROMATIC_ORDER = new Map([
+  ...NOTES_SHARP.map((n, i) => [n, i] as const),
+  ...NOTES_FLAT.map((n, i) => [n, i] as const),
+  ...DEGREE_BY_SEMITONE.map((d, i) => [d, i] as const),
+]);
+
+function LayerLabels({
+  labels,
+  isDark,
+}: {
+  labels: { id: string; labels: string[] }[];
+  isDark: boolean;
+}) {
+  const unique = [...new Set(labels.flatMap((l) => l.labels))];
+  unique.sort((a, b) => (CHROMATIC_ORDER.get(a) ?? 0) - (CHROMATIC_ORDER.get(b) ?? 0));
+  const text = unique.join("  ") || " ";
+  const scale = useRef(new Animated.Value(1)).current;
+  const prevText = useRef(text);
+
+  if (prevText.current !== text) {
+    prevText.current = text;
+    scale.stopAnimation();
+    scale.setValue(0.85);
+    Animated.spring(scale, {
+      toValue: 1,
+      friction: 5,
+      tension: 150,
+      useNativeDriver: true,
+    }).start();
+  }
+
+  return (
+    <View style={styles.layerLabelsContainer}>
+      <Animated.Text
+        style={[
+          styles.layerLabelsText,
+          { color: isDark ? "#9ca3af" : "#78716c", transform: [{ scale }] },
+        ]}
+      >
+        {text}
+      </Animated.Text>
+    </View>
+  );
+}
 
 function AppContent() {
   const insets = useSafeAreaInsets();
@@ -104,8 +148,6 @@ function AppContent() {
     }, 500);
   }, [isLandscape]);
 
-  // Auto filter
-  const [autoFilter, setAutoFilter] = useState(false);
   // Quiz
   const [showQuiz, setShowQuiz] = useState(false);
   const [showHowToUse, setShowHowToUse] = useState(false);
@@ -115,8 +157,6 @@ function AppContent() {
   const rootStepperRef = useRef<View>(null);
   const labelToggleRef = useRef<View>(null);
   const fretboardAreaRef = useRef<View>(null);
-  const chipAreaRef = useRef<View>(null);
-  const filterBtnRef = useRef<View>(null);
   const quizSelectorRef = useRef<View>(null);
 
   const measureElement = (
@@ -131,22 +171,17 @@ function AppContent() {
     });
 
   const openHowToUse = async () => {
-    const [rootStepper, labelToggle, quizSelector, fretboard, chipArea, filterBtn] =
-      await Promise.all([
-        measureElement(rootStepperRef),
-        measureElement(labelToggleRef),
-        measureElement(quizSelectorRef),
-        measureElement(fretboardAreaRef),
-        measureElement(chipAreaRef),
-        measureElement(filterBtnRef),
-      ]);
+    const [rootStepper, labelToggle, quizSelector, fretboard] = await Promise.all([
+      measureElement(rootStepperRef),
+      measureElement(labelToggleRef),
+      measureElement(quizSelectorRef),
+      measureElement(fretboardAreaRef),
+    ]);
     setHowToUsePositions({
       rootStepper,
       labelToggle,
       quizSelector,
       fretboard,
-      chipArea,
-      filterBtn,
     });
     setShowHowToUse(true);
   };
@@ -165,28 +200,6 @@ function AppContent() {
     (v) => v,
     (v) => v as Theme,
   );
-  // Layer colors
-  const [scaleColor, setScaleColor] = usePersistedSetting<string>(
-    STORAGE_KEYS.scaleColor,
-    "#ff69b6",
-    (v) => v,
-    (v) => v,
-  );
-  const [cagedColor, setCagedColor] = usePersistedSetting<string>(
-    STORAGE_KEYS.cagedColor,
-    "#40e0d0",
-    (v) => v,
-    (v) => v,
-  );
-  const [chordColor, setChordColor] = usePersistedSetting<string>(
-    STORAGE_KEYS.chordColor,
-    "#ffd700",
-    (v) => v,
-    (v) => v,
-  );
-
-  const [highlightedOverlayNotes, setHighlightedOverlayNotes] = useState<Set<string>>(new Set());
-
   // New layer system
   const [layers, setLayers] = useState<LayerConfig[]>([]);
   const handleAddLayer = (layer: LayerConfig) => setLayers((prev) => [...prev, layer]);
@@ -222,22 +235,6 @@ function AppContent() {
     setRootNote(noteName);
     regenerateQuiz();
   };
-
-  const handleToggleOverlayNoteHighlight = (note: string) => {
-    setHighlightedOverlayNotes((current) => {
-      const next = new Set(current);
-      if (next.has(note)) next.delete(note);
-      else next.add(note);
-      return next;
-    });
-  };
-
-  const handleSetOverlayNoteHighlights = (notes: string[]) => {
-    setHighlightedOverlayNotes(new Set(notes));
-  };
-
-  const { highlightedDegrees, toggleDegree, resetHighlightedDegrees, setHighlightedDegrees } =
-    useDegreeFilter();
 
   const {
     quizMode,
@@ -300,6 +297,7 @@ function AppContent() {
         for (const semitone of SCALE_DEGREES[layer.scaleType] ?? []) active.add(semitone);
         continue;
       }
+      if (layer.type !== "chord") continue;
 
       let semitones: Set<number> | undefined;
       if (layer.chordDisplayMode === "power") {
@@ -330,43 +328,57 @@ function AppContent() {
       .map((semitone) => notes[(rootIndex + semitone) % 12]);
   }, [accidental, overlaySemitones, rootNote]);
 
-  const DEGREE_BY_SEMITONE = [
-    "P1",
-    "m2",
-    "M2",
-    "m3",
-    "M3",
-    "P4",
-    "b5",
-    "P5",
-    "m6",
-    "M6",
-    "m7",
-    "M7",
-  ];
-  const effectiveHighlightedDegrees = useMemo(() => {
-    if (!autoFilter) return highlightedDegrees;
-    if (overlaySemitones.size === 0) return new Set<string>();
-    return new Set(DEGREE_BY_SEMITONE.filter((_, i) => overlaySemitones.has(i)));
-  }, [autoFilter, highlightedDegrees, overlaySemitones]);
-
-  const effectiveHighlightedNotes = useMemo(() => {
-    if (!autoFilter) return highlightedOverlayNotes;
-    return new Set(overlayNotes);
-  }, [autoFilter, highlightedOverlayNotes, overlayNotes]);
-
-  const prevAutoFilterKey = useRef("");
-  const autoFilterKey = autoFilter
-    ? `${[...overlayNotes].sort().join()}|${[...overlaySemitones].sort().join()}`
-    : "";
-  if (
-    autoFilter &&
-    autoFilterKey !== prevAutoFilterKey.current &&
-    prevAutoFilterKey.current !== ""
-  ) {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  }
-  prevAutoFilterKey.current = autoFilterKey;
+  // Per-layer note/degree labels for display below fretboard
+  const layerNoteLabels = useMemo(() => {
+    const notes = accidental === "sharp" ? NOTES_SHARP : NOTES_FLAT;
+    const rootIndex = getRootIndex(rootNote);
+    const useDegree = baseLabelMode === "degree";
+    return effectiveLayers
+      .filter((l) => l.enabled)
+      .map((l) => {
+        let semitones: number[] = [];
+        if (l.type === "scale") {
+          semitones = [...(SCALE_DEGREES[l.scaleType] ?? [])];
+        } else if (l.type === "chord") {
+          let s: Set<number> | undefined;
+          if (l.chordDisplayMode === "power") {
+            s = CHORD_SEMITONES.power;
+          } else if (l.chordDisplayMode === "diatonic") {
+            s = getDiatonicChordSemitones(
+              rootIndex,
+              `${l.diatonicKeyType}-${l.diatonicChordSize}`,
+              l.diatonicDegree,
+            );
+          } else if (l.chordDisplayMode === "caged") {
+            s = CHORD_SEMITONES.Major;
+          } else {
+            s = CHORD_SEMITONES[l.chordType];
+          }
+          semitones = [...(s ?? [])];
+        } else if (l.type === "custom") {
+          if (l.customMode === "note") {
+            // Convert note names to semitones so they follow baseLabelMode
+            for (const n of l.selectedNotes) {
+              const ni = (notes as readonly string[]).indexOf(n);
+              if (ni >= 0) semitones.push((ni - rootIndex + 12) % 12);
+            }
+          } else {
+            // Convert degree names to semitones
+            for (const d of l.selectedDegrees) {
+              const di = DEGREE_BY_SEMITONE.indexOf(d);
+              if (di >= 0) semitones.push(di);
+            }
+          }
+        }
+        const sorted = semitones.sort((a, b) => a - b);
+        return {
+          id: l.id,
+          labels: useDegree
+            ? sorted.map((s) => DEGREE_BY_SEMITONE[s])
+            : sorted.map((s) => notes[(rootIndex + s) % 12]),
+        };
+      });
+  }, [effectiveLayers, accidental, rootNote, baseLabelMode]);
 
   const quizRootChangeEnabled =
     !showQuiz || quizMode === "degree" || quizMode === "scale" || quizMode === "diatonic";
@@ -409,19 +421,6 @@ function AppContent() {
     accidental,
     baseLabelMode,
     fretRange,
-    showChord: false,
-    chordDisplayMode: "form" as const,
-    showScale: false,
-    scaleType,
-    showCaged: false,
-    cagedForms: new Set<string>(),
-    chordType: "Major" as const,
-    triadPosition: "root",
-    diatonicScaleType: "major-triad",
-    diatonicDegree: "I",
-    chordColor,
-    scaleColor,
-    cagedColor,
     layers: effectiveLayers,
     disableAnimation: isLandscape || animDisabled,
   };
@@ -443,7 +442,18 @@ function AppContent() {
     lastTapRef.current = now;
   }, [showQuiz, toggleLayout]);
 
-  const quizAccentColor = quizMode === "chord" || quizMode === "diatonic" ? chordColor : scaleColor;
+  const quizAccentColor = quizMode === "chord" || quizMode === "diatonic" ? "#40E0D0" : "#ff69b6";
+
+  // Temporary chord layer for quiz mode
+  const quizLayers = useMemo(() => {
+    if (quizMode === "chord" && quizType === "choice") {
+      const layer = createDefaultLayer("chord", "quiz-chord", quizAccentColor);
+      layer.chordDisplayMode = "form";
+      layer.chordType = quizQuestion?.promptChordType ?? "Major";
+      return [layer];
+    }
+    return [];
+  }, [quizMode, quizType, quizAccentColor, quizQuestion?.promptChordType]);
 
   const fretboardEl = (
     <View style={{ paddingVertical: isLandscape ? 2 : 8 }} onTouchEnd={handleFretboardDoubleTap}>
@@ -454,19 +464,7 @@ function AppContent() {
           baseLabelMode={baseLabelMode}
           fretRange={fretRange}
           rootNote={quizEffectiveRootNote}
-          showChord={quizMode === "chord" && quizType === "choice"}
-          chordType={quizQuestion?.promptChordType ?? "Major"}
-          chordDisplayMode="form"
-          showScale={false}
-          showCaged={false}
-          cagedForms={new Set()}
-          triadPosition="root"
-          diatonicScaleType="major-triad"
-          diatonicDegree="I"
-          scaleType="major"
-          chordColor={quizAccentColor}
-          scaleColor="#ff69b6"
-          cagedColor="#40e0d0"
+          layers={quizLayers}
           quizColor={quizAccentColor}
           onNoteClick={() => {}}
           quizModeActive={quizQuestion != null}
@@ -493,17 +491,9 @@ function AppContent() {
           quizSelectedCells={quizSelectedCells}
           onQuizCellClick={handleFretboardQuizAnswer}
           quizRevealNoteNames={quizRevealNoteNames}
-          highlightedNotes={new Set<string>()}
-          highlightedDegrees={new Set<string>()}
         />
       ) : (
-        <NormalFretboard
-          {...commonFretboardProps}
-          rootNote={rootNote}
-          onNoteClick={() => {}}
-          highlightedNotes={effectiveHighlightedNotes}
-          highlightedDegrees={effectiveHighlightedDegrees}
-        />
+        <NormalFretboard {...commonFretboardProps} rootNote={rootNote} onNoteClick={() => {}} />
       )}
     </View>
   );
@@ -564,32 +554,6 @@ function AppContent() {
         onFretboardAllStringsChange={setFretboardAllStrings}
       />
     ) : null;
-
-  const footerFilterEl = (
-    <FretboardFooter
-      theme={theme}
-      baseLabelMode={baseLabelMode}
-      showQuiz={showQuiz}
-      allNotes={allNotes}
-      overlayNotes={overlayNotes}
-      highlightedOverlayNotes={effectiveHighlightedNotes}
-      highlightedDegrees={effectiveHighlightedDegrees}
-      onAutoFilter={() =>
-        setHighlightedDegrees(new Set(DEGREE_BY_SEMITONE.filter((_, i) => overlaySemitones.has(i))))
-      }
-      onReset={() => {
-        setAutoFilter(false);
-        resetHighlightedDegrees();
-      }}
-      autoFilter={autoFilter}
-      onAutoFilterChange={setAutoFilter}
-      onSetOverlayNoteHighlights={handleSetOverlayNoteHighlights}
-      onToggleOverlayNoteHighlight={handleToggleOverlayNoteHighlight}
-      onToggleDegree={toggleDegree}
-      filterBtnRef={filterBtnRef}
-      chipAreaRef={chipAreaRef}
-    />
-  );
 
   const tabBarEl = (
     <View
@@ -693,34 +657,6 @@ function AppContent() {
             >
               {t("header.root")} {rootNote}
             </Text>
-            {effectiveHighlightedNotes.size > 0 && baseLabelMode === "note" && (
-              <View style={styles.infoChipsRow}>
-                {[...effectiveHighlightedNotes].map((n) => (
-                  <View
-                    key={n}
-                    style={[styles.infoChip, { borderColor: isDark ? "#d1d5db" : "#44403c" }]}
-                  >
-                    <Text style={[styles.infoChipText, { color: isDark ? "#d1d5db" : "#44403c" }]}>
-                      {n}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            )}
-            {effectiveHighlightedDegrees.size > 0 && baseLabelMode === "degree" && (
-              <View style={styles.infoChipsRow}>
-                {[...effectiveHighlightedDegrees].map((d) => (
-                  <View
-                    key={d}
-                    style={[styles.infoChip, { borderColor: isDark ? "#d1d5db" : "#44403c" }]}
-                  >
-                    <Text style={[styles.infoChipText, { color: isDark ? "#d1d5db" : "#44403c" }]}>
-                      {d}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            )}
           </View>
           {/* New layer system info pills */}
           {effectiveLayers.some((l) => l.enabled) && (
@@ -729,7 +665,11 @@ function AppContent() {
                 .filter((l) => l.enabled)
                 .map((l) => {
                   let label: string;
-                  if (l.type === "scale") {
+                  if (l.type === "custom") {
+                    const items =
+                      l.customMode === "note" ? [...l.selectedNotes] : [...l.selectedDegrees];
+                    label = items.length > 0 ? items.join(", ") : t("layers.custom");
+                  } else if (l.type === "scale") {
                     label = t(
                       `options.scale.${l.scaleType.replace(/-([a-z])/g, (_: string, c: string) => c.toUpperCase())}`,
                     );
@@ -806,8 +746,9 @@ function AppContent() {
 
       <View style={{ flex: 1, overflow: "hidden" }}>
         <View ref={fretboardAreaRef}>{fretboardEl}</View>
+        {!showQuiz && <LayerLabels labels={layerNoteLabels} isDark={isDark} />}
         {quizPanelEl}
-        {footerFilterEl}
+        {showQuiz && <View style={{ height: 100 }} />}
         {!showQuiz && (
           <LayerList
             theme={theme}
@@ -820,6 +761,8 @@ function AppContent() {
             onToggleLayer={handleToggleLayer}
             onReorderLayers={handleReorderLayers}
             onPreviewLayer={setPreviewLayer}
+            overlayNotes={overlayNotes}
+            overlaySemitones={overlaySemitones}
           />
         )}
       </View>
@@ -906,5 +849,15 @@ const styles = StyleSheet.create({
   infoChipText: {
     fontSize: 14,
     fontWeight: "600",
+  },
+  layerLabelsContainer: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+  },
+  layerLabelsText: {
+    fontSize: 13,
+    fontWeight: "500",
+    textAlign: "center",
+    fontFamily: "monospace",
   },
 });

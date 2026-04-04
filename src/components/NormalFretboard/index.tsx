@@ -1,7 +1,5 @@
 import Fretboard, { type FretboardProps } from "../ui/Fretboard";
 
-export type { FretboardProps } from "../ui/Fretboard";
-
 export default function NormalFretboard(props: FretboardProps) {
   return (
     <Fretboard

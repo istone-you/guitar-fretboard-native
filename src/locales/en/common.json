@@ -38,7 +38,10 @@
     "chord": "Chord",
     "quiz": "Quiz",
     "addLayer": "Add Layer",
-    "confirm": "Done"
+    "confirm": "Done",
+    "custom": "Custom",
+    "extractFromLayers": "Extract from layers",
+    "reset": "Reset"
   },
   "controls": {
     "displayMode": "Display",
@@ -58,20 +61,10 @@
     "quiz": "Quiz"
   },
   "degreeFilter": {
-    "title": "Degrees",
-    "filter": "Filter",
-    "filterTitle": "Filter by the currently visible overlays",
-    "reset": "Reset",
-    "highlightAll": "Highlight all",
-    "autoFilter": "Auto"
+    "title": "Degrees"
   },
   "noteFilter": {
-    "title": "Notes",
-    "filter": "Filter",
-    "filterTitle": "Filter by the currently visible overlays",
-    "highlightAll": "Highlight all",
-    "reset": "Reset",
-    "autoFilter": "Auto"
+    "title": "Notes"
   },
   "mobileControls": {
     "layers": "Layers",

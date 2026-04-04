@@ -17,23 +17,13 @@ import {
   getDiatonicChord,
   getOpenChordForm,
   isInScale,
-  calcCagedPositions,
   getCagedFormCells,
   getChordLayerCells,
   CHORD_CAGED_ORDER,
   getRootIndex,
   type FretCell,
-  type CagedPositionValue,
 } from "../../logic/fretboard";
-import type {
-  Theme,
-  Accidental,
-  BaseLabelMode,
-  ChordDisplayMode,
-  ScaleType,
-  ChordType,
-  LayerConfig,
-} from "../../types";
+import type { Theme, Accidental, BaseLabelMode, LayerConfig } from "../../types";
 import { MAX_LAYERS } from "../../types";
 
 const STRING_COUNT = 6;
@@ -148,13 +138,14 @@ function LayerOverlayDot({
 }) {
   const remountSeed = useRef(0);
   const prevColor = useRef<string | undefined>(overlay?.color);
-
   if (overlay?.color && prevColor.current && prevColor.current !== overlay.color) {
     remountSeed.current += 1;
   }
   if (overlay?.color) {
     prevColor.current = overlay.color;
   }
+
+  const inset = overlayInset - 0.4 + idx * 2;
 
   return (
     <ScaleAnimView
@@ -164,10 +155,10 @@ function LayerOverlayDot({
       color={overlay?.color}
       style={{
         position: "absolute",
-        top: overlayInset + idx * 2,
-        left: overlayInset + idx * 2,
-        right: overlayInset + idx * 2,
-        bottom: overlayInset + idx * 2,
+        top: inset,
+        left: inset,
+        right: inset,
+        bottom: inset,
         borderRadius: overlaySize / 2,
         alignItems: "center",
         justifyContent: "center",
@@ -196,8 +187,8 @@ const FRETBOARD_SIZE = {
   rowGap: 1,
   headerFontSize: 12,
   markHeight: 12,
-  markerSize: 4,
-  markerGap: 2,
+  customSize: 4,
+  customGap: 2,
   baseFontSize: 12,
   overlayFontSize: 12,
   rootRingInset: 1,
@@ -216,32 +207,13 @@ interface ChordGroup {
   rootStringIdx?: number;
 }
 
-function buildCellKey(cells: FretCell[]): string {
-  return cells
-    .map((cell) => `${cell.string}-${cell.fret}`)
-    .sort()
-    .join("|");
-}
-
 export interface FretboardProps {
   theme: Theme;
   rootNote: string;
   accidental: Accidental;
   baseLabelMode: BaseLabelMode;
   fretRange: [number, number];
-  showChord: boolean;
-  chordDisplayMode: ChordDisplayMode;
-  showScale: boolean;
-  scaleType: ScaleType;
-  showCaged: boolean;
-  cagedForms: Set<string>;
-  chordType: ChordType;
-  triadPosition: string;
-  diatonicScaleType: string;
-  diatonicDegree: string;
   onNoteClick: (noteName: string) => void;
-  highlightedNotes?: Set<string>;
-  highlightedDegrees?: Set<string>;
   quizModeActive?: boolean;
   quizCell?: { stringIdx: number; fret: number };
   quizAnswerMode?: boolean;
@@ -253,9 +225,6 @@ export interface FretboardProps {
   quizRevealNoteNames?: string[] | null;
   suppressRegularDisplay?: boolean;
   hideChordNoteLabels?: boolean;
-  chordColor?: string;
-  scaleColor?: string;
-  cagedColor?: string;
   quizColor?: string;
   layers?: LayerConfig[];
   disableAnimation?: boolean;
@@ -267,19 +236,7 @@ export default function Fretboard({
   accidental,
   baseLabelMode,
   fretRange,
-  showChord,
-  chordDisplayMode,
-  showScale,
-  scaleType,
-  showCaged,
-  cagedForms,
-  chordType,
-  triadPosition,
-  diatonicScaleType,
-  diatonicDegree,
   onNoteClick,
-  highlightedNotes = new Set(),
-  highlightedDegrees = new Set(),
   quizModeActive = false,
   quizCell,
   quizAnswerMode = false,
@@ -291,9 +248,6 @@ export default function Fretboard({
   quizRevealNoteNames = null,
   suppressRegularDisplay = false,
   hideChordNoteLabels = false,
-  chordColor = "#ffd700",
-  scaleColor = "#ff69b6",
-  cagedColor = "#40e0d0",
   quizColor,
   layers = [],
   disableAnimation = false,
@@ -324,157 +278,6 @@ export default function Fretboard({
   const size = FRETBOARD_SIZE;
   const isDark = theme === "dark";
   const rootIndex = getRootIndex(rootNote);
-  const diatonicChord =
-    chordDisplayMode === "diatonic"
-      ? getDiatonicChord(rootIndex, diatonicScaleType, diatonicDegree)
-      : null;
-  const effectiveDisplayMode = chordDisplayMode === "diatonic" ? "form" : chordDisplayMode;
-  const effectiveRootIndex = diatonicChord != null ? diatonicChord.rootIndex : rootIndex;
-  const effectiveChordType: ChordType = diatonicChord != null ? diatonicChord.chordType : chordType;
-
-  const chordGroups = useMemo<ChordGroup[]>(() => {
-    if (!showChord) return [];
-
-    if (chordDisplayMode === "triad") {
-      const groups: ChordGroup[] = [];
-      for (const stringSetOpt of TRIAD_STRING_SET_OPTIONS) {
-        const layoutValue = `${stringSetOpt.value}-${triadPosition}`;
-        const cells = buildTriadVoicing(rootIndex, chordType, layoutValue);
-        if (cells.length === 0) continue;
-        const frets = cells.map((cell) => cell.fret);
-        const strings = cells.map((cell) => cell.string);
-        groups.push({
-          id: `triad-${stringSetOpt.value}-${rootIndex}-${chordType}-${triadPosition}`,
-          kind: "triad",
-          cells,
-          minFret: Math.min(...frets),
-          maxFret: Math.max(...frets),
-          minString: Math.min(...strings),
-          maxString: Math.max(...strings),
-        });
-      }
-      return groups;
-    }
-
-    if (chordDisplayMode === "caged") {
-      const groups: ChordGroup[] = [];
-      for (const key of CHORD_CAGED_ORDER) {
-        if (!cagedForms.has(key)) continue;
-        const cells = getCagedFormCells(key, rootIndex);
-        if (cells.length === 0) continue;
-        const frets = cells.map((c) => c.fret);
-        const strings = cells.map((c) => c.string);
-        groups.push({
-          id: `caged-${key}-${rootIndex}`,
-          kind: "caged",
-          cells,
-          minFret: Math.min(...frets),
-          maxFret: Math.max(...frets),
-          minString: Math.min(...strings),
-          maxString: Math.max(...strings),
-        });
-      }
-      return groups;
-    }
-
-    const movableGroups: ChordGroup[] = [0, 1].flatMap((rootStringIdx) => {
-      const fullForm =
-        effectiveDisplayMode === "power"
-          ? POWER_CHORD_FORMS[rootStringIdx]
-          : (rootStringIdx === 0 ? CHORD_FORMS_6TH : CHORD_FORMS_5TH)[effectiveChordType];
-      if (!fullForm) return [];
-
-      let rootFret = -1;
-      for (let fret = 0; fret < FRET_COUNT; fret++) {
-        if (getNoteIndex(rootStringIdx, fret) === effectiveRootIndex) {
-          rootFret = fret;
-          break;
-        }
-      }
-      if (rootFret === -1) return [];
-
-      const cells = fullForm
-        .map(({ string, fretOffset }) => ({
-          string,
-          fret: rootFret + fretOffset,
-        }))
-        .filter(({ fret }) => fret >= 0 && fret < FRET_COUNT);
-      if (cells.length === 0) return [];
-
-      const frets = cells.map((cell) => cell.fret);
-      const strings = cells.map((cell) => cell.string);
-      return [
-        {
-          id: `${rootStringIdx}-${effectiveDisplayMode}-${effectiveChordType}-${effectiveRootIndex}`,
-          kind: rootStringIdx === 0 ? "6th" : "5th",
-          rootStringIdx,
-          cells,
-          minFret: Math.min(...frets),
-          maxFret: Math.max(...frets),
-          minString: Math.min(...strings),
-          maxString: Math.max(...strings),
-        },
-      ];
-    });
-
-    if (effectiveDisplayMode !== "form") return movableGroups;
-
-    const openForm = getOpenChordForm(effectiveRootIndex, effectiveChordType);
-    if (!openForm) return movableGroups;
-    const openFormKey = buildCellKey(openForm);
-    const overlapsMovableGroup = movableGroups.some(
-      (group) => buildCellKey(group.cells) === openFormKey,
-    );
-    if (overlapsMovableGroup) return movableGroups;
-
-    const frets = openForm.map((cell) => cell.fret);
-    const strings = openForm.map((cell) => cell.string);
-    return [
-      ...movableGroups,
-      {
-        id: `open-${effectiveChordType}-${effectiveRootIndex}`,
-        kind: "open",
-        cells: openForm,
-        minFret: Math.min(...frets),
-        maxFret: Math.max(...frets),
-        minString: Math.min(...strings),
-        maxString: Math.max(...strings),
-      },
-    ];
-  }, [
-    showChord,
-    chordDisplayMode,
-    rootIndex,
-    chordType,
-    triadPosition,
-    effectiveDisplayMode,
-    effectiveChordType,
-    effectiveRootIndex,
-    cagedForms,
-  ]);
-
-  const chordPositions = useMemo(() => {
-    const set = new Set<string>();
-    chordGroups.forEach((group) => {
-      group.cells.forEach(({ string, fret }) => {
-        set.add(`${string}-${fret}`);
-      });
-    });
-    return set;
-  }, [chordGroups]);
-
-  const cagedPositions = useMemo(() => {
-    if (!showCaged || cagedForms.size === 0) return new Map<string, CagedPositionValue>();
-    const merged = new Map<string, CagedPositionValue>();
-    for (const key of cagedForms) {
-      for (const [cell, val] of calcCagedPositions(key, rootIndex)) {
-        if (!merged.has(cell) || val.degree === "R") {
-          merged.set(cell, val);
-        }
-      }
-    }
-    return merged;
-  }, [showCaged, cagedForms, rootIndex]);
 
   // New layer system overlays
   const layerOverlays = useMemo(() => {
@@ -506,6 +309,21 @@ export default function Fretboard({
             layer.cagedForms,
           ),
         );
+      } else if (layer.type === "custom") {
+        const customNotes = accidental === "sharp" ? NOTES_SHARP : NOTES_FLAT;
+        for (let s = 0; s < 6; s++) {
+          for (let f = fretMin; f <= fretMax; f++) {
+            const noteIdx = getNoteIndex(s, f);
+            const noteName = customNotes[noteIdx];
+            const degreeName = getDegreeName(noteIdx, rootIndex);
+            if (
+              (layer.customMode === "note" && layer.selectedNotes.has(noteName)) ||
+              (layer.customMode === "degree" && layer.selectedDegrees.has(degreeName))
+            ) {
+              cells.push({ string: s, fret: f });
+            }
+          }
+        }
       }
       for (const cell of cells) {
         const key = `${cell.string}-${cell.fret}`;
@@ -514,7 +332,147 @@ export default function Fretboard({
       }
     });
     return map;
-  }, [layers, rootIndex, fretMin, fretMax]);
+  }, [layers, rootIndex, fretMin, fretMax, accidental]);
+
+  // Chord groups from layer system (for border rendering)
+  const layerChordGroups = useMemo(() => {
+    const groups: { group: ChordGroup; color: string }[] = [];
+    for (const layer of layers) {
+      if (!layer.enabled || layer.type !== "chord") continue;
+      const color = layer.color;
+      const ri = rootIndex;
+
+      if (layer.chordDisplayMode === "triad") {
+        for (const opt of TRIAD_STRING_SET_OPTIONS) {
+          const layoutValue = `${opt.value}-${layer.triadInversion}`;
+          const cells = buildTriadVoicing(ri, layer.chordType, layoutValue);
+          if (cells.length === 0) continue;
+          const frets = cells.map((c) => c.fret);
+          const strings = cells.map((c) => c.string);
+          groups.push({
+            group: {
+              id: `layer-triad-${layer.id}-${opt.value}`,
+              kind: "triad",
+              cells,
+              minFret: Math.min(...frets),
+              maxFret: Math.max(...frets),
+              minString: Math.min(...strings),
+              maxString: Math.max(...strings),
+            },
+            color,
+          });
+        }
+        continue;
+      }
+
+      if (layer.chordDisplayMode === "caged") {
+        for (const key of CHORD_CAGED_ORDER) {
+          if (!layer.cagedForms.has(key)) continue;
+          const cells = getCagedFormCells(key, ri);
+          if (cells.length === 0) continue;
+          const frets = cells.map((c) => c.fret);
+          const strings = cells.map((c) => c.string);
+          groups.push({
+            group: {
+              id: `layer-caged-${layer.id}-${key}`,
+              kind: "caged",
+              cells,
+              minFret: Math.min(...frets),
+              maxFret: Math.max(...frets),
+              minString: Math.min(...strings),
+              maxString: Math.max(...strings),
+            },
+            color,
+          });
+        }
+        continue;
+      }
+
+      let effRootIndex = ri;
+      let effChordType = layer.chordType;
+      if (layer.chordDisplayMode === "diatonic") {
+        const chord = getDiatonicChord(
+          ri,
+          `${layer.diatonicKeyType}-${layer.diatonicChordSize}`,
+          layer.diatonicDegree,
+        );
+        effRootIndex = chord.rootIndex;
+        effChordType = chord.chordType;
+      }
+      const effDisplayMode =
+        layer.chordDisplayMode === "diatonic" ? "form" : layer.chordDisplayMode;
+
+      const movable: ChordGroup[] = [0, 1].flatMap((rsi) => {
+        const fullForm =
+          effDisplayMode === "power"
+            ? POWER_CHORD_FORMS[rsi]
+            : (rsi === 0 ? CHORD_FORMS_6TH : CHORD_FORMS_5TH)[effChordType];
+        if (!fullForm) return [];
+        let rootFret = -1;
+        for (let f = 0; f < FRET_COUNT; f++) {
+          if (getNoteIndex(rsi, f) === effRootIndex) {
+            rootFret = f;
+            break;
+          }
+        }
+        if (rootFret === -1) return [];
+        const cells = fullForm
+          .map(({ string, fretOffset }) => ({ string, fret: rootFret + fretOffset }))
+          .filter(({ fret }) => fret >= 0 && fret < FRET_COUNT);
+        if (cells.length === 0) return [];
+        const frets = cells.map((c) => c.fret);
+        const strings = cells.map((c) => c.string);
+        return [
+          {
+            id: `layer-${layer.id}-${rsi}`,
+            kind: rsi === 0 ? "6th" : "5th",
+            rootStringIdx: rsi,
+            cells,
+            minFret: Math.min(...frets),
+            maxFret: Math.max(...frets),
+            minString: Math.min(...strings),
+            maxString: Math.max(...strings),
+          },
+        ];
+      });
+
+      for (const g of movable) groups.push({ group: g, color });
+
+      if (effDisplayMode === "form") {
+        const openForm = getOpenChordForm(effRootIndex, effChordType);
+        if (openForm) {
+          const openKey = openForm
+            .map((c) => `${c.string}-${c.fret}`)
+            .sort()
+            .join("|");
+          const overlaps = movable.some(
+            (g) =>
+              g.cells
+                .map((c) => `${c.string}-${c.fret}`)
+                .sort()
+                .join("|") === openKey,
+          );
+          if (!overlaps) {
+            const frets = openForm.map((c) => c.fret);
+            const strings = openForm.map((c) => c.string);
+            groups.push({
+              group: {
+                id: `layer-open-${layer.id}`,
+                kind: "open",
+                cells: openForm,
+                minFret: Math.min(...frets),
+                maxFret: Math.max(...frets),
+                minString: Math.min(...strings),
+                maxString: Math.max(...strings),
+              },
+              color,
+            });
+          }
+        }
+      }
+    }
+    return groups;
+  }, [layers, rootIndex]);
 
   const visibleFrets = Array.from({ length: fretMax - fretMin + 1 }, (_, i) => fretMin + i);
 
@@ -548,7 +506,7 @@ export default function Fretboard({
           ))}
         </View>
 
-        {/* Position markers */}
+        {/* Position customs */}
         <View style={[styles.row, { marginBottom: 4 }]}>
           {visibleFrets.map((fret) => {
             const mark = POSITION_MARKS[fret];
@@ -561,24 +519,24 @@ export default function Fretboard({
                   flexDirection: "row",
                   alignItems: "center",
                   justifyContent: "center",
-                  gap: size.markerGap,
+                  gap: size.customGap,
                 }}
               >
                 {mark === "double" ? (
                   <>
                     <View
                       style={{
-                        width: size.markerSize,
-                        height: size.markerSize,
-                        borderRadius: size.markerSize / 2,
+                        width: size.customSize,
+                        height: size.customSize,
+                        borderRadius: size.customSize / 2,
                         backgroundColor: isDark ? "#6b7280" : "#a8a29e",
                       }}
                     />
                     <View
                       style={{
-                        width: size.markerSize,
-                        height: size.markerSize,
-                        borderRadius: size.markerSize / 2,
+                        width: size.customSize,
+                        height: size.customSize,
+                        borderRadius: size.customSize / 2,
                         backgroundColor: isDark ? "#6b7280" : "#a8a29e",
                       }}
                     />
@@ -586,9 +544,9 @@ export default function Fretboard({
                 ) : mark === "single" ? (
                   <View
                     style={{
-                      width: size.markerSize,
-                      height: size.markerSize,
-                      borderRadius: size.markerSize / 2,
+                      width: size.customSize,
+                      height: size.customSize,
+                      borderRadius: size.customSize / 2,
                       backgroundColor: isDark ? "#6b7280" : "#a8a29e",
                     }}
                   />
@@ -600,14 +558,12 @@ export default function Fretboard({
 
         {/* Chord group overlays + string rows */}
         <View style={{ position: "relative" }}>
-          {chordGroups
-            .filter((group) => group.maxFret >= fretMin && group.minFret <= fretMax)
-            .map((group) => {
-              const clampedMin = Math.max(group.minFret, fretMin);
-              const clampedMax = Math.min(group.maxFret, fretMax);
+          {layerChordGroups
+            .filter(({ group }) => group.minFret >= fretMin && group.maxFret <= fretMax)
+            .map(({ group, color }) => {
               const top = (STRING_COUNT - 1 - group.maxString) * (size.rowHeight + size.rowGap);
-              const left = (clampedMin - fretMin) * size.cellWidth;
-              const width = (clampedMax - clampedMin + 1) * size.cellWidth;
+              const left = (group.minFret - fretMin) * size.cellWidth;
+              const width = (group.maxFret - group.minFret + 1) * size.cellWidth;
               const height =
                 (group.maxString - group.minString + 1) * size.rowHeight +
                 (group.maxString - group.minString) * size.rowGap;
@@ -625,8 +581,8 @@ export default function Fretboard({
                     borderRadius: 12,
                     borderWidth: 2,
                     zIndex: 6,
-                    borderColor: `${chordColor}99`,
-                    backgroundColor: `${chordColor}14`,
+                    borderColor: `${color}99`,
+                    backgroundColor: `${color}14`,
                   }}
                 />
               );
@@ -641,15 +597,9 @@ export default function Fretboard({
               rootIndex={rootIndex}
               baseLabelMode={baseLabelMode}
               labelScale={labelScale}
-              showScale={showScale}
-              scaleType={scaleType}
-              cagedPositions={cagedPositions}
-              chordPositions={chordPositions}
               size={size}
               visibleFrets={visibleFrets}
               onNoteClick={onNoteClick}
-              highlightedNotes={highlightedNotes}
-              highlightedDegrees={highlightedDegrees}
               quizActive={quizActive}
               quizTargetFret={quizCell?.stringIdx === stringIdx ? quizCell.fret : null}
               quizAnswerMode={quizAnswerMode}
@@ -661,9 +611,6 @@ export default function Fretboard({
               quizRevealNoteNames={quizRevealNoteNames}
               suppressRegularDisplay={suppressRegularDisplay}
               hideChordNoteLabels={hideChordNoteLabels}
-              chordColor={chordColor}
-              scaleColor={scaleColor}
-              cagedColor={cagedColor}
               quizColor={quizColor}
               layerOverlays={layerOverlays}
               disableAnimation={disableAnimation}
@@ -682,15 +629,10 @@ interface StringRowProps {
   rootIndex: number;
   baseLabelMode: BaseLabelMode;
   labelScale: Animated.Value;
-  showScale: boolean;
-  scaleType: ScaleType;
-  cagedPositions: Map<string, CagedPositionValue>;
-  chordPositions: Set<string>;
   size: typeof FRETBOARD_SIZE;
   visibleFrets: number[];
   onNoteClick: (noteName: string) => void;
-  highlightedNotes: Set<string>;
-  highlightedDegrees: Set<string>;
+
   quizActive: boolean;
   quizTargetFret: number | null;
   quizAnswerMode?: boolean;
@@ -702,9 +644,6 @@ interface StringRowProps {
   quizRevealNoteNames?: string[] | null;
   suppressRegularDisplay?: boolean;
   hideChordNoteLabels?: boolean;
-  chordColor?: string;
-  scaleColor?: string;
-  cagedColor?: string;
   quizColor?: string;
   layerOverlays?: Map<string, { color: string; zIndex: number }[]>;
   disableAnimation?: boolean;
@@ -717,15 +656,10 @@ function StringRow({
   rootIndex,
   baseLabelMode,
   labelScale,
-  showScale,
-  scaleType,
-  cagedPositions,
-  chordPositions,
   size,
   visibleFrets,
   onNoteClick,
-  highlightedNotes,
-  highlightedDegrees,
+
   quizActive,
   quizTargetFret,
   quizAnswerMode = false,
@@ -737,9 +671,6 @@ function StringRow({
   quizRevealNoteNames,
   suppressRegularDisplay = false,
   hideChordNoteLabels = false,
-  chordColor = "#ffd700",
-  scaleColor = "#ff69b6",
-  cagedColor = "#40e0d0",
   quizColor,
   layerOverlays,
   disableAnimation = false,
@@ -758,22 +689,9 @@ function StringRow({
       {visibleFrets.map((fret) => {
         const noteIdx = getNoteIndex(stringIdx, fret);
         const noteName = NOTES[noteIdx];
-        const semitone = calcDegree(noteIdx, rootIndex);
         const degreeName = getDegreeName(noteIdx, rootIndex);
 
-        const inChord = chordPositions.has(`${stringIdx}-${fret}`);
-        const cagedCell = cagedPositions.get(`${stringIdx}-${fret}`);
         const labelText = baseLabelMode === "degree" ? degreeName : noteName;
-        const isHighlighted =
-          (baseLabelMode === "note" && highlightedNotes.has(noteName)) ||
-          (baseLabelMode === "degree" && highlightedDegrees.has(degreeName));
-
-        const inScale = showScale && isInScale(semitone, scaleType);
-        const inCaged = !!cagedCell;
-        // For non-animated logic, keep combined overlayColor
-        let overlayColor: string | null = null;
-        if (inScale) overlayColor = scaleColor;
-        if (inCaged) overlayColor = cagedColor;
 
         const isAnswered = quizAnswerMode && quizAnsweredCell != null;
         const isTappedCell =
@@ -841,25 +759,8 @@ function StringRow({
               }}
             />
 
-            {/* Highlight ring */}
-            <ScaleAnimView
-              skipAnimation={disableAnimation}
-              visible={isHighlighted}
-              style={{
-                position: "absolute",
-                top: overlayInset - 2,
-                left: overlayInset - 2,
-                right: overlayInset - 2,
-                bottom: overlayInset - 2,
-                borderRadius: (overlaySize + 4) / 2,
-                borderWidth: 2,
-                borderColor: isDark ? "#e5e7eb" : "#1c1917",
-                zIndex: 25,
-              }}
-            />
-
             {/* Base label */}
-            {!overlayColor && !inChord && !shouldSuppressRegularDisplay && (
+            {!shouldSuppressRegularDisplay && (
               <Animated.View
                 style={{
                   backgroundColor: isDark ? "#111827" : "#f5f5f4",
@@ -886,105 +787,7 @@ function StringRow({
               </Animated.View>
             )}
 
-            {/* Scale overlay (behind CAGED) */}
-            {!quizAnswerOverlay && !shouldRevealChoiceAnswer && !isSelectedCell && (
-              <ScaleAnimView
-                key={`scale-${scaleColor}`}
-                skipAnimation={disableAnimation}
-                visible={inScale}
-                color={scaleColor}
-                style={{
-                  position: "absolute",
-                  top: overlayInset,
-                  left: overlayInset,
-                  right: overlayInset,
-                  bottom: overlayInset,
-                  borderRadius: overlaySize / 2,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  zIndex: 10,
-                  opacity: 0.92,
-                }}
-              >
-                <Animated.Text
-                  style={{
-                    fontSize: size.overlayFontSize,
-                    color: "#fff",
-                    fontWeight: "bold",
-                    transform: [{ scale: labelScale }],
-                  }}
-                >
-                  {labelText}
-                </Animated.Text>
-              </ScaleAnimView>
-            )}
-            {/* CAGED overlay (in front of scale) */}
-            {!quizAnswerOverlay && !shouldRevealChoiceAnswer && !isSelectedCell && (
-              <ScaleAnimView
-                key={`caged-${cagedColor}`}
-                skipAnimation={disableAnimation}
-                visible={inCaged}
-                color={cagedColor}
-                style={{
-                  position: "absolute",
-                  top: overlayInset,
-                  left: overlayInset,
-                  right: overlayInset,
-                  bottom: overlayInset,
-                  borderRadius: overlaySize / 2,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  zIndex: 11,
-                  opacity: 0.92,
-                }}
-              >
-                <Animated.Text
-                  style={{
-                    fontSize: size.overlayFontSize,
-                    color: "#fff",
-                    fontWeight: "bold",
-                    transform: [{ scale: labelScale }],
-                  }}
-                >
-                  {labelText}
-                </Animated.Text>
-              </ScaleAnimView>
-            )}
-
-            {/* Chord dot */}
-            {!quizAnswerOverlay && (
-              <ScaleAnimView
-                key={`chord-${chordColor}`}
-                skipAnimation={disableAnimation}
-                visible={inChord}
-                color={chordColor}
-                style={{
-                  position: "absolute",
-                  top: overlayInset,
-                  left: overlayInset,
-                  right: overlayInset,
-                  bottom: overlayInset,
-                  borderRadius: overlaySize / 2,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  zIndex: 20,
-                  opacity: 0.92,
-                }}
-              >
-                <Animated.Text
-                  style={{
-                    fontSize: size.overlayFontSize,
-                    color: "#fff",
-                    fontWeight: "bold",
-                    transform: [{ scale: labelScale }],
-                  }}
-                >
-                  {hideChordNoteLabels ? "?" : labelText}
-                </Animated.Text>
-              </ScaleAnimView>
-            )}
-
-            {/* New layer system overlays */}
+            {/* Layer system overlays */}
             {Array.from({ length: MAX_LAYERS }, (_, idx) => {
               const overlay = layerOverlays?.get(`${stringIdx}-${fret}`)?.[idx];
               return (
@@ -995,7 +798,7 @@ function StringRow({
                   overlayInset={overlayInset}
                   overlaySize={overlaySize}
                   overlayFontSize={size.overlayFontSize}
-                  labelText={labelText}
+                  labelText={hideChordNoteLabels ? "?" : labelText}
                   disableAnimation={disableAnimation}
                 />
               );

@@ -38,7 +38,10 @@
     "chord": "コード",
     "quiz": "クイズ",
     "addLayer": "レイヤーを追加",
-    "confirm": "決定"
+    "confirm": "決定",
+    "custom": "カスタム",
+    "extractFromLayers": "既存レイヤーから抽出",
+    "reset": "リセット"
   },
   "controls": {
     "displayMode": "表示形式",
@@ -58,20 +61,10 @@
     "quiz": "クイズ"
   },
   "degreeFilter": {
-    "title": "度数",
-    "filter": "抽出",
-    "filterTitle": "表示中のオーバーレイに合わせて絞り込む",
-    "reset": "リセット",
-    "highlightAll": "全強調",
-    "autoFilter": "自動抽出"
+    "title": "度数"
   },
   "noteFilter": {
-    "title": "音名",
-    "filter": "抽出",
-    "filterTitle": "表示中のオーバーレイに合わせて絞り込む",
-    "highlightAll": "全強調",
-    "reset": "リセット",
-    "autoFilter": "自動抽出"
+    "title": "音名"
   },
   "mobileControls": {
     "layers": "レイヤー",

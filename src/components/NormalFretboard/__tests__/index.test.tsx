@@ -24,16 +24,6 @@ const baseProps = {
   accidental: "sharp" as const,
   baseLabelMode: "note" as const,
   fretRange: [0, 14] as [number, number],
-  showChord: false,
-  chordDisplayMode: "form" as const,
-  showScale: true,
-  scaleType: "major" as const,
-  showCaged: false,
-  cagedForms: new Set<string>(),
-  chordType: "Major" as const,
-  triadPosition: "1-3",
-  diatonicScaleType: "major",
-  diatonicDegree: "I",
   onNoteClick: jest.fn(),
 };
 
@@ -56,11 +46,6 @@ describe("NormalFretboard", () => {
         accidental: "sharp",
         baseLabelMode: "note",
         fretRange: [0, 14],
-        showChord: false,
-        showScale: true,
-        scaleType: "major",
-        showCaged: false,
-        chordType: "Major",
       }),
     );
   });
@@ -111,32 +96,11 @@ describe("NormalFretboard", () => {
     );
   });
 
-  it("passes optional props like highlightedNotes", () => {
-    const highlightedNotes = new Set(["C", "E"]);
-    render(<NormalFretboard {...baseProps} highlightedNotes={highlightedNotes} />);
-    expect(mockFretboard).toHaveBeenCalledWith(expect.objectContaining({ highlightedNotes }));
-  });
-
-  it("passes optional props like highlightedDegrees", () => {
-    const highlightedDegrees = new Set(["P1", "P5"]);
-    render(<NormalFretboard {...baseProps} highlightedDegrees={highlightedDegrees} />);
-    expect(mockFretboard).toHaveBeenCalledWith(expect.objectContaining({ highlightedDegrees }));
-  });
-
-  it("passes custom color props", () => {
-    render(
-      <NormalFretboard
-        {...baseProps}
-        chordColor="#ff0000"
-        scaleColor="#00ff00"
-        cagedColor="#0000ff"
-      />,
-    );
+  it("passes layers prop through", () => {
+    render(<NormalFretboard {...baseProps} layers={[]} />);
     expect(mockFretboard).toHaveBeenCalledWith(
       expect.objectContaining({
-        chordColor: "#ff0000",
-        scaleColor: "#00ff00",
-        cagedColor: "#0000ff",
+        layers: [],
       }),
     );
   });

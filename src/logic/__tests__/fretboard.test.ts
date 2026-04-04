@@ -1,7 +1,6 @@
 import {
   NOTES_SHARP,
   NOTES_FLAT,
-  NOTES,
   OPEN_STRINGS,
   FRET_COUNT,
   POSITION_MARKS,
@@ -89,12 +88,6 @@ describe("NOTES_FLAT", () => {
     expect(NOTES_FLAT).toContain("G♭");
     expect(NOTES_FLAT).toContain("A♭");
     expect(NOTES_FLAT).toContain("B♭");
-  });
-});
-
-describe("NOTES (backward compat alias)", () => {
-  it("is the same reference as NOTES_FLAT", () => {
-    expect(NOTES).toBe(NOTES_FLAT);
   });
 });
 

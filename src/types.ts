@@ -53,9 +53,9 @@ export type DegreeName =
   | "M7";
 
 // ===== Layer system =====
-export type LayerType = "scale" | "chord";
+export type LayerType = "scale" | "chord" | "custom";
 
-export const MAX_LAYERS = 2;
+export const MAX_LAYERS = 3;
 
 export interface LayerConfig {
   id: string;
@@ -72,6 +72,10 @@ export interface LayerConfig {
   diatonicChordSize: string;
   diatonicDegree: string;
   cagedForms: Set<string>;
+  // Marker settings
+  customMode: "note" | "degree";
+  selectedNotes: Set<string>;
+  selectedDegrees: Set<string>;
 }
 
 export function createDefaultLayer(type: LayerType, id: string, color: string): LayerConfig {
@@ -88,10 +92,26 @@ export function createDefaultLayer(type: LayerType, id: string, color: string): 
     diatonicChordSize: "triad",
     diatonicDegree: "I",
     cagedForms: new Set(["C", "A", "G", "E", "D"]),
+    customMode: "note",
+    selectedNotes: new Set(),
+    selectedDegrees: new Set(),
   };
 }
 
 export const DEFAULT_LAYER_COLORS = ["#ff69b6", "#40e0d0", "#ffd700", "#7c3aed"];
+
+export const COLOR_PRESETS = [
+  "#ff4d4d",
+  "#ff8c00",
+  "#ffd700",
+  "#84cc16",
+  "#10b981",
+  "#40e0d0",
+  "#00bfff",
+  "#0ea5e9",
+  "#7c3aed",
+  "#ff69b6",
+];
 
 export type QuizMode = "note" | "degree" | "chord" | "scale" | "diatonic";
 export type QuizType = "choice" | "fretboard" | "all";
