@@ -59,6 +59,7 @@ interface LayerListProps {
   onPreviewLayer: (layer: LayerConfig | null) => void;
   overlayNotes: string[];
   overlaySemitones: Set<number>;
+  layerNoteLabels: Map<string, string[]>;
 }
 
 export default function LayerList({
@@ -74,6 +75,7 @@ export default function LayerList({
   onPreviewLayer,
   overlayNotes,
   overlaySemitones,
+  layerNoteLabels,
 }: LayerListProps) {
   const { t } = useTranslation();
   const isDark = theme === "dark";
@@ -403,6 +405,12 @@ export default function LayerList({
               >
                 {getSummary(layer)}
               </Text>
+              <Text
+                style={[styles.layerNoteLabels, { color: isDark ? "#9ca3af" : "#78716c" }]}
+                numberOfLines={1}
+              >
+                {layerNoteLabels.get(layer.id)?.join("  ") || " "}
+              </Text>
             </View>
 
             {/* Settings button */}
@@ -469,6 +477,7 @@ export default function LayerList({
               styles.addBtn,
               {
                 borderColor: isDark ? "#374151" : "#d6d3d1",
+                minHeight: rowHeight.current,
               },
             ]}
             activeOpacity={0.7}
@@ -555,6 +564,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "500",
   },
+  layerNoteLabels: {
+    fontSize: 12,
+    fontWeight: "500",
+    fontFamily: "monospace",
+  },
   actionBtn: {
     padding: 8,
   },
@@ -565,7 +579,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 12,
     alignItems: "center",
-    minHeight: 52,
     justifyContent: "center",
   },
 });

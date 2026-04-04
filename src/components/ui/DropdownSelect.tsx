@@ -47,19 +47,13 @@ export function DropdownSelect({
       callback?.();
     });
   };
-  const scaleAnim = useRef(new Animated.Value(variant === "plain" ? 0.8 : 1)).current;
+  const scaleAnim = useRef(new Animated.Value(1)).current;
   const mounted = useRef(false);
   const prevKey = useRef(`${value}:${disabled}`);
   const currentKey = `${value}:${disabled}`;
 
-  if (!mounted.current && variant === "plain") {
+  if (!mounted.current) {
     mounted.current = true;
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      friction: 5,
-      tension: 150,
-      useNativeDriver: true,
-    }).start();
   } else if (prevKey.current !== currentKey) {
     prevKey.current = currentKey;
     scaleAnim.stopAnimation();
@@ -262,9 +256,10 @@ const styles = StyleSheet.create({
   plainTrigger: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    alignSelf: "center",
     gap: 6,
     paddingVertical: 8,
+    paddingHorizontal: 12,
   },
   plainTriggerText: {
     fontSize: 15,

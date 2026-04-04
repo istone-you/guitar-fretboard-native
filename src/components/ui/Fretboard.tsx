@@ -336,10 +336,11 @@ export default function Fretboard({
 
   // Chord groups from layer system (for border rendering)
   const layerChordGroups = useMemo(() => {
-    const groups: { group: ChordGroup; color: string }[] = [];
+    const groups: { group: ChordGroup; color: string; visible: boolean }[] = [];
     for (const layer of layers) {
       if (!layer.enabled || layer.type !== "chord") continue;
       const color = layer.color;
+      const frameVisible = layer.showChordFrame !== false;
       const ri = rootIndex;
 
       if (layer.chordDisplayMode === "triad") {
@@ -360,6 +361,7 @@ export default function Fretboard({
               maxString: Math.max(...strings),
             },
             color,
+            visible: frameVisible,
           });
         }
         continue;
@@ -383,6 +385,7 @@ export default function Fretboard({
               maxString: Math.max(...strings),
             },
             color,
+            visible: frameVisible,
           });
         }
         continue;
@@ -436,7 +439,7 @@ export default function Fretboard({
         ];
       });
 
-      for (const g of movable) groups.push({ group: g, color });
+      for (const g of movable) groups.push({ group: g, color, visible: frameVisible });
 
       if (effDisplayMode === "form") {
         const openForm = getOpenChordForm(effRootIndex, effChordType);
@@ -466,6 +469,7 @@ export default function Fretboard({
                 maxString: Math.max(...strings),
               },
               color,
+              visible: frameVisible,
             });
           }
         }
@@ -560,7 +564,7 @@ export default function Fretboard({
         <View style={{ position: "relative" }}>
           {layerChordGroups
             .filter(({ group }) => group.minFret >= fretMin && group.maxFret <= fretMax)
-            .map(({ group, color }) => {
+            .map(({ group, color, visible }) => {
               const top = (STRING_COUNT - 1 - group.maxString) * (size.rowHeight + size.rowGap);
               const left = (group.minFret - fretMin) * size.cellWidth;
               const width = (group.maxFret - group.minFret + 1) * size.cellWidth;
@@ -569,9 +573,10 @@ export default function Fretboard({
                 (group.maxString - group.minString) * size.rowGap;
 
               return (
-                <View
+                <ScaleAnimView
                   key={group.id}
-                  pointerEvents="none"
+                  skipAnimation={disableAnimation}
+                  visible={visible}
                   style={{
                     position: "absolute",
                     top,

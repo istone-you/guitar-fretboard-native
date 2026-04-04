@@ -67,6 +67,44 @@ const DEGREE_CHIPS = [
 
 const DEGREE_BY_SEMITONE = ["P1", "m2", "M2", "m3", "M3", "P4", "b5", "P5", "m6", "M6", "m7", "M7"];
 
+function SlideToggle({
+  active,
+  color,
+  isDark,
+  onPress,
+}: {
+  active: boolean;
+  color: string;
+  isDark: boolean;
+  onPress: () => void;
+}) {
+  const anim = useRef(new Animated.Value(active ? 1 : 0)).current;
+  const prevActive = useRef(active);
+
+  if (prevActive.current !== active) {
+    prevActive.current = active;
+    Animated.timing(anim, {
+      toValue: active ? 1 : 0,
+      duration: 300,
+      useNativeDriver: false,
+    }).start();
+  }
+
+  const thumbX = anim.interpolate({ inputRange: [0, 1], outputRange: [3, 23] });
+  const bgColor = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [isDark ? "#4b5563" : "#d6d3d1", color],
+  });
+
+  return (
+    <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
+      <Animated.View style={[styles.slideToggle, { backgroundColor: bgColor }]}>
+        <Animated.View style={[styles.slideToggleThumb, { transform: [{ translateX: thumbX }] }]} />
+      </Animated.View>
+    </TouchableOpacity>
+  );
+}
+
 function BounceChip({
   label,
   active,
@@ -256,9 +294,9 @@ export default function LayerEditModal({
   const chordDisplayOptions: { value: ChordDisplayMode; label: string }[] = [
     { value: "form", label: t("options.chordDisplayMode.form") },
     { value: "power", label: t("options.chordDisplayMode.power") },
-    { value: "caged", label: t("options.chordDisplayMode.caged") },
     { value: "triad", label: t("options.chordDisplayMode.triad") },
     { value: "diatonic", label: t("options.chordDisplayMode.diatonic") },
+    { value: "caged", label: t("options.chordDisplayMode.caged") },
   ];
   const triadInversionOptions = TRIAD_INVERSION_OPTIONS.map(({ value }) => ({
     value,
@@ -700,6 +738,23 @@ export default function LayerEditModal({
                 </>
               )}
 
+              {layer.type === "chord" && (
+                <View style={[styles.settingRow, { flexDirection: "row", alignItems: "center" }]}>
+                  <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c", flex: 1 }]}>
+                    {t("layers.chordFrame")}
+                  </Text>
+                  <SlideToggle
+                    active={layer.showChordFrame ?? true}
+                    color={layer.color}
+                    isDark={isDark}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      update({ showChordFrame: !(layer.showChordFrame ?? true) });
+                    }}
+                  />
+                </View>
+              )}
+
               {/* Color picker */}
               <View style={styles.settingRow}>
                 <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c" }]}>
@@ -823,6 +878,25 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     alignItems: "center",
     marginTop: 8,
+  },
+  slideToggle: {
+    width: 44,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: "center",
+  },
+  slideToggleThumb: {
+    position: "absolute",
+    top: 3,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: "#fff",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1,
+    elevation: 2,
   },
   customModeRow: {
     flexDirection: "row",

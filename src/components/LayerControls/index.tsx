@@ -395,9 +395,9 @@ export default function LayerControls({
   const chordDisplayOptions: { value: ChordDisplayMode; label: string }[] = [
     { value: "form", label: t("options.chordDisplayMode.form") },
     { value: "power", label: t("options.chordDisplayMode.power") },
-    { value: "caged", label: t("options.chordDisplayMode.caged") },
     { value: "triad", label: t("options.chordDisplayMode.triad") },
     { value: "diatonic", label: t("options.chordDisplayMode.diatonic") },
+    { value: "caged", label: t("options.chordDisplayMode.caged") },
   ];
   const triadInversionOptions = TRIAD_INVERSION_OPTIONS.map(({ value }) => ({
     value,

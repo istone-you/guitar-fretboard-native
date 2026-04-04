@@ -53,51 +53,6 @@ const STORAGE_KEYS = {
   fretRange: "guiter:fret-range",
 } as const;
 
-const CHROMATIC_ORDER = new Map([
-  ...NOTES_SHARP.map((n, i) => [n, i] as const),
-  ...NOTES_FLAT.map((n, i) => [n, i] as const),
-  ...DEGREE_BY_SEMITONE.map((d, i) => [d, i] as const),
-]);
-
-function LayerLabels({
-  labels,
-  isDark,
-}: {
-  labels: { id: string; labels: string[] }[];
-  isDark: boolean;
-}) {
-  const unique = [...new Set(labels.flatMap((l) => l.labels))];
-  unique.sort((a, b) => (CHROMATIC_ORDER.get(a) ?? 0) - (CHROMATIC_ORDER.get(b) ?? 0));
-  const text = unique.join("  ") || " ";
-  const scale = useRef(new Animated.Value(1)).current;
-  const prevText = useRef(text);
-
-  if (prevText.current !== text) {
-    prevText.current = text;
-    scale.stopAnimation();
-    scale.setValue(0.85);
-    Animated.spring(scale, {
-      toValue: 1,
-      friction: 5,
-      tension: 150,
-      useNativeDriver: true,
-    }).start();
-  }
-
-  return (
-    <View style={styles.layerLabelsContainer}>
-      <Animated.Text
-        style={[
-          styles.layerLabelsText,
-          { color: isDark ? "#9ca3af" : "#78716c", transform: [{ scale }] },
-        ]}
-      >
-        {text}
-      </Animated.Text>
-    </View>
-  );
-}
-
 function AppContent() {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
@@ -287,55 +242,53 @@ function AppContent() {
   }, [accidental, overlaySemitones, rootNote]);
 
   // Per-layer note/degree labels for display below fretboard
-  const layerNoteLabels = useMemo(() => {
+  const layerNoteLabelsMap = useMemo(() => {
     const notes = accidental === "sharp" ? NOTES_SHARP : NOTES_FLAT;
     const rootIndex = getRootIndex(rootNote);
     const useDegree = baseLabelMode === "degree";
-    return effectiveLayers
-      .filter((l) => l.enabled)
-      .map((l) => {
-        let semitones: number[] = [];
-        if (l.type === "scale") {
-          semitones = [...(SCALE_DEGREES[l.scaleType] ?? [])];
-        } else if (l.type === "chord") {
-          let s: Set<number> | undefined;
-          if (l.chordDisplayMode === "power") {
-            s = CHORD_SEMITONES.power;
-          } else if (l.chordDisplayMode === "diatonic") {
-            s = getDiatonicChordSemitones(
-              rootIndex,
-              `${l.diatonicKeyType}-${l.diatonicChordSize}`,
-              l.diatonicDegree,
-            );
-          } else if (l.chordDisplayMode === "caged") {
-            s = CHORD_SEMITONES.Major;
-          } else {
-            s = CHORD_SEMITONES[l.chordType];
+    const map = new Map<string, string[]>();
+    for (const l of effectiveLayers) {
+      let semitones: number[] = [];
+      if (l.type === "scale") {
+        semitones = [...(SCALE_DEGREES[l.scaleType] ?? [])];
+      } else if (l.type === "chord") {
+        let s: Set<number> | undefined;
+        if (l.chordDisplayMode === "power") {
+          s = CHORD_SEMITONES.power;
+        } else if (l.chordDisplayMode === "diatonic") {
+          s = getDiatonicChordSemitones(
+            rootIndex,
+            `${l.diatonicKeyType}-${l.diatonicChordSize}`,
+            l.diatonicDegree,
+          );
+        } else if (l.chordDisplayMode === "caged") {
+          s = CHORD_SEMITONES.Major;
+        } else {
+          s = CHORD_SEMITONES[l.chordType];
+        }
+        semitones = [...(s ?? [])];
+      } else if (l.type === "custom") {
+        if (l.customMode === "note") {
+          for (const n of l.selectedNotes) {
+            const ni = (notes as readonly string[]).indexOf(n);
+            if (ni >= 0) semitones.push((ni - rootIndex + 12) % 12);
           }
-          semitones = [...(s ?? [])];
-        } else if (l.type === "custom") {
-          if (l.customMode === "note") {
-            // Convert note names to semitones so they follow baseLabelMode
-            for (const n of l.selectedNotes) {
-              const ni = (notes as readonly string[]).indexOf(n);
-              if (ni >= 0) semitones.push((ni - rootIndex + 12) % 12);
-            }
-          } else {
-            // Convert degree names to semitones
-            for (const d of l.selectedDegrees) {
-              const di = DEGREE_BY_SEMITONE.indexOf(d);
-              if (di >= 0) semitones.push(di);
-            }
+        } else {
+          for (const d of l.selectedDegrees) {
+            const di = DEGREE_BY_SEMITONE.indexOf(d);
+            if (di >= 0) semitones.push(di);
           }
         }
-        const sorted = semitones.sort((a, b) => a - b);
-        return {
-          id: l.id,
-          labels: useDegree
-            ? sorted.map((s) => DEGREE_BY_SEMITONE[s])
-            : sorted.map((s) => notes[(rootIndex + s) % 12]),
-        };
-      });
+      }
+      const sorted = semitones.sort((a, b) => a - b);
+      map.set(
+        l.id,
+        useDegree
+          ? sorted.map((s) => DEGREE_BY_SEMITONE[s])
+          : sorted.map((s) => notes[(rootIndex + s) % 12]),
+      );
+    }
+    return map;
   }, [effectiveLayers, accidental, rootNote, baseLabelMode]);
 
   const quizRootChangeEnabled =
@@ -702,7 +655,6 @@ function AppContent() {
 
       <View style={{ flex: 1, overflow: "hidden" }}>
         <View>{fretboardEl}</View>
-        {!showQuiz && <LayerLabels labels={layerNoteLabels} isDark={isDark} />}
         {quizPanelEl}
         {showQuiz && <View style={{ height: 100 }} />}
         {!showQuiz && (
@@ -719,6 +671,7 @@ function AppContent() {
             onPreviewLayer={setPreviewLayer}
             overlayNotes={overlayNotes}
             overlaySemitones={overlaySemitones}
+            layerNoteLabels={layerNoteLabelsMap}
           />
         )}
       </View>
@@ -796,15 +749,5 @@ const styles = StyleSheet.create({
   infoChipText: {
     fontSize: 14,
     fontWeight: "600",
-  },
-  layerLabelsContainer: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-  },
-  layerLabelsText: {
-    fontSize: 13,
-    fontWeight: "500",
-    textAlign: "center",
-    fontFamily: "monospace",
   },
 });

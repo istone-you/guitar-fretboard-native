@@ -72,6 +72,7 @@ export interface LayerConfig {
   diatonicChordSize: string;
   diatonicDegree: string;
   cagedForms: Set<string>;
+  showChordFrame?: boolean;
   // Marker settings
   customMode: "note" | "degree";
   selectedNotes: Set<string>;
@@ -92,6 +93,7 @@ export function createDefaultLayer(type: LayerType, id: string, color: string): 
     diatonicChordSize: "triad",
     diatonicDegree: "I",
     cagedForms: new Set(["C", "A", "G", "E", "D"]),
+    showChordFrame: true,
     customMode: "note",
     selectedNotes: new Set(),
     selectedDegrees: new Set(),
