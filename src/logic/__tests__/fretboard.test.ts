@@ -371,6 +371,15 @@ describe("CHORD_FORMS_5TH", () => {
     // m7(b5) on 5th string has only 4 positions
     expect(CHORD_FORMS_5TH["m7(b5)"]!.length).toBeLessThan(6);
   });
+
+  it("11 uses user-provided 5th-string-root voicing (53,33,24,11 for C)", () => {
+    expect(CHORD_FORMS_5TH["11"]).toEqual([
+      { string: 1, fretOffset: 0 },
+      { string: 3, fretOffset: 0 },
+      { string: 4, fretOffset: 1 },
+      { string: 5, fretOffset: -2 },
+    ]);
+  });
 });
 
 describe("POWER_CHORD_FORMS", () => {

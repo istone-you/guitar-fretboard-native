@@ -30,6 +30,8 @@ import { buildScaleOptions } from "../ui/scaleOptions";
 const CHORD_TYPES: ChordType[] = [
   "Major",
   "Minor",
+  "dim",
+  "aug",
   "7th",
   "maj7",
   "m7",
@@ -40,8 +42,16 @@ const CHORD_TYPES: ChordType[] = [
   "sus4",
   "6",
   "m6",
-  "dim",
-  "aug",
+  "9",
+  "b9",
+  "#9",
+  "add9",
+  "11",
+  "#11",
+  "add11",
+  "add#11",
+  "13",
+  "b13",
 ];
 const TRIAD_CHORD_TYPES = ["Major", "Minor", "Diminished", "Augmented"];
 

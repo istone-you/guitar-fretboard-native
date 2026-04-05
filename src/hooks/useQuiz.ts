@@ -36,6 +36,16 @@ export const CHORD_QUIZ_TYPES_ALL: ChordType[] = [
   "m6",
   "dim",
   "aug",
+  "9",
+  "b9",
+  "#9",
+  "add9",
+  "11",
+  "#11",
+  "add11",
+  "add#11",
+  "13",
+  "b13",
 ];
 
 const CHORD_SUFFIX_MAP: Record<ChordType, string> = {
@@ -53,6 +63,25 @@ const CHORD_SUFFIX_MAP: Record<ChordType, string> = {
   m6: "m6",
   dim: "dim",
   aug: "aug",
+  "9": "9",
+  b9: "7(b9)",
+  "#9": "7(#9)",
+  maj9: "maj9",
+  m9: "m9",
+  add9: "add9",
+  "7(b9)": "7(b9)",
+  "7(#9)": "7(#9)",
+  "11": "11",
+  "#11": "7(#11)",
+  add11: "add11",
+  "add#11": "add(#11)",
+  m11: "m11",
+  "13": "13",
+  b13: "7(b13)",
+  maj13: "maj13",
+  m13: "m13",
+  "6/9": "6/9",
+  "m6/9": "m6/9",
 };
 
 const CHORD_IDENTIFY_ROOTS = ["A", "B", "C", "D", "E", "F", "G"] as const;

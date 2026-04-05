@@ -1716,10 +1716,12 @@ describe("useQuiz", () => {
   // =========================================================================
 
   describe("CHORD_QUIZ_TYPES_ALL", () => {
-    it("contains all 14 chord types", () => {
-      expect(CHORD_QUIZ_TYPES_ALL).toHaveLength(14);
+    it("contains current chord quiz lineup", () => {
+      expect(CHORD_QUIZ_TYPES_ALL).toHaveLength(24);
       expect(CHORD_QUIZ_TYPES_ALL).toContain("Major");
       expect(CHORD_QUIZ_TYPES_ALL).toContain("Minor");
+      expect(CHORD_QUIZ_TYPES_ALL).toContain("#11");
+      expect(CHORD_QUIZ_TYPES_ALL).toContain("b13");
       expect(CHORD_QUIZ_TYPES_ALL).toContain("aug");
       expect(CHORD_QUIZ_TYPES_ALL).toContain("dim");
     });

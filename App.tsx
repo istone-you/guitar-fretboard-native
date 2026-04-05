@@ -47,6 +47,29 @@ import LayerList from "./src/components/LayerSystem/LayerList";
 const DEFAULT_CHORD_QUIZ_TYPES: ChordType[] = ["Major", "Minor", "7th", "maj7", "m7"];
 
 const DEGREE_BY_SEMITONE = ["P1", "m2", "M2", "m3", "M3", "P4", "b5", "P5", "m6", "M6", "m7", "M7"];
+const DEGREE_LABEL_ORDER = [
+  "P1",
+  "m2",
+  "M2",
+  "m3",
+  "M3",
+  "P4",
+  "b5",
+  "P5",
+  "m6",
+  "M6",
+  "m7",
+  "M7",
+  "b9",
+  "9",
+  "#9",
+  "11",
+  "#11",
+  "b13",
+  "13",
+] as const;
+
+const normalizeDegreeLabel = (label: string) => label.replace("♭", "b").replace("♯", "#");
 
 const STORAGE_KEYS = {
   theme: "guiter:theme",
@@ -389,12 +412,19 @@ function AppContent() {
         }
       }
       const sorted = semitones.sort((a, b) => a - b);
-      map.set(
-        l.id,
-        useDegree
-          ? sorted.map((s) => DEGREE_BY_SEMITONE[s])
-          : sorted.map((s) => notes[(rootIndex + s) % 12]),
-      );
+      if (useDegree && l.type === "custom" && l.customMode === "degree") {
+        const normalized = [...new Set([...l.selectedDegrees].map(normalizeDegreeLabel))];
+        const orderIndex = new Map<string, number>(DEGREE_LABEL_ORDER.map((d, i) => [d, i]));
+        normalized.sort((a, b) => (orderIndex.get(a) ?? 999) - (orderIndex.get(b) ?? 999));
+        map.set(l.id, normalized);
+      } else {
+        map.set(
+          l.id,
+          useDegree
+            ? sorted.map((s) => DEGREE_BY_SEMITONE[s])
+            : sorted.map((s) => notes[(rootIndex + s) % 12]),
+        );
+      }
     }
     return map;
   }, [effectiveLayers, accidental, rootNote, baseLabelMode]);

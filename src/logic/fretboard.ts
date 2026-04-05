@@ -243,6 +243,131 @@ export const CHORD_FORMS_6TH: Partial<Record<ChordType, FretPosition[]>> = {
     { string: 4, fretOffset: 1 },
     { string: 5, fretOffset: 0 },
   ],
+  // --- Tension chords ---
+  "9": [
+    { string: 0, fretOffset: 0 }, // R
+    { string: 2, fretOffset: 0 }, // m7
+    { string: 3, fretOffset: 1 }, // M3
+    { string: 4, fretOffset: 0 }, // P5
+    { string: 5, fretOffset: 2 }, // M9
+  ],
+  b9: [
+    { string: 0, fretOffset: 0 }, // R
+    { string: 2, fretOffset: 0 }, // m7
+    { string: 3, fretOffset: 1 }, // M3
+    { string: 5, fretOffset: 1 }, // b9
+  ],
+  "#9": [
+    { string: 0, fretOffset: 0 }, // R
+    { string: 2, fretOffset: 0 }, // m7
+    { string: 3, fretOffset: 1 }, // M3
+    { string: 5, fretOffset: 3 }, // #9
+  ],
+  maj9: [
+    { string: 0, fretOffset: 0 }, // R
+    { string: 2, fretOffset: 1 }, // M7
+    { string: 3, fretOffset: 1 }, // M3
+    { string: 4, fretOffset: 0 }, // P5
+    { string: 5, fretOffset: 2 }, // M9
+  ],
+  m9: [
+    { string: 0, fretOffset: 0 }, // R
+    { string: 2, fretOffset: 0 }, // m7
+    { string: 3, fretOffset: 0 }, // m3
+    { string: 4, fretOffset: 0 }, // P5
+    { string: 5, fretOffset: 2 }, // M9
+  ],
+  add9: [
+    { string: 0, fretOffset: 0 }, // R
+    { string: 1, fretOffset: 2 }, // P5
+    { string: 2, fretOffset: 2 }, // R (octave)
+    { string: 3, fretOffset: 1 }, // M3
+    { string: 5, fretOffset: 2 }, // M9
+  ],
+  "7(b9)": [
+    { string: 0, fretOffset: 0 }, // R
+    { string: 2, fretOffset: 0 }, // m7
+    { string: 3, fretOffset: 1 }, // M3
+    { string: 5, fretOffset: 1 }, // b9
+  ],
+  "7(#9)": [
+    { string: 0, fretOffset: 0 }, // R
+    { string: 2, fretOffset: 0 }, // m7
+    { string: 3, fretOffset: 1 }, // M3
+    { string: 5, fretOffset: 3 }, // #9
+  ],
+  "11": [
+    { string: 0, fretOffset: 0 }, // R
+    { string: 2, fretOffset: 0 }, // m7
+    { string: 3, fretOffset: -1 }, // M9
+    { string: 4, fretOffset: -2 }, // P11
+    { string: 5, fretOffset: 0 }, // R (octave)
+  ],
+  "#11": [
+    { string: 0, fretOffset: 0 }, // R
+    { string: 2, fretOffset: 0 }, // m7
+    { string: 3, fretOffset: -1 }, // M9
+    { string: 4, fretOffset: -1 }, // #11
+    { string: 5, fretOffset: 0 }, // R (octave)
+  ],
+  add11: [
+    { string: 0, fretOffset: 0 }, // R
+    { string: 1, fretOffset: 2 }, // P5
+    { string: 3, fretOffset: 1 }, // M3
+    { string: 4, fretOffset: -2 }, // P11
+  ],
+  "add#11": [
+    { string: 0, fretOffset: 0 }, // R
+    { string: 1, fretOffset: 2 }, // P5
+    { string: 3, fretOffset: 1 }, // M3
+    { string: 4, fretOffset: -1 }, // #11
+  ],
+  m11: [
+    { string: 0, fretOffset: 0 }, // R
+    { string: 2, fretOffset: 0 }, // m7
+    { string: 3, fretOffset: -1 }, // M9
+    { string: 4, fretOffset: -2 }, // P11
+    { string: 5, fretOffset: 0 }, // R (octave)
+  ],
+  "13": [
+    { string: 0, fretOffset: 0 }, // R
+    { string: 2, fretOffset: 0 }, // m7
+    { string: 3, fretOffset: 1 }, // M3
+    { string: 4, fretOffset: 2 }, // M13
+    { string: 5, fretOffset: 2 }, // M9
+  ],
+  b13: [
+    { string: 0, fretOffset: 0 }, // R
+    { string: 2, fretOffset: 0 }, // m7
+    { string: 3, fretOffset: 1 }, // M3
+    { string: 4, fretOffset: 1 }, // b13
+  ],
+  maj13: [
+    { string: 0, fretOffset: 0 }, // R
+    { string: 2, fretOffset: 1 }, // M7
+    { string: 3, fretOffset: 1 }, // M3
+    { string: 4, fretOffset: 2 }, // M13
+  ],
+  m13: [
+    { string: 0, fretOffset: 0 }, // R
+    { string: 2, fretOffset: 0 }, // m7
+    { string: 3, fretOffset: 0 }, // m3
+    { string: 4, fretOffset: 2 }, // M13
+  ],
+  "6/9": [
+    { string: 0, fretOffset: 0 }, // R
+    { string: 1, fretOffset: 2 }, // P5
+    { string: 3, fretOffset: 1 }, // M3
+    { string: 4, fretOffset: 2 }, // M6
+    { string: 5, fretOffset: 2 }, // M9
+  ],
+  "m6/9": [
+    { string: 0, fretOffset: 0 }, // R
+    { string: 1, fretOffset: 2 }, // P5
+    { string: 3, fretOffset: 0 }, // m3
+    { string: 4, fretOffset: 2 }, // M6
+    { string: 5, fretOffset: 2 }, // M9
+  ],
 };
 
 // 5弦ルートのバレーコードフォーム
@@ -342,6 +467,129 @@ export const CHORD_FORMS_5TH: Partial<Record<ChordType, FretPosition[]>> = {
     { string: 3, fretOffset: 2 },
     { string: 4, fretOffset: 2 },
     { string: 5, fretOffset: 1 },
+  ],
+  // --- Tension chords (5th string root, verified voicings) ---
+  "9": [
+    { string: 1, fretOffset: 0 }, // R
+    { string: 2, fretOffset: -1 }, // M3
+    { string: 3, fretOffset: 0 }, // m7
+    { string: 4, fretOffset: 0 }, // M9
+    { string: 5, fretOffset: -3 }, // M3 (octave)
+  ],
+  b9: [
+    { string: 1, fretOffset: 0 }, // R
+    { string: 2, fretOffset: -1 }, // M3
+    { string: 3, fretOffset: 0 }, // m7
+    { string: 4, fretOffset: -1 }, // b9
+    { string: 5, fretOffset: -3 }, // M3 (octave)
+  ],
+  "#9": [
+    { string: 1, fretOffset: 0 }, // R
+    { string: 2, fretOffset: -1 }, // M3
+    { string: 3, fretOffset: 0 }, // m7
+    { string: 4, fretOffset: 1 }, // #9
+    { string: 5, fretOffset: -3 }, // M3 (octave)
+  ],
+  maj9: [
+    { string: 1, fretOffset: 0 }, // R
+    { string: 2, fretOffset: -1 }, // M3
+    { string: 3, fretOffset: 1 }, // M7
+    { string: 4, fretOffset: 0 }, // M9
+  ],
+  m9: [
+    { string: 1, fretOffset: 0 }, // R
+    { string: 2, fretOffset: -2 }, // m3
+    { string: 3, fretOffset: 0 }, // m7
+    { string: 4, fretOffset: 0 }, // M9
+  ],
+  add9: [
+    { string: 1, fretOffset: 0 }, // R
+    { string: 2, fretOffset: -1 }, // M3
+    { string: 4, fretOffset: 0 }, // M9
+    { string: 5, fretOffset: 0 }, // P5
+  ],
+  "7(b9)": [
+    { string: 1, fretOffset: 0 }, // R
+    { string: 2, fretOffset: -1 }, // M3
+    { string: 3, fretOffset: 0 }, // m7
+    { string: 4, fretOffset: -1 }, // b9
+    { string: 5, fretOffset: -3 }, // M3 (octave)
+  ],
+  "7(#9)": [
+    { string: 1, fretOffset: 0 }, // R
+    { string: 2, fretOffset: -1 }, // M3
+    { string: 3, fretOffset: 0 }, // m7
+    { string: 4, fretOffset: 1 }, // #9
+    { string: 5, fretOffset: -3 }, // M3 (octave)
+  ],
+  "11": [
+    // user-provided: 53,33,24,11
+    { string: 1, fretOffset: 0 }, // R
+    { string: 3, fretOffset: 0 }, // m7
+    { string: 4, fretOffset: 1 }, // m3
+    { string: 5, fretOffset: -2 }, // P11
+  ],
+  "#11": [
+    { string: 1, fretOffset: 0 }, // R
+    { string: 3, fretOffset: 0 }, // m7
+    { string: 4, fretOffset: 2 }, // M3
+    { string: 5, fretOffset: -1 }, // #11
+  ],
+  add11: [
+    { string: 1, fretOffset: 0 }, // R
+    { string: 2, fretOffset: 2 }, // P5
+    { string: 4, fretOffset: 2 }, // M3
+    { string: 5, fretOffset: -2 }, // P11
+  ],
+  "add#11": [
+    { string: 1, fretOffset: 0 }, // R
+    { string: 2, fretOffset: 2 }, // P5
+    { string: 4, fretOffset: 2 }, // M3
+    { string: 5, fretOffset: -1 }, // #11
+  ],
+  m11: [
+    { string: 1, fretOffset: 0 }, // R
+    { string: 3, fretOffset: 0 }, // m7
+    { string: 4, fretOffset: 1 }, // m3
+    { string: 5, fretOffset: -2 }, // P11
+  ],
+  "13": [
+    { string: 1, fretOffset: 0 }, // R
+    { string: 3, fretOffset: 0 }, // m7
+    { string: 4, fretOffset: 2 }, // M3
+    { string: 5, fretOffset: 2 }, // M13
+  ],
+  b13: [
+    { string: 1, fretOffset: 0 }, // R
+    { string: 3, fretOffset: 0 }, // m7
+    { string: 4, fretOffset: 2 }, // M3
+    { string: 5, fretOffset: 1 }, // b13
+  ],
+  maj13: [
+    { string: 1, fretOffset: 0 }, // R
+    { string: 2, fretOffset: -1 }, // M3
+    { string: 3, fretOffset: 1 }, // M7
+    { string: 5, fretOffset: 2 }, // M13
+  ],
+  m13: [
+    { string: 1, fretOffset: 0 }, // R
+    { string: 2, fretOffset: -2 }, // m3
+    { string: 3, fretOffset: 0 }, // m7
+    { string: 5, fretOffset: 2 }, // M13
+  ],
+  "6/9": [
+    { string: 1, fretOffset: 0 }, // R
+    { string: 2, fretOffset: -1 }, // M3
+    { string: 3, fretOffset: -1 }, // M6
+    { string: 4, fretOffset: 0 }, // M9
+    { string: 5, fretOffset: 0 }, // P5
+  ],
+  "m6/9": [
+    { string: 1, fretOffset: 0 }, // R
+    { string: 2, fretOffset: -2 }, // m3
+    { string: 3, fretOffset: -1 }, // M6
+    { string: 4, fretOffset: 0 }, // M9
+    { string: 5, fretOffset: 0 }, // P5
   ],
 };
 
@@ -1290,6 +1538,26 @@ export const CHORD_SEMITONES: Record<string, Set<number>> = {
   dim: new Set([0, 3, 6]),
   aug: new Set([0, 4, 8]),
   power: new Set([0, 7]),
+  // --- Tension chords ---
+  "9": new Set([0, 4, 7, 10, 2]), // R, M3, P5, m7, M9
+  b9: new Set([0, 4, 7, 10, 1]), // R, M3, P5, m7, b9
+  "#9": new Set([0, 4, 7, 10, 3]), // R, M3, P5, m7, #9
+  maj9: new Set([0, 4, 7, 11, 2]), // R, M3, P5, M7, M9
+  m9: new Set([0, 3, 7, 10, 2]), // R, m3, P5, m7, M9
+  add9: new Set([0, 4, 7, 2]), // R, M3, P5, M9
+  "7(b9)": new Set([0, 4, 7, 10, 1]), // R, M3, P5, m7, m9
+  "7(#9)": new Set([0, 4, 7, 10, 3]), // R, M3, P5, m7, #9
+  "11": new Set([0, 4, 7, 10, 2, 5]), // R, M3, P5, m7, M9, P11
+  "#11": new Set([0, 4, 7, 10, 6]), // R, M3, P5, m7, #11
+  add11: new Set([0, 4, 7, 5]), // R, M3, P5, P11
+  "add#11": new Set([0, 4, 7, 6]), // R, M3, P5, #11
+  m11: new Set([0, 3, 7, 10, 2, 5]), // R, m3, P5, m7, M9, P11
+  "13": new Set([0, 4, 7, 10, 2, 9]), // R, M3, P5, m7, M9, M13
+  b13: new Set([0, 4, 7, 10, 8]), // R, M3, P5, m7, b13
+  maj13: new Set([0, 4, 7, 11, 2, 9]), // R, M3, P5, M7, M9, M13
+  m13: new Set([0, 3, 7, 10, 2, 9]), // R, m3, P5, m7, M9, M13
+  "6/9": new Set([0, 4, 7, 9, 2]), // R, M3, P5, M6, M9
+  "m6/9": new Set([0, 3, 7, 9, 2]), // R, m3, P5, M6, M9
 };
 
 interface ActiveOverlaySemitoneParams {

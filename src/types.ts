@@ -36,7 +36,26 @@ export type ChordType =
   | "6"
   | "m6"
   | "dim"
-  | "aug";
+  | "aug"
+  | "9"
+  | "b9"
+  | "#9"
+  | "maj9"
+  | "m9"
+  | "add9"
+  | "7(b9)"
+  | "7(#9)"
+  | "11"
+  | "#11"
+  | "add11"
+  | "add#11"
+  | "m11"
+  | "13"
+  | "b13"
+  | "maj13"
+  | "m13"
+  | "6/9"
+  | "m6/9";
 export type TriadChordType = "Major" | "Minor" | "Diminished" | "Augmented";
 export type DegreeName =
   | "P1"
