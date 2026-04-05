@@ -121,6 +121,37 @@ function PulseView({ children, style }: { children: React.ReactNode; style: any 
   return <Animated.View style={[style, { opacity }]}>{children}</Animated.View>;
 }
 
+function TriggerBounceView({
+  active,
+  tick,
+  children,
+  style,
+}: {
+  active: boolean;
+  tick: number;
+  children: React.ReactNode;
+  style?: any;
+}) {
+  const scale = useRef(new Animated.Value(1)).current;
+  const prevTick = useRef(tick);
+
+  if (active && tick !== prevTick.current) {
+    prevTick.current = tick;
+    scale.stopAnimation();
+    scale.setValue(0.82);
+    Animated.spring(scale, {
+      toValue: 1,
+      friction: 5,
+      tension: 190,
+      useNativeDriver: true,
+    }).start();
+  } else if (!active) {
+    prevTick.current = tick;
+  }
+
+  return <Animated.View style={[style, { transform: [{ scale }] }]}>{children}</Animated.View>;
+}
+
 function LayerOverlayDot({
   idx,
   overlay,
@@ -233,6 +264,8 @@ export interface FretboardProps {
   cellEditMode?: "hide" | "frame" | null;
   cellEditLayerId?: string | null;
   editingCells?: Set<string>;
+  cellEditBounceKey?: string | null;
+  cellEditBounceTick?: number;
   onCellToggle?: (cellKey: string) => void;
 }
 
@@ -260,6 +293,8 @@ export default function Fretboard({
   cellEditMode = null,
   cellEditLayerId = null,
   editingCells = new Set(),
+  cellEditBounceKey = null,
+  cellEditBounceTick = 0,
   onCellToggle,
 }: FretboardProps) {
   const [fretMin, fretMax] = fretRange;
@@ -735,6 +770,8 @@ export default function Fretboard({
               disableAnimation={disableAnimation}
               cellEditMode={cellEditMode}
               editingCells={editingCells}
+              cellEditBounceKey={cellEditBounceKey}
+              cellEditBounceTick={cellEditBounceTick}
               onCellToggle={onCellToggle}
             />
           ))}
@@ -772,6 +809,8 @@ interface StringRowProps {
   cellEditMode?: "hide" | "frame" | null;
   cellEditLayerId?: string | null;
   editingCells?: Set<string>;
+  cellEditBounceKey?: string | null;
+  cellEditBounceTick?: number;
   onCellToggle?: (cellKey: string) => void;
 }
 
@@ -802,6 +841,8 @@ function StringRow({
   disableAnimation = false,
   cellEditMode,
   editingCells,
+  cellEditBounceKey,
+  cellEditBounceTick = 0,
   onCellToggle,
 }: StringRowProps) {
   const isDark = theme === "dark";
@@ -843,8 +884,8 @@ function StringRow({
         }
 
         const handlePress = () => {
+          const cellKey = `${stringIdx}-${fret}`;
           if (cellEditMode && onCellToggle) {
-            const cellKey = `${stringIdx}-${fret}`;
             const hasOverlay = layerOverlays?.has(cellKey);
             const isEditing = editingCells?.has(cellKey);
             if (!hasOverlay && !isEditing) return;
@@ -864,6 +905,8 @@ function StringRow({
 
         const overlayInset = size.overlayInset;
         const overlaySize = size.rowHeight - overlayInset * 2;
+        const cellKey = `${stringIdx}-${fret}`;
+        const dotBounceActive = cellEditMode === "hide" && cellEditBounceKey === cellKey;
 
         return (
           <TouchableOpacity
@@ -926,52 +969,66 @@ function StringRow({
             )}
 
             {/* Layer system overlays */}
-            {Array.from({ length: MAX_LAYERS }, (_, idx) => {
-              const overlay = layerOverlays?.get(`${stringIdx}-${fret}`)?.[idx];
-              return (
-                <LayerOverlayDot
-                  key={`layer-slot-${idx}`}
-                  idx={idx}
-                  overlay={overlay}
-                  overlayInset={overlayInset}
-                  overlaySize={overlaySize}
-                  overlayFontSize={size.overlayFontSize}
-                  labelText={hideChordNoteLabels ? "?" : labelText}
-                  disableAnimation={disableAnimation}
-                />
-              );
-            })}
+            <TriggerBounceView
+              active={dotBounceActive}
+              tick={cellEditBounceTick}
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                pointerEvents: "none",
+                zIndex: 20,
+              }}
+            >
+              {Array.from({ length: MAX_LAYERS }, (_, idx) => {
+                const overlay = layerOverlays?.get(cellKey)?.[idx];
+                return (
+                  <LayerOverlayDot
+                    key={`layer-slot-${idx}`}
+                    idx={idx}
+                    overlay={overlay}
+                    overlayInset={overlayInset}
+                    overlaySize={overlaySize}
+                    overlayFontSize={size.overlayFontSize}
+                    labelText={hideChordNoteLabels ? "?" : labelText}
+                    disableAnimation={disableAnimation}
+                  />
+                );
+              })}
+            </TriggerBounceView>
 
             {/* Cell edit mode visual indicators */}
-            {cellEditMode === "hide" && editingCells?.has(`${stringIdx}-${fret}`) && (
-              <View
-                style={{
-                  position: "absolute",
-                  top: overlayInset - 1,
-                  left: overlayInset - 1,
-                  right: overlayInset - 1,
-                  bottom: overlayInset - 1,
-                  borderRadius: overlaySize / 2,
-                  backgroundColor: "rgba(0,0,0,0.6)",
-                  zIndex: 30,
-                }}
-              />
-            )}
-            {cellEditMode === "frame" && editingCells?.has(`${stringIdx}-${fret}`) && (
-              <View
-                style={{
-                  position: "absolute",
-                  top: overlayInset - 2,
-                  left: overlayInset - 2,
-                  right: overlayInset - 2,
-                  bottom: overlayInset - 2,
-                  borderRadius: (overlaySize + 4) / 2,
-                  borderWidth: 2.5,
-                  borderColor: "#fbbf24",
-                  zIndex: 30,
-                }}
-              />
-            )}
+            <ScaleAnimView
+              visible={cellEditMode === "hide" && !!editingCells?.has(cellKey)}
+              skipAnimation={false}
+              style={{
+                position: "absolute",
+                top: overlayInset - 1,
+                left: overlayInset - 1,
+                right: overlayInset - 1,
+                bottom: overlayInset - 1,
+                borderRadius: overlaySize / 2,
+                backgroundColor: "rgba(0,0,0,0.6)",
+                zIndex: 30,
+              }}
+            />
+            <ScaleAnimView
+              visible={cellEditMode === "frame" && !!editingCells?.has(cellKey)}
+              skipAnimation={false}
+              style={{
+                position: "absolute",
+                top: overlayInset - 2,
+                left: overlayInset - 2,
+                right: overlayInset - 2,
+                bottom: overlayInset - 2,
+                borderRadius: (overlaySize + 4) / 2,
+                borderWidth: 2.5,
+                borderColor: "#fbbf24",
+                zIndex: 30,
+              }}
+            />
 
             {/* Quiz target (pulsing) */}
             {fret === quizTargetFret && !quizAnswerMode && (

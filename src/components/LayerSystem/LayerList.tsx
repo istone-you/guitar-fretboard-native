@@ -57,10 +57,11 @@ interface LayerListProps {
   onToggleLayer: (id: string) => void;
   onReorderLayers: (layers: LayerConfig[]) => void;
   onPreviewLayer: (layer: LayerConfig | null) => void;
+  previewLayer?: LayerConfig | null;
   overlayNotes: string[];
   overlaySemitones: Set<number>;
   layerNoteLabels: Map<string, string[]>;
-  onStartCellEdit?: (mode: "hide" | "frame", layerId: string) => void;
+  onStartCellEdit?: (mode: "hide" | "frame", layerId: string, draftLayer?: LayerConfig) => void;
   reopenLayerId?: string | null;
   onClearReopenLayerId?: () => void;
 }
@@ -76,6 +77,7 @@ export default function LayerList({
   onToggleLayer,
   onReorderLayers,
   onPreviewLayer,
+  previewLayer,
   overlayNotes,
   overlaySemitones,
   layerNoteLabels,
@@ -221,14 +223,16 @@ export default function LayerList({
   // Reopen modal for a specific layer (e.g. after cell edit cancel)
   useEffect(() => {
     if (reopenLayerId) {
-      const target = layers.find((l) => l.id === reopenLayerId);
+      const target =
+        (previewLayer && previewLayer.id === reopenLayerId ? previewLayer : null) ??
+        layers.find((l) => l.id === reopenLayerId);
       if (target) {
         setEditingLayer(target);
         setEditModalVisible(true);
       }
       onClearReopenLayerId?.();
     }
-  }, [reopenLayerId]);
+  }, [reopenLayerId, previewLayer, layers, onClearReopenLayerId]);
 
   const handleAdd = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -243,14 +247,21 @@ export default function LayerList({
   };
 
   const handleSave = (layer: LayerConfig) => {
-    if (editingLayer) {
-      onUpdateLayer(editingLayer.id, layer);
-    } else {
-      onAddLayer(layer);
-    }
+    const saveId = editingLayer?.id ?? layer.id;
+    const exists = layers.some((l) => l.id === saveId);
+    if (exists) onUpdateLayer(saveId, layer);
+    else onAddLayer(layer);
   };
 
-  const nextColor = DEFAULT_LAYER_COLORS[layers.length % DEFAULT_LAYER_COLORS.length];
+  const pickNextLayerColor = (currentLayers: LayerConfig[]) => {
+    const usedColors = new Set(currentLayers.map((l) => l.color));
+    return (
+      DEFAULT_LAYER_COLORS.find((c) => !usedColors.has(c)) ??
+      DEFAULT_LAYER_COLORS[currentLayers.length % DEFAULT_LAYER_COLORS.length]
+    );
+  };
+
+  const nextColor = pickNextLayerColor(layers);
 
   const getSummary = (layer: LayerConfig): string => {
     if (layer.type === "custom") {
@@ -441,10 +452,7 @@ export default function LayerList({
             <TouchableOpacity
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                const usedColors = new Set(layers.map((l) => l.color));
-                const dupeColor =
-                  DEFAULT_LAYER_COLORS.find((c) => !usedColors.has(c)) ??
-                  DEFAULT_LAYER_COLORS[layers.length % DEFAULT_LAYER_COLORS.length];
+                const dupeColor = pickNextLayerColor(layers);
                 const clone: LayerConfig = {
                   ...layer,
                   id: `layer-${Date.now()}`,
@@ -577,10 +585,9 @@ export default function LayerList({
         onPreview={onPreviewLayer}
         overlayNotes={overlayNotes}
         overlaySemitones={overlaySemitones}
-        onStartCellEdit={(mode, layerId) => {
+        onStartCellEdit={(mode, layerId, draftLayer) => {
           setEditModalVisible(false);
-          onPreviewLayer(null);
-          onStartCellEdit?.(mode, layerId);
+          onStartCellEdit?.(mode, layerId, draftLayer);
         }}
       />
     </View>

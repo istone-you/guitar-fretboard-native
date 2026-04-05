@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,8 @@ import {
   StyleSheet,
   Animated,
   Easing,
+  PanResponder,
+  useWindowDimensions,
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
@@ -191,7 +193,7 @@ interface LayerEditModalProps {
   onClose: () => void;
   onSave: (layer: LayerConfig) => void;
   onPreview?: (layer: LayerConfig) => void;
-  onStartCellEdit?: (mode: "hide" | "frame", layerId: string) => void;
+  onStartCellEdit?: (mode: "hide" | "frame", layerId: string, draftLayer?: LayerConfig) => void;
 }
 
 export default function LayerEditModal({
@@ -210,6 +212,9 @@ export default function LayerEditModal({
 }: LayerEditModalProps) {
   const { t } = useTranslation();
   const isDark = theme === "dark";
+  const [dockBottom, setDockBottom] = useState(false);
+  const [modalHeight, setModalHeight] = useState(0);
+  const { height: winHeight } = useWindowDimensions();
 
   const [step, setStep] = useState<"type" | "settings" | "color" | "chips">(
     initialLayer ? "settings" : "type",
@@ -221,6 +226,25 @@ export default function LayerEditModal({
   // Animation
   const modalScale = useRef(new Animated.Value(0.5)).current;
   const modalOpacity = useRef(new Animated.Value(1)).current;
+  const modalDockY = useRef(new Animated.Value(0)).current;
+  const modalPanResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 12 && Math.abs(g.dy) > Math.abs(g.dx),
+      onMoveShouldSetPanResponderCapture: (_, g) =>
+        Math.abs(g.dy) > 12 && Math.abs(g.dy) > Math.abs(g.dx),
+      onPanResponderTerminationRequest: () => false,
+      onPanResponderRelease: (_, g) => {
+        if (g.dy > 28 || g.vy > 0.45) {
+          setDockBottom(true);
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        } else if (g.dy < -28 || g.vy < -0.45) {
+          setDockBottom(false);
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
+      },
+    }),
+  ).current;
 
   // Reset state when modal opens with different layer
   const prevVisible = useRef(visible);
@@ -246,7 +270,21 @@ export default function LayerEditModal({
   }
   if (!visible && prevVisible.current) {
     prevVisible.current = false;
+    setDockBottom(false);
+    modalDockY.setValue(0);
   }
+
+  useEffect(() => {
+    const centerTop = (winHeight - modalHeight) / 2;
+    const bottomTop = winHeight - modalHeight - 20;
+    const dockOffset = modalHeight > 0 ? Math.max(0, bottomTop - centerTop) : 0;
+    Animated.spring(modalDockY, {
+      toValue: dockBottom ? dockOffset : 0,
+      friction: 8,
+      tension: 120,
+      useNativeDriver: true,
+    }).start();
+  }, [dockBottom, winHeight, modalHeight, modalDockY]);
 
   const update = (partial: Partial<LayerConfig>) => {
     setLayer((prev) => {
@@ -361,15 +399,20 @@ export default function LayerEditModal({
 
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={handleClose}>
-      <View style={styles.overlay}>
+      <View style={[styles.overlay, { justifyContent: "center" }]}>
         <Pressable style={styles.backdrop} onPress={handleClose} />
         <Animated.View
+          {...modalPanResponder.panHandlers}
+          onLayout={(e) => {
+            const h = Math.round(e.nativeEvent.layout.height);
+            if (h > 0 && h !== modalHeight) setModalHeight(h);
+          }}
           style={[
             styles.modal,
             {
               backgroundColor: isDark ? "rgba(17,24,39,0.97)" : "rgba(250,250,249,0.97)",
               borderColor: isDark ? "rgba(255,255,255,0.08)" : "#e7e5e4",
-              transform: [{ scale: modalScale }],
+              transform: [{ translateY: modalDockY }, { scale: modalScale }],
               opacity: modalOpacity,
             },
           ]}
@@ -657,7 +700,12 @@ export default function LayerEditModal({
               )}
 
               {layer.type === "chord" && (
-                <View style={[styles.settingRow, { flexDirection: "row", alignItems: "center" }]}>
+                <View
+                  style={[
+                    styles.settingRow,
+                    { flexDirection: "row", alignItems: "center", minHeight: 38 },
+                  ]}
+                >
                   <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c", flex: 1 }]}>
                     {t("layers.chordFrame")}
                   </Text>
@@ -724,8 +772,8 @@ export default function LayerEditModal({
                   </Text>
                   <TouchableOpacity
                     onPress={() => {
-                      onSave(layer);
-                      onStartCellEdit?.("hide", layer.id);
+                      onPreview?.(layer);
+                      onStartCellEdit?.("hide", layer.id, layer);
                     }}
                     style={[
                       styles.navTrigger,
@@ -762,8 +810,8 @@ export default function LayerEditModal({
                   </Text>
                   <TouchableOpacity
                     onPress={() => {
-                      onSave(layer);
-                      onStartCellEdit?.("frame", layer.id);
+                      onPreview?.(layer);
+                      onStartCellEdit?.("frame", layer.id, layer);
                     }}
                     style={[
                       styles.navTrigger,
@@ -793,7 +841,12 @@ export default function LayerEditModal({
               )}
 
               {/* Navigate to color page */}
-              <View style={[styles.settingRow, { flexDirection: "row", alignItems: "center" }]}>
+              <View
+                style={[
+                  styles.settingRow,
+                  { flexDirection: "row", alignItems: "center", minHeight: 38 },
+                ]}
+              >
                 <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c", flex: 1 }]}>
                   {t("layerColors")}
                 </Text>
