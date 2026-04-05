@@ -30,6 +30,7 @@ import {
   NOTES_FLAT,
   NOTES_SHARP,
   TRIAD_INVERSION_OPTIONS,
+  getOnChordListForRoot,
   getDiatonicChord,
   getRootIndex,
 } from "../../logic/fretboard";
@@ -320,8 +321,10 @@ export default function LayerEditModal({
     { value: "power", label: t("options.chordDisplayMode.power") },
     { value: "triad", label: t("options.chordDisplayMode.triad") },
     { value: "diatonic", label: t("options.chordDisplayMode.diatonic") },
+    { value: "on-chord", label: t("options.chordDisplayMode.on-chord") },
     { value: "caged", label: t("options.chordDisplayMode.caged") },
   ];
+  const onChordOptions = getOnChordListForRoot(rootNote).map((v) => ({ value: v, label: v }));
   const triadInversionOptions = TRIAD_INVERSION_OPTIONS.map(({ value }) => ({
     value,
     label: t(`options.triadInversions.${value}`),
@@ -490,35 +493,51 @@ export default function LayerEditModal({
                       fullWidth
                     />
                   </View>
-                  {layer.chordDisplayMode !== "power" && layer.chordDisplayMode !== "caged" && (
+                  {layer.chordDisplayMode !== "power" &&
+                    layer.chordDisplayMode !== "caged" &&
+                    layer.chordDisplayMode !== "on-chord" && (
+                      <View style={styles.settingRow}>
+                        <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c" }]}>
+                          {layer.chordDisplayMode === "diatonic"
+                            ? t("controls.degree")
+                            : t("controls.chord")}
+                        </Text>
+                        <DropdownSelect
+                          theme={theme}
+                          value={
+                            layer.chordDisplayMode === "diatonic"
+                              ? layer.diatonicDegree
+                              : layer.chordType
+                          }
+                          onChange={(v) =>
+                            layer.chordDisplayMode === "diatonic"
+                              ? update({ diatonicDegree: v })
+                              : update({ chordType: v as ChordType })
+                          }
+                          options={
+                            layer.chordDisplayMode === "form"
+                              ? CHORD_TYPES.map((v) => ({ value: v, label: v }))
+                              : layer.chordDisplayMode === "triad"
+                                ? ["Major", "Minor", "Diminished", "Augmented"].map((v) => ({
+                                    value: v,
+                                    label: v,
+                                  }))
+                                : diatonicCodeOptions
+                          }
+                          fullWidth
+                        />
+                      </View>
+                    )}
+                  {layer.chordDisplayMode === "on-chord" && (
                     <View style={styles.settingRow}>
                       <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-                        {layer.chordDisplayMode === "diatonic"
-                          ? t("controls.degree")
-                          : t("controls.chord")}
+                        {t("controls.chord")}
                       </Text>
                       <DropdownSelect
                         theme={theme}
-                        value={
-                          layer.chordDisplayMode === "diatonic"
-                            ? layer.diatonicDegree
-                            : layer.chordType
-                        }
-                        onChange={(v) =>
-                          layer.chordDisplayMode === "diatonic"
-                            ? update({ diatonicDegree: v })
-                            : update({ chordType: v as ChordType })
-                        }
-                        options={
-                          layer.chordDisplayMode === "form"
-                            ? CHORD_TYPES.map((v) => ({ value: v, label: v }))
-                            : layer.chordDisplayMode === "triad"
-                              ? ["Major", "Minor", "Diminished", "Augmented"].map((v) => ({
-                                  value: v,
-                                  label: v,
-                                }))
-                              : diatonicCodeOptions
-                        }
+                        value={layer.onChordName}
+                        onChange={(v) => update({ onChordName: v })}
+                        options={onChordOptions}
                         fullWidth
                       />
                     </View>

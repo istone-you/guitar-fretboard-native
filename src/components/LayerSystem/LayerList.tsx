@@ -279,6 +279,9 @@ export default function LayerList({
       const inv = t(`options.triadInversions.${layer.triadInversion}`);
       return `${mode}: ${layer.chordType} ${inv}`;
     }
+    if (layer.chordDisplayMode === "on-chord") {
+      return `${mode}: ${layer.onChordName}`;
+    }
     return `${mode}: ${layer.chordType}`;
   };
 

@@ -1143,3 +1143,58 @@ describe("calcCagedPositions", () => {
     }
   });
 });
+
+import { getOnChordVoicings } from "../fretboard";
+
+describe("On-chord voicings - C/B", () => {
+  it("should generate correct voicings for C/B", () => {
+    const voicings = getOnChordVoicings("C/B");
+
+    // Log what we actually get
+    console.log("C/B voicings count:", voicings.length);
+    for (const [i, v] of voicings.entries()) {
+      const desc = v.map((c) => `${c.string + 1}gen${c.fret}`).join(", ");
+      console.log(`  voicing ${i}: ${desc}`);
+    }
+
+    // Single voicing: C open chord with B bass on 5th string
+    // 5弦2(B), 4弦2(E), 3弦0(G), 2弦1(C), 1弦0(E)
+    expect(voicings.length).toBe(1);
+    const v = voicings[0];
+    expect(v).toContainEqual({ string: 1, fret: 2 }); // B bass
+    expect(v).toContainEqual({ string: 2, fret: 2 }); // E
+    expect(v).toContainEqual({ string: 3, fret: 0 }); // G
+    expect(v).toContainEqual({ string: 4, fret: 1 }); // C
+    expect(v).toContainEqual({ string: 5, fret: 0 }); // E
+  });
+});
+
+describe("On-chord voicings", () => {
+  it("C/E uses open E bass + C open chord", () => {
+    const v = getOnChordVoicings("C/E");
+    expect(v.length).toBe(1);
+    expect(v[0]).toContainEqual({ string: 0, fret: 0 }); // E open bass
+    expect(v[0]).toContainEqual({ string: 4, fret: 1 }); // C
+  });
+
+  it("C/G uses 6th string 3rd fret G bass", () => {
+    const v = getOnChordVoicings("C/G");
+    expect(v.length).toBe(1);
+    expect(v[0]).toContainEqual({ string: 0, fret: 3 }); // G bass
+  });
+
+  it("C/D uses open D on 4th string", () => {
+    const v = getOnChordVoicings("C/D");
+    expect(v.length).toBe(1);
+    expect(v[0]).toContainEqual({ string: 2, fret: 0 }); // D open
+  });
+
+  it("Cm/Eb uses low position voicing", () => {
+    const v = getOnChordVoicings("Cm/E♭");
+    expect(v.length).toBe(1);
+    const frets = v[0].map((c) => c.fret).filter((f) => f > 0);
+    const span = Math.max(...frets) - Math.min(...frets);
+    expect(span).toBeLessThanOrEqual(4);
+    expect(Math.max(...frets)).toBeLessThanOrEqual(7); // low position
+  });
+});

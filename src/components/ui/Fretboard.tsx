@@ -19,6 +19,8 @@ import {
   isInScale,
   getCagedFormCells,
   getChordLayerCells,
+  getOnChordCells,
+  getOnChordVoicings,
   CHORD_CAGED_ORDER,
   getRootIndex,
   type FretCell,
@@ -315,6 +317,7 @@ export default function Fretboard({
             diatonicScale,
             layer.diatonicDegree,
             layer.cagedForms,
+            layer.onChordName,
           ),
         );
       } else if (layer.type === "custom") {
@@ -437,6 +440,29 @@ export default function Fretboard({
               id: `layer-caged-${layer.id}-${key}`,
               kind: "caged",
               cells,
+              minFret: Math.min(...frets),
+              maxFret: Math.max(...frets),
+              minString: Math.min(...strings),
+              maxString: Math.max(...strings),
+            },
+            color,
+            visible: frameVisible,
+          });
+        }
+        continue;
+      }
+
+      if (layer.chordDisplayMode === "on-chord") {
+        const voicings = getOnChordVoicings(layer.onChordName);
+        for (const [vi, voicing] of voicings.entries()) {
+          if (voicing.length === 0) continue;
+          const frets = voicing.map((c) => c.fret);
+          const strings = voicing.map((c) => c.string);
+          groups.push({
+            group: {
+              id: `layer-onchord-${layer.id}-${vi}`,
+              kind: "on-chord",
+              cells: voicing,
               minFret: Math.min(...frets),
               maxFret: Math.max(...frets),
               minString: Math.min(...strings),

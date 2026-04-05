@@ -81,7 +81,8 @@
       "power": "Power Chords",
       "triad": "Triads",
       "diatonic": "Diatonic",
-      "caged": "CAGED"
+      "caged": "CAGED",
+      "on-chord": "On-Chord"
     },
     "diatonicKey": {
       "major": "Major",

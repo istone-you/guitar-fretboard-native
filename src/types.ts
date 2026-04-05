@@ -1,7 +1,7 @@
 export type Theme = "dark" | "light";
 export type Accidental = "sharp" | "flat";
 export type BaseLabelMode = "note" | "degree";
-export type ChordDisplayMode = "form" | "power" | "triad" | "diatonic" | "caged";
+export type ChordDisplayMode = "form" | "power" | "triad" | "diatonic" | "caged" | "on-chord";
 export type ScaleType =
   | "major"
   | "natural-minor"
@@ -67,6 +67,7 @@ export interface LayerConfig {
   // Chord settings
   chordDisplayMode: ChordDisplayMode;
   chordType: ChordType;
+  onChordName: string;
   triadInversion: string;
   diatonicKeyType: string;
   diatonicChordSize: string;
@@ -90,6 +91,7 @@ export function createDefaultLayer(type: LayerType, id: string, color: string): 
     scaleType: "major",
     chordDisplayMode: "form",
     chordType: "Major",
+    onChordName: "C/E",
     triadInversion: "root",
     diatonicKeyType: "major",
     diatonicChordSize: "triad",

@@ -28,6 +28,7 @@ import {
   CHORD_SEMITONES,
   SCALE_DEGREES,
   getDiatonicChordSemitones,
+  parseOnChord,
   getRootIndex,
 } from "./src/logic/fretboard";
 import type {
@@ -299,6 +300,9 @@ function AppContent() {
         );
       } else if (layer.chordDisplayMode === "caged") {
         semitones = CHORD_SEMITONES.Major;
+      } else if (layer.chordDisplayMode === "on-chord") {
+        const parsed = parseOnChord(layer.onChordName);
+        semitones = parsed ? CHORD_SEMITONES[parsed.chordType] : undefined;
       } else {
         semitones = CHORD_SEMITONES[layer.chordType];
       }
@@ -339,6 +343,9 @@ function AppContent() {
           );
         } else if (l.chordDisplayMode === "caged") {
           s = CHORD_SEMITONES.Major;
+        } else if (l.chordDisplayMode === "on-chord") {
+          const parsed = parseOnChord(l.onChordName);
+          s = parsed ? CHORD_SEMITONES[parsed.chordType] : undefined;
         } else {
           s = CHORD_SEMITONES[l.chordType];
         }
@@ -705,6 +712,8 @@ function AppContent() {
                       label = `${mode}(${l.diatonicDegree} ${t(`options.diatonicKey.${l.diatonicKeyType === "natural-minor" ? "naturalMinor" : "major"}`)} ${t(`options.diatonicChordSize.${l.diatonicChordSize}`)})`;
                     } else if (l.chordDisplayMode === "triad") {
                       label = `${mode}(${l.chordType} ${t(`options.triadInversions.${l.triadInversion}`)})`;
+                    } else if (l.chordDisplayMode === "on-chord") {
+                      label = `${mode}: ${l.onChordName}`;
                     } else {
                       label = `${mode}: ${l.chordType}`;
                     }

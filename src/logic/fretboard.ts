@@ -1520,6 +1520,368 @@ export function getCagedFormCells(formKey: string, rootIndex: number): FretCell[
     .filter(({ fret }) => fret >= 0 && fret < FRET_COUNT);
 }
 
+// ===== オンコード (slash chord) =====
+
+export const ON_CHORD_LIST: string[] = [
+  // C-based
+  "C/D",
+  "C/B♭",
+  "C/B",
+  "C/E",
+  "C/G",
+  "C/F",
+  "C7/B♭",
+  "Cm/E♭",
+  "Cm6/D",
+  "CM7/D",
+  "C7/E",
+  "Cm7/B♭",
+  "CM7/B",
+  // C#-based
+  "C#m7/B",
+  "C#m7/E",
+  "C#m/A#",
+  "C#mM7/C",
+  "C#mM7/B#",
+  "C#m7/B",
+  "C#/F",
+  // D-based
+  "D/C",
+  "D/A",
+  "D/E",
+  "D/G",
+  "D/F#",
+  "Dadd9/A",
+  "Dadd9/B",
+  "Dadd9/C",
+  "Dadd9/F#",
+  "Dsus4/C",
+  "D7/F#",
+  "Dm7/C",
+  "Dm7/G",
+  "Dm/C",
+  "Dm/B",
+  "DM7/A",
+  "Dm7/F#",
+  "Dm7/F",
+  "D♭/E♭",
+  "Dm/F",
+  "D7/C",
+  "Dm6/B",
+  "DmM7/C#",
+  // D#-based
+  "D#/D",
+  "D#M7/D",
+  "D#m7/B♭",
+  // E-based
+  "E/B",
+  "E/F#",
+  "E/G#",
+  "E7sus4/B",
+  "Em7/A",
+  "Em7/B",
+  "Em7/D",
+  "EM7/D#",
+  "Em/B",
+  "E7/G#",
+  "EmM7/D#",
+  "Edim7/A#",
+  "E/D",
+  "E♭m7/A♭",
+  "E7/B",
+  "E♭/B♭",
+  "Em/G",
+  "EmM7/E♭",
+  "Em6/C#",
+  "Em6/D♭",
+  // F-based
+  "F/A",
+  "F/E♭",
+  "F/G",
+  "F/C",
+  "F/E",
+  "Fm7/A♭",
+  "Fm7/D",
+  "FM7/G",
+  "Fm/C",
+  "Fdim7/C",
+  // F#-based
+  "F#7/A#",
+  "F#7/E",
+  "F#m7/B",
+  "F#m7/E",
+  "F#m/C#",
+  "F#m/D#",
+  "F#m7/C#",
+  "F#m7/A",
+  "F#/C#",
+  "F#7/B♭",
+  // G-based
+  "G/A",
+  "G/B",
+  "G/D",
+  "G/F",
+  "G/E",
+  "G/F#",
+  "G6/F",
+  "G6/F#",
+  "Gm/B♭",
+  "Gadd9/F#",
+  "GM7/F#",
+  "G/C",
+  "Gm/A",
+  "Gm6/A",
+  "Gm7/C",
+  "G7/F",
+  "Gsus4/C",
+  "GM7/E",
+  // G♭-based
+  "G♭M7/A♭",
+  "G♭/A♭",
+  // G#-based
+  "G#/B♭",
+  "G#m7/F#",
+  "G#m7/G",
+  "G#m7/B",
+  "G#m7/D#",
+  "G#7/D#",
+  // A♭-based
+  "A♭/C",
+  // A-based
+  "A/B",
+  "A/F#",
+  "A/E",
+  "A/C#",
+  "A/G",
+  "A/G#",
+  "A7/G",
+  "A7/C#",
+  "AM7/E",
+  "Am/C",
+  "Am7/D",
+  "Am7/G",
+  "Am/G",
+  "Am/F#",
+  "Am/B",
+  "A7sus4/E",
+  "A7/E",
+  "Am/D",
+  "Am/E",
+  "Am7♭5/E♭",
+  "A7/D♭",
+  // B♭-based
+  "B♭/C",
+  "B♭/D",
+  "B♭m/D♭",
+  "B♭/A",
+  // B-based
+  "B/A",
+  "B/D#",
+  "B/E",
+  "Bm/A",
+  "Bm/D",
+  "Bm7/E",
+  "Bm7/A",
+  "Bm7♭5/F",
+  "B7/A",
+  "B7/F#",
+  "B7/E♭",
+  "B7/D#",
+  "B/C#",
+];
+
+function getNoteIndexByName(name: string): number {
+  // Normalize: replace unicode sharp/flat with ASCII for matching
+  const normalized = name.replace("♯", "#").replace("♭", "b");
+  // Try direct match with sharp array
+  const sharpIdx = NOTES_SHARP.indexOf(name as (typeof NOTES_SHARP)[number]);
+  if (sharpIdx >= 0) return sharpIdx;
+  // Try direct match with flat array
+  const flatIdx = NOTES_FLAT.indexOf(name as (typeof NOTES_FLAT)[number]);
+  if (flatIdx >= 0) return flatIdx;
+  // Try converting ASCII sharp to unicode
+  if (normalized.includes("#")) {
+    const withSharp = normalized.replace("#", "♯");
+    const idx = NOTES_SHARP.indexOf(withSharp as (typeof NOTES_SHARP)[number]);
+    if (idx >= 0) return idx;
+  }
+  // Try converting ASCII flat to unicode
+  if (normalized.length > 1 && normalized.includes("b")) {
+    const withFlat = normalized.replace("b", "♭");
+    const idx = NOTES_FLAT.indexOf(withFlat as (typeof NOTES_FLAT)[number]);
+    if (idx >= 0) return idx;
+  }
+  return -1;
+}
+
+export function getOnChordListForRoot(rootNote: string): string[] {
+  const rootIdx = getNoteIndexByName(rootNote);
+  if (rootIdx === -1) return [];
+  return ON_CHORD_LIST.filter((name) => {
+    const parsed = parseOnChord(name);
+    if (!parsed) return false;
+    const chordRootIdx = getNoteIndexByName(parsed.chordRoot);
+    return chordRootIdx === rootIdx;
+  });
+}
+
+export function parseOnChord(
+  name: string,
+): { chordRoot: string; chordType: string; bassNote: string } | null {
+  const slashIdx = name.indexOf("/");
+  if (slashIdx === -1) return null;
+  const upper = name.substring(0, slashIdx);
+  const bassNote = name.substring(slashIdx + 1);
+
+  // Extract root note (1 or 2 chars: C, C#, D♭, E♭, etc.)
+  let rootEnd = 1;
+  if (
+    upper.length > 1 &&
+    (upper[1] === "#" || upper[1] === "♯" || upper[1] === "b" || upper[1] === "♭")
+  ) {
+    rootEnd = 2;
+  }
+  const chordRoot = upper.substring(0, rootEnd);
+  const chordSuffix = upper.substring(rootEnd);
+
+  // Map suffix to ChordType
+  let chordType = "Major";
+  if (chordSuffix === "m") chordType = "Minor";
+  else if (chordSuffix === "7") chordType = "7th";
+  else if (chordSuffix === "M7") chordType = "maj7";
+  else if (chordSuffix === "m7") chordType = "m7";
+  else if (chordSuffix === "m7♭5" || chordSuffix === "m7b5") chordType = "m7(b5)";
+  else if (chordSuffix === "dim7") chordType = "dim7";
+  else if (chordSuffix === "mM7") chordType = "m(maj7)";
+  else if (chordSuffix === "sus2") chordType = "sus2";
+  else if (chordSuffix === "sus4") chordType = "sus4";
+  else if (chordSuffix === "6") chordType = "6";
+  else if (chordSuffix === "m6") chordType = "m6";
+  else if (chordSuffix === "dim") chordType = "dim";
+  else if (chordSuffix === "aug") chordType = "aug";
+  else if (chordSuffix === "add9") chordType = "Major";
+  else if (chordSuffix === "7sus4") chordType = "7th";
+  else if (chordSuffix === "" || chordSuffix === "maj") chordType = "Major";
+
+  return { chordRoot, chordType, bassNote };
+}
+
+function deduplicateCells(cells: FretCell[]): FretCell[] {
+  const uniq = new Map<string, FretCell>();
+  for (const c of cells) {
+    const key = `${c.string}-${c.fret}`;
+    if (!uniq.has(key)) uniq.set(key, c);
+  }
+  return [...uniq.values()];
+}
+
+// Returns a single voicing: open chord (or lowest barre) + bass note
+export function getOnChordVoicings(onChordName: string): FretCell[][] {
+  const parsed = parseOnChord(onChordName);
+  if (!parsed) return [];
+
+  const chordRootIdx = getNoteIndexByName(parsed.chordRoot);
+  if (chordRootIdx === -1) return [];
+
+  const bassIdx = getNoteIndexByName(parsed.bassNote);
+  if (bassIdx === -1) return [];
+
+  // 1. Try open chord form first
+  let baseForm: FretCell[] | null = null;
+  const openForm = getOpenChordForm(chordRootIdx, parsed.chordType as ChordType);
+  if (openForm && openForm.length >= 2) {
+    baseForm = openForm;
+  }
+
+  // 2. If no open form, use lowest-fret barre chord (across both root strings)
+  if (!baseForm) {
+    let bestFret = FRET_COUNT;
+    for (const rootStringIdx of [0, 1]) {
+      const fullForm = (rootStringIdx === 0 ? CHORD_FORMS_6TH : CHORD_FORMS_5TH)[
+        parsed.chordType as ChordType
+      ];
+      if (!fullForm) continue;
+      for (let f = 0; f < FRET_COUNT; f++) {
+        if (getNoteIndex(rootStringIdx, f) !== chordRootIdx) continue;
+        if (f >= bestFret) continue; // already have a lower one
+        const cells: FretCell[] = [];
+        for (const { string, fretOffset } of fullForm) {
+          const fret = f + fretOffset;
+          if (fret >= 0 && fret < FRET_COUNT) cells.push({ string, fret });
+        }
+        if (cells.length >= 2) {
+          baseForm = cells;
+          bestFret = f;
+        }
+      }
+    }
+  }
+
+  if (!baseForm) return [];
+
+  // Find best bass note across all strings at or below the chord form
+  const frettedInForm = baseForm.map((c) => c.fret).filter((f) => f > 0);
+  const formCenter =
+    frettedInForm.length > 0 ? frettedInForm.reduce((a, b) => a + b, 0) / frettedInForm.length : 0;
+  const highestFormString = Math.max(...baseForm.map((c) => c.string));
+
+  // Collect all valid bass candidates across all strings
+  const allBassCandidates: { string: number; fret: number; score: number }[] = [];
+  for (let stringIdx = 0; stringIdx < 6; stringIdx++) {
+    // Bass must be on a string lower than (or equal to) the highest chord string
+    // and there must be at least 2 chord cells above it
+    const upperCount = baseForm.filter((c) => c.string > stringIdx).length;
+    if (upperCount < 2) continue;
+
+    for (let f = 0; f < FRET_COUNT; f++) {
+      if (getNoteIndex(stringIdx, f) !== bassIdx) continue;
+
+      // Playability: fretted notes must be within 4 frets of each other
+      const upperFretted = baseForm
+        .filter((c) => c.string > stringIdx)
+        .map((c) => c.fret)
+        .filter((fr) => fr > 0);
+      if (f > 0 && upperFretted.length > 0) {
+        const allFretted = [...upperFretted, f];
+        const span = Math.max(...allFretted) - Math.min(...allFretted);
+        if (span > 4) continue;
+      }
+
+      // Score: prefer lower strings (bass should be low), then close to form, open bonus
+      const distToForm = Math.abs(f - formCenter);
+      const lowerStringBonus = (5 - stringIdx) * -3; // lower string = more negative = better
+      const openBonus = f === 0 ? -5 : 0;
+      const score = distToForm + lowerStringBonus + openBonus;
+      allBassCandidates.push({ string: stringIdx, fret: f, score });
+    }
+  }
+
+  if (allBassCandidates.length === 0) return [];
+
+  // Pick best bass candidate
+  allBassCandidates.sort((a, b) => a.score - b.score);
+  const { string: bassStr, fret: bassFr } = allBassCandidates[0];
+  const bestBass = { string: bassStr, fret: bassFr };
+
+  if (!bestBass) return [];
+
+  // Build voicing: bass + chord cells above bass string
+  // If bass is on the same string as the chord's lowest note, replace it
+  const upperCells = baseForm.filter((c) => c.string > bestBass!.string);
+  if (upperCells.length < 1) return [];
+
+  const voicing = deduplicateCells([bestBass, ...upperCells]);
+  return [voicing];
+}
+
+// Flat version for overlay dots
+export function getOnChordCells(onChordName: string, _rootIndex: number): FretCell[] {
+  const voicings = getOnChordVoicings(onChordName);
+  const all: FretCell[] = [];
+  for (const v of voicings) all.push(...v);
+  return deduplicateCells(all);
+}
+
 // コードレイヤー用: コードフォームのセル一覧を返す（既存レイヤーとは独立）
 export function getChordLayerCells(
   rootIndex: number,
@@ -1529,6 +1891,7 @@ export function getChordLayerCells(
   diatonicScaleType: string,
   diatonicDegree: string,
   cagedForms: Set<string>,
+  onChordName: string = "C/E",
 ): FretCell[] {
   const dedupeCells = (input: FretCell[]): FretCell[] => {
     const uniq = new Map<string, FretCell>();
@@ -1538,6 +1901,10 @@ export function getChordLayerCells(
     }
     return [...uniq.values()];
   };
+
+  if (chordDisplayMode === "on-chord") {
+    return getOnChordCells(onChordName, rootIndex);
+  }
 
   if (chordDisplayMode === "caged") {
     const cells: FretCell[] = [];

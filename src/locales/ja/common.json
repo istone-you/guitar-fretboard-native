@@ -81,7 +81,8 @@
       "power": "パワーコード",
       "triad": "トライアド",
       "diatonic": "ダイアトニック",
-      "caged": "CAGED"
+      "caged": "CAGED",
+      "on-chord": "オンコード"
     },
     "diatonicKey": {
       "major": "メジャー",
