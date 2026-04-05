@@ -180,6 +180,7 @@ interface LayerEditModalProps {
   onClose: () => void;
   onSave: (layer: LayerConfig) => void;
   onPreview?: (layer: LayerConfig) => void;
+  onStartCellEdit?: (mode: "hide" | "frame", layerId: string) => void;
 }
 
 export default function LayerEditModal({
@@ -194,6 +195,7 @@ export default function LayerEditModal({
   onClose,
   onSave,
   onPreview,
+  onStartCellEdit,
 }: LayerEditModalProps) {
   const { t } = useTranslation();
   const isDark = theme === "dark";
@@ -679,6 +681,82 @@ export default function LayerEditModal({
                         if (items.length <= 6) return items.join(", ");
                         return `${items.slice(0, 6).join(", ")}…`;
                       })()}
+                    </Text>
+                    <ChevronIcon size={10} color={isDark ? "#6b7280" : "#a8a29e"} />
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {/* Edit display (hide cells) - custom only */}
+              {layer.type === "custom" && (
+                <View style={styles.settingRow}>
+                  <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c" }]}>
+                    {t("layers.editDisplay")}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      onSave(layer);
+                      onStartCellEdit?.("hide", layer.id);
+                    }}
+                    style={[
+                      styles.navTrigger,
+                      {
+                        borderColor: isDark ? "#374151" : "#d6d3d1",
+                        backgroundColor: isDark
+                          ? "rgba(255,255,255,0.06)"
+                          : "rgba(250,250,249,0.95)",
+                      },
+                    ]}
+                    activeOpacity={0.7}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 13,
+                        fontWeight: "500",
+                        color: isDark ? "#fff" : "#1c1917",
+                      }}
+                    >
+                      {layer.hiddenCells.size === 0
+                        ? t("layers.allVisible")
+                        : t("layers.hiddenCount", { count: layer.hiddenCells.size })}
+                    </Text>
+                    <ChevronIcon size={10} color={isDark ? "#6b7280" : "#a8a29e"} />
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {/* Create chord frame - custom only */}
+              {layer.type === "custom" && (
+                <View style={styles.settingRow}>
+                  <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c" }]}>
+                    {t("layers.createFrame")}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      onSave(layer);
+                      onStartCellEdit?.("frame", layer.id);
+                    }}
+                    style={[
+                      styles.navTrigger,
+                      {
+                        borderColor: isDark ? "#374151" : "#d6d3d1",
+                        backgroundColor: isDark
+                          ? "rgba(255,255,255,0.06)"
+                          : "rgba(250,250,249,0.95)",
+                      },
+                    ]}
+                    activeOpacity={0.7}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 13,
+                        fontWeight: "500",
+                        color: isDark ? "#fff" : "#1c1917",
+                      }}
+                    >
+                      {layer.chordFrames.length === 0
+                        ? t("layers.noFrame")
+                        : t("layers.frameCount", { count: layer.chordFrames.length })}
                     </Text>
                     <ChevronIcon size={10} color={isDark ? "#6b7280" : "#a8a29e"} />
                   </TouchableOpacity>

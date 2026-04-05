@@ -26,7 +26,15 @@
     "custom": "カスタム",
     "chordFrame": "コード枠",
     "extractFromLayers": "既存レイヤーから抽出",
-    "reset": "リセット"
+    "reset": "リセット",
+    "editDisplay": "表示を編集",
+    "createFrame": "コード枠を作成",
+    "allVisible": "すべて表示",
+    "hiddenCount": "{{count}}個非表示",
+    "frameCount": "枠: {{count}}個",
+    "noFrame": "なし",
+    "cancel": "キャンセル",
+    "displayEdited": "表示編集済"
   },
   "controls": {
     "displayMode": "表示形式",

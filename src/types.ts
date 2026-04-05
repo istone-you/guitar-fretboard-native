@@ -77,6 +77,8 @@ export interface LayerConfig {
   customMode: "note" | "degree";
   selectedNotes: Set<string>;
   selectedDegrees: Set<string>;
+  hiddenCells: Set<string>;
+  chordFrames: { cells: string[] }[];
 }
 
 export function createDefaultLayer(type: LayerType, id: string, color: string): LayerConfig {
@@ -97,6 +99,8 @@ export function createDefaultLayer(type: LayerType, id: string, color: string): 
     customMode: "note",
     selectedNotes: new Set(),
     selectedDegrees: new Set(),
+    hiddenCells: new Set(),
+    chordFrames: [],
   };
 }
 

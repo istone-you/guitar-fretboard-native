@@ -124,6 +124,12 @@ function AppContent() {
   const handleReorderLayers = (reordered: LayerConfig[]) => setLayers(reordered);
   const [previewLayer, setPreviewLayer] = useState<LayerConfig | null>(null);
 
+  // Cell edit mode (hide dots / create chord frames)
+  const [cellEditMode, setCellEditMode] = useState<"hide" | "frame" | null>(null);
+  const [cellEditLayerId, setCellEditLayerId] = useState<string | null>(null);
+  const [editingCells, setEditingCells] = useState<Set<string>>(new Set());
+  const [reopenLayerId, setReopenLayerId] = useState<string | null>(null);
+
   // Layers with preview merged
   const effectiveLayers = useMemo(() => {
     if (!previewLayer) return layers;
@@ -131,6 +137,76 @@ function AppContent() {
     if (existing) return layers.map((l) => (l.id === previewLayer.id ? previewLayer : l));
     return [...layers, previewLayer];
   }, [layers, previewLayer]);
+
+  const handleStartCellEdit = (mode: "hide" | "frame", layerId: string) => {
+    setCellEditMode(mode);
+    setCellEditLayerId(layerId);
+    const layer = layers.find((l) => l.id === layerId);
+    if (mode === "hide" && layer) {
+      setEditingCells(new Set(layer.hiddenCells));
+    } else {
+      setEditingCells(new Set());
+    }
+  };
+
+  const handleCellToggle = (cellKey: string) => {
+    setEditingCells((prev) => {
+      const next = new Set(prev);
+      if (next.has(cellKey)) next.delete(cellKey);
+      else next.add(cellKey);
+      return next;
+    });
+  };
+
+  const handleCellEditDone = () => {
+    if (cellEditLayerId) {
+      if (cellEditMode === "hide") {
+        const target = layers.find((l) => l.id === cellEditLayerId);
+        if (target) {
+          handleUpdateLayer(cellEditLayerId, {
+            ...target,
+            hiddenCells: editingCells,
+          });
+        }
+      } else if (cellEditMode === "frame" && editingCells.size > 0) {
+        const target = layers.find((l) => l.id === cellEditLayerId);
+        if (target) {
+          handleUpdateLayer(cellEditLayerId, {
+            ...target,
+            chordFrames: [...target.chordFrames, { cells: [...editingCells] }],
+          });
+        }
+      }
+    }
+    const layerId = cellEditLayerId;
+    setCellEditMode(null);
+    setCellEditLayerId(null);
+    setEditingCells(new Set());
+    setReopenLayerId(layerId);
+  };
+
+  const handleCellEditCancel = () => {
+    const layerId = cellEditLayerId;
+    setCellEditMode(null);
+    setCellEditLayerId(null);
+    setEditingCells(new Set());
+    setReopenLayerId(layerId);
+  };
+
+  const handleCellEditReset = () => {
+    setEditingCells(new Set());
+    if (cellEditMode === "hide" && cellEditLayerId) {
+      const target = layers.find((l) => l.id === cellEditLayerId);
+      if (target) {
+        handleUpdateLayer(cellEditLayerId, { ...target, hiddenCells: new Set() });
+      }
+    } else if (cellEditMode === "frame" && cellEditLayerId) {
+      const target = layers.find((l) => l.id === cellEditLayerId);
+      if (target) {
+        handleUpdateLayer(cellEditLayerId, { ...target, chordFrames: [] });
+      }
+    }
+  };
 
   const [scaleType, setScaleType] = useState<ScaleType>("major");
 
@@ -370,13 +446,13 @@ function AppContent() {
 
   const lastTapRef = useRef(0);
   const handleFretboardDoubleTap = useCallback(() => {
-    if (showQuiz) return;
+    if (showQuiz || cellEditMode) return;
     const now = Date.now();
     if (now - lastTapRef.current < 300) {
       toggleLayout();
     }
     lastTapRef.current = now;
-  }, [showQuiz, toggleLayout]);
+  }, [showQuiz, cellEditMode, toggleLayout]);
 
   const quizAccentColor = quizMode === "chord" || quizMode === "diatonic" ? "#40E0D0" : "#ff69b6";
 
@@ -429,7 +505,15 @@ function AppContent() {
           quizRevealNoteNames={quizRevealNoteNames}
         />
       ) : (
-        <NormalFretboard {...commonFretboardProps} rootNote={rootNote} onNoteClick={() => {}} />
+        <NormalFretboard
+          {...commonFretboardProps}
+          rootNote={rootNote}
+          onNoteClick={() => {}}
+          cellEditMode={cellEditMode}
+          cellEditLayerId={cellEditLayerId}
+          editingCells={editingCells}
+          onCellToggle={handleCellToggle}
+        />
       )}
     </View>
   );
@@ -658,7 +742,26 @@ function AppContent() {
         barStyle={isDark ? "light-content" : "dark-content"}
         backgroundColor="transparent"
       />
-      <View style={{ backgroundColor: headerBg, paddingTop: insets.top }}>
+      <View
+        style={{
+          backgroundColor: cellEditMode ? "#000" : headerBg,
+          paddingTop: insets.top,
+        }}
+        pointerEvents={cellEditMode ? "none" : "auto"}
+      >
+        {cellEditMode && (
+          <View
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(0,0,0,0.5)",
+              zIndex: 10,
+            }}
+          />
+        )}
         <HeaderBar
           theme={theme}
           rootNote={rootNote}
@@ -680,28 +783,110 @@ function AppContent() {
 
       <View style={{ flex: 1, overflow: "hidden" }}>
         <View>{fretboardEl}</View>
+        {cellEditMode && (
+          <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)" }}>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "center",
+                gap: 16,
+                paddingVertical: 12,
+              }}
+            >
+              <TouchableOpacity
+                onPress={handleCellEditCancel}
+                style={{
+                  paddingHorizontal: 20,
+                  paddingVertical: 10,
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor: isDark ? "#374151" : "#d6d3d1",
+                  backgroundColor: isDark ? "#111" : "#f5f5f4",
+                }}
+                activeOpacity={0.7}
+              >
+                <Text
+                  style={{
+                    fontSize: 15,
+                    fontWeight: "600",
+                    color: isDark ? "#e5e7eb" : "#1c1917",
+                  }}
+                >
+                  {t("layers.cancel")}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleCellEditReset}
+                style={{
+                  paddingHorizontal: 20,
+                  paddingVertical: 10,
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor: isDark ? "#374151" : "#d6d3d1",
+                  backgroundColor: isDark ? "#111" : "#f5f5f4",
+                }}
+                activeOpacity={0.7}
+              >
+                <Text
+                  style={{
+                    fontSize: 15,
+                    fontWeight: "600",
+                    color: isDark ? "#e5e7eb" : "#1c1917",
+                  }}
+                >
+                  {t("layers.reset")}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleCellEditDone}
+                style={{
+                  paddingHorizontal: 20,
+                  paddingVertical: 10,
+                  borderRadius: 12,
+                  backgroundColor: isDark ? "#e5e7eb" : "#1c1917",
+                }}
+                activeOpacity={0.7}
+              >
+                <Text
+                  style={{
+                    fontSize: 15,
+                    fontWeight: "600",
+                    color: isDark ? "#1c1917" : "#fff",
+                  }}
+                >
+                  {t("layers.confirm")}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
         {quizPanelEl}
         {showQuiz && <View style={{ height: 100 }} />}
         {!showQuiz && (
-          <LayerList
-            theme={theme}
-            rootNote={rootNote}
-            accidental={accidental}
-            layers={layers}
-            onAddLayer={handleAddLayer}
-            onUpdateLayer={handleUpdateLayer}
-            onRemoveLayer={handleRemoveLayer}
-            onToggleLayer={handleToggleLayer}
-            onReorderLayers={handleReorderLayers}
-            onPreviewLayer={setPreviewLayer}
-            overlayNotes={overlayNotes}
-            overlaySemitones={overlaySemitones}
-            layerNoteLabels={layerNoteLabelsMap}
-          />
+          <View style={cellEditMode ? { height: 0, overflow: "hidden" } : undefined}>
+            <LayerList
+              theme={theme}
+              rootNote={rootNote}
+              accidental={accidental}
+              layers={layers}
+              onAddLayer={handleAddLayer}
+              onUpdateLayer={handleUpdateLayer}
+              onRemoveLayer={handleRemoveLayer}
+              onToggleLayer={handleToggleLayer}
+              onReorderLayers={handleReorderLayers}
+              onPreviewLayer={setPreviewLayer}
+              overlayNotes={overlayNotes}
+              overlaySemitones={overlaySemitones}
+              layerNoteLabels={layerNoteLabelsMap}
+              onStartCellEdit={handleStartCellEdit}
+              reopenLayerId={reopenLayerId}
+              onClearReopenLayerId={() => setReopenLayerId(null)}
+            />
+          </View>
         )}
       </View>
 
-      {tabBarEl}
+      {!cellEditMode && tabBarEl}
     </View>
   );
 }

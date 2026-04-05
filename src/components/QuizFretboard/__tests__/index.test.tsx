@@ -74,6 +74,8 @@ describe("QuizFretboard", () => {
       customMode: "note" as const,
       selectedNotes: new Set<string>(),
       selectedDegrees: new Set<string>(),
+      hiddenCells: new Set<string>(),
+      chordFrames: [],
     };
     render(<QuizFretboard {...baseProps} layers={[chordLayer]} quizAnswerMode={false} />);
     expect(mockFretboard).toHaveBeenCalledWith(
@@ -98,6 +100,8 @@ describe("QuizFretboard", () => {
       customMode: "note" as const,
       selectedNotes: new Set<string>(),
       selectedDegrees: new Set<string>(),
+      hiddenCells: new Set<string>(),
+      chordFrames: [],
     };
     render(<QuizFretboard {...baseProps} layers={[chordLayer]} quizAnswerMode={true} />);
     expect(mockFretboard).toHaveBeenCalledWith(

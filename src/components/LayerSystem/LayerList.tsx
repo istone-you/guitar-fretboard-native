@@ -60,6 +60,9 @@ interface LayerListProps {
   overlayNotes: string[];
   overlaySemitones: Set<number>;
   layerNoteLabels: Map<string, string[]>;
+  onStartCellEdit?: (mode: "hide" | "frame", layerId: string) => void;
+  reopenLayerId?: string | null;
+  onClearReopenLayerId?: () => void;
 }
 
 export default function LayerList({
@@ -76,6 +79,9 @@ export default function LayerList({
   overlayNotes,
   overlaySemitones,
   layerNoteLabels,
+  onStartCellEdit,
+  reopenLayerId,
+  onClearReopenLayerId,
 }: LayerListProps) {
   const { t } = useTranslation();
   const isDark = theme === "dark";
@@ -211,6 +217,18 @@ export default function LayerList({
     }
     prevShowAddBtnRef.current = showAddBtn;
   }, [layers.length, addBtnAnim]);
+
+  // Reopen modal for a specific layer (e.g. after cell edit cancel)
+  useEffect(() => {
+    if (reopenLayerId) {
+      const target = layers.find((l) => l.id === reopenLayerId);
+      if (target) {
+        setEditingLayer(target);
+        setEditModalVisible(true);
+      }
+      onClearReopenLayerId?.();
+    }
+  }, [reopenLayerId]);
 
   const handleAdd = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -404,6 +422,9 @@ export default function LayerList({
                 numberOfLines={1}
               >
                 {getSummary(layer)}
+                {layer.type === "custom" && layer.hiddenCells.size > 0 && (
+                  <Text style={{ fontWeight: "300" }}> ({t("layers.displayEdited")})</Text>
+                )}
               </Text>
               <Text
                 style={[styles.layerNoteLabels, { color: isDark ? "#9ca3af" : "#78716c" }]}
@@ -428,6 +449,10 @@ export default function LayerList({
                   cagedForms: new Set(layer.cagedForms),
                   selectedNotes: new Set(layer.selectedNotes),
                   selectedDegrees: new Set(layer.selectedDegrees),
+                  hiddenCells: new Set(layer.hiddenCells),
+                  chordFrames: layer.chordFrames.map((f) => ({
+                    cells: [...f.cells],
+                  })),
                 };
                 onAddLayer(clone);
               }}
@@ -549,6 +574,11 @@ export default function LayerList({
         onPreview={onPreviewLayer}
         overlayNotes={overlayNotes}
         overlaySemitones={overlaySemitones}
+        onStartCellEdit={(mode, layerId) => {
+          setEditModalVisible(false);
+          onPreviewLayer(null);
+          onStartCellEdit?.(mode, layerId);
+        }}
       />
     </View>
   );

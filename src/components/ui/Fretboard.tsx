@@ -228,6 +228,10 @@ export interface FretboardProps {
   quizColor?: string;
   layers?: LayerConfig[];
   disableAnimation?: boolean;
+  cellEditMode?: "hide" | "frame" | null;
+  cellEditLayerId?: string | null;
+  editingCells?: Set<string>;
+  onCellToggle?: (cellKey: string) => void;
 }
 
 export default function Fretboard({
@@ -251,6 +255,10 @@ export default function Fretboard({
   quizColor,
   layers = [],
   disableAnimation = false,
+  cellEditMode = null,
+  cellEditLayerId = null,
+  editingCells = new Set(),
+  onCellToggle,
 }: FretboardProps) {
   const [fretMin, fretMax] = fretRange;
   const quizActive = quizModeActive && quizCell !== undefined;
@@ -361,13 +369,28 @@ export default function Fretboard({
         }
       }
       for (const cell of cells) {
-        const key = `${cell.string}-${cell.fret}`;
-        if (!map.has(key)) map.set(key, []);
-        map.get(key)!.push({ color: layer.color, zIndex: 12 + idx });
+        const cellKey = `${cell.string}-${cell.fret}`;
+        if (layer.type === "custom") {
+          // During hide edit mode, show ALL cells (dark overlay handles visual feedback)
+          if (cellEditMode !== "hide" || cellEditLayerId !== layer.id) {
+            if (layer.hiddenCells.has(cellKey)) continue;
+          }
+        }
+        if (!map.has(cellKey)) map.set(cellKey, []);
+        map.get(cellKey)!.push({ color: layer.color, zIndex: 12 + idx });
       }
     });
     return map;
-  }, [layers, rootIndex, fretMin, fretMax, accidental]);
+  }, [
+    layers,
+    rootIndex,
+    fretMin,
+    fretMax,
+    accidental,
+    cellEditMode,
+    cellEditLayerId,
+    editingCells,
+  ]);
 
   // Chord groups from layer system (for border rendering)
   const layerChordGroups = useMemo(() => {
@@ -510,6 +533,35 @@ export default function Fretboard({
         }
       }
     }
+    // Custom layer chord frames
+    for (const layer of layers) {
+      if (!layer.enabled || layer.type !== "custom" || layer.chordFrames.length === 0) continue;
+      const color = layer.color;
+      const frameVisible = true;
+      for (const [frameIdx, frame] of layer.chordFrames.entries()) {
+        if (frame.cells.length === 0) continue;
+        const frameCells = frame.cells.map((key) => {
+          const [s, f] = key.split("-").map(Number);
+          return { string: s, fret: f };
+        });
+        const frets = frameCells.map((c) => c.fret);
+        const strings = frameCells.map((c) => c.string);
+        groups.push({
+          group: {
+            id: `layer-custom-frame-${layer.id}-${frameIdx}`,
+            kind: "custom-frame",
+            cells: frameCells,
+            minFret: Math.min(...frets),
+            maxFret: Math.max(...frets),
+            minString: Math.min(...strings),
+            maxString: Math.max(...strings),
+          },
+          color,
+          visible: frameVisible,
+        });
+      }
+    }
+
     return groups;
   }, [layers, rootIndex]);
 
@@ -623,6 +675,7 @@ export default function Fretboard({
                     zIndex: 6,
                     borderColor: `${color}99`,
                     backgroundColor: `${color}14`,
+                    pointerEvents: "none",
                   }}
                 />
               );
@@ -654,6 +707,9 @@ export default function Fretboard({
               quizColor={quizColor}
               layerOverlays={layerOverlays}
               disableAnimation={disableAnimation}
+              cellEditMode={cellEditMode}
+              editingCells={editingCells}
+              onCellToggle={onCellToggle}
             />
           ))}
         </View>
@@ -687,6 +743,10 @@ interface StringRowProps {
   quizColor?: string;
   layerOverlays?: Map<string, { color: string; zIndex: number }[]>;
   disableAnimation?: boolean;
+  cellEditMode?: "hide" | "frame" | null;
+  cellEditLayerId?: string | null;
+  editingCells?: Set<string>;
+  onCellToggle?: (cellKey: string) => void;
 }
 
 function StringRow({
@@ -714,6 +774,9 @@ function StringRow({
   quizColor,
   layerOverlays,
   disableAnimation = false,
+  cellEditMode,
+  editingCells,
+  onCellToggle,
 }: StringRowProps) {
   const isDark = theme === "dark";
   const NOTES = accidental === "sharp" ? NOTES_SHARP : NOTES_FLAT;
@@ -754,6 +817,15 @@ function StringRow({
         }
 
         const handlePress = () => {
+          if (cellEditMode && onCellToggle) {
+            const cellKey = `${stringIdx}-${fret}`;
+            const hasOverlay = layerOverlays?.has(cellKey);
+            const isEditing = editingCells?.has(cellKey);
+            if (!hasOverlay && !isEditing) return;
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            onCellToggle(cellKey);
+            return;
+          }
           if (quizAnswerMode) {
             if (isTargetString && !isAnswered && onQuizCellClick) {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -843,6 +915,37 @@ function StringRow({
                 />
               );
             })}
+
+            {/* Cell edit mode visual indicators */}
+            {cellEditMode === "hide" && editingCells?.has(`${stringIdx}-${fret}`) && (
+              <View
+                style={{
+                  position: "absolute",
+                  top: overlayInset - 1,
+                  left: overlayInset - 1,
+                  right: overlayInset - 1,
+                  bottom: overlayInset - 1,
+                  borderRadius: overlaySize / 2,
+                  backgroundColor: "rgba(0,0,0,0.6)",
+                  zIndex: 30,
+                }}
+              />
+            )}
+            {cellEditMode === "frame" && editingCells?.has(`${stringIdx}-${fret}`) && (
+              <View
+                style={{
+                  position: "absolute",
+                  top: overlayInset - 2,
+                  left: overlayInset - 2,
+                  right: overlayInset - 2,
+                  bottom: overlayInset - 2,
+                  borderRadius: (overlaySize + 4) / 2,
+                  borderWidth: 2.5,
+                  borderColor: "#fbbf24",
+                  zIndex: 30,
+                }}
+              />
+            )}
 
             {/* Quiz target (pulsing) */}
             {fret === quizTargetFret && !quizAnswerMode && (

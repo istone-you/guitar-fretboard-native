@@ -26,7 +26,15 @@
     "custom": "Custom",
     "chordFrame": "Chord Frame",
     "extractFromLayers": "Extract from layers",
-    "reset": "Reset"
+    "reset": "Reset",
+    "editDisplay": "Edit Display",
+    "createFrame": "Create Chord Frame",
+    "allVisible": "All visible",
+    "hiddenCount": "{{count}} hidden",
+    "frameCount": "Frames: {{count}}",
+    "noFrame": "None",
+    "cancel": "Cancel",
+    "displayEdited": "Edited"
   },
   "controls": {
     "displayMode": "Display",
