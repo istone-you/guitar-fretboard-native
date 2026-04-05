@@ -9,7 +9,7 @@ import {
   Pressable,
   Animated,
 } from "react-native";
-import Svg, { Path } from "react-native-svg";
+import ChevronIcon from "./ChevronIcon";
 import type { Theme } from "../../types";
 
 interface Option {
@@ -131,21 +131,11 @@ export function DropdownSelect({
             {triggerLabel}
           </Text>
           {!disabled && (
-            <Svg
-              width={fullWidth ? 10 : 12}
-              height={fullWidth ? 10 : 12}
-              viewBox="0 0 16 16"
-              fill="none"
-              style={{ transform: [{ rotate: open ? "180deg" : "0deg" }] }}
-            >
-              <Path
-                d="M3 6l5 5 5-5"
-                stroke={isDark ? "#6b7280" : "#a8a29e"}
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </Svg>
+            <ChevronIcon
+              size={fullWidth ? 10 : 12}
+              color={isDark ? "#6b7280" : "#a8a29e"}
+              direction={open ? "up" : "down"}
+            />
           )}
         </TouchableOpacity>
       </Animated.View>

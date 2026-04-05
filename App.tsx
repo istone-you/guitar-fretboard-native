@@ -274,9 +274,34 @@ function AppContent() {
             if (ni >= 0) semitones.push((ni - rootIndex + 12) % 12);
           }
         } else {
+          const DEGREE_TO_SEMITONE: Record<string, number> = {
+            P1: 0,
+            m2: 1,
+            M2: 2,
+            m3: 3,
+            M3: 4,
+            P4: 5,
+            b5: 6,
+            P5: 7,
+            m6: 8,
+            M6: 9,
+            m7: 10,
+            M7: 11,
+            b9: 1,
+            "♭9": 1,
+            "9": 2,
+            "#9": 3,
+            "♯9": 3,
+            "11": 5,
+            "#11": 6,
+            "♯11": 6,
+            b13: 8,
+            "♭13": 8,
+            "13": 9,
+          };
           for (const d of l.selectedDegrees) {
-            const di = DEGREE_BY_SEMITONE.indexOf(d);
-            if (di >= 0) semitones.push(di);
+            const di = DEGREE_TO_SEMITONE[d];
+            if (di !== undefined) semitones.push(di);
           }
         }
       }

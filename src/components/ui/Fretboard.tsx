@@ -311,16 +311,51 @@ export default function Fretboard({
         );
       } else if (layer.type === "custom") {
         const customNotes = accidental === "sharp" ? NOTES_SHARP : NOTES_FLAT;
+        // Convert selected degrees to semitone set for matching (supports tension degrees)
+        const DEGREE_TO_SEMITONE: Record<string, number> = {
+          P1: 0,
+          m2: 1,
+          M2: 2,
+          m3: 3,
+          M3: 4,
+          P4: 5,
+          b5: 6,
+          P5: 7,
+          m6: 8,
+          M6: 9,
+          m7: 10,
+          M7: 11,
+          b9: 1,
+          "♭9": 1,
+          "9": 2,
+          "#9": 3,
+          "♯9": 3,
+          "11": 5,
+          "#11": 6,
+          "♯11": 6,
+          b13: 8,
+          "♭13": 8,
+          "13": 9,
+        };
+        const selectedSemitones =
+          layer.customMode === "degree"
+            ? new Set(
+                [...layer.selectedDegrees]
+                  .map((d) => DEGREE_TO_SEMITONE[d])
+                  .filter((v) => v !== undefined),
+              )
+            : null;
         for (let s = 0; s < 6; s++) {
           for (let f = fretMin; f <= fretMax; f++) {
             const noteIdx = getNoteIndex(s, f);
             const noteName = customNotes[noteIdx];
-            const degreeName = getDegreeName(noteIdx, rootIndex);
-            if (
-              (layer.customMode === "note" && layer.selectedNotes.has(noteName)) ||
-              (layer.customMode === "degree" && layer.selectedDegrees.has(degreeName))
-            ) {
+            if (layer.customMode === "note" && layer.selectedNotes.has(noteName)) {
               cells.push({ string: s, fret: f });
+            } else if (layer.customMode === "degree" && selectedSemitones) {
+              const semitone = calcDegree(noteIdx, rootIndex);
+              if (selectedSemitones.has(semitone)) {
+                cells.push({ string: s, fret: f });
+              }
             }
           }
         }

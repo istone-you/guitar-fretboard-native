@@ -413,6 +413,46 @@ export default function LayerList({
               </Text>
             </View>
 
+            {/* Duplicate button */}
+            <TouchableOpacity
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                const usedColors = new Set(layers.map((l) => l.color));
+                const dupeColor =
+                  DEFAULT_LAYER_COLORS.find((c) => !usedColors.has(c)) ??
+                  DEFAULT_LAYER_COLORS[layers.length % DEFAULT_LAYER_COLORS.length];
+                const clone: LayerConfig = {
+                  ...layer,
+                  id: `layer-${Date.now()}`,
+                  color: dupeColor,
+                  cagedForms: new Set(layer.cagedForms),
+                  selectedNotes: new Set(layer.selectedNotes),
+                  selectedDegrees: new Set(layer.selectedDegrees),
+                };
+                onAddLayer(clone);
+              }}
+              disabled={layers.length >= MAX_LAYERS}
+              style={[styles.actionBtn, { opacity: layers.length >= MAX_LAYERS ? 0.35 : 1 }]}
+              activeOpacity={0.7}
+            >
+              <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+                <Path
+                  d="M10 2h10a2 2 0 0 1 2 2v10"
+                  stroke={isDark ? "#6b7280" : "#a8a29e"}
+                  strokeWidth={2.5}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <Path
+                  d="M2 8h12a2 2 0 0 1 2 2v12H4a2 2 0 0 1-2-2V8Z"
+                  stroke={isDark ? "#6b7280" : "#a8a29e"}
+                  strokeWidth={2.5}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </Svg>
+            </TouchableOpacity>
+
             {/* Settings button */}
             <TouchableOpacity
               onPress={() => handleEdit(layer)}

@@ -9,7 +9,7 @@ import {
   Modal,
   Pressable,
 } from "react-native";
-import Svg, { Path } from "react-native-svg";
+import ChevronIcon from "../ui/ChevronIcon";
 import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 import "../../i18n";
@@ -593,15 +593,7 @@ export default function LayerControls({
                   >
                     {[...cagedForms].join(", ") || "—"}
                   </Text>
-                  <Svg width={12} height={12} viewBox="0 0 16 16" fill="none">
-                    <Path
-                      d="M3 6l5 5 5-5"
-                      stroke={isDark ? "#6b7280" : "#a8a29e"}
-                      strokeWidth={2}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </Svg>
+                  <ChevronIcon size={12} color={isDark ? "#6b7280" : "#a8a29e"} />
                 </TouchableOpacity>
                 <Modal
                   visible={cagedPickerVisible}
