@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, PanResponder, Animated } from
 import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 import "../../i18n";
-import Svg, { Path } from "react-native-svg";
+import Svg, { Circle, Path } from "react-native-svg";
 import type { Theme, LayerConfig } from "../../types";
 import { MAX_LAYERS, DEFAULT_LAYER_COLORS } from "../../types";
 import LayerEditModal from "./LayerEditModal";
@@ -473,16 +473,17 @@ export default function LayerList({
             >
               <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
                 <Path
-                  d="M10 2h10a2 2 0 0 1 2 2v10"
+                  d="M4 3h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"
                   stroke={isDark ? "#6b7280" : "#a8a29e"}
-                  strokeWidth={2.5}
+                  strokeWidth={2}
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
                 <Path
-                  d="M2 8h12a2 2 0 0 1 2 2v12H4a2 2 0 0 1-2-2V8Z"
+                  d="M10 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2Z"
+                  fill={isDark ? "#1f2937" : "#fafaf9"}
                   stroke={isDark ? "#6b7280" : "#a8a29e"}
-                  strokeWidth={2.5}
+                  strokeWidth={2}
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
@@ -497,11 +498,35 @@ export default function LayerList({
             >
               <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
                 <Path
-                  d="M12 15.5A3.5 3.5 0 1 0 12 8.5a3.5 3.5 0 0 0 0 7ZM19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"
-                  stroke={isDark ? "#9ca3af" : "#78716c"}
-                  strokeWidth={1.5}
+                  d="M4 6h16M4 12h16M4 18h16"
+                  stroke={isDark ? "#6b7280" : "#a8a29e"}
+                  strokeWidth={2}
                   strokeLinecap="round"
                   strokeLinejoin="round"
+                />
+                <Circle
+                  cx={9}
+                  cy={6}
+                  r={2}
+                  fill={isDark ? "#1f2937" : "#fafaf9"}
+                  stroke={isDark ? "#6b7280" : "#a8a29e"}
+                  strokeWidth={2}
+                />
+                <Circle
+                  cx={15}
+                  cy={12}
+                  r={2}
+                  fill={isDark ? "#1f2937" : "#fafaf9"}
+                  stroke={isDark ? "#6b7280" : "#a8a29e"}
+                  strokeWidth={2}
+                />
+                <Circle
+                  cx={11}
+                  cy={18}
+                  r={2}
+                  fill={isDark ? "#1f2937" : "#fafaf9"}
+                  stroke={isDark ? "#6b7280" : "#a8a29e"}
+                  strokeWidth={2}
                 />
               </Svg>
             </TouchableOpacity>
@@ -515,12 +540,13 @@ export default function LayerList({
               style={styles.actionBtn}
               activeOpacity={0.7}
             >
-              <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
+              <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
                 <Path
                   d="M18 6L6 18M6 6l12 12"
                   stroke={isDark ? "#6b7280" : "#a8a29e"}
-                  strokeWidth={2.5}
+                  strokeWidth={2.2}
                   strokeLinecap="round"
+                  strokeLinejoin="round"
                 />
               </Svg>
             </TouchableOpacity>
