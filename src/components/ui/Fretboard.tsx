@@ -96,28 +96,42 @@ function ScaleAnimView({
 
 // Fade transition when text changes
 function PulseView({ children, style }: { children: React.ReactNode; style: any }) {
-  const opacity = useRef(
-    (() => {
-      const val = new Animated.Value(1);
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(val, {
-            toValue: 0.4,
-            duration: 1000,
-            useNativeDriver: true,
-          }),
-          Animated.timing(val, {
-            toValue: 1,
-            duration: 1000,
-            useNativeDriver: true,
-          }),
-        ]),
-      ).start();
-      return val;
-    })(),
-  ).current;
+  const stateRef = useRef<{
+    opacity: Animated.Value;
+    anim: Animated.CompositeAnimation;
+  } | null>(null);
+  if (stateRef.current == null) {
+    const val = new Animated.Value(1);
+    const anim = Animated.loop(
+      Animated.sequence([
+        Animated.timing(val, {
+          toValue: 0.4,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(val, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    anim.start();
+    stateRef.current = { opacity: val, anim };
+  }
+  // Stable ref callback: stops animation when view unmounts (ref becomes null)
+  const cleanupRef = useRef((node: View | null) => {
+    if (!node && stateRef.current) {
+      stateRef.current.anim.stop();
+      stateRef.current = null;
+    }
+  }).current;
 
-  return <Animated.View style={[style, { opacity }]}>{children}</Animated.View>;
+  return (
+    <Animated.View style={[style, { opacity: stateRef.current.opacity }]} ref={cleanupRef}>
+      {children}
+    </Animated.View>
+  );
 }
 
 function TriggerBounceView({
@@ -177,6 +191,23 @@ function LayerOverlayDot({
     prevColor.current = overlay.color;
   }
 
+  // Bounce when label text changes (e.g. note ↔ degree switch)
+  const textScale = useRef(new Animated.Value(1)).current;
+  const prevLabelText = useRef(labelText);
+  if (overlay && prevLabelText.current !== labelText) {
+    prevLabelText.current = labelText;
+    if (!disableAnimation) {
+      textScale.stopAnimation();
+      textScale.setValue(0.82);
+      Animated.spring(textScale, {
+        toValue: 1,
+        friction: 5,
+        tension: 150,
+        useNativeDriver: true,
+      }).start();
+    }
+  }
+
   const inset = overlayInset - 0.4 + idx * 2;
 
   return (
@@ -199,15 +230,16 @@ function LayerOverlayDot({
       }}
     >
       {overlay && (
-        <Text
+        <Animated.Text
           style={{
             fontSize: overlayFontSize,
             color: "#fff",
             fontWeight: "bold",
+            transform: [{ scale: textScale }],
           }}
         >
           {labelText}
-        </Text>
+        </Animated.Text>
       )}
     </ScaleAnimView>
   );

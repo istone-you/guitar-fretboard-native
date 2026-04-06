@@ -1198,6 +1198,7 @@ export function buildTriadVoicing(
     if (cells.some(({ fret }) => fret < 0 || fret >= FRET_COUNT)) continue;
 
     const frets = cells.map((cell) => cell.fret);
+    if (frets.length === 0) continue;
     const score = Math.max(...frets) * 10 + (Math.max(...frets) - Math.min(...frets));
     if (!best || score < best.score) {
       best = { cells, score };
@@ -2137,7 +2138,7 @@ export function parseOnChord(
   else if (chordSuffix === "m6") chordType = "m6";
   else if (chordSuffix === "dim") chordType = "dim";
   else if (chordSuffix === "aug") chordType = "aug";
-  else if (chordSuffix === "add9") chordType = "Major";
+  else if (chordSuffix === "add9") chordType = "add9";
   else if (chordSuffix === "7sus4") chordType = "7th";
   else if (chordSuffix === "" || chordSuffix === "maj") chordType = "Major";
 

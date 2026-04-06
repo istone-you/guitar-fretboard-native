@@ -1,5 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, PanResponder, Animated } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  PanResponder,
+  Animated,
+  type PanResponderInstance,
+} from "react-native";
 import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 import "../../i18n";
@@ -102,6 +110,42 @@ export default function LayerList({
   const addBtnAnim = useRef(new Animated.Value(layers.length < MAX_LAYERS ? 1 : 0)).current;
   const prevShowAddBtnRef = useRef(layers.length < MAX_LAYERS);
   const addBtnPrevYRef = useRef<number | null>(null);
+
+  // Bounce animation for note labels (e.g. when switching note/degree mode)
+  const labelScaleMapRef = useRef<Map<string, Animated.Value>>(new Map());
+  const prevLabelSnapshotRef = useRef<string>("");
+
+  const getLabelScale = (id: string) => {
+    const existing = labelScaleMapRef.current.get(id);
+    if (existing) return existing;
+    const value = new Animated.Value(1);
+    labelScaleMapRef.current.set(id, value);
+    return value;
+  };
+
+  const labelsSnapshot = layers
+    .map((l) => `${l.id}:${layerNoteLabels.get(l.id)?.join(",") ?? ""}`)
+    .join("|");
+  if (prevLabelSnapshotRef.current !== "" && prevLabelSnapshotRef.current !== labelsSnapshot) {
+    for (const layer of layers) {
+      const prevEntry = prevLabelSnapshotRef.current
+        .split("|")
+        .find((e) => e.startsWith(`${layer.id}:`));
+      const currEntry = `${layer.id}:${layerNoteLabels.get(layer.id)?.join(",") ?? ""}`;
+      if (prevEntry !== currEntry) {
+        const scale = getLabelScale(layer.id);
+        scale.stopAnimation();
+        scale.setValue(0.93);
+        Animated.spring(scale, {
+          toValue: 1,
+          friction: 6,
+          tension: 180,
+          useNativeDriver: true,
+        }).start();
+      }
+    }
+  }
+  prevLabelSnapshotRef.current = labelsSnapshot;
 
   const getRowAnim = (id: string) => {
     const existing = rowAnimMapRef.current.get(id);
@@ -298,8 +342,18 @@ export default function LayerList({
 
   const ROW_STRIDE = rowHeight.current + ROW_GAP;
 
-  const createDragResponder = (idx: number, layerId: string) =>
-    PanResponder.create({
+  // Stable refs so PanResponder callbacks always read fresh values
+  const layersRef = useRef(layers);
+  layersRef.current = layers;
+  const onReorderLayersRef = useRef(onReorderLayers);
+  onReorderLayersRef.current = onReorderLayers;
+
+  const panResponderMapRef = useRef<Map<string, PanResponderInstance>>(new Map());
+
+  const getDragResponder = (idx: number, layerId: string) => {
+    const existing = panResponderMapRef.current.get(layerId);
+    if (existing) return existing;
+    const responder = PanResponder.create({
       onStartShouldSetPanResponder: () => false,
       onMoveShouldSetPanResponder: (_, gs) =>
         Math.abs(gs.dy) > 10 && Math.abs(gs.dy) > Math.abs(gs.dx),
@@ -315,28 +369,32 @@ export default function LayerList({
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       },
       onPanResponderMove: (_, gs) => {
-        const maxUp = -idx * ROW_STRIDE;
-        const maxDown = (layers.length - 1 - idx) * ROW_STRIDE;
+        const currentLayers = layersRef.current;
+        const currentIdx = currentLayers.findIndex((l) => l.id === layerId);
+        if (currentIdx < 0) return;
+        const stride = rowHeight.current + ROW_GAP;
+        const maxUp = -currentIdx * stride;
+        const maxDown = (currentLayers.length - 1 - currentIdx) * stride;
         dragY.setValue(Math.max(maxUp, Math.min(maxDown, gs.dy)));
       },
       onPanResponderRelease: (_, gs) => {
-        const sourceIdx = layers.findIndex((l) => l.id === layerId);
-        if (sourceIdx >= 0 && Math.abs(gs.dy) > ROW_STRIDE * 0.4 && layers.length > 1) {
-          const offset = Math.round(gs.dy / ROW_STRIDE);
-          const targetIdx = Math.max(0, Math.min(sourceIdx + offset, layers.length - 1));
+        const currentLayers = layersRef.current;
+        const stride = rowHeight.current + ROW_GAP;
+        const sourceIdx = currentLayers.findIndex((l) => l.id === layerId);
+        if (sourceIdx >= 0 && Math.abs(gs.dy) > stride * 0.4 && currentLayers.length > 1) {
+          const offset = Math.round(gs.dy / stride);
+          const targetIdx = Math.max(0, Math.min(sourceIdx + offset, currentLayers.length - 1));
           if (targetIdx !== sourceIdx) {
-            // Collect IDs of all affected rows (between source and target, inclusive)
             const minIdx = Math.min(sourceIdx, targetIdx);
             const maxIdx = Math.max(sourceIdx, targetIdx);
-            const affectedIds = layers
-              .filter((_, i) => i >= minIdx && i <= maxIdx && layers[i].id !== layerId)
+            const affectedIds = currentLayers
+              .filter((_, i) => i >= minIdx && i <= maxIdx && currentLayers[i].id !== layerId)
               .map((l) => l.id);
-            const reordered = [...layers];
+            const reordered = [...currentLayers];
             const [moved] = reordered.splice(sourceIdx, 1);
             reordered.splice(targetIdx, 0, moved);
-            onReorderLayers(reordered);
+            onReorderLayersRef.current(reordered);
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            // Keep the dragged visual until the reordered frame is painted.
             requestAnimationFrame(() => {
               setDraggingLayerId(null);
               dragY.setValue(0);
@@ -362,11 +420,20 @@ export default function LayerList({
         dragY.setValue(0);
       },
     });
+    panResponderMapRef.current.set(layerId, responder);
+    return responder;
+  };
+
+  // Cleanup stale PanResponder entries when layers change
+  const currentLayerIds = new Set(layers.map((l) => l.id));
+  for (const key of panResponderMapRef.current.keys()) {
+    if (!currentLayerIds.has(key)) panResponderMapRef.current.delete(key);
+  }
 
   return (
     <View style={styles.container}>
       {layers.map((layer, idx) => {
-        const panResponder = createDragResponder(idx, layer.id);
+        const panResponder = getDragResponder(idx, layer.id);
         const isDragging = draggingLayerId === layer.id;
         const rowAnim = getRowAnim(layer.id);
         const rowSnapAnim = getRowSnapAnim(layer.id);
@@ -437,15 +504,29 @@ export default function LayerList({
               >
                 {getSummary(layer)}
                 {layer.type === "custom" && layer.hiddenCells.size > 0 && (
-                  <Text style={{ fontWeight: "300" }}> ({t("layers.displayEdited")})</Text>
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      fontWeight: "500",
+                      color: isDark ? "#9ca3af" : "#78716c",
+                    }}
+                  >
+                    ({t("layers.displayEdited")})
+                  </Text>
                 )}
               </Text>
-              <Text
-                style={[styles.layerNoteLabels, { color: isDark ? "#9ca3af" : "#78716c" }]}
+              <Animated.Text
+                style={[
+                  styles.layerNoteLabels,
+                  {
+                    color: isDark ? "#9ca3af" : "#78716c",
+                    transform: [{ scale: getLabelScale(layer.id) }],
+                  },
+                ]}
                 numberOfLines={1}
               >
                 {layerNoteLabels.get(layer.id)?.join("  ") || " "}
-              </Text>
+              </Animated.Text>
             </View>
 
             {/* Duplicate button */}

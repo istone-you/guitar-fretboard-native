@@ -187,7 +187,10 @@ export function useQuiz({
           }
         }
 
-        const targetCell = matchingCells[Math.floor(Math.random() * matchingCells.length)];
+        const targetCell =
+          matchingCells.length > 0
+            ? matchingCells[Math.floor(Math.random() * matchingCells.length)]
+            : undefined;
         return {
           stringIdx: targetCell?.stringIdx ?? stringIdx,
           fret: targetCell?.fret ?? fret,
@@ -219,7 +222,10 @@ export function useQuiz({
           }
         }
 
-        const targetCell = matchingCells[Math.floor(Math.random() * matchingCells.length)];
+        const targetCell =
+          matchingCells.length > 0
+            ? matchingCells[Math.floor(Math.random() * matchingCells.length)]
+            : undefined;
         return {
           stringIdx: targetCell?.stringIdx ?? stringIdx,
           fret: targetCell?.fret ?? fret,

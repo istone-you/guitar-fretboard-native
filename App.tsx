@@ -71,7 +71,9 @@ function AppContent() {
   const rotatingRef = useRef(false);
   const [animDisabled, setAnimDisabled] = useState(false);
 
+  const rotateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toggleLayout = useCallback(async () => {
+    if (rotateTimerRef.current) clearTimeout(rotateTimerRef.current);
     rotatingRef.current = true;
     setAnimDisabled(true);
     if (isLandscape) {
@@ -79,9 +81,10 @@ function AppContent() {
     } else {
       await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE_RIGHT);
     }
-    setTimeout(() => {
+    rotateTimerRef.current = setTimeout(() => {
       rotatingRef.current = false;
       setAnimDisabled(false);
+      rotateTimerRef.current = null;
     }, 500);
   }, [isLandscape]);
 
@@ -355,7 +358,7 @@ function AppContent() {
       return [layer];
     }
     return [];
-  }, [quizMode, quizType, quizAccentColor, quizQuestion?.promptChordType]);
+  }, [quizMode, quizType, quizAccentColor, quizQuestion]);
 
   const fretboardEl = (
     <FretboardPane
