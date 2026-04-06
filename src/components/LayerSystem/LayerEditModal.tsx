@@ -227,12 +227,15 @@ export default function LayerEditModal({
   const modalScale = useRef(new Animated.Value(0.5)).current;
   const modalOpacity = useRef(new Animated.Value(1)).current;
   const modalDockY = useRef(new Animated.Value(0)).current;
+  const dropdownOpenCount = useRef(0);
+  const handleDropdownOpenChange = (open: boolean) => {
+    dropdownOpenCount.current += open ? 1 : -1;
+  };
   const modalPanResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => false,
-      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 12 && Math.abs(g.dy) > Math.abs(g.dx),
-      onMoveShouldSetPanResponderCapture: (_, g) =>
-        Math.abs(g.dy) > 12 && Math.abs(g.dy) > Math.abs(g.dx),
+      onMoveShouldSetPanResponder: (_, g) =>
+        dropdownOpenCount.current === 0 && Math.abs(g.dy) > 12 && Math.abs(g.dy) > Math.abs(g.dx),
       onPanResponderTerminationRequest: () => false,
       onPanResponderRelease: (_, g) => {
         if (g.dy > 28 || g.vy > 0.45) {
@@ -513,6 +516,7 @@ export default function LayerEditModal({
                   { value: "custom", label: t("layers.custom") },
                 ]}
                 variant="plain"
+                onOpenChange={handleDropdownOpenChange}
               />
 
               {/* Scale settings */}
@@ -527,6 +531,7 @@ export default function LayerEditModal({
                     onChange={(v) => update({ scaleType: v as ScaleType })}
                     options={scaleOptions}
                     fullWidth
+                    onOpenChange={handleDropdownOpenChange}
                   />
                 </View>
               )}
@@ -544,6 +549,7 @@ export default function LayerEditModal({
                       onChange={(v) => update({ chordDisplayMode: v as ChordDisplayMode })}
                       options={chordDisplayOptions}
                       fullWidth
+                      onOpenChange={handleDropdownOpenChange}
                     />
                   </View>
                   {layer.chordDisplayMode !== "power" &&
@@ -578,6 +584,7 @@ export default function LayerEditModal({
                                 : diatonicCodeOptions
                           }
                           fullWidth
+                          onOpenChange={handleDropdownOpenChange}
                         />
                       </View>
                     )}
@@ -592,6 +599,7 @@ export default function LayerEditModal({
                         onChange={(v) => update({ onChordName: v })}
                         options={onChordOptions}
                         fullWidth
+                        onOpenChange={handleDropdownOpenChange}
                       />
                     </View>
                   )}
@@ -621,6 +629,7 @@ export default function LayerEditModal({
                             : triadInversionOptions
                         }
                         fullWidth
+                        onOpenChange={handleDropdownOpenChange}
                       />
                     </View>
                   )}
@@ -635,6 +644,7 @@ export default function LayerEditModal({
                         onChange={(v) => update({ diatonicChordSize: v })}
                         options={diatonicChordSizeOptions}
                         fullWidth
+                        onOpenChange={handleDropdownOpenChange}
                       />
                     </View>
                   )}
@@ -967,6 +977,7 @@ export default function LayerEditModal({
                   { value: "degree", label: t("degreeFilter.title") },
                 ]}
                 fullWidth
+                onOpenChange={handleDropdownOpenChange}
               />
               <View style={styles.customChipsGrid}>
                 {(layer.customMode === "note" ? notes : [...DEGREE_CHIPS]).map((item) => {

@@ -25,6 +25,7 @@ interface DropdownSelectProps {
   disabled?: boolean;
   fullWidth?: boolean;
   variant?: "default" | "plain";
+  onOpenChange?: (open: boolean) => void;
 }
 
 export function DropdownSelect({
@@ -35,8 +36,14 @@ export function DropdownSelect({
   disabled = false,
   fullWidth = false,
   variant = "default",
+  onOpenChange,
 }: DropdownSelectProps) {
   const [visible, setVisible] = useState(false);
+  const prevVisibleRef = useRef(false);
+  if (prevVisibleRef.current !== visible) {
+    prevVisibleRef.current = visible;
+    onOpenChange?.(visible);
+  }
   const listRef = useRef<FlatList>(null);
   const menuScale = useRef(new Animated.Value(1)).current;
   const menuOpacity = useRef(new Animated.Value(1)).current;
