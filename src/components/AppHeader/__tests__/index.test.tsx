@@ -21,6 +21,9 @@ const defaultProps = {
   rootChangeDisabled: false,
   onBaseLabelModeChange: jest.fn(),
   onRootNoteChange: jest.fn(),
+  quizKindValue: undefined as string | undefined,
+  quizKindOptions: undefined as { value: string; label: string }[] | undefined,
+  onQuizKindChange: undefined as ((value: string) => void) | undefined,
   fretRange: [0, 14] as [number, number],
   onThemeChange: jest.fn(),
   onFretRangeChange: jest.fn(),
@@ -302,5 +305,132 @@ describe("HeaderBar", () => {
 
     timingSpy.mockRestore();
     parallelSpy.mockRestore();
+  });
+
+  // ── baseLabelMode underline animation ─────────────────────────────
+  it("enters underline animation branch when baseLabelMode changes", () => {
+    const result = renderHeader({ baseLabelMode: "note" });
+
+    // Trigger layout events to populate labelLayouts ref
+    const noteBtn = result.getByText("header.note").parent!;
+    fireEvent(noteBtn, "layout", {
+      nativeEvent: { layout: { x: 0, width: 40, height: 20, y: 0 } },
+    });
+    const degreeBtn = result.getByText("header.degree").parent!;
+    fireEvent(degreeBtn, "layout", {
+      nativeEvent: { layout: { x: 56, width: 60, height: 20, y: 0 } },
+    });
+
+    const timingSpy = jest.spyOn(Animated, "timing");
+
+    // Rerender with different baseLabelMode to trigger the animation branch
+    result.rerender(<HeaderBar {...defaultProps} baseLabelMode="degree" />);
+    act(() => {
+      jest.runAllTimers();
+    });
+
+    expect(timingSpy).toHaveBeenCalled();
+    timingSpy.mockRestore();
+  });
+
+  // ── rootNote bounce animation ─────────────────────────────────────
+  it("triggers bounce animation when rootNote changes", () => {
+    const springSpy = jest.spyOn(Animated, "spring");
+    const result = renderHeader({ rootNote: "C" });
+
+    result.rerender(<HeaderBar {...defaultProps} rootNote="D" />);
+    act(() => {
+      jest.runAllTimers();
+    });
+
+    expect(springSpy).toHaveBeenCalled();
+    springSpy.mockRestore();
+  });
+
+  // ── Root stepper buttons ──────────────────────────────────────────
+  it("renders stepper ‹ and › buttons", () => {
+    const { getByText } = renderHeader();
+    expect(getByText("‹")).toBeTruthy();
+    expect(getByText("›")).toBeTruthy();
+  });
+
+  it("calls onRootNoteChange when ‹ stepper is pressed", () => {
+    const onRootNoteChange = jest.fn();
+    const { getByText } = renderHeader({ rootNote: "C", onRootNoteChange });
+    fireEvent.press(getByText("‹"));
+    expect(onRootNoteChange).toHaveBeenCalledWith("B");
+  });
+
+  it("calls onRootNoteChange when › stepper is pressed", () => {
+    const onRootNoteChange = jest.fn();
+    const { getByText } = renderHeader({ rootNote: "C", onRootNoteChange });
+    fireEvent.press(getByText("›"));
+    expect(onRootNoteChange).toHaveBeenCalledWith("C♯");
+  });
+
+  // ── rootChangeDisabled disables stepper buttons ───────────────────
+  it("disables stepper buttons when rootChangeDisabled is true", () => {
+    const onRootNoteChange = jest.fn();
+    const { getByText } = renderHeader({ rootChangeDisabled: true, onRootNoteChange });
+    fireEvent.press(getByText("‹"));
+    fireEvent.press(getByText("›"));
+    expect(onRootNoteChange).not.toHaveBeenCalled();
+  });
+
+  // ── Note/Degree toggle callbacks ──────────────────────────────────
+  it("calls onBaseLabelModeChange with 'note' when note toggle is pressed", () => {
+    const onBaseLabelModeChange = jest.fn();
+    const { getByText } = renderHeader({ baseLabelMode: "degree", onBaseLabelModeChange });
+    fireEvent.press(getByText("header.note"));
+    expect(onBaseLabelModeChange).toHaveBeenCalledWith("note");
+  });
+
+  it("calls onBaseLabelModeChange with 'degree' when degree toggle is pressed", () => {
+    const onBaseLabelModeChange = jest.fn();
+    const { getByText } = renderHeader({ baseLabelMode: "note", onBaseLabelModeChange });
+    fireEvent.press(getByText("header.degree"));
+    expect(onBaseLabelModeChange).toHaveBeenCalledWith("degree");
+  });
+
+  // ── Degree button initial layout when baseLabelMode is degree ─────
+  it("sets initial underline position when baseLabelMode is degree on mount", () => {
+    const result = renderHeader({ baseLabelMode: "degree" });
+    // Trigger layout event on the degree button to cover the initial underline branch
+    const degreeBtn = result.getByText("header.degree").parent!;
+    fireEvent(degreeBtn, "layout", {
+      nativeEvent: { layout: { x: 56, width: 60, height: 20, y: 0 } },
+    });
+    // The degree text should be rendered with active styling
+    expect(result.getByText("header.degree")).toBeTruthy();
+  });
+
+  // ── Quiz kind dropdown in quiz mode ───────────────────────────────
+  it("renders quiz kind dropdown when in quiz mode with quiz props", () => {
+    const onQuizKindChange = jest.fn();
+    const { getByText } = renderHeader({
+      showQuiz: true,
+      quizKindValue: "note",
+      quizKindOptions: [
+        { value: "note", label: "Note" },
+        { value: "chord", label: "Chord" },
+      ],
+      onQuizKindChange,
+    });
+    // The DropdownSelect renders the current value label as text
+    expect(getByText("Note")).toBeTruthy();
+  });
+
+  it("does not render quiz kind dropdown when not in quiz mode", () => {
+    const { queryByText } = renderHeader({
+      showQuiz: false,
+      quizKindValue: "note",
+      quizKindOptions: [
+        { value: "note", label: "Note" },
+        { value: "chord", label: "Chord" },
+      ],
+      onQuizKindChange: jest.fn(),
+    });
+    // DropdownSelect should not be visible; note/degree toggle should be shown instead
+    expect(queryByText("header.note")).toBeTruthy();
   });
 });

@@ -6,6 +6,11 @@ jest.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key, i18n: { language: "en" } }),
 }));
 
+jest.mock("expo-haptics", () => ({
+  impactAsync: jest.fn(),
+  ImpactFeedbackStyle: { Light: "Light", Medium: "Medium", Heavy: "Heavy" },
+}));
+
 const options = [
   { value: "a", label: "Alpha" },
   { value: "b", label: "Beta" },
@@ -273,5 +278,117 @@ describe("DropdownSelect", () => {
     }));
     render(<DropdownSelect {...defaultProps} options={manyOptions} value="opt0" />);
     expect(screen.getByText("Option 0")).toBeTruthy();
+  });
+
+  // --- Bounce animation on value/disabled change ---
+
+  it("triggers bounce animation when value changes", () => {
+    const { rerender } = render(<DropdownSelect {...defaultProps} value="a" />);
+    // Rerender with a different value to trigger the bounce animation branch
+    rerender(<DropdownSelect {...defaultProps} value="b" />);
+    // If the bounce animation code runs without error, the label updates
+    expect(screen.getByText("Beta")).toBeTruthy();
+  });
+
+  it("triggers bounce animation when disabled changes", () => {
+    const { rerender } = render(<DropdownSelect {...defaultProps} disabled={false} />);
+    // Rerender with disabled=true to trigger the bounce animation branch
+    rerender(<DropdownSelect {...defaultProps} disabled={true} />);
+    expect(screen.getByText("Alpha")).toBeTruthy();
+  });
+
+  it("triggers bounce animation when value and disabled both change", () => {
+    const { rerender } = render(<DropdownSelect {...defaultProps} value="a" disabled={false} />);
+    rerender(<DropdownSelect {...defaultProps} value="c" disabled={true} />);
+    expect(screen.getByText("Gamma")).toBeTruthy();
+  });
+
+  // --- Menu spring animation via onShow ---
+
+  it("triggers spring animation sequence on modal show", () => {
+    jest.useFakeTimers();
+    const { UNSAFE_getByType } = render(<DropdownSelect {...defaultProps} />);
+    const { Modal: RNModal } = require("react-native");
+
+    // Open the menu
+    fireEvent.press(screen.getByText("Alpha"));
+
+    // Trigger the onShow callback
+    act(() => {
+      const modal = UNSAFE_getByType(RNModal);
+      modal.props.onShow();
+    });
+
+    act(() => {
+      jest.runAllTimers();
+    });
+
+    // Modal should still be visible with options
+    expect(screen.getByText("Beta")).toBeTruthy();
+    jest.useRealTimers();
+  });
+
+  // --- onOpenChange callback ---
+
+  it("calls onOpenChange when modal opens and closes", () => {
+    jest.useFakeTimers();
+    const onOpenChange = jest.fn();
+    render(<DropdownSelect {...defaultProps} onOpenChange={onOpenChange} />);
+
+    fireEvent.press(screen.getByText("Alpha"));
+    expect(onOpenChange).toHaveBeenCalledWith(true);
+
+    // Close via selecting an option
+    fireEvent.press(screen.getByText("Beta"));
+    act(() => {
+      jest.runAllTimers();
+    });
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    jest.useRealTimers();
+  });
+
+  // --- Plain variant ---
+
+  it("renders plain variant with correct styling", () => {
+    const { toJSON } = render(<DropdownSelect {...defaultProps} variant="plain" />);
+    const tree = toJSON();
+    const jsonStr = JSON.stringify(tree);
+    // Plain variant should have transparent border
+    expect(jsonStr).toContain('"borderColor":"transparent"');
+  });
+
+  it("applies scale transform to plain variant wrapper", () => {
+    const { toJSON } = render(<DropdownSelect {...defaultProps} variant="plain" />);
+    const tree = toJSON() as any;
+    // The outer Animated.View for plain variant should have scale transform
+    const jsonStr = JSON.stringify(tree);
+    expect(jsonStr).toContain('"scale"');
+  });
+
+  // --- FlatList scroll setup ---
+
+  it("renders FlatList with correct getItemLayout in open modal", () => {
+    render(<DropdownSelect {...defaultProps} value="b" />);
+    fireEvent.press(screen.getByText("Beta"));
+    // The modal is now open with a FlatList containing all options
+    expect(screen.getByText("Alpha")).toBeTruthy();
+    expect(screen.getByText("Gamma")).toBeTruthy();
+  });
+
+  it("FlatList getItemLayout returns correct dimensions and onLayout flashes indicators", () => {
+    const { UNSAFE_getByType } = render(<DropdownSelect {...defaultProps} value="b" />);
+    fireEvent.press(screen.getByText("Beta"));
+
+    const { FlatList: RNFlatList } = require("react-native");
+    const flatList = UNSAFE_getByType(RNFlatList);
+
+    // Verify getItemLayout returns correct values
+    const layout = flatList.props.getItemLayout(null, 3);
+    expect(layout).toEqual({ length: 38, offset: 38 * 3, index: 3 });
+
+    // Trigger FlatList onLayout to cover the flashScrollIndicators call
+    if (flatList.props.onLayout) {
+      flatList.props.onLayout();
+    }
   });
 });

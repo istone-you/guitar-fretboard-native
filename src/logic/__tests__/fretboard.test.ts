@@ -49,7 +49,7 @@ import {
   CAGED_ORDER,
   calcCagedPositions,
 } from "../fretboard";
-import type { ScaleType, ChordType, DegreeName } from "../../types";
+import type { ScaleType, ChordType, DegreeName, ChordDisplayMode } from "../../types";
 
 // ===== Constants =====
 
@@ -1153,7 +1153,13 @@ describe("calcCagedPositions", () => {
   });
 });
 
-import { getOnChordVoicings } from "../fretboard";
+import {
+  getOnChordVoicings,
+  getOnChordCells,
+  getOnChordListForRoot,
+  parseOnChord,
+  getChordLayerCells,
+} from "../fretboard";
 
 describe("On-chord voicings - C/B", () => {
   it("should generate correct voicings for C/B", () => {
@@ -1205,5 +1211,134 @@ describe("On-chord voicings", () => {
     const span = Math.max(...frets) - Math.min(...frets);
     expect(span).toBeLessThanOrEqual(4);
     expect(Math.max(...frets)).toBeLessThanOrEqual(7); // low position
+  });
+});
+
+// ===== parseOnChord =====
+
+describe("parseOnChord", () => {
+  it("parses C/E correctly", () => {
+    const result = parseOnChord("C/E");
+    expect(result).toEqual({ chordRoot: "C", chordType: "Major", bassNote: "E" });
+  });
+
+  it("parses C#m7/E correctly (ASCII sharp, multi-char root)", () => {
+    const result = parseOnChord("C#m7/E");
+    expect(result).toEqual({ chordRoot: "C#", chordType: "m7", bassNote: "E" });
+  });
+
+  it("parses Cm/E♭ correctly (unicode flat bass)", () => {
+    const result = parseOnChord("Cm/E♭");
+    expect(result).toEqual({ chordRoot: "C", chordType: "Minor", bassNote: "E♭" });
+  });
+
+  it("parses D♭7/A correctly (unicode sharp root)", () => {
+    const result = parseOnChord("D♭7/A");
+    expect(result).toEqual({ chordRoot: "D♭", chordType: "7th", bassNote: "A" });
+  });
+
+  it("returns null for invalid format (no slash)", () => {
+    expect(parseOnChord("Cmajor")).toBeNull();
+  });
+
+  it("returns null for empty string", () => {
+    expect(parseOnChord("")).toBeNull();
+  });
+});
+
+// ===== getOnChordListForRoot =====
+
+describe("getOnChordListForRoot", () => {
+  it("returns on-chords for C root (unicode sharp notation)", () => {
+    const list = getOnChordListForRoot("C");
+    expect(list.length).toBeGreaterThan(0);
+    expect(list).toContain("C/E");
+    expect(list).toContain("C/G");
+  });
+
+  it("returns on-chords for C# root (ASCII sharp triggers getNoteIndexByName conversion)", () => {
+    const list = getOnChordListForRoot("C#");
+    expect(list.length).toBeGreaterThan(0);
+    expect(list).toContain("C#m7/B");
+  });
+
+  it("returns on-chords for C♯ root (unicode sharp)", () => {
+    const list = getOnChordListForRoot("C♯");
+    expect(list.length).toBeGreaterThan(0);
+    // Should return same results as ASCII C#
+    const asciiList = getOnChordListForRoot("C#");
+    expect(list).toEqual(asciiList);
+  });
+
+  it("returns on-chords for Db root (ASCII flat triggers getNoteIndexByName flat conversion)", () => {
+    const list = getOnChordListForRoot("Db");
+    // Db = C#, so should return C#-based on-chords
+    const sharpList = getOnChordListForRoot("C#");
+    expect(list).toEqual(sharpList);
+  });
+
+  it("returns empty for invalid root", () => {
+    expect(getOnChordListForRoot("X")).toEqual([]);
+  });
+});
+
+// ===== getOnChordCells =====
+
+describe("getOnChordCells", () => {
+  it("returns deduplicated cells for a valid on-chord", () => {
+    const cells = getOnChordCells("C/E", 0);
+    expect(cells.length).toBeGreaterThan(0);
+    // Verify no duplicate string-fret pairs
+    const keys = cells.map((c) => `${c.string}-${c.fret}`);
+    expect(new Set(keys).size).toBe(keys.length);
+  });
+
+  it("returns cells that include the bass note position", () => {
+    const cells = getOnChordCells("C/E", 0);
+    // E open string (string 0, fret 0)
+    expect(cells).toContainEqual({ string: 0, fret: 0 });
+  });
+
+  it("returns empty for invalid on-chord name", () => {
+    const cells = getOnChordCells("InvalidChord", 0);
+    expect(cells).toEqual([]);
+  });
+});
+
+// ===== getChordLayerCells - on-chord mode =====
+
+describe("getChordLayerCells - on-chord mode", () => {
+  it("delegates to getOnChordCells when chordDisplayMode is on-chord", () => {
+    const chordDisplayMode: ChordDisplayMode = "on-chord";
+    const rootIndex = 0; // C
+    const cells = getChordLayerCells(
+      rootIndex,
+      chordDisplayMode,
+      "Major" as ChordType,
+      "root",
+      "major",
+      "I",
+      new Set<string>(),
+      "C/E",
+    );
+    expect(cells.length).toBeGreaterThan(0);
+    // Should match getOnChordCells output
+    const directCells = getOnChordCells("C/E", rootIndex);
+    expect(cells).toEqual(directCells);
+  });
+
+  it("uses default on-chord name when none specified", () => {
+    const cells = getChordLayerCells(
+      0,
+      "on-chord" as ChordDisplayMode,
+      "Major" as ChordType,
+      "root",
+      "major",
+      "I",
+      new Set<string>(),
+    );
+    // Default is "C/E"
+    const directCells = getOnChordCells("C/E", 0);
+    expect(cells).toEqual(directCells);
   });
 });

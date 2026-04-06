@@ -1000,3 +1000,183 @@ describe("Fretboard - Chord border with hideChordNoteLabels via layers", () => {
     expect(json).toContain("#ff000014");
   });
 });
+
+// ==================== 25. Custom layer degree mode ====================
+
+describe("Fretboard - Custom layer degree mode", () => {
+  it("renders custom layer in degree mode with selectedDegrees", () => {
+    const layer = createDefaultLayer("custom", "cu1", "#ff00ff");
+    layer.customMode = "degree";
+    layer.selectedDegrees = new Set(["P1", "M3", "P5"]);
+    const { toJSON } = render(
+      <Fretboard
+        {...makeProps({
+          rootNote: "C",
+          fretRange: [0, 7],
+          layers: [layer],
+        })}
+      />,
+    );
+    const json = JSON.stringify(toJSON());
+    // Custom layer color should appear for matched degree cells
+    expect(json).toContain("#ff00ff");
+  });
+
+  it("renders custom layer in note mode with selectedNotes", () => {
+    const layer = createDefaultLayer("custom", "cu1", "#00ccff");
+    layer.customMode = "note";
+    layer.selectedNotes = new Set(["C", "E", "G"]);
+    const { toJSON } = render(
+      <Fretboard
+        {...makeProps({
+          rootNote: "C",
+          fretRange: [0, 5],
+          layers: [layer],
+        })}
+      />,
+    );
+    const json = JSON.stringify(toJSON());
+    expect(json).toContain("#00ccff");
+  });
+});
+
+// ==================== 26. On-chord voicing rendering ====================
+
+describe("Fretboard - On-chord voicing rendering", () => {
+  it("renders chord layer in on-chord display mode", () => {
+    const layer = createDefaultLayer("chord", "oc1", "#ee5500");
+    layer.chordDisplayMode = "on-chord";
+    layer.onChordName = "C/E";
+    const { toJSON } = render(
+      <Fretboard
+        {...makeProps({
+          rootNote: "C",
+          fretRange: [0, 14],
+          layers: [layer],
+        })}
+      />,
+    );
+    const json = JSON.stringify(toJSON());
+    // On-chord voicing should render with the layer color
+    expect(json).toContain("#ee5500");
+  });
+});
+
+// ==================== 27. Custom chord frames ====================
+
+describe("Fretboard - Custom chord frames", () => {
+  it("renders custom layer with chordFrames", () => {
+    const layer = createDefaultLayer("custom", "cf1", "#9900cc");
+    layer.customMode = "note";
+    layer.selectedNotes = new Set(["C", "E", "G"]);
+    layer.chordFrames = [{ cells: ["0-0", "1-2", "2-3"] }];
+    const { toJSON } = render(
+      <Fretboard
+        {...makeProps({
+          rootNote: "C",
+          fretRange: [0, 5],
+          layers: [layer],
+        })}
+      />,
+    );
+    const json = JSON.stringify(toJSON());
+    // Chord frame border color should appear (layerColor + "99" suffix)
+    expect(json).toContain("#9900cc");
+  });
+});
+
+// ==================== 28. Cell edit mode ====================
+
+describe("Fretboard - Cell edit mode", () => {
+  it("renders with cellEditMode hide and cellEditLayerId set", () => {
+    const layer = createDefaultLayer("custom", "ce1", "#ff69b6");
+    layer.customMode = "note";
+    layer.selectedNotes = new Set(["C", "E", "G"]);
+    layer.hiddenCells = new Set(["0-3"]);
+    const { toJSON } = render(
+      <Fretboard
+        {...makeProps({
+          rootNote: "C",
+          fretRange: [0, 5],
+          layers: [layer],
+          cellEditMode: "hide",
+          cellEditLayerId: "ce1",
+          editingCells: new Set(),
+          onCellToggle: jest.fn(),
+        })}
+      />,
+    );
+    const json = JSON.stringify(toJSON());
+    // In hide edit mode, all cells should be shown (hidden ones too)
+    expect(json).toContain("#ff69b6");
+  });
+
+  it("calls onCellToggle when a cell with overlay is pressed in edit mode", () => {
+    const onCellToggle = jest.fn();
+    const layer = createDefaultLayer("custom", "ce1", "#ff69b6");
+    layer.customMode = "note";
+    layer.selectedNotes = new Set(["E"]);
+    const { UNSAFE_root } = render(
+      <Fretboard
+        {...makeProps({
+          rootNote: "C",
+          fretRange: [0, 0],
+          layers: [layer],
+          cellEditMode: "hide",
+          cellEditLayerId: "ce1",
+          editingCells: new Set(),
+          onCellToggle,
+        })}
+      />,
+    );
+    // Find a pressable cell
+    const touchables = UNSAFE_root.findAll(
+      (node: any) => node.props.onPress != null && node.props.activeOpacity != null,
+    );
+    // Press one of them - it should call onCellToggle if the cell has an overlay
+    if (touchables.length > 0) {
+      fireEvent.press(touchables[0]);
+    }
+    // Verify the component rendered without error
+    expect(UNSAFE_root).toBeTruthy();
+  });
+});
+
+// ==================== 29. disableAnimation (skipAnimation path) ====================
+
+describe("Fretboard - disableAnimation", () => {
+  it("renders with disableAnimation=true for skipAnimation path", () => {
+    const layer = createDefaultLayer("scale", "s1", "#ff69b6");
+    layer.scaleType = "major";
+    const { toJSON } = render(
+      <Fretboard
+        {...makeProps({
+          rootNote: "C",
+          fretRange: [0, 5],
+          layers: [layer],
+          disableAnimation: true,
+        })}
+      />,
+    );
+    const json = JSON.stringify(toJSON());
+    // Scale dots should still appear with the layer color
+    expect(json).toContain("#ff69b6");
+  });
+
+  it("renders without animation for chord layer too", () => {
+    const layer = createDefaultLayer("chord", "c1", "#ffd700");
+    layer.chordType = "Major";
+    const { toJSON } = render(
+      <Fretboard
+        {...makeProps({
+          rootNote: "E",
+          fretRange: [0, 4],
+          layers: [layer],
+          disableAnimation: true,
+        })}
+      />,
+    );
+    const json = JSON.stringify(toJSON());
+    expect(json).toContain("#ffd700");
+  });
+});

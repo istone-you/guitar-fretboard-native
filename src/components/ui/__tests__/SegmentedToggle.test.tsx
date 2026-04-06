@@ -1,9 +1,14 @@
 import React from "react";
-import { render, fireEvent, screen } from "@testing-library/react-native";
+import { render, fireEvent, screen, act } from "@testing-library/react-native";
 import { SegmentedToggle } from "../SegmentedToggle";
 
 jest.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key, i18n: { language: "en" } }),
+}));
+
+jest.mock("expo-haptics", () => ({
+  impactAsync: jest.fn(),
+  ImpactFeedbackStyle: { Light: "Light", Medium: "Medium", Heavy: "Heavy" },
 }));
 
 const stringOptions = [
@@ -231,5 +236,99 @@ describe("SegmentedToggle", () => {
     render(<SegmentedToggle theme="dark" value="v0" onChange={jest.fn()} options={manyOptions} />);
     expect(screen.getByText("Label 0")).toBeTruthy();
     expect(screen.getByText("Label 9")).toBeTruthy();
+  });
+
+  // --- Layout and animation ---
+
+  it("triggers onLayout for each button and shows slide indicator", () => {
+    const onChange = jest.fn();
+    render(<SegmentedToggle {...defaultProps} value="one" onChange={onChange} />);
+
+    // Find the button elements by their text labels
+    const labels = ["One", "Two", "Three"];
+    act(() => {
+      labels.forEach((label, idx) => {
+        const textEl = screen.getByText(label);
+        // Walk up to find the element with onLayout
+        let node: any = textEl;
+        while (node && !node.props?.onLayout) {
+          node = node.parent;
+        }
+        if (node?.props?.onLayout) {
+          node.props.onLayout({ nativeEvent: { layout: { width: 60 + idx * 10 } } });
+        }
+      });
+    });
+
+    // After all layouts, the indicator should be rendered (selectedWidth > 0)
+    const updatedTree = screen.toJSON() as any;
+    const jsonStr = JSON.stringify(updatedTree);
+    expect(jsonStr).toContain('"translateX"');
+  });
+
+  it("triggers haptic feedback when value changes via handleChange", () => {
+    const onChange = jest.fn();
+    render(<SegmentedToggle {...defaultProps} value="one" onChange={onChange} />);
+
+    // Set up button widths first
+    const labels = ["One", "Two", "Three"];
+    act(() => {
+      labels.forEach((label) => {
+        const textEl = screen.getByText(label);
+        let node: any = textEl;
+        while (node && !node.props?.onLayout) {
+          node = node.parent;
+        }
+        if (node?.props?.onLayout) {
+          node.props.onLayout({ nativeEvent: { layout: { width: 60 } } });
+        }
+      });
+    });
+
+    // Press a different option to trigger handleChange (which calls Haptics.impactAsync)
+    fireEvent.press(screen.getByText("Two"));
+    expect(onChange).toHaveBeenCalledWith("two");
+    // Haptics.impactAsync is called inside handleChange - verify it was invoked
+    const Haptics = require("expo-haptics");
+    expect(Haptics.impactAsync).toHaveBeenCalled();
+  });
+
+  it("computes selectedLeft correctly when buttons have different widths", () => {
+    const onChange = jest.fn();
+    render(<SegmentedToggle {...defaultProps} value="two" onChange={onChange} />);
+
+    // Set widths: One=50, Two=70, Three=60
+    const labels = ["One", "Two", "Three"];
+    const widths = [50, 70, 60];
+    act(() => {
+      labels.forEach((label, idx) => {
+        const textEl = screen.getByText(label);
+        let node: any = textEl;
+        while (node && !node.props?.onLayout) {
+          node = node.parent;
+        }
+        if (node?.props?.onLayout) {
+          node.props.onLayout({ nativeEvent: { layout: { width: widths[idx] } } });
+        }
+      });
+    });
+
+    // Indicator should be visible (selectedWidth > 0 for "two")
+    const updatedTree = screen.toJSON() as any;
+    const jsonStr = JSON.stringify(updatedTree);
+    expect(jsonStr).toContain('"translateX"');
+  });
+
+  it("does not render indicator before layout events", () => {
+    render(<SegmentedToggle {...defaultProps} value="one" />);
+    const tree = screen.toJSON() as any;
+    // Before any onLayout, selectedWidth = 0, so indicator is not rendered
+    const hasAbsoluteIndicator = tree.children.some((c: any) => {
+      const style = c.props?.style;
+      if (!style) return false;
+      const flat = Array.isArray(style) ? Object.assign({}, ...style) : style;
+      return flat.position === "absolute";
+    });
+    expect(hasAbsoluteIndicator).toBe(false);
   });
 });

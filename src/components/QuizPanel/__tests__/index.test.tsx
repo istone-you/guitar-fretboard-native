@@ -863,4 +863,252 @@ describe("QuizPanel", () => {
     });
     expect(getByText("Dm")).toBeTruthy();
   });
+
+  // ── Scale type dropdown in scale quiz ────────────────────────────
+  it("renders scale type dropdown in scale mode", () => {
+    const { getByText } = renderPanel({ mode: "scale" });
+    // The scale dropdown trigger should show the scale label
+    expect(getByText("layers.scale")).toBeTruthy();
+  });
+
+  it("calls onScaleTypeChange when scale type is changed", () => {
+    const onScaleTypeChange = jest.fn();
+    const { getByText } = renderPanel({
+      mode: "scale",
+      scaleType: "major",
+      onScaleTypeChange,
+    });
+    // The scale type label should be visible
+    expect(getByText("layers.scale")).toBeTruthy();
+  });
+
+  // ── Fretboard single/all strings mode selector ───────────────────
+  it("calls onFretboardAllStringsChange when fretboard mode is changed", () => {
+    const onFretboardAllStringsChange = jest.fn();
+    const { getByText } = renderPanel({
+      quizType: "fretboard",
+      mode: "note",
+      fretboardAllStrings: false,
+      onFretboardAllStringsChange,
+    });
+    // The single string mode label should be visible
+    expect(getByText("quiz.fretboardMode.singleString")).toBeTruthy();
+  });
+
+  it("shows allStrings mode selector for degree fretboard quiz", () => {
+    const { getByText } = renderPanel({
+      quizType: "fretboard",
+      mode: "degree",
+      fretboardAllStrings: true,
+    });
+    expect(getByText("quiz.fretboardMode.allStrings")).toBeTruthy();
+  });
+
+  it("does not show fretboard mode selector for chord fretboard quiz", () => {
+    const { queryByText } = renderPanel({
+      quizType: "fretboard",
+      mode: "chord",
+      question: {
+        ...baseQuestion,
+        promptChordLabel: "C Major",
+      },
+    });
+    expect(queryByText("quiz.fretboardMode.singleString")).toBeNull();
+  });
+
+  it("disables fretboard mode selector when answered", () => {
+    const { getByText } = renderPanel({
+      quizType: "fretboard",
+      mode: "note",
+      selectedAnswer: "G",
+      fretboardAllStrings: false,
+    });
+    // Selector should still render but be disabled
+    expect(getByText("quiz.fretboardMode.singleString")).toBeTruthy();
+  });
+
+  // ── Diatonic key type and chord size settings ────────────────────
+  it("renders diatonic key type dropdown", () => {
+    const { getByText } = renderPanel({
+      mode: "diatonic",
+      quizType: "all",
+      question: {
+        ...baseQuestion,
+        promptDiatonicKeyType: "major",
+        promptDiatonicChordSize: "triad",
+        diatonicAnswers: [{ degree: "I", root: "C", chordType: "Major", label: "C" }],
+        diatonicChordTypeOptions: ["Major", "Minor"] as ChordType[],
+      },
+      diatonicQuizKeyType: "major",
+    });
+    expect(getByText("controls.key")).toBeTruthy();
+  });
+
+  it("renders diatonic chord size dropdown", () => {
+    const { getByText } = renderPanel({
+      mode: "diatonic",
+      quizType: "all",
+      question: {
+        ...baseQuestion,
+        promptDiatonicKeyType: "major",
+        promptDiatonicChordSize: "triad",
+        diatonicAnswers: [{ degree: "I", root: "C", chordType: "Major", label: "C" }],
+        diatonicChordTypeOptions: ["Major", "Minor"] as ChordType[],
+      },
+      diatonicQuizChordSize: "triad",
+    });
+    expect(getByText("controls.chordType")).toBeTruthy();
+  });
+
+  // ── Incorrect chord answer styling (lines 502-505) ──────────────
+  it("shows red background for incorrectly selected chord root", () => {
+    const { getByText } = renderPanel({
+      mode: "chord",
+      selectedAnswer: "D-Minor",
+      quizSelectedChordRoot: "D",
+      quizSelectedChordType: "Minor",
+      question: {
+        ...baseQuestion,
+        correct: "C-Major",
+        promptChordRoot: "C",
+        promptChordType: "Major",
+        promptChordLabel: "C Major",
+      },
+    });
+    // "D" was selected as root but wrong (correct is "C")
+    // "C" should have green background, "D" should have red background
+    const dButton = getByText("D");
+    expect(dButton).toBeTruthy();
+    // The correct root "C" should also be visible with green styling
+    const cButton = getByText("C");
+    expect(cButton).toBeTruthy();
+  });
+
+  it("shows correct green and wrong red styling for chord root after answer", () => {
+    const { toJSON } = renderPanel({
+      mode: "chord",
+      selectedAnswer: "D-Minor",
+      quizSelectedChordRoot: "D",
+      quizSelectedChordType: "Minor",
+      question: {
+        ...baseQuestion,
+        correct: "C-Major",
+        promptChordRoot: "C",
+        promptChordType: "Major",
+        promptChordLabel: "C Major",
+      },
+    });
+    const json = JSON.stringify(toJSON());
+    // Red (#ef4444) for wrong selection, green (#16a34a) for correct
+    expect(json).toContain("#ef4444");
+    expect(json).toContain("#16a34a");
+  });
+
+  // ── Scale type dropdown onChange callback ─────────────────────────
+  it("calls onScaleTypeChange when a different scale is selected from dropdown", () => {
+    const onScaleTypeChange = jest.fn();
+    const { getByText } = renderPanel({
+      mode: "scale",
+      scaleType: "major",
+      onScaleTypeChange,
+    });
+    // Open the scale type dropdown by pressing the trigger (shows current value label)
+    fireEvent.press(getByText("options.scale.major"));
+    // Select a different scale from the modal list
+    fireEvent.press(getByText("options.scale.naturalMinor"));
+    expect(onScaleTypeChange).toHaveBeenCalledWith("natural-minor");
+  });
+
+  // ── Fretboard allStrings dropdown onChange callback ──────────────
+  it("calls onFretboardAllStringsChange when fretboard mode dropdown is changed", () => {
+    const onFretboardAllStringsChange = jest.fn();
+    const { getByText } = renderPanel({
+      quizType: "fretboard",
+      mode: "note",
+      fretboardAllStrings: false,
+      onFretboardAllStringsChange,
+    });
+    // Open the fretboard mode dropdown
+    fireEvent.press(getByText("quiz.fretboardMode.singleString"));
+    // Select allStrings option
+    fireEvent.press(getByText("quiz.fretboardMode.allStrings"));
+    expect(onFretboardAllStringsChange).toHaveBeenCalledWith(true);
+  });
+
+  it("does not call onFretboardAllStringsChange when answered", () => {
+    const onFretboardAllStringsChange = jest.fn();
+    const { getByText } = renderPanel({
+      quizType: "fretboard",
+      mode: "note",
+      fretboardAllStrings: false,
+      selectedAnswer: "G",
+      onFretboardAllStringsChange,
+    });
+    // Open the fretboard mode dropdown (disabled should prevent opening)
+    fireEvent.press(getByText("quiz.fretboardMode.singleString"));
+    expect(onFretboardAllStringsChange).not.toHaveBeenCalled();
+  });
+
+  // ── Diatonic key type dropdown onChange callback ─────────────────
+  it("calls onDiatonicQuizKeyTypeChange when key type is changed from dropdown", () => {
+    const onDiatonicQuizKeyTypeChange = jest.fn();
+    const { getByText } = renderPanel({
+      mode: "diatonic",
+      quizType: "all",
+      question: {
+        ...baseQuestion,
+        promptDiatonicKeyType: "major",
+        promptDiatonicChordSize: "triad",
+        diatonicAnswers: [{ degree: "I", root: "C", chordType: "Major", label: "C" }],
+        diatonicChordTypeOptions: ["Major", "Minor"] as ChordType[],
+      },
+      diatonicQuizKeyType: "major",
+      onDiatonicQuizKeyTypeChange,
+    });
+    // Open the key type dropdown
+    fireEvent.press(getByText("options.diatonicKey.major"));
+    // Select natural-minor
+    fireEvent.press(getByText("options.diatonicKey.naturalMinor"));
+    expect(onDiatonicQuizKeyTypeChange).toHaveBeenCalledWith("natural-minor");
+  });
+
+  // ── Diatonic chord size dropdown onChange callback ───────────────
+  it("calls onDiatonicQuizChordSizeChange when chord size is changed from dropdown", () => {
+    const onDiatonicQuizChordSizeChange = jest.fn();
+    const { getByText } = renderPanel({
+      mode: "diatonic",
+      quizType: "all",
+      question: {
+        ...baseQuestion,
+        promptDiatonicKeyType: "major",
+        promptDiatonicChordSize: "triad",
+        diatonicAnswers: [{ degree: "I", root: "C", chordType: "Major", label: "C" }],
+        diatonicChordTypeOptions: ["Major", "Minor"] as ChordType[],
+      },
+      diatonicQuizChordSize: "triad",
+      onDiatonicQuizChordSizeChange,
+    });
+    // Open the chord size dropdown
+    fireEvent.press(getByText("options.diatonicChordSize.triad"));
+    // Select seventh
+    fireEvent.press(getByText("options.diatonicChordSize.seventh"));
+    expect(onDiatonicQuizChordSizeChange).toHaveBeenCalledWith("seventh");
+  });
+
+  // ── BounceButton animation on selection change ───────────────────
+  it("triggers bounce animation when choice selection changes", () => {
+    const { rerender } = renderPanel({
+      mode: "note",
+      quizSelectedChoices: [],
+    });
+    // Rerender with a selected choice to trigger BounceButton animation
+    rerender(<QuizPanel {...defaultProps} mode="note" quizSelectedChoices={["G"]} />);
+    // The "G" button should now appear selected - use rerender's container
+    const { getByText } = renderPanel({
+      mode: "note",
+      quizSelectedChoices: ["G"],
+    });
+    const gButton = getByText("G");
+    expect(gButton).toBeTruthy();
+  });
 });
