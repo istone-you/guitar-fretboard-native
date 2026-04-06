@@ -28,65 +28,18 @@ import ChevronIcon from "../ui/ChevronIcon";
 import { buildScaleOptions } from "../ui/scaleOptions";
 import {
   CHORD_CAGED_ORDER,
+  CHORD_TYPES_CORE,
+  CUSTOM_DEGREE_CHIPS,
+  DEGREE_BY_SEMITONE,
   DIATONIC_CHORDS,
-  NOTES_FLAT,
-  NOTES_SHARP,
   TRIAD_INVERSION_OPTIONS,
-  getOnChordListForRoot,
   getDiatonicChord,
+  getNotesByAccidental,
+  getOnChordListForRoot,
   getRootIndex,
 } from "../../logic/fretboard";
 
-const CHORD_TYPES: ChordType[] = [
-  "Major",
-  "Minor",
-  "dim",
-  "aug",
-  "7th",
-  "maj7",
-  "m7",
-  "m7(b5)",
-  "dim7",
-  "m(maj7)",
-  "sus2",
-  "sus4",
-  "6",
-  "m6",
-  "9",
-  "b9",
-  "#9",
-  "add9",
-  "11",
-  "#11",
-  "add11",
-  "add#11",
-  "13",
-  "b13",
-];
-
-const DEGREE_CHIPS = [
-  "P1",
-  "m2",
-  "M2",
-  "m3",
-  "M3",
-  "P4",
-  "b5",
-  "P5",
-  "m6",
-  "M6",
-  "m7",
-  "M7",
-  "♭9",
-  "9",
-  "♯9",
-  "11",
-  "♯11",
-  "♭13",
-  "13",
-] as const;
-
-const DEGREE_BY_SEMITONE = ["P1", "m2", "M2", "m3", "M3", "P4", "b5", "P5", "m6", "M6", "m7", "M7"];
+const CHORD_TYPES = CHORD_TYPES_CORE;
 
 function SlideToggle({
   active,
@@ -356,7 +309,7 @@ export default function LayerEditModal({
   };
 
   const { options: scaleOptions } = buildScaleOptions(t);
-  const notes = accidental === "sharp" ? NOTES_SHARP : NOTES_FLAT;
+  const notes = getNotesByAccidental(accidental);
   const rootIndex = getRootIndex(rootNote);
 
   const diatonicKeyOptions = [
@@ -980,7 +933,7 @@ export default function LayerEditModal({
                 onOpenChange={handleDropdownOpenChange}
               />
               <View style={styles.customChipsGrid}>
-                {(layer.customMode === "note" ? notes : [...DEGREE_CHIPS]).map((item) => {
+                {(layer.customMode === "note" ? notes : [...CUSTOM_DEGREE_CHIPS]).map((item) => {
                   const active =
                     layer.customMode === "note"
                       ? layer.selectedNotes.has(item)

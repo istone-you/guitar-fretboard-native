@@ -1,4 +1,11 @@
-import type { ChordDisplayMode, ChordType, TriadChordType, DegreeName, ScaleType } from "../types";
+import type {
+  Accidental,
+  ChordDisplayMode,
+  ChordType,
+  TriadChordType,
+  DegreeName,
+  ScaleType,
+} from "../types";
 
 // 音名配列（半音12音）
 export const NOTES_SHARP = [
@@ -88,6 +95,109 @@ export const SEMITONE_TO_DEGREE: DegreeName[] = [
   "m7", // 10
   "M7", // 11
 ];
+
+export const DEGREE_BY_SEMITONE: readonly DegreeName[] = SEMITONE_TO_DEGREE;
+
+export const DEGREE_TO_SEMITONE: Readonly<Record<string, number>> = {
+  P1: 0,
+  m2: 1,
+  M2: 2,
+  m3: 3,
+  M3: 4,
+  P4: 5,
+  b5: 6,
+  P5: 7,
+  m6: 8,
+  M6: 9,
+  m7: 10,
+  M7: 11,
+  b9: 1,
+  "♭9": 1,
+  "9": 2,
+  "#9": 3,
+  "♯9": 3,
+  "11": 5,
+  "#11": 6,
+  "♯11": 6,
+  b13: 8,
+  "♭13": 8,
+  "13": 9,
+};
+
+export const CUSTOM_DEGREE_CHIPS = [
+  "P1",
+  "m2",
+  "M2",
+  "m3",
+  "M3",
+  "P4",
+  "b5",
+  "P5",
+  "m6",
+  "M6",
+  "m7",
+  "M7",
+  "♭9",
+  "9",
+  "♯9",
+  "11",
+  "♯11",
+  "♭13",
+  "13",
+] as const;
+
+export const DEGREE_LABEL_ORDER = [
+  "P1",
+  "m2",
+  "M2",
+  "m3",
+  "M3",
+  "P4",
+  "b5",
+  "P5",
+  "m6",
+  "M6",
+  "m7",
+  "M7",
+  "b9",
+  "9",
+  "#9",
+  "11",
+  "#11",
+  "b13",
+  "13",
+] as const;
+
+export const CHORD_TYPES_CORE: ChordType[] = [
+  "Major",
+  "Minor",
+  "dim",
+  "aug",
+  "7th",
+  "maj7",
+  "m7",
+  "m7(b5)",
+  "dim7",
+  "m(maj7)",
+  "sus2",
+  "sus4",
+  "6",
+  "m6",
+  "9",
+  "b9",
+  "#9",
+  "add9",
+  "11",
+  "#11",
+  "add11",
+  "add#11",
+  "13",
+  "b13",
+];
+
+export function getNotesByAccidental(accidental: Accidental) {
+  return accidental === "sharp" ? NOTES_SHARP : NOTES_FLAT;
+}
 
 // 度数計算: (TargetNoteIndex - RootNoteIndex + 12) % 12
 export function calcDegree(noteIndex: number, rootIndex: number): number {

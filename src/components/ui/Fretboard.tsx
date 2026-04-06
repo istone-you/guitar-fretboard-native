@@ -3,8 +3,6 @@ import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Animated } from "
 import * as Haptics from "expo-haptics";
 import {
   FRET_COUNT,
-  NOTES_SHARP,
-  NOTES_FLAT,
   POSITION_MARKS,
   getNoteIndex,
   getDegreeName,
@@ -19,8 +17,9 @@ import {
   isInScale,
   getCagedFormCells,
   getChordLayerCells,
-  getOnChordCells,
   getOnChordVoicings,
+  DEGREE_TO_SEMITONE,
+  getNotesByAccidental,
   CHORD_CAGED_ORDER,
   getRootIndex,
   type FretCell,
@@ -356,33 +355,8 @@ export default function Fretboard({
           ),
         );
       } else if (layer.type === "custom") {
-        const customNotes = accidental === "sharp" ? NOTES_SHARP : NOTES_FLAT;
+        const customNotes = getNotesByAccidental(accidental);
         // Convert selected degrees to semitone set for matching (supports tension degrees)
-        const DEGREE_TO_SEMITONE: Record<string, number> = {
-          P1: 0,
-          m2: 1,
-          M2: 2,
-          m3: 3,
-          M3: 4,
-          P4: 5,
-          b5: 6,
-          P5: 7,
-          m6: 8,
-          M6: 9,
-          m7: 10,
-          M7: 11,
-          b9: 1,
-          "♭9": 1,
-          "9": 2,
-          "#9": 3,
-          "♯9": 3,
-          "11": 5,
-          "#11": 6,
-          "♯11": 6,
-          b13: 8,
-          "♭13": 8,
-          "13": 9,
-        };
         const selectedSemitones =
           layer.customMode === "degree"
             ? new Set(
@@ -846,7 +820,7 @@ function StringRow({
   onCellToggle,
 }: StringRowProps) {
   const isDark = theme === "dark";
-  const NOTES = accidental === "sharp" ? NOTES_SHARP : NOTES_FLAT;
+  const NOTES = getNotesByAccidental(accidental);
   const shouldSuppressRegularDisplay = suppressRegularDisplay || quizActive || quizAnswerMode;
 
   const isNonTargetString =

@@ -16,7 +16,7 @@ import "../../i18n";
 import type { Accidental, BaseLabelMode, Theme } from "../../types";
 import { SegmentedToggle } from "../ui/SegmentedToggle";
 import { DropdownSelect } from "../ui/DropdownSelect";
-import { NOTES_SHARP, NOTES_FLAT } from "../../logic/fretboard";
+import { useRootStepper } from "../../hooks/useRootStepper";
 
 import { changeLocale } from "../../i18n";
 
@@ -264,13 +264,12 @@ export default function HeaderBar({
     void changeLocale(locale);
   };
 
-  const notes: string[] = [...(accidental === "sharp" ? NOTES_SHARP : NOTES_FLAT)];
-  const currentIndex = notes.indexOf(rootNote);
-  const stepNote = (dir: 1 | -1) => {
-    if (rootChangeDisabled) return;
-    const next = (currentIndex + dir + 12) % 12;
-    onRootNoteChange(notes[next]);
-  };
+  const { stepNote } = useRootStepper({
+    accidental,
+    rootNote,
+    rootChangeDisabled,
+    onRootNoteChange,
+  });
 
   return (
     <View

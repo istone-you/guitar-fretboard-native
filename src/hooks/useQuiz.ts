@@ -1,8 +1,8 @@
 import { useCallback, useState } from "react";
 import {
-  NOTES_SHARP,
-  NOTES_FLAT,
   CHORD_SEMITONES,
+  DEGREE_BY_SEMITONE,
+  getNotesByAccidental,
   DIATONIC_CHORDS,
   isInScale,
   getDegreeName,
@@ -18,8 +18,6 @@ import type {
   QuizQuestion,
   DiatonicAnswerEntry,
 } from "../types";
-
-const DEGREE_NAMES = ["P1", "m2", "M2", "m3", "M3", "P4", "b5", "P5", "m6", "M6", "m7", "M7"];
 
 export const CHORD_QUIZ_TYPES_ALL: ChordType[] = [
   "Major",
@@ -143,7 +141,7 @@ export function useQuiz({
 
   const generateQuizQuestion = useCallback(
     (mode: QuizMode, type: QuizType = "choice"): QuizQuestion => {
-      const notes = accidental === "sharp" ? NOTES_SHARP : NOTES_FLAT;
+      const notes = getNotesByAccidental(accidental);
       const stringIdx = Math.floor(Math.random() * 6);
       const fret = fretRange[0] + Math.floor(Math.random() * (fretRange[1] - fretRange[0] + 1));
       const noteIdx = getNoteIndex(stringIdx, fret);
@@ -282,7 +280,7 @@ export function useQuiz({
       }
 
       const correct = getDegreeName(noteIdx, rootIdx);
-      const choices = DEGREE_NAMES;
+      const choices = [...DEGREE_BY_SEMITONE];
       return { stringIdx, fret, correct, choices };
     },
     [
@@ -468,7 +466,7 @@ export function useQuiz({
   const handleSubmitFretboard = useCallback(() => {
     if (selectedAnswer !== null || quizQuestion === null || quizSelectedCells.length === 0) return;
 
-    const notes = accidental === "sharp" ? NOTES_SHARP : NOTES_FLAT;
+    const notes = getNotesByAccidental(accidental);
     const rootIdx = getRootIndex(rootNote);
     const correctNoteNames = quizQuestion.correctNoteNames ?? [];
 
