@@ -602,7 +602,6 @@ export default function LayerList({
         overlayNotes={overlayNotes}
         overlaySemitones={overlaySemitones}
         onStartCellEdit={(mode, layerId, draftLayer) => {
-          setEditModalVisible(false);
           onStartCellEdit?.(mode, layerId, draftLayer);
         }}
       />
