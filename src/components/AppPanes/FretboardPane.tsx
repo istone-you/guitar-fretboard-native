@@ -22,7 +22,7 @@ interface FretboardPaneProps {
   quizCorrectCell: { stringIdx: number; fret: number } | null;
   quizSelectedCells: { stringIdx: number; fret: number }[];
   quizRevealNoteNames: string[] | null;
-  fretboardAllStrings: boolean;
+  quizStrings: number[];
   layers: LayerConfig[];
   disableAnimation: boolean;
   cellEditMode: "hide" | "frame" | null;
@@ -53,7 +53,7 @@ export default function FretboardPane({
   quizCorrectCell,
   quizSelectedCells,
   quizRevealNoteNames,
-  fretboardAllStrings,
+  quizStrings,
   layers,
   disableAnimation,
   cellEditMode,
@@ -91,7 +91,7 @@ export default function FretboardPane({
           quizTargetString={
             quizType === "fretboard" &&
             (quizMode === "note" || quizMode === "degree") &&
-            !fretboardAllStrings &&
+            quizStrings.length === 1 &&
             quizQuestion != null
               ? quizQuestion.stringIdx
               : undefined

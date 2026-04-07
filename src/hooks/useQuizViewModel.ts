@@ -21,8 +21,7 @@ export function useQuizViewModel({
   t,
   onQuizKindChange,
 }: UseQuizViewModelParams) {
-  const quizRootChangeEnabled =
-    !showQuiz || quizMode === "degree" || quizMode === "scale" || quizMode === "diatonic";
+  const quizRootChangeEnabled = !showQuiz;
 
   const quizKindValue = `${quizMode}-${quizType}`;
 

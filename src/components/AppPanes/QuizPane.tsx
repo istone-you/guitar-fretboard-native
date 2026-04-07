@@ -24,7 +24,11 @@ interface QuizPaneProps {
   availableChordQuizTypes: ChordType[];
   scaleType: ScaleType;
   quizSelectedCells: { stringIdx: number; fret: number }[];
-  fretboardAllStrings: boolean;
+  quizStrings: number[];
+  quizKeys: string[];
+  onQuizKeysChange: (value: string[]) => void;
+  quizNoteNames: string[];
+  onQuizNoteNamesChange: (value: string[]) => void;
   onChordQuizTypesChange: (value: ChordType[]) => void;
   onScaleTypeChange: (value: ScaleType) => void;
   onDiatonicQuizKeyTypeChange: (value: "major" | "natural-minor") => void;
@@ -41,7 +45,7 @@ interface QuizPaneProps {
   onSubmitFretboard: () => void;
   onNextQuestion: () => void;
   onRetryQuestion: () => void;
-  onFretboardAllStringsChange: (value: boolean) => void;
+  onQuizStringsChange: (value: number[]) => void;
 }
 
 export default function QuizPane(props: QuizPaneProps) {
@@ -86,8 +90,12 @@ export default function QuizPane(props: QuizPaneProps) {
       onNextQuestion={props.onNextQuestion}
       onRetryQuestion={props.onRetryQuestion}
       quizSelectedCells={props.quizSelectedCells}
-      fretboardAllStrings={props.fretboardAllStrings}
-      onFretboardAllStringsChange={props.onFretboardAllStringsChange}
+      quizStrings={props.quizStrings}
+      onQuizStringsChange={props.onQuizStringsChange}
+      quizKeys={props.quizKeys}
+      onQuizKeysChange={props.onQuizKeysChange}
+      quizNoteNames={props.quizNoteNames}
+      onQuizNoteNamesChange={props.onQuizNoteNamesChange}
     />
   );
 }

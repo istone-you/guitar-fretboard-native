@@ -90,24 +90,19 @@ interface UseQuizParams {
   rootNote: string;
   scaleType: ScaleType;
   showQuiz: boolean;
-  chordQuizTypes: ChordType[];
 }
+
+const DEFAULT_CHORD_QUIZ_TYPES: ChordType[] = ["Major", "Minor", "7th", "maj7", "m7"];
 
 function chordSuffix(chordType: ChordType): string {
   return CHORD_SUFFIX_MAP[chordType] ?? chordType;
 }
 
-export function useQuiz({
-  accidental,
-  fretRange,
-  rootNote,
-  scaleType,
-  showQuiz,
-  chordQuizTypes,
-}: UseQuizParams) {
+export function useQuiz({ accidental, fretRange, rootNote, scaleType, showQuiz }: UseQuizParams) {
+  const [chordQuizTypes, setChordQuizTypes] = useState<ChordType[]>(DEFAULT_CHORD_QUIZ_TYPES);
   const [quizMode, setQuizMode] = useState<QuizMode>("note");
   const [quizType, setQuizType] = useState<QuizType>("choice");
-  const [fretboardAllStrings, setFretboardAllStrings] = useState(false);
+  const [quizStrings, setQuizStrings] = useState<number[]>([0, 1, 2, 3, 4, 5]);
   const [quizQuestion, setQuizQuestion] = useState<QuizQuestion | null>(null);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [quizScore, setQuizScore] = useState({ correct: 0, total: 0 });
@@ -138,17 +133,39 @@ export function useQuiz({
   >({});
   const [diatonicEditingDegree, setDiatonicEditingDegree] = useState<string | null>(null);
   const [quizRevealNoteNames, setQuizRevealNoteNames] = useState<string[] | null>(null);
+  const [quizKeys, setQuizKeys] = useState<string[]>(() => [...getNotesByAccidental(accidental)]);
+  const [quizNoteNames, setQuizNoteNames] = useState<string[]>(() => [
+    ...getNotesByAccidental(accidental),
+  ]);
 
   const generateQuizQuestion = useCallback(
-    (mode: QuizMode, type: QuizType = "choice"): QuizQuestion => {
+    (
+      mode: QuizMode,
+      type: QuizType = "choice",
+      overrides?: {
+        quizKeys?: string[];
+        quizNoteNames?: string[];
+        quizStrings?: number[];
+        chordQuizTypes?: ChordType[];
+      },
+    ): QuizQuestion => {
       const notes = getNotesByAccidental(accidental);
       const stringIdx = Math.floor(Math.random() * 6);
       const fret = fretRange[0] + Math.floor(Math.random() * (fretRange[1] - fretRange[0] + 1));
       const noteIdx = getNoteIndex(stringIdx, fret);
-      const rootIdx = getRootIndex(rootNote);
+
+      // For degree/scale, pick a random key from quizKeys
+      const effectiveQuizKeys = overrides?.quizKeys ?? quizKeys;
+      const effectiveRoot =
+        (mode === "degree" || mode === "scale") && effectiveQuizKeys.length > 0
+          ? effectiveQuizKeys[Math.floor(Math.random() * effectiveQuizKeys.length)]
+          : rootNote;
+      const rootIdx = getRootIndex(effectiveRoot);
 
       if (mode === "chord") {
-        const chordTypePool: ChordType[] = chordQuizTypes.length > 0 ? chordQuizTypes : ["Major"];
+        const effectiveChordTypes = overrides?.chordQuizTypes ?? chordQuizTypes;
+        const chordTypePool: ChordType[] =
+          effectiveChordTypes.length > 0 ? effectiveChordTypes : ["Major"];
         const chordType = chordTypePool[Math.floor(Math.random() * chordTypePool.length)];
         const chordRoot =
           type === "choice"
@@ -205,7 +222,7 @@ export function useQuiz({
       }
 
       if (mode === "scale") {
-        const scaleRootIndex = getRootIndex(rootNote);
+        const scaleRootIndex = getRootIndex(effectiveRoot);
         const correctNoteNames = notes.filter((_, noteIndex) =>
           isInScale((noteIndex - scaleRootIndex + 12) % 12, scaleType),
         );
@@ -232,7 +249,7 @@ export function useQuiz({
           correct: correctNoteNames[0] ?? "",
           choices: type === "choice" ? [...notes] : [],
           answerLabel: correctNoteNames.join(" / "),
-          promptScaleRoot: rootNote,
+          promptScaleRoot: effectiveRoot,
           promptScaleType: scaleType,
           correctNoteNames,
         };
@@ -265,29 +282,64 @@ export function useQuiz({
         };
       }
 
+      const effectiveStrings = overrides?.quizStrings ?? quizStrings;
+      const multiString = effectiveStrings.length > 1;
+
+      // For note mode, pick a cell whose note is in quizNoteNames
+      if (mode === "note") {
+        const effectiveNoteNames = overrides?.quizNoteNames ?? quizNoteNames;
+        const pool: Set<string> =
+          effectiveNoteNames.length > 0 ? new Set(effectiveNoteNames) : new Set(notes);
+        const validCells: { stringIdx: number; fret: number }[] = [];
+        for (const s of effectiveStrings) {
+          for (let f = fretRange[0]; f <= fretRange[1]; f++) {
+            if (pool.has(notes[getNoteIndex(s, f)])) {
+              validCells.push({ stringIdx: s, fret: f });
+            }
+          }
+        }
+        const cell =
+          validCells.length > 0
+            ? validCells[Math.floor(Math.random() * validCells.length)]
+            : { stringIdx, fret };
+        const pickedNoteIdx = getNoteIndex(cell.stringIdx, cell.fret);
+        const correct = notes[pickedNoteIdx];
+
+        if (type === "fretboard") {
+          if (multiString) {
+            return {
+              stringIdx: cell.stringIdx,
+              fret: cell.fret,
+              correct,
+              choices: [],
+              correctNoteNames: [correct],
+              promptQuizStrings: effectiveStrings,
+            };
+          }
+          return { stringIdx: cell.stringIdx, fret: cell.fret, correct, choices: [] };
+        }
+        return { stringIdx: cell.stringIdx, fret: cell.fret, correct, choices: [...notes] };
+      }
+
       if (type === "fretboard") {
-        const correct = mode === "note" ? notes[noteIdx] : getDegreeName(noteIdx, rootIdx);
-        if (fretboardAllStrings && (mode === "note" || mode === "degree")) {
+        const correct = getDegreeName(noteIdx, rootIdx);
+        if (multiString) {
           return {
             stringIdx,
             fret,
             correct,
             choices: [],
             correctNoteNames: [notes[noteIdx]],
+            promptQuizRoot: effectiveRoot,
+            promptQuizStrings: effectiveStrings,
           };
         }
-        return { stringIdx, fret, correct, choices: [] };
-      }
-
-      if (mode === "note") {
-        const correct = notes[noteIdx];
-        const choices = [...notes];
-        return { stringIdx, fret, correct, choices };
+        return { stringIdx, fret, correct, choices: [], promptQuizRoot: effectiveRoot };
       }
 
       const correct = getDegreeName(noteIdx, rootIdx);
       const choices = [...DEGREE_BY_SEMITONE];
-      return { stringIdx, fret, correct, choices };
+      return { stringIdx, fret, correct, choices, promptQuizRoot: effectiveRoot };
     },
     [
       accidental,
@@ -295,7 +347,9 @@ export function useQuiz({
       diatonicQuizChordSize,
       diatonicQuizKeyType,
       fretRange,
-      fretboardAllStrings,
+      quizStrings,
+      quizKeys,
+      quizNoteNames,
       rootNote,
       scaleType,
     ],
@@ -447,11 +501,11 @@ export function useQuiz({
       if (!showQuiz || quizType !== "fretboard" || selectedAnswer !== null || quizQuestion === null)
         return;
 
-      // Multi-cell modes (scale/chord/allStrings): toggle cell
+      // Multi-cell modes (scale/chord/multiString): toggle cell
       if (
         quizMode === "chord" ||
         quizMode === "scale" ||
-        ((quizMode === "note" || quizMode === "degree") && fretboardAllStrings)
+        ((quizMode === "note" || quizMode === "degree") && quizStrings.length > 1)
       ) {
         setQuizSelectedCells((prev) => {
           const exists = prev.some((c) => c.stringIdx === stringIdx && c.fret === fret);
@@ -465,7 +519,7 @@ export function useQuiz({
       // Single-cell mode (note/degree single string): replace selection
       setQuizSelectedCells([{ stringIdx, fret }]);
     },
-    [showQuiz, quizType, selectedAnswer, quizQuestion, quizMode, fretboardAllStrings],
+    [showQuiz, quizType, selectedAnswer, quizQuestion, quizMode, quizStrings],
   );
 
   // Submit fretboard answer
@@ -473,7 +527,8 @@ export function useQuiz({
     if (selectedAnswer !== null || quizQuestion === null || quizSelectedCells.length === 0) return;
 
     const notes = getNotesByAccidental(accidental);
-    const rootIdx = getRootIndex(rootNote);
+    const effectiveRoot = quizQuestion.promptQuizRoot ?? rootNote;
+    const rootIdx = getRootIndex(effectiveRoot);
     const correctNoteNames = quizQuestion.correctNoteNames ?? [];
 
     // Scale fretboard: must select ALL cells that are scale notes
@@ -517,15 +572,16 @@ export function useQuiz({
       return;
     }
 
-    // Note/degree all strings: correct note on every string that has it, one per string OK, wrong cells NG
-    if ((quizMode === "note" || quizMode === "degree") && fretboardAllStrings) {
+    // Note/degree multi-string: correct note on every target string that has it
+    const targetStrings = quizQuestion.promptQuizStrings ?? quizStrings;
+    if ((quizMode === "note" || quizMode === "degree") && targetStrings.length > 1) {
       // Check all selected cells are correct notes
       const allSelectedCorrect = quizSelectedCells.every((c) =>
         correctNoteNames.includes(notes[getNoteIndex(c.stringIdx, c.fret)] as string),
       );
-      // Check every string that has the note has at least one selected
+      // Check every target string that has the note has at least one selected
       let allStringsCovered = true;
-      for (let s = 0; s < 6; s++) {
+      for (const s of targetStrings) {
         const stringHasNote = Array.from(
           { length: fretRange[1] - fretRange[0] + 1 },
           (_, i) => fretRange[0] + i,
@@ -576,7 +632,7 @@ export function useQuiz({
     accidental,
     rootNote,
     quizMode,
-    fretboardAllStrings,
+    quizStrings,
     fretRange,
   ]);
 
@@ -664,11 +720,51 @@ export function useQuiz({
     ],
   );
 
-  const regenerateQuiz = useCallback(() => {
-    if (!showQuiz || quizQuestion === null) return;
-    clearCurrentQuizState();
-    setQuizQuestion(generateQuizQuestion(quizMode, quizType));
-  }, [clearCurrentQuizState, generateQuizQuestion, quizMode, quizQuestion, quizType, showQuiz]);
+  const regenerateQuiz = useCallback(
+    (overrides?: {
+      quizKeys?: string[];
+      quizNoteNames?: string[];
+      quizStrings?: number[];
+      chordQuizTypes?: ChordType[];
+    }) => {
+      if (!showQuiz || quizQuestion === null) return;
+      clearCurrentQuizState();
+      setQuizQuestion(generateQuizQuestion(quizMode, quizType, overrides));
+    },
+    [clearCurrentQuizState, generateQuizQuestion, quizMode, quizQuestion, quizType, showQuiz],
+  );
+
+  const handleChordQuizTypesChange = useCallback(
+    (types: ChordType[]) => {
+      setChordQuizTypes(types);
+      regenerateQuiz({ chordQuizTypes: types });
+    },
+    [regenerateQuiz],
+  );
+
+  const handleQuizKeysChange = useCallback(
+    (keys: string[]) => {
+      setQuizKeys(keys);
+      regenerateQuiz({ quizKeys: keys });
+    },
+    [regenerateQuiz],
+  );
+
+  const handleQuizNoteNamesChange = useCallback(
+    (names: string[]) => {
+      setQuizNoteNames(names);
+      regenerateQuiz({ quizNoteNames: names });
+    },
+    [regenerateQuiz],
+  );
+
+  const handleQuizStringsChange = useCallback(
+    (strings: number[]) => {
+      setQuizStrings(strings);
+      regenerateQuiz({ quizStrings: strings });
+    },
+    [regenerateQuiz],
+  );
 
   const handleShowQuizChange = useCallback(
     (show: boolean) => {
@@ -719,8 +815,14 @@ export function useQuiz({
     handleRetryQuestion,
     setDiatonicQuizKeyType,
     setDiatonicQuizChordSize,
-    fretboardAllStrings,
-    setFretboardAllStrings,
+    chordQuizTypes,
+    handleChordQuizTypesChange,
+    quizStrings,
+    handleQuizStringsChange,
+    quizKeys,
+    handleQuizKeysChange,
+    quizNoteNames,
+    handleQuizNoteNamesChange,
     regenerateQuiz,
     handleShowQuizChange,
     handleSubmitChoice,

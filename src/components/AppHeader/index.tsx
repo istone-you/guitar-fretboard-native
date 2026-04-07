@@ -281,42 +281,28 @@ export default function HeaderBar({
         },
       ]}
     >
-      {/* Root stepper (absolute left) */}
-      <View style={styles.stepperRow}>
-        <TouchableOpacity
-          onPress={() => stepNote(-1)}
-          disabled={rootChangeDisabled}
-          style={[styles.stepBtn, rootChangeDisabled && styles.disabled]}
-          activeOpacity={0.7}
-        >
-          <Text style={[styles.stepBtnText, { color: isDark ? "#9ca3af" : "#78716c" }]}>‹</Text>
-        </TouchableOpacity>
-        <Animated.Text
-          style={[
-            styles.rootNote,
-            {
-              color: rootChangeDisabled
-                ? isDark
-                  ? "#6b7280"
-                  : "#a8a29e"
-                : isDark
-                  ? "#fff"
-                  : "#1c1917",
-              transform: [{ scale: rootScale }],
-            },
-          ]}
-        >
-          {rootNote}
-        </Animated.Text>
-        <TouchableOpacity
-          onPress={() => stepNote(1)}
-          disabled={rootChangeDisabled}
-          style={[styles.stepBtn, rootChangeDisabled && styles.disabled]}
-          activeOpacity={0.7}
-        >
-          <Text style={[styles.stepBtnText, { color: isDark ? "#9ca3af" : "#78716c" }]}>›</Text>
-        </TouchableOpacity>
-      </View>
+      {/* Root stepper (absolute left) — hidden when root change is disabled */}
+      {!rootChangeDisabled && (
+        <View style={styles.stepperRow}>
+          <TouchableOpacity onPress={() => stepNote(-1)} style={styles.stepBtn} activeOpacity={0.7}>
+            <Text style={[styles.stepBtnText, { color: isDark ? "#9ca3af" : "#78716c" }]}>‹</Text>
+          </TouchableOpacity>
+          <Animated.Text
+            style={[
+              styles.rootNote,
+              {
+                color: isDark ? "#fff" : "#1c1917",
+                transform: [{ scale: rootScale }],
+              },
+            ]}
+          >
+            {rootNote}
+          </Animated.Text>
+          <TouchableOpacity onPress={() => stepNote(1)} style={styles.stepBtn} activeOpacity={0.7}>
+            <Text style={[styles.stepBtnText, { color: isDark ? "#9ca3af" : "#78716c" }]}>›</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Quiz kind selector (center) */}
       {showQuiz && quizKindValue && quizKindOptions && onQuizKindChange && (

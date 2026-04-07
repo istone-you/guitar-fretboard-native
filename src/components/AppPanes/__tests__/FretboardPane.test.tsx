@@ -57,7 +57,7 @@ const defaultProps = {
   quizCorrectCell: null,
   quizSelectedCells: [],
   quizRevealNoteNames: null,
-  fretboardAllStrings: false,
+  quizStrings: [0, 1, 2, 3, 4, 5],
   layers: [] as LayerConfig[],
   disableAnimation: false,
   cellEditMode: null as "hide" | "frame" | null,
@@ -142,25 +142,25 @@ describe("FretboardPane", () => {
     expect(fb.props.quizCell).toBeUndefined();
   });
 
-  it("passes quizTargetString when fretboard mode for note quiz without allStrings", () => {
+  it("passes quizTargetString when single string mode", () => {
     const { getByTestId } = renderPane({
       showQuiz: true,
       quizQuestion: baseQuestion,
       quizType: "fretboard",
       quizMode: "note",
-      fretboardAllStrings: false,
+      quizStrings: [2],
     });
     const fb = getByTestId("quiz-fretboard");
     expect(fb.props.quizTargetString).toBe(2);
   });
 
-  it("does not pass quizTargetString when fretboardAllStrings is true", () => {
+  it("does not pass quizTargetString when multi-string mode", () => {
     const { getByTestId } = renderPane({
       showQuiz: true,
       quizQuestion: baseQuestion,
       quizType: "fretboard",
       quizMode: "note",
-      fretboardAllStrings: true,
+      quizStrings: [0, 1, 2, 3, 4, 5],
     });
     const fb = getByTestId("quiz-fretboard");
     expect(fb.props.quizTargetString).toBeUndefined();
@@ -172,7 +172,7 @@ describe("FretboardPane", () => {
       quizQuestion: baseQuestion,
       quizType: "choice",
       quizMode: "note",
-      fretboardAllStrings: false,
+      quizStrings: [0, 1, 2, 3, 4, 5],
     });
     const fb = getByTestId("quiz-fretboard");
     expect(fb.props.quizTargetString).toBeUndefined();
@@ -184,7 +184,7 @@ describe("FretboardPane", () => {
       quizQuestion: baseQuestion,
       quizType: "fretboard",
       quizMode: "chord",
-      fretboardAllStrings: false,
+      quizStrings: [0, 1, 2, 3, 4, 5],
     });
     const fb = getByTestId("quiz-fretboard");
     expect(fb.props.quizTargetString).toBeUndefined();

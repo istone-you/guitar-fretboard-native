@@ -1,10 +1,20 @@
-import { useMemo, useRef } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Animated } from "react-native";
+import { useMemo, useRef, useState } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  Animated,
+  Modal,
+  Pressable,
+} from "react-native";
 import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 import "../../i18n";
 import type { Theme, ChordType, ScaleType, QuizMode, QuizType, QuizQuestion } from "../../types";
 import { DropdownSelect } from "../ui/DropdownSelect";
+import ChevronIcon from "../ui/ChevronIcon";
 import { buildScaleOptions } from "../ui/scaleOptions";
 
 function BounceButton({
@@ -77,6 +87,211 @@ function BounceView({ children, style }: { children: React.ReactNode; style?: an
   return <Animated.View style={[style, { transform: [{ scale }] }]}>{children}</Animated.View>;
 }
 
+function MultiSelectPopup({
+  theme,
+  label,
+  items,
+  selected,
+  onToggle,
+  disabled,
+}: {
+  theme: Theme;
+  label: string;
+  items: string[];
+  selected: string[];
+  onToggle: (item: string) => void;
+  disabled?: boolean;
+}) {
+  const { t } = useTranslation();
+  const [visible, setVisible] = useState(false);
+  const menuScale = useRef(new Animated.Value(1)).current;
+  const menuOpacity = useRef(new Animated.Value(1)).current;
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const isDark = theme === "dark";
+  const count = selected.length;
+  const total = items.length;
+  const summary = count === total ? t("quiz.filterAll") : `${count}/${total}`;
+  const textColor = disabled ? (isDark ? "#6b7280" : "#a8a29e") : isDark ? "#fff" : "#1c1917";
+
+  const prevSummary = useRef(summary);
+  if (prevSummary.current !== summary) {
+    prevSummary.current = summary;
+    scaleAnim.stopAnimation();
+    scaleAnim.setValue(0.8);
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      friction: 5,
+      tension: 150,
+      useNativeDriver: true,
+    }).start();
+  }
+
+  const close = () => {
+    Animated.timing(menuOpacity, { toValue: 0, duration: 150, useNativeDriver: true }).start(() => {
+      setVisible(false);
+    });
+  };
+
+  return (
+    <>
+      <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+        <TouchableOpacity
+          onPress={() => {
+            if (disabled) return;
+            menuScale.setValue(0.5);
+            menuOpacity.setValue(1);
+            setVisible(true);
+          }}
+          disabled={disabled}
+          style={popupStyles.trigger}
+          activeOpacity={0.7}
+        >
+          <Text style={[popupStyles.triggerText, { color: textColor }]} numberOfLines={1}>
+            {summary}
+          </Text>
+          {!disabled && (
+            <ChevronIcon
+              size={12}
+              color={isDark ? "#6b7280" : "#a8a29e"}
+              direction={visible ? "up" : "down"}
+            />
+          )}
+        </TouchableOpacity>
+      </Animated.View>
+      <Modal
+        visible={visible && !disabled}
+        transparent
+        animationType="none"
+        onRequestClose={close}
+        onShow={() => {
+          Animated.timing(menuScale, {
+            toValue: 1.05,
+            duration: 100,
+            useNativeDriver: true,
+          }).start(() => {
+            Animated.spring(menuScale, {
+              toValue: 1,
+              friction: 4,
+              tension: 200,
+              useNativeDriver: true,
+            }).start();
+          });
+        }}
+      >
+        <Pressable style={popupStyles.overlay} onPress={close}>
+          <Animated.View
+            style={[
+              popupStyles.menu,
+              {
+                backgroundColor: isDark ? "rgba(17,24,39,0.97)" : "rgba(250,250,249,0.97)",
+                borderColor: isDark ? "rgba(255,255,255,0.08)" : "#e7e5e4",
+                transform: [{ scale: menuScale }],
+                opacity: menuOpacity,
+              },
+            ]}
+          >
+            <Pressable>
+              <Text style={[popupStyles.menuTitle, { color: isDark ? "#e5e7eb" : "#1c1917" }]}>
+                {label}
+              </Text>
+              <View style={popupStyles.chipGrid}>
+                {items.map((item) => {
+                  const active = selected.includes(item);
+                  return (
+                    <TouchableOpacity
+                      key={item}
+                      onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        onToggle(item);
+                      }}
+                      style={[
+                        popupStyles.chip,
+                        {
+                          backgroundColor: active
+                            ? isDark
+                              ? "#e5e7eb"
+                              : "#1c1917"
+                            : isDark
+                              ? "#374151"
+                              : "#fff",
+                          borderColor: active ? "transparent" : isDark ? "#4b5563" : "#d6d3d1",
+                        },
+                      ]}
+                      activeOpacity={0.7}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 14,
+                          color: active
+                            ? isDark
+                              ? "#1c1917"
+                              : "#fff"
+                            : isDark
+                              ? "#e5e7eb"
+                              : "#44403c",
+                        }}
+                      >
+                        {item}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </Pressable>
+          </Animated.View>
+        </Pressable>
+      </Modal>
+    </>
+  );
+}
+
+const popupStyles = StyleSheet.create({
+  trigger: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "center",
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  triggerText: {
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.35)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  menu: {
+    borderWidth: 1,
+    borderRadius: 20,
+    padding: 16,
+    width: 300,
+  },
+  menuTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    textAlign: "center",
+    marginBottom: 12,
+  },
+  chipGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: 8,
+  },
+  chip: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    minWidth: 48,
+    alignItems: "center",
+  },
+});
+
 function ResultSection({ children }: { children: React.ReactNode }) {
   const scale = useRef(new Animated.Value(0.8)).current;
   const mounted = useRef(false);
@@ -134,8 +349,12 @@ interface QuizPanelProps {
   onNextQuestion: () => void;
   onRetryQuestion: () => void;
   quizSelectedCells: { stringIdx: number; fret: number }[];
-  fretboardAllStrings: boolean;
-  onFretboardAllStringsChange: (value: boolean) => void;
+  quizStrings: number[];
+  onQuizStringsChange: (value: number[]) => void;
+  quizKeys: string[];
+  onQuizKeysChange: (value: string[]) => void;
+  quizNoteNames: string[];
+  onQuizNoteNamesChange: (value: string[]) => void;
 }
 
 export default function QuizPanel({
@@ -176,8 +395,12 @@ export default function QuizPanel({
   onNextQuestion,
   onRetryQuestion,
   quizSelectedCells,
-  fretboardAllStrings,
-  onFretboardAllStringsChange,
+  quizStrings,
+  onQuizStringsChange,
+  quizKeys,
+  onQuizKeysChange,
+  quizNoteNames,
+  onQuizNoteNamesChange,
 }: QuizPanelProps) {
   const { t } = useTranslation();
   const isDark = theme === "dark";
@@ -208,6 +431,37 @@ export default function QuizPanel({
     onChordQuizTypesChange([...chordQuizTypes, value]);
   };
 
+  const handleQuizKeyToggle = (key: string) => {
+    if (answered) return;
+    if (quizKeys.includes(key)) {
+      if (quizKeys.length === 1) return;
+      onQuizKeysChange(quizKeys.filter((k) => k !== key));
+      return;
+    }
+    onQuizKeysChange([...quizKeys, key]);
+  };
+
+  const handleQuizNoteNameToggle = (name: string) => {
+    if (answered) return;
+    if (quizNoteNames.includes(name)) {
+      if (quizNoteNames.length === 1) return;
+      onQuizNoteNamesChange(quizNoteNames.filter((n) => n !== name));
+      return;
+    }
+    onQuizNoteNamesChange([...quizNoteNames, name]);
+  };
+
+  const handleQuizStringToggle = (item: string) => {
+    if (answered) return;
+    const s = Number(item);
+    if (quizStrings.includes(s)) {
+      if (quizStrings.length === 1) return;
+      onQuizStringsChange(quizStrings.filter((v) => v !== s).sort((a, b) => a - b));
+      return;
+    }
+    onQuizStringsChange([...quizStrings, s].sort((a, b) => a - b));
+  };
+
   const currentDiatonicDegree = useMemo(() => {
     if (diatonicEditingDegree != null) return diatonicEditingDegree;
     return (
@@ -226,12 +480,13 @@ export default function QuizPanel({
   const questionText = useMemo(() => {
     if (quizType === "fretboard") {
       if (mode === "degree") {
-        return fretboardAllStrings
-          ? t("quiz.questionDegreeAllStrings", { degree: question.correct, root: rootNote })
+        const degreeRoot = question.promptQuizRoot ?? rootNote;
+        return quizStrings.length > 1
+          ? t("quiz.questionDegreeAllStrings", { degree: question.correct, root: degreeRoot })
           : t("quiz.questionDegreeFretboard", {
               string: stringNumber,
               degree: question.correct,
-              root: rootNote,
+              root: degreeRoot,
             });
       }
       if (mode === "scale") {
@@ -244,7 +499,7 @@ export default function QuizPanel({
         return t("quiz.questionChordFretboard", { chord: question.promptChordLabel });
       }
       if (mode === "diatonic") return "";
-      return fretboardAllStrings
+      return quizStrings.length > 1
         ? t("quiz.questionNoteAllStrings", { note: question.correct })
         : t("quiz.questionFretboard", { string: stringNumber, note: question.correct });
     }
@@ -266,8 +521,12 @@ export default function QuizPanel({
     if (mode === "chord") return t("quiz.questionChordIdentify");
     if (mode === "note")
       return t("quiz.questionNote", { string: stringNumber, fret: question.fret });
-    return t("quiz.questionDegree", { string: stringNumber, fret: question.fret, root: rootNote });
-  }, [mode, quizType, question, rootNote, stringNumber, fretboardAllStrings, t]);
+    return t("quiz.questionDegree", {
+      string: stringNumber,
+      fret: question.fret,
+      root: question.promptQuizRoot ?? rootNote,
+    });
+  }, [mode, quizType, question, rootNote, stringNumber, quizStrings, t]);
 
   return (
     <View style={styles.card}>
@@ -278,86 +537,202 @@ export default function QuizPanel({
         </Text>
       </View>
 
+      {/* Note mode: note names + strings in a row */}
+      {mode === "note" && quizType === "fretboard" && (
+        <View style={styles.filterRow}>
+          <View style={styles.diatonicSettingsRow}>
+            <View style={{ alignItems: "center", gap: 4 }}>
+              <Text style={[styles.filterLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
+                {t("quiz.quizNoteNames.label")}
+              </Text>
+              <MultiSelectPopup
+                theme={theme}
+                label={t("quiz.quizNoteNames.label")}
+                items={noteOptions.slice(0, 12)}
+                selected={quizNoteNames}
+                onToggle={handleQuizNoteNameToggle}
+                disabled={answered}
+              />
+            </View>
+            <View style={{ alignItems: "center", gap: 4 }}>
+              <Text style={[styles.filterLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
+                {t("quiz.quizStrings.label")}
+              </Text>
+              <MultiSelectPopup
+                theme={theme}
+                label={t("quiz.quizStrings.label")}
+                items={["1", "2", "3", "4", "5", "6"]}
+                selected={quizStrings.map((s) => String(6 - s))}
+                onToggle={(item) => handleQuizStringToggle(String(6 - Number(item)))}
+                disabled={answered}
+              />
+            </View>
+          </View>
+        </View>
+      )}
+
+      {/* Note mode choice: note names only */}
+      {mode === "note" && quizType !== "fretboard" && (
+        <View style={styles.filterRow}>
+          <Text style={[styles.filterLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
+            {t("quiz.quizNoteNames.label")}
+          </Text>
+          <MultiSelectPopup
+            theme={theme}
+            label={t("quiz.quizNoteNames.label")}
+            items={noteOptions.slice(0, 12)}
+            selected={quizNoteNames}
+            onToggle={handleQuizNoteNameToggle}
+            disabled={answered}
+          />
+        </View>
+      )}
+
+      {/* Degree mode: keys + strings in a row (fretboard only) */}
+      {mode === "degree" && quizType === "fretboard" && (
+        <View style={styles.filterRow}>
+          <View style={styles.diatonicSettingsRow}>
+            <View style={{ alignItems: "center", gap: 4 }}>
+              <Text style={[styles.filterLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
+                {t("quiz.quizKeys.label")}
+              </Text>
+              <MultiSelectPopup
+                theme={theme}
+                label={t("quiz.quizKeys.label")}
+                items={noteOptions.slice(0, 12)}
+                selected={quizKeys}
+                onToggle={handleQuizKeyToggle}
+                disabled={answered}
+              />
+            </View>
+            <View style={{ alignItems: "center", gap: 4 }}>
+              <Text style={[styles.filterLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
+                {t("quiz.quizStrings.label")}
+              </Text>
+              <MultiSelectPopup
+                theme={theme}
+                label={t("quiz.quizStrings.label")}
+                items={["1", "2", "3", "4", "5", "6"]}
+                selected={quizStrings.map((s) => String(6 - s))}
+                onToggle={(item) => handleQuizStringToggle(String(6 - Number(item)))}
+                disabled={answered}
+              />
+            </View>
+          </View>
+        </View>
+      )}
+
+      {/* Degree mode choice: keys only */}
+      {mode === "degree" && quizType !== "fretboard" && (
+        <View style={styles.filterRow}>
+          <Text style={[styles.filterLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
+            {t("quiz.quizKeys.label")}
+          </Text>
+          <MultiSelectPopup
+            theme={theme}
+            label={t("quiz.quizKeys.label")}
+            items={noteOptions.slice(0, 12)}
+            selected={quizKeys}
+            onToggle={handleQuizKeyToggle}
+            disabled={answered}
+          />
+        </View>
+      )}
+
+      {/* Scale mode fretboard: keys + strings + scale in a row */}
+      {mode === "scale" && quizType === "fretboard" && (
+        <View style={styles.filterRow}>
+          <View style={styles.diatonicSettingsRow}>
+            <View style={{ alignItems: "center", gap: 4 }}>
+              <Text style={[styles.filterLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
+                {t("quiz.quizKeys.label")}
+              </Text>
+              <MultiSelectPopup
+                theme={theme}
+                label={t("quiz.quizKeys.label")}
+                items={noteOptions.slice(0, 12)}
+                selected={quizKeys}
+                onToggle={handleQuizKeyToggle}
+                disabled={answered}
+              />
+            </View>
+            <View style={{ alignItems: "center", gap: 4 }}>
+              <Text style={[styles.filterLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
+                {t("quiz.quizStrings.label")}
+              </Text>
+              <MultiSelectPopup
+                theme={theme}
+                label={t("quiz.quizStrings.label")}
+                items={["1", "2", "3", "4", "5", "6"]}
+                selected={quizStrings.map((s) => String(6 - s))}
+                onToggle={(item) => handleQuizStringToggle(String(6 - Number(item)))}
+                disabled={answered}
+              />
+            </View>
+            <View style={{ alignItems: "center", gap: 4 }}>
+              <Text style={[styles.filterLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
+                {t("layers.scale")}
+              </Text>
+              <DropdownSelect
+                theme={theme}
+                value={scaleType}
+                onChange={(v) => onScaleTypeChange(v as ScaleType)}
+                options={scaleOptions}
+                disabled={answered}
+                variant="plain"
+              />
+            </View>
+          </View>
+        </View>
+      )}
+
+      {/* Scale mode choice: keys + scale in a row */}
+      {mode === "scale" && quizType !== "fretboard" && (
+        <View style={styles.filterRow}>
+          <View style={styles.diatonicSettingsRow}>
+            <View style={{ alignItems: "center", gap: 4 }}>
+              <Text style={[styles.filterLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
+                {t("quiz.quizKeys.label")}
+              </Text>
+              <MultiSelectPopup
+                theme={theme}
+                label={t("quiz.quizKeys.label")}
+                items={noteOptions.slice(0, 12)}
+                selected={quizKeys}
+                onToggle={handleQuizKeyToggle}
+                disabled={answered}
+              />
+            </View>
+            <View style={{ alignItems: "center", gap: 4 }}>
+              <Text style={[styles.filterLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
+                {t("layers.scale")}
+              </Text>
+              <DropdownSelect
+                theme={theme}
+                value={scaleType}
+                onChange={(v) => onScaleTypeChange(v as ScaleType)}
+                options={scaleOptions}
+                disabled={answered}
+                variant="plain"
+              />
+            </View>
+          </View>
+        </View>
+      )}
+
       {/* Chord quiz types filter */}
       {mode === "chord" && (
         <View style={styles.filterRow}>
           <Text style={[styles.filterLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
             {t("quiz.chordTypes.label")}
           </Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View style={{ flexDirection: "row", gap: 6 }}>
-              {availableChordQuizTypes.map((ct) => {
-                const active = chordQuizTypes.includes(ct);
-                return (
-                  <BounceButton
-                    key={`${ct}-${quizType}`}
-                    selected={active}
-                    onPress={() => handleChordTypeToggle(ct)}
-                    style={[
-                      styles.chip,
-                      {
-                        backgroundColor: active
-                          ? isDark
-                            ? "#e5e7eb"
-                            : "#1c1917"
-                          : isDark
-                            ? "#374151"
-                            : "#fff",
-                        borderColor: active ? "transparent" : isDark ? "#4b5563" : "#d6d3d1",
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={{
-                        fontSize: 13,
-                        color: active
-                          ? isDark
-                            ? "#1c1917"
-                            : "#fff"
-                          : isDark
-                            ? "#e5e7eb"
-                            : "#44403c",
-                      }}
-                    >
-                      {ct}
-                    </Text>
-                  </BounceButton>
-                );
-              })}
-            </View>
-          </ScrollView>
-        </View>
-      )}
-
-      {/* Scale type selector */}
-      {mode === "scale" && (
-        <View style={styles.filterRow}>
-          <Text style={[styles.filterLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-            {t("layers.scale")}
-          </Text>
-          <DropdownSelect
+          <MultiSelectPopup
             theme={theme}
-            value={scaleType}
-            onChange={(v) => onScaleTypeChange(v as ScaleType)}
-            options={scaleOptions}
-            variant="plain"
-          />
-        </View>
-      )}
-
-      {/* Fretboard mode single/all strings */}
-      {quizType === "fretboard" && (mode === "note" || mode === "degree") && (
-        <View style={styles.filterRow}>
-          <DropdownSelect
-            theme={theme}
-            value={String(fretboardAllStrings)}
-            onChange={(v) => !answered && onFretboardAllStringsChange(v === "true")}
-            options={[
-              { value: "false", label: t("quiz.fretboardMode.singleString") },
-              { value: "true", label: t("quiz.fretboardMode.allStrings") },
-            ]}
+            label={t("quiz.chordTypes.label")}
+            items={availableChordQuizTypes}
+            selected={chordQuizTypes}
+            onToggle={(v) => handleChordTypeToggle(v as ChordType)}
             disabled={answered}
-            variant="plain"
           />
         </View>
       )}
@@ -398,7 +773,7 @@ export default function QuizPanel({
 
       {/* Question text */}
       {questionText !== "" && (
-        <BounceView key={questionText}>
+        <BounceView key={questionText} style={{ marginTop: 8 }}>
           <Text style={[styles.questionText, { color: isDark ? "#fff" : "#1c1917" }]}>
             {questionText}
           </Text>
@@ -971,12 +1346,6 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingHorizontal: 16,
     paddingVertical: 8,
-  },
-  chip: {
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
   },
   diatonicCard: {
     borderWidth: 1,

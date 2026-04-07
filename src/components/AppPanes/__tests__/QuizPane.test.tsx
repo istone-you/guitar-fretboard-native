@@ -63,7 +63,12 @@ const defaultProps = {
   onSubmitFretboard: jest.fn(),
   onNextQuestion: jest.fn(),
   onRetryQuestion: jest.fn(),
-  onFretboardAllStringsChange: jest.fn(),
+  quizStrings: [0, 1, 2, 3, 4, 5],
+  onQuizStringsChange: jest.fn(),
+  quizKeys: ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"],
+  onQuizKeysChange: jest.fn(),
+  quizNoteNames: ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"],
+  onQuizNoteNamesChange: jest.fn(),
 };
 
 function renderPane(overrides: Partial<typeof defaultProps> = {}) {

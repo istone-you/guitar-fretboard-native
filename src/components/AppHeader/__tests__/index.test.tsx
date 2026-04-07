@@ -369,12 +369,10 @@ describe("HeaderBar", () => {
   });
 
   // ── rootChangeDisabled disables stepper buttons ───────────────────
-  it("disables stepper buttons when rootChangeDisabled is true", () => {
-    const onRootNoteChange = jest.fn();
-    const { getByText } = renderHeader({ rootChangeDisabled: true, onRootNoteChange });
-    fireEvent.press(getByText("‹"));
-    fireEvent.press(getByText("›"));
-    expect(onRootNoteChange).not.toHaveBeenCalled();
+  it("hides stepper buttons when rootChangeDisabled is true", () => {
+    const { queryByText } = renderHeader({ rootChangeDisabled: true });
+    expect(queryByText("‹")).toBeNull();
+    expect(queryByText("›")).toBeNull();
   });
 
   // ── Note/Degree toggle callbacks ──────────────────────────────────

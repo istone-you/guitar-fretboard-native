@@ -177,6 +177,16 @@
       "chordChoice": "コード・識別",
       "chordFretboard": "コード・指板"
     },
+    "filterAll": "すべて",
+    "quizNoteNames": {
+      "label": "出題音"
+    },
+    "quizStrings": {
+      "label": "出題弦"
+    },
+    "quizKeys": {
+      "label": "出題キー"
+    },
     "chordTypes": {
       "label": "出題コード",
       "select": "選択",

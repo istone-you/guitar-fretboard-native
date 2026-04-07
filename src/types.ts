@@ -160,9 +160,11 @@ export interface QuizQuestion {
   promptChordLabel?: string;
   promptChordRoot?: string;
   promptChordType?: ChordType;
+  promptQuizRoot?: string;
   promptScaleRoot?: string;
   promptScaleType?: ScaleType;
   correctNoteNames?: string[];
+  promptQuizStrings?: number[];
   promptDiatonicKeyType?: "major" | "natural-minor";
   promptDiatonicChordSize?: "triad" | "seventh";
   diatonicChordTypeOptions?: ChordType[];

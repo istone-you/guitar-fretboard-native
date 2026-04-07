@@ -13,7 +13,6 @@ const defaultParams = {
   rootNote: "C",
   scaleType: "major" as ScaleType,
   showQuiz: true,
-  chordQuizTypes: ["Major", "Minor"] as ChordType[],
 };
 
 function setup(overrides: Partial<typeof defaultParams> = {}) {
@@ -62,7 +61,7 @@ describe("useQuiz", () => {
       expect(result.current.quizScore).toEqual({ correct: 0, total: 0 });
       expect(result.current.quizSelectedCells).toEqual([]);
       expect(result.current.quizSelectedChoices).toEqual([]);
-      expect(result.current.fretboardAllStrings).toBe(false);
+      expect(result.current.quizStrings).toEqual([0, 1, 2, 3, 4, 5]);
     });
   });
 
@@ -546,7 +545,10 @@ describe("useQuiz", () => {
     });
 
     it("uses default Major if chordQuizTypes is empty", () => {
-      const hook = startedQuiz({ chordQuizTypes: [] });
+      const hook = startedQuiz();
+      act(() => {
+        hook.result.current.handleChordQuizTypesChange([] as ChordType[]);
+      });
       act(() => {
         hook.result.current.handleQuizKindChange("chord", "choice");
       });
@@ -560,8 +562,11 @@ describe("useQuiz", () => {
   // =========================================================================
 
   describe("handleFretboardQuizAnswer", () => {
-    it("selects a single cell for note fretboard quiz", () => {
+    it("selects a single cell for note fretboard quiz (single string)", () => {
       const hook = startedQuiz();
+      act(() => {
+        hook.result.current.handleQuizStringsChange([0]);
+      });
       act(() => {
         hook.result.current.handleQuizKindChange("note", "fretboard");
       });
@@ -573,6 +578,9 @@ describe("useQuiz", () => {
 
     it("replaces cell for single-cell mode", () => {
       const hook = startedQuiz();
+      act(() => {
+        hook.result.current.handleQuizStringsChange([0]);
+      });
       act(() => {
         hook.result.current.handleQuizKindChange("note", "fretboard");
       });
@@ -624,7 +632,7 @@ describe("useQuiz", () => {
     it("toggles cells for note fretboard with allStrings", () => {
       const hook = startedQuiz();
       act(() => {
-        hook.result.current.setFretboardAllStrings(true);
+        hook.result.current.handleQuizStringsChange([0, 1, 2, 3, 4, 5]);
       });
       act(() => {
         hook.result.current.handleQuizKindChange("note", "fretboard");
@@ -707,6 +715,9 @@ describe("useQuiz", () => {
       it("judges correct single cell note answer", () => {
         const hook = startedQuiz();
         act(() => {
+          hook.result.current.handleQuizStringsChange([0]);
+        });
+        act(() => {
           hook.result.current.handleQuizKindChange("note", "fretboard");
         });
         const q = hook.result.current.quizQuestion!;
@@ -732,6 +743,9 @@ describe("useQuiz", () => {
         // Use a deterministic random to get fret 5, string 0
         const spy = mockRandom(0, 0.3); // stringIdx=0, fret ~4
         const hook = startedQuiz();
+        act(() => {
+          hook.result.current.handleQuizStringsChange([0]);
+        });
         act(() => {
           hook.result.current.handleQuizKindChange("note", "fretboard");
         });
@@ -769,6 +783,9 @@ describe("useQuiz", () => {
       it("judges correct single cell degree answer", () => {
         const hook = startedQuiz();
         act(() => {
+          hook.result.current.handleQuizStringsChange([0]);
+        });
+        act(() => {
           hook.result.current.handleQuizKindChange("degree", "fretboard");
         });
         const q = hook.result.current.quizQuestion!;
@@ -790,7 +807,7 @@ describe("useQuiz", () => {
       it("judges correct all-strings note answer", () => {
         const hook = startedQuiz();
         act(() => {
-          hook.result.current.setFretboardAllStrings(true);
+          hook.result.current.handleQuizStringsChange([0, 1, 2, 3, 4, 5]);
         });
         act(() => {
           hook.result.current.handleQuizKindChange("note", "fretboard");
@@ -831,7 +848,7 @@ describe("useQuiz", () => {
       it("judges wrong when a string is missing", () => {
         const hook = startedQuiz();
         act(() => {
-          hook.result.current.setFretboardAllStrings(true);
+          hook.result.current.handleQuizStringsChange([0, 1, 2, 3, 4, 5]);
         });
         act(() => {
           hook.result.current.handleQuizKindChange("note", "fretboard");
@@ -860,7 +877,7 @@ describe("useQuiz", () => {
       it("judges wrong when a wrong cell is selected", () => {
         const hook = startedQuiz();
         act(() => {
-          hook.result.current.setFretboardAllStrings(true);
+          hook.result.current.handleQuizStringsChange([0, 1, 2, 3, 4, 5]);
         });
         act(() => {
           hook.result.current.handleQuizKindChange("note", "fretboard");
@@ -902,6 +919,51 @@ describe("useQuiz", () => {
           hook.result.current.handleSubmitFretboard();
         });
         expect(hook.result.current.quizScore.correct).toBe(0);
+      });
+    });
+
+    describe("all strings with filtered quizNoteNames", () => {
+      it("judges correctly after quizNoteNames is narrowed (same act)", () => {
+        const hook = startedQuiz();
+        act(() => {
+          hook.result.current.handleQuizStringsChange([0, 1, 2, 3, 4, 5]);
+        });
+        act(() => {
+          hook.result.current.handleQuizKindChange("note", "fretboard");
+        });
+        // Use the handler that sets + regenerates atomically
+        act(() => {
+          hook.result.current.handleQuizNoteNamesChange(["C", "E"]);
+        });
+
+        const q = hook.result.current.quizQuestion!;
+        expect(q.correctNoteNames).toBeTruthy();
+        expect(q.correctNoteNames!.length).toBe(1);
+        const targetNote = q.correctNoteNames![0];
+        // The question should only use "C" or "E"
+        expect(["C", "E"]).toContain(targetNote);
+
+        const notes = [...NOTES_SHARP] as string[];
+        const fretRange: [number, number] = [0, 14];
+
+        // Select one correct cell per string
+        const selectedPerString = new Set<number>();
+        for (let s = 0; s < 6; s++) {
+          for (let f = fretRange[0]; f <= fretRange[1]; f++) {
+            if (notes[getNoteIndex(s, f)] === targetNote && !selectedPerString.has(s)) {
+              selectedPerString.add(s);
+              act(() => {
+                hook.result.current.handleFretboardQuizAnswer(s, f);
+              });
+            }
+          }
+        }
+
+        act(() => {
+          hook.result.current.handleSubmitFretboard();
+        });
+        expect(hook.result.current.quizScore.correct).toBe(1);
+        expect(hook.result.current.quizRevealNoteNames).toEqual([targetNote]);
       });
     });
 
@@ -1643,7 +1705,7 @@ describe("useQuiz", () => {
     it("fretboard allStrings note question has correctNoteNames", () => {
       const hook = startedQuiz();
       act(() => {
-        hook.result.current.setFretboardAllStrings(true);
+        hook.result.current.handleQuizStringsChange([0, 1, 2, 3, 4, 5]);
       });
       act(() => {
         hook.result.current.handleQuizKindChange("note", "fretboard");
@@ -1655,7 +1717,7 @@ describe("useQuiz", () => {
     it("fretboard allStrings degree question has correctNoteNames", () => {
       const hook = startedQuiz();
       act(() => {
-        hook.result.current.setFretboardAllStrings(true);
+        hook.result.current.handleQuizStringsChange([0, 1, 2, 3, 4, 5]);
       });
       act(() => {
         hook.result.current.handleQuizKindChange("degree", "fretboard");
@@ -1748,12 +1810,12 @@ describe("useQuiz", () => {
       expect(result.current.quizType).toBe("fretboard");
     });
 
-    it("setFretboardAllStrings updates the flag", () => {
+    it("handleQuizStringsChange updates the strings", () => {
       const { result } = setup();
       act(() => {
-        result.current.setFretboardAllStrings(true);
+        result.current.handleQuizStringsChange([0, 2]);
       });
-      expect(result.current.fretboardAllStrings).toBe(true);
+      expect(result.current.quizStrings).toEqual([0, 2]);
     });
 
     it("setQuizQuestion updates the question", () => {

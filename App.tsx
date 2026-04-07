@@ -34,8 +34,6 @@ import FretboardPane from "./src/components/AppPanes/FretboardPane";
 import MainPracticePane from "./src/components/AppPanes/MainPracticePane";
 import QuizPane from "./src/components/AppPanes/QuizPane";
 
-const DEFAULT_CHORD_QUIZ_TYPES: ChordType[] = ["Major", "Minor", "7th", "maj7", "m7"];
-
 const STORAGE_KEYS = {
   theme: "guiter:theme",
   accidental: "guiter:accidental",
@@ -90,7 +88,6 @@ function AppContent() {
 
   // Quiz
   const [showQuiz, setShowQuiz] = useState(false);
-  const [chordQuizTypes, setChordQuizTypes] = useState<ChordType[]>(DEFAULT_CHORD_QUIZ_TYPES);
   // Display settings
   const [accidental, setAccidental] = usePersistedSetting<Accidental>(
     STORAGE_KEYS.accidental,
@@ -301,8 +298,14 @@ function AppContent() {
     handleRetryQuestion,
     setDiatonicQuizKeyType,
     setDiatonicQuizChordSize,
-    fretboardAllStrings,
-    setFretboardAllStrings,
+    chordQuizTypes,
+    handleChordQuizTypesChange,
+    quizStrings,
+    handleQuizStringsChange,
+    quizKeys,
+    handleQuizKeysChange,
+    quizNoteNames,
+    handleQuizNoteNamesChange,
     regenerateQuiz,
     handleShowQuizChange,
     handleSubmitChoice,
@@ -310,7 +313,6 @@ function AppContent() {
     handleSubmitFretboard,
   } = useQuiz({
     accidental,
-    chordQuizTypes,
     fretRange,
     rootNote,
     scaleType,
@@ -359,7 +361,7 @@ function AppContent() {
   const quizEffectiveRootNote =
     quizMode === "chord" && quizType === "choice" && quizQuestion?.promptChordRoot
       ? quizQuestion.promptChordRoot
-      : rootNote;
+      : (quizQuestion?.promptQuizRoot ?? rootNote);
 
   // ── Shared JSX pieces ──────────────────────────────────────────
 
@@ -405,7 +407,7 @@ function AppContent() {
       quizCorrectCell={quizCorrectCell}
       quizSelectedCells={quizSelectedCells}
       quizRevealNoteNames={quizRevealNoteNames}
-      fretboardAllStrings={fretboardAllStrings}
+      quizStrings={quizStrings}
       layers={effectiveLayers}
       disableAnimation={isLandscape || animDisabled}
       cellEditMode={cellEditMode}
@@ -443,11 +445,12 @@ function AppContent() {
       availableChordQuizTypes={CHORD_QUIZ_TYPES_ALL}
       scaleType={scaleType}
       quizSelectedCells={quizSelectedCells}
-      fretboardAllStrings={fretboardAllStrings}
-      onChordQuizTypesChange={(v) => {
-        setChordQuizTypes(v);
-        regenerateQuiz();
-      }}
+      quizStrings={quizStrings}
+      quizKeys={quizKeys}
+      onQuizKeysChange={handleQuizKeysChange}
+      quizNoteNames={quizNoteNames}
+      onQuizNoteNamesChange={handleQuizNoteNamesChange}
+      onChordQuizTypesChange={handleChordQuizTypesChange}
       onScaleTypeChange={(v) => {
         setScaleType(v as ScaleType);
         regenerateQuiz();
@@ -472,7 +475,7 @@ function AppContent() {
       onSubmitFretboard={handleSubmitFretboard}
       onNextQuestion={handleNextQuestion}
       onRetryQuestion={handleRetryQuestion}
-      onFretboardAllStringsChange={setFretboardAllStrings}
+      onQuizStringsChange={handleQuizStringsChange}
     />
   );
 

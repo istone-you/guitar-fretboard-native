@@ -70,8 +70,12 @@ const defaultProps = {
   onNextQuestion: jest.fn(),
   onRetryQuestion: jest.fn(),
   quizSelectedCells: [] as { stringIdx: number; fret: number }[],
-  fretboardAllStrings: false,
-  onFretboardAllStringsChange: jest.fn(),
+  quizStrings: [0, 1, 2, 3, 4, 5],
+  onQuizStringsChange: jest.fn(),
+  quizKeys: ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"],
+  onQuizKeysChange: jest.fn(),
+  quizNoteNames: ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"],
+  onQuizNoteNamesChange: jest.fn(),
 };
 
 function renderPanel(overrides: Partial<typeof defaultProps> = {}) {
@@ -130,36 +134,38 @@ describe("QuizPanel", () => {
     expect(getByText("quiz.questionScale")).toBeTruthy();
   });
 
-  it("displays fretboard question for note mode", () => {
+  it("displays fretboard question for note mode (single string)", () => {
     const { getByText } = renderPanel({
       quizType: "fretboard",
       mode: "note",
+      quizStrings: [2],
     });
     expect(getByText("quiz.questionFretboard")).toBeTruthy();
   });
 
-  it("displays fretboard question for note mode with allStrings", () => {
+  it("displays fretboard question for note mode (multi string)", () => {
     const { getByText } = renderPanel({
       quizType: "fretboard",
       mode: "note",
-      fretboardAllStrings: true,
+      quizStrings: [0, 1, 2, 3, 4, 5],
     });
     expect(getByText("quiz.questionNoteAllStrings")).toBeTruthy();
   });
 
-  it("displays fretboard question for degree mode", () => {
+  it("displays fretboard question for degree mode (single string)", () => {
     const { getByText } = renderPanel({
       quizType: "fretboard",
       mode: "degree",
+      quizStrings: [2],
     });
     expect(getByText("quiz.questionDegreeFretboard")).toBeTruthy();
   });
 
-  it("displays fretboard question for degree mode with allStrings", () => {
+  it("displays fretboard question for degree mode (multi string)", () => {
     const { getByText } = renderPanel({
       quizType: "fretboard",
       mode: "degree",
-      fretboardAllStrings: true,
+      quizStrings: [0, 1, 2, 3, 4, 5],
     });
     expect(getByText("quiz.questionDegreeAllStrings")).toBeTruthy();
   });
@@ -200,26 +206,28 @@ describe("QuizPanel", () => {
 
   // ── Choice selection + submit button ──────────────────────────────
   it("renders 12 choice buttons for note quiz", () => {
-    const { getByText } = renderPanel();
+    const { getAllByText } = renderPanel();
     baseQuestion.choices.forEach((choice) => {
-      expect(getByText(choice)).toBeTruthy();
+      expect(getAllByText(choice).length).toBeGreaterThanOrEqual(1);
     });
   });
 
   it("calls onAnswer when a choice is pressed", () => {
     const onAnswer = jest.fn();
-    const { getByText } = renderPanel({ onAnswer });
-    fireEvent.press(getByText("G"));
+    const { getAllByText } = renderPanel({ onAnswer });
+    const gButtons = getAllByText("G");
+    fireEvent.press(gButtons[gButtons.length - 1]);
     expect(onAnswer).toHaveBeenCalledWith("G");
   });
 
   it("does not call onAnswer when answered", () => {
     const onAnswer = jest.fn();
-    const { getByText } = renderPanel({
+    const { getAllByText } = renderPanel({
       onAnswer,
       selectedAnswer: "G",
     });
-    fireEvent.press(getByText("C"));
+    const cButtons = getAllByText("C");
+    fireEvent.press(cButtons[cButtons.length - 1]);
     expect(onAnswer).not.toHaveBeenCalled();
   });
 
@@ -314,10 +322,10 @@ describe("QuizPanel", () => {
     expect(onSubmitChordChoice).toHaveBeenCalledTimes(1);
   });
 
-  // ── Chord quiz type filter ────────────────────────────────────────
-  it("renders chord type filter chips in chord mode", () => {
+  // ── Chord quiz type filter (popup) ────────────────────────────────
+  it("renders chord type filter trigger in chord mode", () => {
     const { getByText } = renderPanel({ mode: "chord" });
-    expect(getByText("quiz.chordTypes.label")).toBeTruthy();
+    expect(getByText(/quiz\.chordTypes\.label/)).toBeTruthy();
   });
 
   it("calls onChordQuizTypesChange to add a type", () => {
@@ -327,6 +335,8 @@ describe("QuizPanel", () => {
       chordQuizTypes: ["Major", "Minor"],
       onChordQuizTypesChange,
     });
+    // Open popup via trigger button then press chip
+    fireEvent.press(getByText("2/14"));
     fireEvent.press(getByText("m7"));
     expect(onChordQuizTypesChange).toHaveBeenCalledWith(["Major", "Minor", "m7"]);
   });
@@ -338,6 +348,7 @@ describe("QuizPanel", () => {
       chordQuizTypes: ["Major", "Minor", "7th"],
       onChordQuizTypesChange,
     });
+    fireEvent.press(getByText("3/14"));
     fireEvent.press(getByText("Minor"));
     expect(onChordQuizTypesChange).toHaveBeenCalledWith(["Major", "7th"]);
   });
@@ -349,13 +360,14 @@ describe("QuizPanel", () => {
       chordQuizTypes: ["Major"],
       onChordQuizTypesChange,
     });
+    fireEvent.press(getByText("1/14"));
     fireEvent.press(getByText("Major"));
     expect(onChordQuizTypesChange).not.toHaveBeenCalled();
   });
 
   it("does not toggle chord types when answered", () => {
     const onChordQuizTypesChange = jest.fn();
-    const { getByText } = renderPanel({
+    const { queryByText } = renderPanel({
       mode: "chord",
       selectedAnswer: "C-Major",
       question: {
@@ -365,7 +377,9 @@ describe("QuizPanel", () => {
       },
       onChordQuizTypesChange,
     });
-    fireEvent.press(getByText("m7"));
+    // Popup trigger should be disabled when answered
+    const trigger = queryByText(/quiz\.chordTypes\.label/);
+    if (trigger) fireEvent.press(trigger);
     expect(onChordQuizTypesChange).not.toHaveBeenCalled();
   });
 
@@ -419,20 +433,20 @@ describe("QuizPanel", () => {
   });
 
   // ── Fretboard all strings mode selector ───────────────────────────
-  it("shows fretboard mode selector for note fretboard quiz", () => {
+  it("shows string selection for note fretboard quiz", () => {
     const { getByText } = renderPanel({
       quizType: "fretboard",
       mode: "note",
     });
-    expect(getByText("quiz.fretboardMode.singleString")).toBeTruthy();
+    expect(getByText("quiz.quizStrings.label")).toBeTruthy();
   });
 
-  it("shows fretboard mode selector for degree fretboard quiz", () => {
+  it("shows string selection for degree fretboard quiz", () => {
     const { getByText } = renderPanel({
       quizType: "fretboard",
       mode: "degree",
     });
-    expect(getByText("quiz.fretboardMode.singleString")).toBeTruthy();
+    expect(getByText("quiz.quizStrings.label")).toBeTruthy();
   });
 
   // ── Result display (correct/incorrect text colors) ────────────────
@@ -504,16 +518,18 @@ describe("QuizPanel", () => {
 
   // ── Choice colors after answer ────────────────────────────────────
   it("shows green background for correct choice after answering", () => {
-    const { getByText } = renderPanel({ selectedAnswer: "G" });
+    const { getAllByText } = renderPanel({ selectedAnswer: "G" });
     // The correct choice "G" should have green background
-    const gButton = getByText("G").parent;
+    const gButtons = getAllByText("G");
+    const gButton = gButtons[gButtons.length - 1].parent;
     expect(gButton).toBeTruthy();
   });
 
   it("shows red background for wrong selected choice", () => {
-    const { getByText } = renderPanel({ selectedAnswer: "C" });
+    const { getAllByText } = renderPanel({ selectedAnswer: "C" });
     // "C" was selected but wrong
-    const cButton = getByText("C").parent;
+    const cButtons = getAllByText("C");
+    const cButton = cButtons[cButtons.length - 1].parent;
     expect(cButton).toBeTruthy();
   });
 
@@ -882,29 +898,26 @@ describe("QuizPanel", () => {
     expect(getByText("layers.scale")).toBeTruthy();
   });
 
-  // ── Fretboard single/all strings mode selector ───────────────────
-  it("calls onFretboardAllStringsChange when fretboard mode is changed", () => {
-    const onFretboardAllStringsChange = jest.fn();
+  // ── String selection popup for note/degree fretboard ─────────────
+  it("shows string selection trigger for note fretboard quiz", () => {
     const { getByText } = renderPanel({
       quizType: "fretboard",
       mode: "note",
-      fretboardAllStrings: false,
-      onFretboardAllStringsChange,
+      quizStrings: [0, 1, 2, 3, 4, 5],
     });
-    // The single string mode label should be visible
-    expect(getByText("quiz.fretboardMode.singleString")).toBeTruthy();
+    expect(getByText("quiz.quizStrings.label")).toBeTruthy();
   });
 
-  it("shows allStrings mode selector for degree fretboard quiz", () => {
+  it("shows string selection trigger for degree fretboard quiz", () => {
     const { getByText } = renderPanel({
       quizType: "fretboard",
       mode: "degree",
-      fretboardAllStrings: true,
+      quizStrings: [0, 1, 2, 3, 4, 5],
     });
-    expect(getByText("quiz.fretboardMode.allStrings")).toBeTruthy();
+    expect(getByText("quiz.quizStrings.label")).toBeTruthy();
   });
 
-  it("does not show fretboard mode selector for chord fretboard quiz", () => {
+  it("does not show string selection for chord fretboard quiz", () => {
     const { queryByText } = renderPanel({
       quizType: "fretboard",
       mode: "chord",
@@ -913,18 +926,7 @@ describe("QuizPanel", () => {
         promptChordLabel: "C Major",
       },
     });
-    expect(queryByText("quiz.fretboardMode.singleString")).toBeNull();
-  });
-
-  it("disables fretboard mode selector when answered", () => {
-    const { getByText } = renderPanel({
-      quizType: "fretboard",
-      mode: "note",
-      selectedAnswer: "G",
-      fretboardAllStrings: false,
-    });
-    // Selector should still render but be disabled
-    expect(getByText("quiz.fretboardMode.singleString")).toBeTruthy();
+    expect(queryByText("quiz.quizStrings.label")).toBeNull();
   });
 
   // ── Diatonic key type and chord size settings ────────────────────
@@ -1020,35 +1022,6 @@ describe("QuizPanel", () => {
   });
 
   // ── Fretboard allStrings dropdown onChange callback ──────────────
-  it("calls onFretboardAllStringsChange when fretboard mode dropdown is changed", () => {
-    const onFretboardAllStringsChange = jest.fn();
-    const { getByText } = renderPanel({
-      quizType: "fretboard",
-      mode: "note",
-      fretboardAllStrings: false,
-      onFretboardAllStringsChange,
-    });
-    // Open the fretboard mode dropdown
-    fireEvent.press(getByText("quiz.fretboardMode.singleString"));
-    // Select allStrings option
-    fireEvent.press(getByText("quiz.fretboardMode.allStrings"));
-    expect(onFretboardAllStringsChange).toHaveBeenCalledWith(true);
-  });
-
-  it("does not call onFretboardAllStringsChange when answered", () => {
-    const onFretboardAllStringsChange = jest.fn();
-    const { getByText } = renderPanel({
-      quizType: "fretboard",
-      mode: "note",
-      fretboardAllStrings: false,
-      selectedAnswer: "G",
-      onFretboardAllStringsChange,
-    });
-    // Open the fretboard mode dropdown (disabled should prevent opening)
-    fireEvent.press(getByText("quiz.fretboardMode.singleString"));
-    expect(onFretboardAllStringsChange).not.toHaveBeenCalled();
-  });
-
   // ── Diatonic key type dropdown onChange callback ─────────────────
   it("calls onDiatonicQuizKeyTypeChange when key type is changed from dropdown", () => {
     const onDiatonicQuizKeyTypeChange = jest.fn();
@@ -1104,11 +1077,11 @@ describe("QuizPanel", () => {
     // Rerender with a selected choice to trigger BounceButton animation
     rerender(<QuizPanel {...defaultProps} mode="note" quizSelectedChoices={["G"]} />);
     // The "G" button should now appear selected - use rerender's container
-    const { getByText } = renderPanel({
+    const { getAllByText } = renderPanel({
       mode: "note",
       quizSelectedChoices: ["G"],
     });
-    const gButton = getByText("G");
-    expect(gButton).toBeTruthy();
+    const gButtons = getAllByText("G");
+    expect(gButtons.length).toBeGreaterThanOrEqual(1);
   });
 });

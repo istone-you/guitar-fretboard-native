@@ -177,6 +177,16 @@
       "chordChoice": "Chord / Identify",
       "chordFretboard": "Chord / Fretboard"
     },
+    "filterAll": "All",
+    "quizNoteNames": {
+      "label": "Notes"
+    },
+    "quizStrings": {
+      "label": "Strings"
+    },
+    "quizKeys": {
+      "label": "Keys"
+    },
     "chordTypes": {
       "label": "Chords",
       "select": "Select",

@@ -38,19 +38,19 @@ describe("useQuizViewModel – quizRootChangeEnabled", () => {
     expect(hook.result.current.quizRootChangeEnabled).toBe(true);
   });
 
-  it("returns true when showQuiz is true and mode is degree", () => {
+  it("returns false when showQuiz is true and mode is degree", () => {
     const { hook } = setup({ showQuiz: true, quizMode: "degree" });
-    expect(hook.result.current.quizRootChangeEnabled).toBe(true);
+    expect(hook.result.current.quizRootChangeEnabled).toBe(false);
   });
 
-  it("returns true when showQuiz is true and mode is scale", () => {
+  it("returns false when showQuiz is true and mode is scale", () => {
     const { hook } = setup({ showQuiz: true, quizMode: "scale" });
-    expect(hook.result.current.quizRootChangeEnabled).toBe(true);
+    expect(hook.result.current.quizRootChangeEnabled).toBe(false);
   });
 
-  it("returns true when showQuiz is true and mode is diatonic", () => {
+  it("returns false when showQuiz is true and mode is diatonic", () => {
     const { hook } = setup({ showQuiz: true, quizMode: "diatonic" });
-    expect(hook.result.current.quizRootChangeEnabled).toBe(true);
+    expect(hook.result.current.quizRootChangeEnabled).toBe(false);
   });
 
   it("returns false when showQuiz is true and mode is note", () => {
