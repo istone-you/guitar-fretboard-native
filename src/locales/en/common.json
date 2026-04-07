@@ -34,7 +34,12 @@
     "frameCount": "Frames: {{count}}",
     "noFrame": "None",
     "cancel": "Cancel",
-    "displayEdited": "Edited"
+    "displayEdited": "Edited",
+    "presets": "Presets",
+    "savePreset": "Save",
+    "presetName": "Preset name",
+    "noPresets": "No saved presets",
+    "layerCount": "layers"
   },
   "controls": {
     "displayMode": "Display",

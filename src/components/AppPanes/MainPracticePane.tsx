@@ -18,14 +18,16 @@ interface MainPracticePaneProps {
   t: (key: string) => string;
   cellEditUiVisible: boolean;
   cellEditAnim: Animated.Value;
-  onAddLayer: (layer: LayerConfig) => void;
+  slots: (LayerConfig | null)[];
+  onAddLayer: (layer: LayerConfig, slotIndex?: number) => void;
   onUpdateLayer: (id: string, layer: LayerConfig) => void;
   onRemoveLayer: (id: string) => void;
   onToggleLayer: (id: string) => void;
-  onReorderLayers: (layers: LayerConfig[]) => void;
+  onReorderLayers: (slots: (LayerConfig | null)[]) => void;
   onPreviewLayer: (layer: LayerConfig | null) => void;
   onStartCellEdit: (mode: "hide" | "frame", layerId: string, draftLayer?: LayerConfig) => void;
   onClearReopenLayerId: () => void;
+  onLoadPreset: (layers: LayerConfig[]) => void;
   onCellEditCancel: () => void;
   onCellEditReset: () => void;
   onCellEditDone: () => void;
@@ -53,6 +55,8 @@ export default function MainPracticePane({
   onReorderLayers,
   onPreviewLayer,
   onStartCellEdit,
+  slots,
+  onLoadPreset,
   onClearReopenLayerId,
   onCellEditCancel,
   onCellEditReset,
@@ -68,6 +72,7 @@ export default function MainPracticePane({
             rootNote={rootNote}
             accidental={accidental}
             layers={layers}
+            slots={slots}
             onAddLayer={onAddLayer}
             onUpdateLayer={onUpdateLayer}
             onRemoveLayer={onRemoveLayer}
@@ -79,6 +84,7 @@ export default function MainPracticePane({
             overlaySemitones={overlaySemitones}
             layerNoteLabels={layerNoteLabelsMap}
             onStartCellEdit={onStartCellEdit}
+            onLoadPreset={onLoadPreset}
             reopenLayerId={reopenLayerId}
             onClearReopenLayerId={onClearReopenLayerId}
           />

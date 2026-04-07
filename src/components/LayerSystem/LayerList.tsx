@@ -15,6 +15,8 @@ import Svg, { Circle, Path } from "react-native-svg";
 import type { Theme, LayerConfig } from "../../types";
 import { MAX_LAYERS, DEFAULT_LAYER_COLORS } from "../../types";
 import LayerEditModal from "./LayerEditModal";
+import LayerPresetModal from "./LayerPresetModal";
+import { useLayerPresets } from "../../hooks/useLayerPresets";
 
 function LayerToggle({
   active,
@@ -59,17 +61,19 @@ interface LayerListProps {
   rootNote: string;
   accidental: "sharp" | "flat";
   layers: LayerConfig[];
-  onAddLayer: (layer: LayerConfig) => void;
+  slots: (LayerConfig | null)[];
+  onAddLayer: (layer: LayerConfig, slotIndex?: number) => void;
   onUpdateLayer: (id: string, layer: LayerConfig) => void;
   onRemoveLayer: (id: string) => void;
   onToggleLayer: (id: string) => void;
-  onReorderLayers: (layers: LayerConfig[]) => void;
+  onReorderLayers: (slots: (LayerConfig | null)[]) => void;
   onPreviewLayer: (layer: LayerConfig | null) => void;
   previewLayer?: LayerConfig | null;
   overlayNotes: string[];
   overlaySemitones: Set<number>;
   layerNoteLabels: Map<string, string[]>;
   onStartCellEdit?: (mode: "hide" | "frame", layerId: string, draftLayer?: LayerConfig) => void;
+  onLoadPreset?: (layers: LayerConfig[]) => void;
   reopenLayerId?: string | null;
   onClearReopenLayerId?: () => void;
 }
@@ -79,6 +83,7 @@ export default function LayerList({
   rootNote,
   accidental,
   layers,
+  slots,
   onAddLayer,
   onUpdateLayer,
   onRemoveLayer,
@@ -90,6 +95,7 @@ export default function LayerList({
   overlaySemitones,
   layerNoteLabels,
   onStartCellEdit,
+  onLoadPreset,
   reopenLayerId,
   onClearReopenLayerId,
 }: LayerListProps) {
@@ -97,23 +103,21 @@ export default function LayerList({
   const isDark = theme === "dark";
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editingLayer, setEditingLayer] = useState<LayerConfig | null>(null);
-  const [draggingLayerId, setDraggingLayerId] = useState<string | null>(null);
+  const [presetModalVisible, setPresetModalVisible] = useState(false);
+  const { presets, savePreset, loadPreset, deletePreset } = useLayerPresets();
+  const [draggingSlotIdx, setDraggingSlotIdx] = useState<number | null>(null);
   const rowHeight = useRef(56);
-  const [, setDeleteAnimTick] = useState(0);
   const dragY = useRef(new Animated.Value(0)).current;
   const liftScale = useRef(new Animated.Value(1)).current;
-  const deleteShiftMapRef = useRef<Map<string, Animated.Value>>(new Map());
-  const rowAnimMapRef = useRef<Map<string, Animated.Value>>(new Map());
-  const rowSnapAnimMapRef = useRef<Map<string, Animated.Value>>(new Map());
-  const prevLayerIdsRef = useRef<string[]>(layers.map((l) => l.id));
-  const initializedRef = useRef(false);
-  const addBtnAnim = useRef(new Animated.Value(layers.length < MAX_LAYERS ? 1 : 0)).current;
-  const prevShowAddBtnRef = useRef(layers.length < MAX_LAYERS);
-  const addBtnPrevYRef = useRef<number | null>(null);
 
-  // Bounce animation for note labels (e.g. when switching note/degree mode)
+  // One animation value per slot — used for all transitions (add/remove/swap)
+  const slotAnims = useRef(Array.from({ length: MAX_LAYERS }, () => new Animated.Value(1))).current;
+  const prevSlotIdsRef = useRef(slots.map((s) => s?.id ?? null));
+  const initializedRef = useRef(false);
+
+  // Bounce animation for note labels
   const labelScaleMapRef = useRef<Map<string, Animated.Value>>(new Map());
-  const prevLabelSnapshotRef = useRef<string>("");
+  const prevLabelSnapshotRef = useRef("");
 
   const getLabelScale = (id: string) => {
     const existing = labelScaleMapRef.current.get(id);
@@ -147,65 +151,13 @@ export default function LayerList({
   }
   prevLabelSnapshotRef.current = labelsSnapshot;
 
-  const getRowAnim = (id: string) => {
-    const existing = rowAnimMapRef.current.get(id);
-    if (existing) return existing;
-    const value = new Animated.Value(1);
-    rowAnimMapRef.current.set(id, value);
-    return value;
-  };
-
-  const getRowSnapAnim = (id: string) => {
-    const existing = rowSnapAnimMapRef.current.get(id);
-    if (existing) return existing;
-    const value = new Animated.Value(1);
-    rowSnapAnimMapRef.current.set(id, value);
-    return value;
-  };
-
-  const replayRowAppear = (id: string) => {
-    const anim = getRowAnim(id);
-    anim.stopAnimation();
-    anim.setValue(0);
-    Animated.spring(anim, {
-      toValue: 1,
-      friction: 8,
-      tension: 130,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const replayRowSnap = (id: string) => {
-    const anim = getRowSnapAnim(id);
-    anim.stopAnimation();
-    anim.setValue(0.95);
-    Animated.spring(anim, {
-      toValue: 1,
-      friction: 6,
-      tension: 260,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  useEffect(() => {
-    if (!initializedRef.current) {
-      layers.forEach((layer) => {
-        rowAnimMapRef.current.set(layer.id, new Animated.Value(1));
-      });
-      prevLayerIdsRef.current = layers.map((l) => l.id);
-      initializedRef.current = true;
-      return;
-    }
-
-    const prevIds = new Set(prevLayerIdsRef.current);
-    const currentIds = new Set(layers.map((l) => l.id));
-    const prevOrder = prevLayerIdsRef.current;
-    const currentOrder = layers.map((l) => l.id);
-
-    // Animate enter for newly added rows.
-    layers.forEach((layer) => {
-      if (!prevIds.has(layer.id)) {
-        const anim = getRowAnim(layer.id);
+  // Detect per-slot changes and bounce the slot that changed
+  const currentSlotIds = slots.map((s) => s?.id ?? null);
+  if (initializedRef.current) {
+    for (let i = 0; i < MAX_LAYERS; i++) {
+      if (prevSlotIdsRef.current[i] !== currentSlotIds[i]) {
+        const anim = slotAnims[i];
+        anim.stopAnimation();
         anim.setValue(0);
         Animated.spring(anim, {
           toValue: 1,
@@ -214,55 +166,11 @@ export default function LayerList({
           useNativeDriver: true,
         }).start();
       }
-    });
-
-    // Cleanup stale anim refs for removed rows.
-    prevIds.forEach((id) => {
-      if (!currentIds.has(id)) {
-        rowAnimMapRef.current.delete(id);
-        rowSnapAnimMapRef.current.delete(id);
-      }
-    });
-
-    // Animate upward shift of remaining rows after a deletion.
-    if (currentOrder.length < prevOrder.length) {
-      const removedId = prevOrder.find((id) => !currentIds.has(id));
-      const removedIdx = removedId != null ? prevOrder.indexOf(removedId) : -1;
-      if (removedIdx >= 0) {
-        currentOrder.slice(removedIdx).forEach((id) => {
-          const shift = new Animated.Value(ROW_STRIDE);
-          deleteShiftMapRef.current.set(id, shift);
-          Animated.timing(shift, {
-            toValue: 0,
-            duration: 180,
-            useNativeDriver: true,
-          }).start(() => {
-            deleteShiftMapRef.current.delete(id);
-            setDeleteAnimTick((v) => v + 1);
-          });
-        });
-        setDeleteAnimTick((v) => v + 1);
-      }
     }
-
-    prevLayerIdsRef.current = layers.map((l) => l.id);
-  }, [layers]);
-
-  useEffect(() => {
-    const showAddBtn = layers.length < MAX_LAYERS;
-    if (showAddBtn && !prevShowAddBtnRef.current) {
-      addBtnAnim.setValue(0);
-      Animated.spring(addBtnAnim, {
-        toValue: 1,
-        friction: 8,
-        tension: 130,
-        useNativeDriver: true,
-      }).start();
-    } else if (!showAddBtn) {
-      addBtnAnim.setValue(0);
-    }
-    prevShowAddBtnRef.current = showAddBtn;
-  }, [layers.length, addBtnAnim]);
+  } else {
+    initializedRef.current = true;
+  }
+  prevSlotIdsRef.current = currentSlotIds;
 
   // Reopen modal for a specific layer (e.g. after cell edit cancel)
   useEffect(() => {
@@ -278,14 +186,18 @@ export default function LayerList({
     }
   }, [reopenLayerId, previewLayer, layers, onClearReopenLayerId]);
 
-  const handleAdd = () => {
+  const addSlotIndexRef = useRef<number | null>(null);
+
+  const handleAdd = (slotIndex: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    addSlotIndexRef.current = slotIndex;
     setEditingLayer(null);
     setEditModalVisible(true);
   };
 
   const handleEdit = (layer: LayerConfig) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    addSlotIndexRef.current = null;
     setEditingLayer(layer);
     setEditModalVisible(true);
   };
@@ -293,8 +205,12 @@ export default function LayerList({
   const handleSave = (layer: LayerConfig) => {
     const saveId = editingLayer?.id ?? layer.id;
     const exists = layers.some((l) => l.id === saveId);
-    if (exists) onUpdateLayer(saveId, layer);
-    else onAddLayer(layer);
+    if (exists) {
+      onUpdateLayer(saveId, layer);
+    } else {
+      onAddLayer(layer, addSlotIndexRef.current ?? undefined);
+    }
+    addSlotIndexRef.current = null;
   };
 
   const pickNextLayerColor = (currentLayers: LayerConfig[]) => {
@@ -340,25 +256,23 @@ export default function LayerList({
     return `${mode}: ${layer.chordType}`;
   };
 
-  const ROW_STRIDE = rowHeight.current + ROW_GAP;
+  // Drag: swap slots. Refs for fresh values inside PanResponder callbacks.
+  const slotsRef = useRef(slots);
+  slotsRef.current = slots;
+  const onReorderRef = useRef(onReorderLayers);
+  onReorderRef.current = onReorderLayers;
 
-  // Stable refs so PanResponder callbacks always read fresh values
-  const layersRef = useRef(layers);
-  layersRef.current = layers;
-  const onReorderLayersRef = useRef(onReorderLayers);
-  onReorderLayersRef.current = onReorderLayers;
+  const panResponderMapRef = useRef<Map<number, PanResponderInstance>>(new Map());
 
-  const panResponderMapRef = useRef<Map<string, PanResponderInstance>>(new Map());
-
-  const getDragResponder = (idx: number, layerId: string) => {
-    const existing = panResponderMapRef.current.get(layerId);
+  const getSlotDragResponder = (slotIdx: number) => {
+    const existing = panResponderMapRef.current.get(slotIdx);
     if (existing) return existing;
     const responder = PanResponder.create({
       onStartShouldSetPanResponder: () => false,
       onMoveShouldSetPanResponder: (_, gs) =>
         Math.abs(gs.dy) > 10 && Math.abs(gs.dy) > Math.abs(gs.dx),
       onPanResponderGrant: () => {
-        setDraggingLayerId(layerId);
+        setDraggingSlotIdx(slotIdx);
         dragY.setValue(0);
         Animated.spring(liftScale, {
           toValue: 1.03,
@@ -369,45 +283,21 @@ export default function LayerList({
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       },
       onPanResponderMove: (_, gs) => {
-        const currentLayers = layersRef.current;
-        const currentIdx = currentLayers.findIndex((l) => l.id === layerId);
-        if (currentIdx < 0) return;
         const stride = rowHeight.current + ROW_GAP;
-        const maxUp = -currentIdx * stride;
-        const maxDown = (currentLayers.length - 1 - currentIdx) * stride;
+        const maxUp = -slotIdx * stride;
+        const maxDown = (MAX_LAYERS - 1 - slotIdx) * stride;
         dragY.setValue(Math.max(maxUp, Math.min(maxDown, gs.dy)));
       },
       onPanResponderRelease: (_, gs) => {
-        const currentLayers = layersRef.current;
         const stride = rowHeight.current + ROW_GAP;
-        const sourceIdx = currentLayers.findIndex((l) => l.id === layerId);
-        if (sourceIdx >= 0 && Math.abs(gs.dy) > stride * 0.4 && currentLayers.length > 1) {
+        if (Math.abs(gs.dy) > stride * 0.4) {
           const offset = Math.round(gs.dy / stride);
-          const targetIdx = Math.max(0, Math.min(sourceIdx + offset, currentLayers.length - 1));
-          if (targetIdx !== sourceIdx) {
-            const minIdx = Math.min(sourceIdx, targetIdx);
-            const maxIdx = Math.max(sourceIdx, targetIdx);
-            const affectedIds = currentLayers
-              .filter((_, i) => i >= minIdx && i <= maxIdx && currentLayers[i].id !== layerId)
-              .map((l) => l.id);
-            const reordered = [...currentLayers];
-            const [moved] = reordered.splice(sourceIdx, 1);
-            reordered.splice(targetIdx, 0, moved);
-            onReorderLayersRef.current(reordered);
+          const targetIdx = Math.max(0, Math.min(slotIdx + offset, MAX_LAYERS - 1));
+          if (targetIdx !== slotIdx) {
+            const swapped = [...slotsRef.current];
+            [swapped[slotIdx], swapped[targetIdx]] = [swapped[targetIdx], swapped[slotIdx]];
+            onReorderRef.current(swapped);
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            requestAnimationFrame(() => {
-              setDraggingLayerId(null);
-              dragY.setValue(0);
-              replayRowSnap(layerId);
-              for (const id of affectedIds) replayRowAppear(id);
-            });
-            Animated.spring(liftScale, {
-              toValue: 1,
-              friction: 8,
-              tension: 200,
-              useNativeDriver: true,
-            }).start();
-            return;
           }
         }
         Animated.spring(liftScale, {
@@ -416,36 +306,71 @@ export default function LayerList({
           tension: 200,
           useNativeDriver: true,
         }).start();
-        setDraggingLayerId(null);
+        setDraggingSlotIdx(null);
         dragY.setValue(0);
       },
     });
-    panResponderMapRef.current.set(layerId, responder);
+    panResponderMapRef.current.set(slotIdx, responder);
     return responder;
   };
 
-  // Cleanup stale PanResponder entries when layers change
-  const currentLayerIds = new Set(layers.map((l) => l.id));
-  for (const key of panResponderMapRef.current.keys()) {
-    if (!currentLayerIds.has(key)) panResponderMapRef.current.delete(key);
-  }
-
   return (
     <View style={styles.container}>
-      {layers.map((layer, idx) => {
-        const panResponder = getDragResponder(idx, layer.id);
-        const isDragging = draggingLayerId === layer.id;
-        const rowAnim = getRowAnim(layer.id);
-        const rowSnapAnim = getRowSnapAnim(layer.id);
-        const rowOpacity = layer.enabled
-          ? rowAnim
-          : rowAnim.interpolate({
-              inputRange: [0, 1],
-              outputRange: [0, 0.5],
-            });
+      {slots.map((slot, slotIdx) => {
+        if (!slot) {
+          // Empty slot → add button
+          return (
+            <Animated.View
+              key={`slot-${slotIdx}`}
+              style={{
+                transform: [{ scale: slotAnims[slotIdx] }],
+                opacity: slotAnims[slotIdx],
+              }}
+            >
+              <TouchableOpacity
+                onPress={() => handleAdd(slotIdx)}
+                style={[
+                  styles.layerRow,
+                  {
+                    borderColor: isDark ? "#374151" : "#d6d3d1",
+                    borderStyle: "dashed",
+                    justifyContent: "center",
+                  },
+                ]}
+                activeOpacity={0.7}
+              >
+                {/* Invisible spacer matching summaryArea height */}
+                <View style={styles.summaryArea} pointerEvents="none">
+                  <Text style={[styles.layerType, { opacity: 0 }]}> </Text>
+                  <Text style={[styles.layerSummary, { opacity: 0 }]}> </Text>
+                  <Text style={[styles.layerNoteLabels, { opacity: 0 }]}> </Text>
+                </View>
+                <View style={StyleSheet.absoluteFill}>
+                  <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+                    <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+                      <Path
+                        d="M12 5v14M5 12h14"
+                        stroke={isDark ? "#6b7280" : "#a8a29e"}
+                        strokeWidth={2}
+                        strokeLinecap="round"
+                      />
+                    </Svg>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            </Animated.View>
+          );
+        }
+
+        // Filled slot → layer row
+        const layer = slot;
+        const panResponder = getSlotDragResponder(slotIdx);
+        const isDragging = draggingSlotIdx === slotIdx;
+        const emptySlotCount = slots.filter((s) => s === null).length;
+        const slotScale = slotAnims[slotIdx];
         return (
           <Animated.View
-            key={layer.id}
+            key={`slot-${slotIdx}`}
             onLayout={(e) => {
               rowHeight.current = e.nativeEvent.layout.height;
             }}
@@ -456,12 +381,15 @@ export default function LayerList({
                 backgroundColor: isDark ? "#1f2937" : "#fafaf9",
                 transform: [
                   ...(isDragging ? [{ translateY: dragY }, { scale: liftScale }] : []),
-                  { translateY: deleteShiftMapRef.current.get(layer.id) ?? 0 },
-                  { scale: rowAnim },
-                  { scale: rowSnapAnim },
+                  { scale: slotScale },
                 ],
                 zIndex: isDragging ? 10 : 1,
-                opacity: rowOpacity,
+                opacity: layer.enabled
+                  ? slotScale
+                  : slotScale.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, 0.5],
+                    }),
                 ...(isDragging && {
                   shadowColor: "#000",
                   shadowOffset: { width: 0, height: 4 },
@@ -548,8 +476,8 @@ export default function LayerList({
                 };
                 onAddLayer(clone);
               }}
-              disabled={layers.length >= MAX_LAYERS}
-              style={[styles.actionBtn, { opacity: layers.length >= MAX_LAYERS ? 0.35 : 1 }]}
+              disabled={emptySlotCount === 0}
+              style={[styles.actionBtn, { opacity: emptySlotCount === 0 ? 0.35 : 1 }]}
               activeOpacity={0.7}
             >
               <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
@@ -635,47 +563,28 @@ export default function LayerList({
         );
       })}
 
-      {layers.length < MAX_LAYERS && (
-        <Animated.View
-          onLayout={(e) => {
-            const y = e.nativeEvent.layout.y;
-            const prevY = addBtnPrevYRef.current;
-            addBtnPrevYRef.current = y;
-            if (prevY != null && Math.abs(prevY - y) > 0.5) {
-              addBtnAnim.stopAnimation();
-              addBtnAnim.setValue(0);
-              Animated.spring(addBtnAnim, {
-                toValue: 1,
-                friction: 8,
-                tension: 130,
-                useNativeDriver: true,
-              }).start();
-            }
-          }}
-          style={{ transform: [{ scale: addBtnAnim }], opacity: addBtnAnim }}
-        >
-          <TouchableOpacity
-            onPress={handleAdd}
-            style={[
-              styles.addBtn,
-              {
-                borderColor: isDark ? "#374151" : "#d6d3d1",
-                minHeight: rowHeight.current,
-              },
-            ]}
-            activeOpacity={0.7}
-          >
-            <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-              <Path
-                d="M12 5v14M5 12h14"
-                stroke={isDark ? "#6b7280" : "#a8a29e"}
-                strokeWidth={2}
-                strokeLinecap="round"
-              />
-            </Svg>
-          </TouchableOpacity>
-        </Animated.View>
-      )}
+      {/* Preset button */}
+      <TouchableOpacity
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          setPresetModalVisible(true);
+        }}
+        style={[styles.presetBtn, { borderColor: isDark ? "#374151" : "#d6d3d1" }]}
+        activeOpacity={0.7}
+      >
+        <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
+          <Path
+            d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"
+            stroke={isDark ? "#6b7280" : "#a8a29e"}
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </Svg>
+        <Text style={[styles.presetBtnText, { color: isDark ? "#9ca3af" : "#78716c" }]}>
+          {t("layers.presets")}
+        </Text>
+      </TouchableOpacity>
 
       <LayerEditModal
         theme={theme}
@@ -696,6 +605,21 @@ export default function LayerList({
           setEditModalVisible(false);
           onStartCellEdit?.(mode, layerId, draftLayer);
         }}
+      />
+
+      <LayerPresetModal
+        theme={theme}
+        visible={presetModalVisible}
+        layers={layers}
+        presets={presets}
+        onSave={savePreset}
+        onLoad={(id) => {
+          const loaded = loadPreset(id);
+          if (loaded) onLoadPreset?.(loaded);
+        }}
+        onDelete={deletePreset}
+        onClose={() => setPresetModalVisible(false)}
+        t={t}
       />
     </View>
   );
@@ -759,13 +683,16 @@ const styles = StyleSheet.create({
   actionBtn: {
     padding: 8,
   },
-  addBtn: {
-    borderWidth: 1,
-    borderStyle: "dashed",
-    borderRadius: 16,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
+  addBtn: {},
+  presetBtn: {
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    gap: 6,
+    paddingVertical: 8,
+  },
+  presetBtnText: {
+    fontSize: 12,
+    fontWeight: "500",
   },
 });

@@ -34,7 +34,12 @@
     "frameCount": "枠: {{count}}個",
     "noFrame": "なし",
     "cancel": "キャンセル",
-    "displayEdited": "表示編集済"
+    "displayEdited": "表示編集済",
+    "presets": "プリセット",
+    "savePreset": "保存",
+    "presetName": "プリセット名",
+    "noPresets": "保存済みプリセットなし",
+    "layerCount": "レイヤー"
   },
   "controls": {
     "displayMode": "表示形式",

@@ -15,6 +15,17 @@ jest.mock("expo-haptics", () => ({
   impactAsync: jest.fn(),
   ImpactFeedbackStyle: { Light: "light", Medium: "medium" },
 }));
+jest.mock("@react-native-async-storage/async-storage", () => ({
+  getItem: jest.fn(() => Promise.resolve(null)),
+  setItem: jest.fn(() => Promise.resolve()),
+}));
+jest.mock("../LayerPresetModal", () => {
+  const { View } = require("react-native");
+  return {
+    __esModule: true,
+    default: (props: any) => (props.visible ? <View testID="preset-modal" /> : null),
+  };
+});
 // Mock LayerEditModal to avoid complex rendering – expose onSave/onClose for tests
 let capturedModalProps: any = null;
 jest.mock("../LayerEditModal", () => {
@@ -33,6 +44,7 @@ const defaultProps = {
   rootNote: "C",
   accidental: "sharp" as const,
   layers: [] as LayerConfig[],
+  slots: [null, null, null] as (LayerConfig | null)[],
   onAddLayer: jest.fn(),
   onUpdateLayer: jest.fn(),
   onRemoveLayer: jest.fn(),
@@ -57,7 +69,16 @@ function makeLayer(
 }
 
 function renderList(overrides: Partial<typeof defaultProps> = {}) {
-  return render(<LayerList {...defaultProps} {...overrides} />);
+  const merged = { ...defaultProps, ...overrides };
+  // Auto-generate slots from layers if slots not explicitly provided
+  if (overrides.layers && !overrides.slots) {
+    const slotsFromLayers: (LayerConfig | null)[] = [null, null, null];
+    merged.layers.forEach((l, i) => {
+      slotsFromLayers[i] = l;
+    });
+    merged.slots = slotsFromLayers;
+  }
+  return render(<LayerList {...merged} />);
 }
 
 /**
@@ -103,16 +124,16 @@ describe("LayerList", () => {
     const layers = [makeLayer("scale", "l1")];
     const { UNSAFE_root } = renderList({ layers });
     const allTouchables = UNSAFE_root.findAllByType(TouchableOpacity);
-    // 4 buttons per row + 1 add button = 5
-    expect(allTouchables.length).toBe(5);
+    // 4 buttons per row + 2 add slots (3-1) + 1 preset button = 7
+    expect(allTouchables.length).toBe(7);
   });
 
   it("hides add button when layers = MAX_LAYERS", () => {
     const layers = [makeLayer("scale", "l1"), makeLayer("chord", "l2"), makeLayer("custom", "l3")];
     const { UNSAFE_root } = renderList({ layers });
     const allTouchables = UNSAFE_root.findAllByType(TouchableOpacity);
-    // 4 buttons per row * 3 rows = 12, no add button
-    expect(allTouchables.length).toBe(12);
+    // 4 buttons per row * 3 rows = 12 + 1 preset button = 13
+    expect(allTouchables.length).toBe(13);
   });
 
   // ── Toggle button ──────────────────────────────────────────────────
@@ -295,13 +316,17 @@ describe("LayerList", () => {
     const { rerender } = renderList({ layers });
     // Rerender with disabled layer to trigger the animation branch (lines 25-32)
     const updatedLayers = [makeLayer("scale", "l1", { enabled: false })];
-    rerender(<LayerList {...defaultProps} layers={updatedLayers} />);
+    rerender(
+      <LayerList {...defaultProps} layers={updatedLayers} slots={[updatedLayers[0], null, null]} />,
+    );
     act(() => {
       jest.runAllTimers();
     });
     // Rerender back to enabled to trigger the reverse animation
     const enabledLayers = [makeLayer("scale", "l1", { enabled: true })];
-    rerender(<LayerList {...defaultProps} layers={enabledLayers} />);
+    rerender(
+      <LayerList {...defaultProps} layers={enabledLayers} slots={[enabledLayers[0], null, null]} />,
+    );
     act(() => {
       jest.runAllTimers();
     });
@@ -343,7 +368,7 @@ describe("LayerList", () => {
     act(() => {
       capturedModalProps.onSave(newLayer);
     });
-    expect(onAddLayer).toHaveBeenCalledWith(newLayer);
+    expect(onAddLayer).toHaveBeenCalledWith(newLayer, 1);
   });
 
   // ── pickNextLayerColor fallback ────────────────────────────────────
@@ -415,7 +440,9 @@ describe("LayerList", () => {
     });
     // Add a second layer
     const layers2 = [makeLayer("scale", "l1"), makeLayer("chord", "l2")];
-    rerender(<LayerList {...defaultProps} layers={layers2} />);
+    rerender(
+      <LayerList {...defaultProps} layers={layers2} slots={[layers2[0], layers2[1], null]} />,
+    );
     act(() => {
       jest.runAllTimers();
     });
@@ -430,7 +457,7 @@ describe("LayerList", () => {
     });
     // Remove first layer
     const layers1 = [makeLayer("chord", "l2")];
-    rerender(<LayerList {...defaultProps} layers={layers1} />);
+    rerender(<LayerList {...defaultProps} layers={layers1} slots={[null, layers1[0], null]} />);
     act(() => {
       jest.runAllTimers();
     });
@@ -446,13 +473,15 @@ describe("LayerList", () => {
     });
     // Now remove one layer so add button appears with animation
     const layers2 = [makeLayer("scale", "l1"), makeLayer("chord", "l2")];
-    rerender(<LayerList {...defaultProps} layers={layers2} />);
+    rerender(
+      <LayerList {...defaultProps} layers={layers2} slots={[layers2[0], layers2[1], null]} />,
+    );
     act(() => {
       jest.runAllTimers();
     });
     const allTouchables = UNSAFE_root.findAllByType(TouchableOpacity);
-    // 2 layers * 4 buttons + 1 add button = 9
-    expect(allTouchables.length).toBe(9);
+    // 2 layers * 4 buttons + 1 add button + 1 preset button = 10
+    expect(allTouchables.length).toBe(10);
   });
 
   // ── Disabled layer opacity ─────────────────────────────────────────

@@ -29,7 +29,7 @@ import type {
   ChordType,
   LayerConfig,
 } from "./src/types";
-import { createDefaultLayer } from "./src/types";
+import { createDefaultLayer, MAX_LAYERS } from "./src/types";
 import FretboardPane from "./src/components/AppPanes/FretboardPane";
 import MainPracticePane from "./src/components/AppPanes/MainPracticePane";
 import QuizPane from "./src/components/AppPanes/QuizPane";
@@ -106,14 +106,40 @@ function AppContent() {
     (v) => v as Theme,
   );
   // New layer system
-  const [layers, setLayers] = useState<LayerConfig[]>([]);
-  const handleAddLayer = (layer: LayerConfig) => setLayers((prev) => [...prev, layer]);
+  // Fixed 3-slot layer system: each slot is either a layer or null
+  const [slots, setSlots] = useState<(LayerConfig | null)[]>([null, null, null]);
+  const layers = slots.filter((s): s is LayerConfig => s !== null);
+
+  const handleAddLayer = (layer: LayerConfig, slotIndex?: number) =>
+    setSlots((prev) => {
+      if (slotIndex != null && slotIndex >= 0 && slotIndex < MAX_LAYERS) {
+        const next = [...prev];
+        next[slotIndex] = layer;
+        return next;
+      }
+      // Fallback: fill first empty slot
+      const emptyIdx = prev.indexOf(null);
+      if (emptyIdx >= 0) {
+        const next = [...prev];
+        next[emptyIdx] = layer;
+        return next;
+      }
+      return prev;
+    });
   const handleUpdateLayer = (id: string, layer: LayerConfig) =>
-    setLayers((prev) => prev.map((l) => (l.id === id ? { ...layer, id } : l)));
-  const handleRemoveLayer = (id: string) => setLayers((prev) => prev.filter((l) => l.id !== id));
+    setSlots((prev) => prev.map((s) => (s?.id === id ? { ...layer, id } : s)));
+  const handleRemoveLayer = (id: string) =>
+    setSlots((prev) => prev.map((s) => (s?.id === id ? null : s)));
   const handleToggleLayer = (id: string) =>
-    setLayers((prev) => prev.map((l) => (l.id === id ? { ...l, enabled: !l.enabled } : l)));
-  const handleReorderLayers = (reordered: LayerConfig[]) => setLayers(reordered);
+    setSlots((prev) => prev.map((s) => (s?.id === id ? { ...s, enabled: !s.enabled } : s)));
+  const handleReorderLayers = (reordered: (LayerConfig | null)[]) => setSlots(reordered);
+  const handleLoadPreset = (preset: LayerConfig[]) => {
+    const next: (LayerConfig | null)[] = [null, null, null];
+    preset.forEach((l, i) => {
+      if (i < MAX_LAYERS) next[i] = l;
+    });
+    setSlots(next);
+  };
   const [previewLayer, setPreviewLayer] = useState<LayerConfig | null>(null);
 
   // Cell edit mode (hide dots / create chord frames)
@@ -671,6 +697,7 @@ function AppContent() {
             rootNote={rootNote}
             accidental={accidental}
             layers={layers}
+            slots={slots}
             previewLayer={previewLayer}
             overlayNotes={overlayNotes}
             overlaySemitones={overlaySemitones}
@@ -687,6 +714,7 @@ function AppContent() {
             onReorderLayers={handleReorderLayers}
             onPreviewLayer={setPreviewLayer}
             onStartCellEdit={handleStartCellEdit}
+            onLoadPreset={handleLoadPreset}
             onClearReopenLayerId={() => setReopenLayerId(null)}
             onCellEditCancel={handleCellEditCancel}
             onCellEditReset={handleCellEditReset}
