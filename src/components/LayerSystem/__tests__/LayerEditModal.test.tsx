@@ -64,7 +64,6 @@ const defaultProps = {
   onClose: jest.fn(),
   onSave: jest.fn(),
   onPreview: jest.fn(),
-  onStartCellEdit: jest.fn(),
 };
 
 function renderModal(overrides: Partial<typeof defaultProps> = {}) {
@@ -223,8 +222,6 @@ describe("LayerEditModal", () => {
       jest.runAllTimers();
     });
     expect(getByText("noteFilter.title")).toBeTruthy();
-    expect(getByText("layers.editDisplay")).toBeTruthy();
-    expect(getByText("layers.createFrame")).toBeTruthy();
   });
 
   // ── Color picker step navigation ──────────────────────────────────
@@ -385,13 +382,11 @@ describe("LayerEditModal", () => {
   // ── Editing existing custom layer ─────────────────────────────────
   it("editing existing custom layer shows custom settings directly", () => {
     const existing = createDefaultLayer("custom", "l3", "#84cc16");
-    const { getByText, queryByText } = renderModal({ initialLayer: existing });
+    const { queryByText } = renderModal({ initialLayer: existing });
     act(() => {
       jest.runAllTimers();
     });
     expect(queryByText("layers.addLayer")).toBeNull();
-    expect(getByText("layers.editDisplay")).toBeTruthy();
-    expect(getByText("layers.createFrame")).toBeTruthy();
   });
 
   // ── Chord frame toggle ────────────────────────────────────────────
@@ -402,44 +397,6 @@ describe("LayerEditModal", () => {
       jest.runAllTimers();
     });
     expect(getByText("layers.chordFrame")).toBeTruthy();
-  });
-
-  // ── Custom layer edit display triggers onStartCellEdit ────────────
-  it("edit display button calls onStartCellEdit with hide mode", () => {
-    const onStartCellEdit = jest.fn();
-    const existing = createDefaultLayer("custom", "l3", "#84cc16");
-    const { getByText } = renderModal({ initialLayer: existing, onStartCellEdit });
-    act(() => {
-      jest.runAllTimers();
-    });
-    fireEvent.press(getByText("layers.allVisible"));
-    act(() => {
-      jest.runAllTimers();
-    });
-    expect(onStartCellEdit).toHaveBeenCalledWith(
-      "hide",
-      "l3",
-      expect.objectContaining({ id: "l3" }),
-    );
-  });
-
-  // ── Custom layer create frame triggers onStartCellEdit ────────────
-  it("create frame button calls onStartCellEdit with frame mode", () => {
-    const onStartCellEdit = jest.fn();
-    const existing = createDefaultLayer("custom", "l3", "#84cc16");
-    const { getByText } = renderModal({ initialLayer: existing, onStartCellEdit });
-    act(() => {
-      jest.runAllTimers();
-    });
-    fireEvent.press(getByText("layers.noFrame"));
-    act(() => {
-      jest.runAllTimers();
-    });
-    expect(onStartCellEdit).toHaveBeenCalledWith(
-      "frame",
-      "l3",
-      expect.objectContaining({ id: "l3" }),
-    );
   });
 
   // ── Back arrow from chips step ────────────────────────────────────
@@ -460,7 +417,7 @@ describe("LayerEditModal", () => {
       jest.runAllTimers();
     });
     // Should be back on settings step
-    expect(getByText("layers.editDisplay")).toBeTruthy();
+    expect(getByText("noteFilter.title")).toBeTruthy();
   });
 
   // ── Extract from layers button (disabled when no overlay) ─────────
@@ -521,32 +478,6 @@ describe("LayerEditModal", () => {
     expect(getByText("G")).toBeTruthy();
     expect(getByText("E")).toBeTruthy();
     expect(getByText("D")).toBeTruthy();
-  });
-
-  // ── Custom layer shows hidden count when cells hidden ─────────────
-  it("custom layer with hidden cells shows hidden count", () => {
-    const existing = {
-      ...createDefaultLayer("custom", "l3", "#84cc16"),
-      hiddenCells: new Set(["0-1", "1-2", "2-3"]),
-    };
-    const { getByText } = renderModal({ initialLayer: existing });
-    act(() => {
-      jest.runAllTimers();
-    });
-    expect(getByText("layers.hiddenCount")).toBeTruthy();
-  });
-
-  // ── Custom layer shows frame count when frames exist ──────────────
-  it("custom layer with chord frames shows frame count", () => {
-    const existing = {
-      ...createDefaultLayer("custom", "l3", "#84cc16"),
-      chordFrames: [{ cells: ["0-1"] }],
-    };
-    const { getByText } = renderModal({ initialLayer: existing });
-    act(() => {
-      jest.runAllTimers();
-    });
-    expect(getByText("layers.frameCount")).toBeTruthy();
   });
 
   // ── onPreview called when type selected ───────────────────────────
@@ -898,7 +829,7 @@ describe("LayerEditModal", () => {
       jest.runAllTimers();
     });
     // Should return to settings
-    expect(getByText("layers.editDisplay")).toBeTruthy();
+    expect(getByText("noteFilter.title")).toBeTruthy();
   });
 
   // ── Modal visibility triggers open animation ──────────────────────

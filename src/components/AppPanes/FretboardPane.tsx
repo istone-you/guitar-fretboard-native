@@ -25,14 +25,8 @@ interface FretboardPaneProps {
   quizStrings: number[];
   layers: LayerConfig[];
   disableAnimation: boolean;
-  cellEditMode: "hide" | "frame" | null;
-  cellEditLayerId: string | null;
-  editingCells: Set<string>;
-  cellEditBounceKey: string | null;
-  cellEditBounceTick: number;
   onFretboardDoubleTap: () => void;
   onQuizCellClick: (stringIdx: number, fret: number) => void;
-  onCellToggle: (cellKey: string) => void;
 }
 
 export default function FretboardPane({
@@ -56,14 +50,8 @@ export default function FretboardPane({
   quizStrings,
   layers,
   disableAnimation,
-  cellEditMode,
-  cellEditLayerId,
-  editingCells,
-  cellEditBounceKey,
-  cellEditBounceTick,
   onFretboardDoubleTap,
   onQuizCellClick,
-  onCellToggle,
 }: FretboardPaneProps) {
   return (
     <View style={{ paddingVertical: isLandscape ? 2 : 8 }} onTouchEnd={onFretboardDoubleTap}>
@@ -112,12 +100,6 @@ export default function FretboardPane({
           layers={layers}
           disableAnimation={disableAnimation}
           onNoteClick={() => {}}
-          cellEditMode={cellEditMode}
-          cellEditLayerId={cellEditLayerId}
-          editingCells={editingCells}
-          cellEditBounceKey={cellEditBounceKey}
-          cellEditBounceTick={cellEditBounceTick}
-          onCellToggle={onCellToggle}
         />
       )}
     </View>

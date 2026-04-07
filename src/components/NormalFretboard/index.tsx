@@ -12,9 +12,6 @@ export default function NormalFretboard(props: FretboardProps) {
       quizCorrectCell={null}
       onQuizCellClick={undefined}
       suppressRegularDisplay={false}
-      cellEditMode={props.cellEditMode}
-      editingCells={props.editingCells}
-      onCellToggle={props.onCellToggle}
     />
   );
 }

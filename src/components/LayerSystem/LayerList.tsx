@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import {
   View,
   Text,
@@ -72,10 +72,7 @@ interface LayerListProps {
   overlayNotes: string[];
   overlaySemitones: Set<number>;
   layerNoteLabels: Map<string, string[]>;
-  onStartCellEdit?: (mode: "hide" | "frame", layerId: string, draftLayer?: LayerConfig) => void;
   onLoadPreset?: (layers: LayerConfig[]) => void;
-  reopenLayerId?: string | null;
-  onClearReopenLayerId?: () => void;
 }
 
 export default function LayerList({
@@ -94,10 +91,7 @@ export default function LayerList({
   overlayNotes,
   overlaySemitones,
   layerNoteLabels,
-  onStartCellEdit,
   onLoadPreset,
-  reopenLayerId,
-  onClearReopenLayerId,
 }: LayerListProps) {
   const { t } = useTranslation();
   const isDark = theme === "dark";
@@ -172,20 +166,7 @@ export default function LayerList({
   }
   prevSlotIdsRef.current = currentSlotIds;
 
-  // Reopen modal for a specific layer (e.g. after cell edit cancel)
-  useEffect(() => {
-    if (reopenLayerId) {
-      const target =
-        (previewLayer && previewLayer.id === reopenLayerId ? previewLayer : null) ??
-        layers.find((l) => l.id === reopenLayerId);
-      if (target) {
-        setEditingLayer(target);
-        setEditModalVisible(true);
-      }
-      onClearReopenLayerId?.();
-    }
-  }, [reopenLayerId, previewLayer, layers, onClearReopenLayerId]);
-
+  // Reopen modal after cell edit ends
   const addSlotIndexRef = useRef<number | null>(null);
 
   const handleAdd = (slotIndex: number) => {
@@ -601,9 +582,6 @@ export default function LayerList({
         onPreview={onPreviewLayer}
         overlayNotes={overlayNotes}
         overlaySemitones={overlaySemitones}
-        onStartCellEdit={(mode, layerId, draftLayer) => {
-          onStartCellEdit?.(mode, layerId, draftLayer);
-        }}
       />
 
       <LayerPresetModal

@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback, useRef, useEffect } from "react";
+import { useMemo, useState, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   StatusBar,
   StyleSheet,
-  Animated,
   useWindowDimensions,
 } from "react-native";
 import Svg, { Path, Line, Text as SvgText } from "react-native-svg";
@@ -139,131 +138,6 @@ function AppContent() {
   };
   const [previewLayer, setPreviewLayer] = useState<LayerConfig | null>(null);
 
-  // Cell edit mode (hide dots / create chord frames)
-  const [cellEditMode, setCellEditMode] = useState<"hide" | "frame" | null>(null);
-  const [cellEditLayerId, setCellEditLayerId] = useState<string | null>(null);
-  const [editingCells, setEditingCells] = useState<Set<string>>(new Set());
-  const [cellEditBounceKey, setCellEditBounceKey] = useState<string | null>(null);
-  const [cellEditBounceTick, setCellEditBounceTick] = useState(0);
-  const [reopenLayerId, setReopenLayerId] = useState<string | null>(null);
-  const [cellEditUiVisible, setCellEditUiVisible] = useState(false);
-  const cellEditAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    if (cellEditMode) {
-      setCellEditUiVisible(true);
-      Animated.timing(cellEditAnim, {
-        toValue: 1,
-        duration: 220,
-        useNativeDriver: true,
-      }).start();
-      return;
-    }
-    Animated.timing(cellEditAnim, {
-      toValue: 0,
-      duration: 180,
-      useNativeDriver: true,
-    }).start(({ finished }) => {
-      if (finished) setCellEditUiVisible(false);
-    });
-  }, [cellEditMode]);
-
-  const handleStartCellEdit = (
-    mode: "hide" | "frame",
-    layerId: string,
-    draftLayer?: LayerConfig,
-  ) => {
-    setCellEditMode(mode);
-    setCellEditLayerId(layerId);
-    if (draftLayer) setPreviewLayer(draftLayer);
-    const layer =
-      draftLayer ??
-      (previewLayer && previewLayer.id === layerId ? previewLayer : null) ??
-      layers.find((l) => l.id === layerId);
-    if (mode === "hide" && layer) {
-      setEditingCells(new Set(layer.hiddenCells));
-    } else {
-      setEditingCells(new Set());
-    }
-  };
-
-  const handleCellToggle = (cellKey: string) => {
-    setCellEditBounceKey(cellKey);
-    setCellEditBounceTick((prev) => prev + 1);
-    setEditingCells((prev) => {
-      const next = new Set(prev);
-      if (next.has(cellKey)) next.delete(cellKey);
-      else next.add(cellKey);
-      return next;
-    });
-  };
-
-  const handleCellEditDone = () => {
-    if (cellEditLayerId) {
-      if (cellEditMode === "hide") {
-        const target =
-          (previewLayer && previewLayer.id === cellEditLayerId ? previewLayer : null) ??
-          layers.find((l) => l.id === cellEditLayerId);
-        if (target) {
-          const updatedLayer = {
-            ...target,
-            hiddenCells: editingCells,
-          };
-          handleUpdateLayer(cellEditLayerId, updatedLayer);
-          setPreviewLayer(updatedLayer);
-        }
-      } else if (cellEditMode === "frame" && editingCells.size > 0) {
-        const target =
-          (previewLayer && previewLayer.id === cellEditLayerId ? previewLayer : null) ??
-          layers.find((l) => l.id === cellEditLayerId);
-        if (target) {
-          const updatedLayer = {
-            ...target,
-            chordFrames: [...target.chordFrames, { cells: [...editingCells] }],
-          };
-          handleUpdateLayer(cellEditLayerId, updatedLayer);
-          setPreviewLayer(updatedLayer);
-        }
-      }
-    }
-    const layerId = cellEditLayerId;
-    setCellEditMode(null);
-    setCellEditLayerId(null);
-    setEditingCells(new Set());
-    setReopenLayerId(layerId);
-  };
-
-  const handleCellEditCancel = () => {
-    const layerId = cellEditLayerId;
-    setCellEditMode(null);
-    setCellEditLayerId(null);
-    setEditingCells(new Set());
-    setReopenLayerId(layerId);
-  };
-
-  const handleCellEditReset = () => {
-    setEditingCells(new Set());
-    if (cellEditMode === "hide" && cellEditLayerId) {
-      const target =
-        (previewLayer && previewLayer.id === cellEditLayerId ? previewLayer : null) ??
-        layers.find((l) => l.id === cellEditLayerId);
-      if (target) {
-        const updatedLayer = { ...target, hiddenCells: new Set<string>() };
-        handleUpdateLayer(cellEditLayerId, updatedLayer);
-        setPreviewLayer(updatedLayer);
-      }
-    } else if (cellEditMode === "frame" && cellEditLayerId) {
-      const target =
-        (previewLayer && previewLayer.id === cellEditLayerId ? previewLayer : null) ??
-        layers.find((l) => l.id === cellEditLayerId);
-      if (target) {
-        const updatedLayer = { ...target, chordFrames: [] };
-        handleUpdateLayer(cellEditLayerId, updatedLayer);
-        setPreviewLayer(updatedLayer);
-      }
-    }
-  };
-
   const [scaleType, setScaleType] = useState<ScaleType>("major");
 
   const {
@@ -367,13 +241,13 @@ function AppContent() {
 
   const lastTapRef = useRef(0);
   const handleFretboardDoubleTap = useCallback(() => {
-    if (showQuiz || cellEditUiVisible) return;
+    if (showQuiz) return;
     const now = Date.now();
     if (now - lastTapRef.current < 300) {
       toggleLayout();
     }
     lastTapRef.current = now;
-  }, [showQuiz, cellEditUiVisible, toggleLayout]);
+  }, [showQuiz, toggleLayout]);
 
   const quizAccentColor = quizMode === "chord" || quizMode === "diatonic" ? "#40E0D0" : "#ff69b6";
 
@@ -410,14 +284,8 @@ function AppContent() {
       quizStrings={quizStrings}
       layers={effectiveLayers}
       disableAnimation={isLandscape || animDisabled}
-      cellEditMode={cellEditMode}
-      cellEditLayerId={cellEditLayerId}
-      editingCells={editingCells}
-      cellEditBounceKey={cellEditBounceKey}
-      cellEditBounceTick={cellEditBounceTick}
       onFretboardDoubleTap={handleFretboardDoubleTap}
       onQuizCellClick={handleFretboardQuizAnswer}
-      onCellToggle={handleCellToggle}
     />
   );
 
@@ -645,7 +513,7 @@ function AppContent() {
     <View style={[styles.safeArea, { backgroundColor: bgColor }]}>
       <StatusBar
         translucent
-        barStyle={cellEditUiVisible ? "light-content" : isDark ? "light-content" : "dark-content"}
+        barStyle={isDark ? "light-content" : "dark-content"}
         backgroundColor="transparent"
       />
       <View
@@ -653,22 +521,7 @@ function AppContent() {
           backgroundColor: headerBg,
           paddingTop: insets.top,
         }}
-        pointerEvents={cellEditUiVisible ? "none" : "auto"}
       >
-        {cellEditUiVisible && (
-          <Animated.View
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: "rgba(0,0,0,0.45)",
-              zIndex: 10,
-              opacity: cellEditAnim,
-            }}
-          />
-        )}
         <HeaderBar
           theme={theme}
           rootNote={rootNote}
@@ -705,28 +558,19 @@ function AppContent() {
             overlayNotes={overlayNotes}
             overlaySemitones={overlaySemitones}
             layerNoteLabelsMap={layerNoteLabelsMap}
-            reopenLayerId={reopenLayerId}
             isDark={isDark}
-            t={t}
-            cellEditUiVisible={cellEditUiVisible}
-            cellEditAnim={cellEditAnim}
             onAddLayer={handleAddLayer}
             onUpdateLayer={handleUpdateLayer}
             onRemoveLayer={handleRemoveLayer}
             onToggleLayer={handleToggleLayer}
             onReorderLayers={handleReorderLayers}
             onPreviewLayer={setPreviewLayer}
-            onStartCellEdit={handleStartCellEdit}
             onLoadPreset={handleLoadPreset}
-            onClearReopenLayerId={() => setReopenLayerId(null)}
-            onCellEditCancel={handleCellEditCancel}
-            onCellEditReset={handleCellEditReset}
-            onCellEditDone={handleCellEditDone}
           />
         </View>
       </View>
 
-      {!cellEditUiVisible && tabBarEl}
+      {tabBarEl}
     </View>
   );
 }

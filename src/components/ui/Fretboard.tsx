@@ -292,12 +292,6 @@ export interface FretboardProps {
   quizColor?: string;
   layers?: LayerConfig[];
   disableAnimation?: boolean;
-  cellEditMode?: "hide" | "frame" | null;
-  cellEditLayerId?: string | null;
-  editingCells?: Set<string>;
-  cellEditBounceKey?: string | null;
-  cellEditBounceTick?: number;
-  onCellToggle?: (cellKey: string) => void;
 }
 
 export default function Fretboard({
@@ -321,12 +315,6 @@ export default function Fretboard({
   quizColor,
   layers = [],
   disableAnimation = false,
-  cellEditMode = null,
-  cellEditLayerId = null,
-  editingCells = new Set(),
-  cellEditBounceKey = null,
-  cellEditBounceTick = 0,
-  onCellToggle,
 }: FretboardProps) {
   const [fretMin, fretMax] = fretRange;
   const quizActive = quizModeActive && quizCell !== undefined;
@@ -415,26 +403,14 @@ export default function Fretboard({
       for (const cell of cells) {
         const cellKey = `${cell.string}-${cell.fret}`;
         if (layer.type === "custom") {
-          // During hide edit mode, show ALL cells (dark overlay handles visual feedback)
-          if (cellEditMode !== "hide" || cellEditLayerId !== layer.id) {
-            if (layer.hiddenCells.has(cellKey)) continue;
-          }
+          if (layer.hiddenCells.has(cellKey)) continue;
         }
         if (!map.has(cellKey)) map.set(cellKey, []);
         map.get(cellKey)!.push({ color: layer.color, zIndex: 12 + idx });
       }
     });
     return map;
-  }, [
-    layers,
-    rootIndex,
-    fretMin,
-    fretMax,
-    accidental,
-    cellEditMode,
-    cellEditLayerId,
-    editingCells,
-  ]);
+  }, [layers, rootIndex, fretMin, fretMax, accidental]);
 
   // Chord groups from layer system (for border rendering)
   const layerChordGroups = useMemo(() => {
@@ -774,11 +750,6 @@ export default function Fretboard({
               quizColor={quizColor}
               layerOverlays={layerOverlays}
               disableAnimation={disableAnimation}
-              cellEditMode={cellEditMode}
-              editingCells={editingCells}
-              cellEditBounceKey={cellEditBounceKey}
-              cellEditBounceTick={cellEditBounceTick}
-              onCellToggle={onCellToggle}
             />
           ))}
         </View>
@@ -812,12 +783,6 @@ interface StringRowProps {
   quizColor?: string;
   layerOverlays?: Map<string, { color: string; zIndex: number }[]>;
   disableAnimation?: boolean;
-  cellEditMode?: "hide" | "frame" | null;
-  cellEditLayerId?: string | null;
-  editingCells?: Set<string>;
-  cellEditBounceKey?: string | null;
-  cellEditBounceTick?: number;
-  onCellToggle?: (cellKey: string) => void;
 }
 
 function StringRow({
@@ -845,11 +810,6 @@ function StringRow({
   quizColor,
   layerOverlays,
   disableAnimation = false,
-  cellEditMode,
-  editingCells,
-  cellEditBounceKey,
-  cellEditBounceTick = 0,
-  onCellToggle,
 }: StringRowProps) {
   const isDark = theme === "dark";
   const NOTES = getNotesByAccidental(accidental);
@@ -890,15 +850,6 @@ function StringRow({
         }
 
         const handlePress = () => {
-          const cellKey = `${stringIdx}-${fret}`;
-          if (cellEditMode && onCellToggle) {
-            const hasOverlay = layerOverlays?.has(cellKey);
-            const isEditing = editingCells?.has(cellKey);
-            if (!hasOverlay && !isEditing) return;
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            onCellToggle(cellKey);
-            return;
-          }
           if (quizAnswerMode) {
             if (isTargetString && !isAnswered && onQuizCellClick) {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -912,7 +863,6 @@ function StringRow({
         const overlayInset = size.overlayInset;
         const overlaySize = size.rowHeight - overlayInset * 2;
         const cellKey = `${stringIdx}-${fret}`;
-        const dotBounceActive = cellEditMode === "hide" && cellEditBounceKey === cellKey;
 
         return (
           <TouchableOpacity
@@ -976,8 +926,8 @@ function StringRow({
 
             {/* Layer system overlays */}
             <TriggerBounceView
-              active={dotBounceActive}
-              tick={cellEditBounceTick}
+              active={false}
+              tick={0}
               style={{
                 position: "absolute",
                 top: 0,
@@ -1004,37 +954,6 @@ function StringRow({
                 );
               })}
             </TriggerBounceView>
-
-            {/* Cell edit mode visual indicators */}
-            <ScaleAnimView
-              visible={cellEditMode === "hide" && !!editingCells?.has(cellKey)}
-              skipAnimation={false}
-              style={{
-                position: "absolute",
-                top: overlayInset - 1,
-                left: overlayInset - 1,
-                right: overlayInset - 1,
-                bottom: overlayInset - 1,
-                borderRadius: overlaySize / 2,
-                backgroundColor: "rgba(0,0,0,0.6)",
-                zIndex: 30,
-              }}
-            />
-            <ScaleAnimView
-              visible={cellEditMode === "frame" && !!editingCells?.has(cellKey)}
-              skipAnimation={false}
-              style={{
-                position: "absolute",
-                top: overlayInset - 2,
-                left: overlayInset - 2,
-                right: overlayInset - 2,
-                bottom: overlayInset - 2,
-                borderRadius: (overlaySize + 4) / 2,
-                borderWidth: 2.5,
-                borderColor: "#fbbf24",
-                zIndex: 30,
-              }}
-            />
 
             {/* Quiz target (pulsing) */}
             {fret === quizTargetFret && !quizAnswerMode && (

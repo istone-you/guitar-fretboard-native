@@ -60,14 +60,8 @@ const defaultProps = {
   quizStrings: [0, 1, 2, 3, 4, 5],
   layers: [] as LayerConfig[],
   disableAnimation: false,
-  cellEditMode: null as "hide" | "frame" | null,
-  cellEditLayerId: null as string | null,
-  editingCells: new Set<string>(),
-  cellEditBounceKey: null as string | null,
-  cellEditBounceTick: 0,
   onFretboardDoubleTap: jest.fn(),
   onQuizCellClick: jest.fn(),
-  onCellToggle: jest.fn(),
 };
 
 function renderPane(overrides: Partial<typeof defaultProps> = {}) {

@@ -1085,63 +1085,6 @@ describe("Fretboard - Custom chord frames", () => {
   });
 });
 
-// ==================== 28. Cell edit mode ====================
-
-describe("Fretboard - Cell edit mode", () => {
-  it("renders with cellEditMode hide and cellEditLayerId set", () => {
-    const layer = createDefaultLayer("custom", "ce1", "#ff69b6");
-    layer.customMode = "note";
-    layer.selectedNotes = new Set(["C", "E", "G"]);
-    layer.hiddenCells = new Set(["0-3"]);
-    const { toJSON } = render(
-      <Fretboard
-        {...makeProps({
-          rootNote: "C",
-          fretRange: [0, 5],
-          layers: [layer],
-          cellEditMode: "hide",
-          cellEditLayerId: "ce1",
-          editingCells: new Set(),
-          onCellToggle: jest.fn(),
-        })}
-      />,
-    );
-    const json = JSON.stringify(toJSON());
-    // In hide edit mode, all cells should be shown (hidden ones too)
-    expect(json).toContain("#ff69b6");
-  });
-
-  it("calls onCellToggle when a cell with overlay is pressed in edit mode", () => {
-    const onCellToggle = jest.fn();
-    const layer = createDefaultLayer("custom", "ce1", "#ff69b6");
-    layer.customMode = "note";
-    layer.selectedNotes = new Set(["E"]);
-    const { UNSAFE_root } = render(
-      <Fretboard
-        {...makeProps({
-          rootNote: "C",
-          fretRange: [0, 0],
-          layers: [layer],
-          cellEditMode: "hide",
-          cellEditLayerId: "ce1",
-          editingCells: new Set(),
-          onCellToggle,
-        })}
-      />,
-    );
-    // Find a pressable cell
-    const touchables = UNSAFE_root.findAll(
-      (node: any) => node.props.onPress != null && node.props.activeOpacity != null,
-    );
-    // Press one of them - it should call onCellToggle if the cell has an overlay
-    if (touchables.length > 0) {
-      fireEvent.press(touchables[0]);
-    }
-    // Verify the component rendered without error
-    expect(UNSAFE_root).toBeTruthy();
-  });
-});
-
 // ==================== 29. disableAnimation (skipAnimation path) ====================
 
 describe("Fretboard - disableAnimation", () => {

@@ -55,9 +55,6 @@ const defaultProps = {
   overlayNotes: [] as string[],
   overlaySemitones: new Set<number>(),
   layerNoteLabels: new Map<string, string[]>(),
-  onStartCellEdit: jest.fn(),
-  reopenLayerId: null as string | null,
-  onClearReopenLayerId: jest.fn(),
 };
 
 function makeLayer(
@@ -395,42 +392,6 @@ describe("LayerList", () => {
     expect(capturedModalProps.defaultColor).toBe("#40e0d0");
   });
 
-  // ── reopenLayerId opens modal for matching layer ───────────────────
-  it("reopenLayerId opens modal for matching layer", () => {
-    const layers = [makeLayer("scale", "l1"), makeLayer("chord", "l2")];
-    const onClearReopenLayerId = jest.fn();
-    const { queryByTestId } = renderList({
-      layers,
-      reopenLayerId: "l2",
-      onClearReopenLayerId,
-    });
-    act(() => {
-      jest.runAllTimers();
-    });
-    expect(queryByTestId("edit-modal")).toBeTruthy();
-    expect(capturedModalProps.initialLayer).toMatchObject({ id: "l2" });
-    expect(onClearReopenLayerId).toHaveBeenCalled();
-  });
-
-  // ── reopenLayerId prefers previewLayer when matching ───────────────
-  it("reopenLayerId uses previewLayer when ids match", () => {
-    const layers = [makeLayer("scale", "l1")];
-    const preview = makeLayer("scale", "l1", { scaleType: "natural-minor" });
-    const onClearReopenLayerId = jest.fn();
-    const { queryByTestId } = renderList({
-      layers,
-      reopenLayerId: "l1",
-      previewLayer: preview,
-      onClearReopenLayerId,
-    });
-    act(() => {
-      jest.runAllTimers();
-    });
-    expect(queryByTestId("edit-modal")).toBeTruthy();
-    expect(capturedModalProps.initialLayer.scaleType).toBe("natural-minor");
-    expect(onClearReopenLayerId).toHaveBeenCalled();
-  });
-
   // ── Layer count changes trigger animations ─────────────────────────
   it("adding a layer triggers appear animation", () => {
     const layers1 = [makeLayer("scale", "l1")];
@@ -515,47 +476,6 @@ describe("LayerList", () => {
     });
     expect(queryByTestId("edit-modal")).toBeNull();
     expect(onPreviewLayer).toHaveBeenCalledWith(null);
-  });
-
-  // ── onStartCellEdit delegate (lines 615-616) ─────────────────────
-  it("onStartCellEdit from modal closes modal and forwards call", () => {
-    const layers = [makeLayer("custom", "l1")];
-    const onStartCellEdit = jest.fn();
-    const { UNSAFE_root, queryByTestId } = renderList({ layers, onStartCellEdit });
-    // Open modal via settings button
-    const { settings } = getRowButtons(UNSAFE_root, 0);
-    fireEvent.press(settings);
-    act(() => {
-      jest.runAllTimers();
-    });
-    expect(queryByTestId("edit-modal")).toBeTruthy();
-    // Simulate onStartCellEdit from modal
-    const draftLayer = makeLayer("custom", "l1", { selectedNotes: new Set(["C"]) });
-    act(() => {
-      capturedModalProps.onStartCellEdit("hide", "l1", draftLayer);
-    });
-    act(() => {
-      jest.runAllTimers();
-    });
-    // Modal should be closed
-    expect(queryByTestId("edit-modal")).toBeNull();
-    // onStartCellEdit should have been forwarded
-    expect(onStartCellEdit).toHaveBeenCalledWith("hide", "l1", draftLayer);
-  });
-
-  it("onStartCellEdit with frame mode forwards correctly", () => {
-    const layers = [makeLayer("custom", "l1")];
-    const onStartCellEdit = jest.fn();
-    const { UNSAFE_root } = renderList({ layers, onStartCellEdit });
-    const { settings } = getRowButtons(UNSAFE_root, 0);
-    fireEvent.press(settings);
-    act(() => {
-      jest.runAllTimers();
-    });
-    act(() => {
-      capturedModalProps.onStartCellEdit("frame", "l1");
-    });
-    expect(onStartCellEdit).toHaveBeenCalledWith("frame", "l1", undefined);
   });
 
   // ── Row layout handler (line 383) ────────────────────────────────
