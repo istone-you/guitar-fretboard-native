@@ -10,6 +10,7 @@
   "displaySize": "Fretboard Size",
   "language": "Language",
   "accidental": "♯/♭",
+  "leftHanded": "Left-handed Display",
   "layerColors": "Layer Colors",
   "settingsPanel": {
     "fretRange": "Fret Range",

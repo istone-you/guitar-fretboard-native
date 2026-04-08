@@ -10,6 +10,7 @@
   "displaySize": "指板表示サイズ",
   "language": "言語",
   "accidental": "♯/♭",
+  "leftHanded": "左利き表示",
   "layerColors": "レイヤーカラー",
   "settingsPanel": {
     "fretRange": "フレット範囲",

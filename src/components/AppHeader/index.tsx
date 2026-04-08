@@ -186,6 +186,8 @@ interface HeaderBarProps {
   onThemeChange: (theme: Theme) => void;
   onFretRangeChange: (range: [number, number]) => void;
   onAccidentalChange: (accidental: Accidental) => void;
+  leftHanded?: boolean;
+  onLeftHandedChange?: (value: boolean) => void;
 }
 
 export default function HeaderBar({
@@ -204,6 +206,8 @@ export default function HeaderBar({
   onThemeChange,
   onFretRangeChange,
   onAccidentalChange,
+  leftHanded = false,
+  onLeftHandedChange,
 }: HeaderBarProps) {
   const { t, i18n } = useTranslation();
   const [settingsVisible, setSettingsVisible] = useState(false);
@@ -502,6 +506,25 @@ export default function HeaderBar({
                 size="compact"
               />
             </View>
+
+            {/* Left-handed */}
+            {onLeftHandedChange && (
+              <View style={styles.settingRow}>
+                <Text style={[styles.settingLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
+                  {t("leftHanded")}
+                </Text>
+                <SegmentedToggle
+                  theme={theme}
+                  value={leftHanded}
+                  onChange={onLeftHandedChange}
+                  options={[
+                    { value: false, label: "OFF" },
+                    { value: true, label: "ON" },
+                  ]}
+                  size="compact"
+                />
+              </View>
+            )}
 
             {/* Fret range */}
             <View style={[styles.settingRow, { borderBottomWidth: 0, paddingBottom: 4 }]}>

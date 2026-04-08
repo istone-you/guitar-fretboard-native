@@ -292,6 +292,7 @@ export interface FretboardProps {
   quizColor?: string;
   layers?: LayerConfig[];
   disableAnimation?: boolean;
+  leftHanded?: boolean;
 }
 
 export default function Fretboard({
@@ -315,6 +316,7 @@ export default function Fretboard({
   quizColor,
   layers = [],
   disableAnimation = false,
+  leftHanded = false,
 }: FretboardProps) {
   const [fretMin, fretMax] = fretRange;
   const quizActive = quizModeActive && quizCell !== undefined;
@@ -624,6 +626,7 @@ export default function Fretboard({
   }, [layers, rootIndex]);
 
   const visibleFrets = Array.from({ length: fretMax - fretMin + 1 }, (_, i) => fretMin + i);
+  const displayFrets = leftHanded ? [...visibleFrets].reverse() : visibleFrets;
 
   const totalWidth = visibleFrets.length * size.cellWidth;
 
@@ -632,7 +635,7 @@ export default function Fretboard({
       <View style={{ width: totalWidth, marginLeft: 8 }}>
         {/* Fret number header */}
         <View style={styles.row}>
-          {visibleFrets.map((fret) => (
+          {displayFrets.map((fret) => (
             <View
               key={fret}
               style={{
@@ -657,7 +660,7 @@ export default function Fretboard({
 
         {/* Position customs */}
         <View style={[styles.row, { marginBottom: 4 }]}>
-          {visibleFrets.map((fret) => {
+          {displayFrets.map((fret) => {
             const mark = POSITION_MARKS[fret];
             return (
               <View
@@ -711,7 +714,9 @@ export default function Fretboard({
             .filter(({ group }) => group.minFret >= fretMin && group.maxFret <= fretMax)
             .map(({ group, color, visible }) => {
               const top = (STRING_COUNT - 1 - group.maxString) * (size.rowHeight + size.rowGap);
-              const left = (group.minFret - fretMin) * size.cellWidth;
+              const left = leftHanded
+                ? (fretMax - group.maxFret) * size.cellWidth
+                : (group.minFret - fretMin) * size.cellWidth;
               const width = (group.maxFret - group.minFret + 1) * size.cellWidth;
               const height =
                 (group.maxString - group.minString + 1) * size.rowHeight +
@@ -749,7 +754,8 @@ export default function Fretboard({
               baseLabelMode={baseLabelMode}
               labelScale={labelScale}
               size={size}
-              visibleFrets={visibleFrets}
+              visibleFrets={displayFrets}
+              leftHanded={leftHanded}
               onNoteClick={onNoteClick}
               quizActive={quizActive}
               quizTargetFret={quizCell?.stringIdx === stringIdx ? quizCell.fret : null}
@@ -798,6 +804,7 @@ interface StringRowProps {
   quizColor?: string;
   layerOverlays?: Map<string, { color: string; zIndex: number }[]>;
   disableAnimation?: boolean;
+  leftHanded?: boolean;
 }
 
 function StringRow({
@@ -825,6 +832,7 @@ function StringRow({
   quizColor,
   layerOverlays,
   disableAnimation = false,
+  leftHanded = false,
 }: StringRowProps) {
   const isDark = theme === "dark";
   const NOTES = getNotesByAccidental(accidental);
@@ -888,9 +896,16 @@ function StringRow({
               height: size.rowHeight,
               alignItems: "center",
               justifyContent: "center",
-              borderLeftWidth: 1,
-              borderLeftColor: isDark ? "#4b5563" : "#d6d3d1",
-              ...(fret === 0
+              borderLeftWidth: fret === 0 && leftHanded ? 4 : 1,
+              borderLeftColor:
+                fret === 0 && leftHanded
+                  ? isDark
+                    ? "#d1d5db"
+                    : "#78716c"
+                  : isDark
+                    ? "#4b5563"
+                    : "#d6d3d1",
+              ...(fret === 0 && !leftHanded
                 ? {
                     borderRightWidth: 4,
                     borderRightColor: isDark ? "#d1d5db" : "#78716c",

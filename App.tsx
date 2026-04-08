@@ -37,6 +37,7 @@ const STORAGE_KEYS = {
   theme: "guiter:theme",
   accidental: "guiter:accidental",
   fretRange: "guiter:fret-range",
+  leftHanded: "guiter:left-handed",
 } as const;
 
 function AppContent() {
@@ -100,6 +101,13 @@ function AppContent() {
     "light",
     (v) => v,
     (v) => v as Theme,
+  );
+  // Left-handed mode
+  const [leftHanded, setLeftHanded] = usePersistedSetting<boolean>(
+    STORAGE_KEYS.leftHanded,
+    false,
+    (v) => String(v),
+    (v) => v === "true",
   );
   // New layer system
   // Fixed 3-slot layer system: each slot is either a layer or null
@@ -284,6 +292,7 @@ function AppContent() {
       quizStrings={quizStrings}
       layers={effectiveLayers}
       disableAnimation={isLandscape || animDisabled}
+      leftHanded={leftHanded}
       onFretboardDoubleTap={handleFretboardDoubleTap}
       onQuizCellClick={handleFretboardQuizAnswer}
     />
@@ -539,6 +548,8 @@ function AppContent() {
           onThemeChange={setTheme}
           onFretRangeChange={setFretRange}
           onAccidentalChange={handleAccidentalChange}
+          leftHanded={leftHanded}
+          onLeftHandedChange={setLeftHanded}
         />
       </View>
 

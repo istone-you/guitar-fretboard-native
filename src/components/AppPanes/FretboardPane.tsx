@@ -25,6 +25,7 @@ interface FretboardPaneProps {
   quizStrings: number[];
   layers: LayerConfig[];
   disableAnimation: boolean;
+  leftHanded?: boolean;
   onFretboardDoubleTap: () => void;
   onQuizCellClick: (stringIdx: number, fret: number) => void;
 }
@@ -50,6 +51,7 @@ export default function FretboardPane({
   quizStrings,
   layers,
   disableAnimation,
+  leftHanded,
   onFretboardDoubleTap,
   onQuizCellClick,
 }: FretboardPaneProps) {
@@ -89,6 +91,7 @@ export default function FretboardPane({
           quizSelectedCells={quizSelectedCells}
           onQuizCellClick={onQuizCellClick}
           quizRevealNoteNames={quizRevealNoteNames}
+          leftHanded={leftHanded}
         />
       ) : (
         <NormalFretboard
@@ -99,6 +102,7 @@ export default function FretboardPane({
           rootNote={rootNote}
           layers={layers}
           disableAnimation={disableAnimation}
+          leftHanded={leftHanded}
           onNoteClick={() => {}}
         />
       )}
