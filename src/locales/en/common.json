@@ -199,6 +199,33 @@
       "Augmented": "A triad built from two stacked major 3rds. Tense.\nFormula: R, M3, #5"
     }
   },
+  "stats": {
+    "title": "Weak Points",
+    "totalRecords": "{{count}} questions answered",
+    "noRecords": "No records yet. Try some quizzes!",
+    "sections": {
+      "byMode": "By Quiz Mode",
+      "byNote": "By Note",
+      "byDegree": "By Degree",
+      "byString": "By String",
+      "byFret": "By Fret",
+      "byStringFret": "String × Fret (Heatmap)",
+      "byChordType": "By Chord Type",
+      "byScale": "By Scale"
+    },
+    "modes": {
+      "note": "Notes",
+      "degree": "Degrees",
+      "chord": "Chords",
+      "scale": "Scales",
+      "diatonic": "Diatonic"
+    },
+    "reset": "Reset Records",
+    "resetTitle": "Reset Records",
+    "resetMessage": "Delete all quiz records?",
+    "resetOk": "Reset",
+    "resetCancel": "Cancel"
+  },
   "quiz": {
     "questionNote": "String {{string}}, Fret {{fret}} — what note?",
     "questionDegree": "String {{string}}, Fret {{fret}} — what degree? (Root: {{root}})",

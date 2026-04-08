@@ -32,6 +32,8 @@ import { createDefaultLayer, MAX_LAYERS } from "./src/types";
 import FretboardPane from "./src/components/AppPanes/FretboardPane";
 import MainPracticePane from "./src/components/AppPanes/MainPracticePane";
 import QuizPane from "./src/components/AppPanes/QuizPane";
+import StatsPane from "./src/components/AppPanes/StatsPane";
+import { useQuizRecords } from "./src/hooks/useQuizRecords";
 
 const STORAGE_KEYS = {
   theme: "guiter:theme",
@@ -88,6 +90,8 @@ function AppContent() {
 
   // Quiz
   const [showQuiz, setShowQuiz] = useState(false);
+  const [showStats, setShowStats] = useState(false);
+  const { records, addRecord, clearRecords } = useQuizRecords();
   // Display settings
   const [accidental, setAccidental] = usePersistedSetting<Accidental>(
     STORAGE_KEYS.accidental,
@@ -199,6 +203,7 @@ function AppContent() {
     rootNote,
     scaleType,
     showQuiz,
+    onRecord: addRecord,
   });
 
   const { effectiveLayers, overlaySemitones, overlayNotes, layerNoteLabelsMap } =
@@ -370,6 +375,7 @@ function AppContent() {
       <TouchableOpacity
         style={styles.tabItem}
         onPress={() => {
+          setShowStats(false);
           setShowQuiz(false);
           handleShowQuizChange(false);
         }}
@@ -380,13 +386,14 @@ function AppContent() {
           style={[
             styles.tabIcon,
             {
-              tintColor: !showQuiz
-                ? isDark
-                  ? "#e5e7eb"
-                  : "#1c1917"
-                : isDark
-                  ? "#6b7280"
-                  : "#a8a29e",
+              tintColor:
+                !showQuiz && !showStats
+                  ? isDark
+                    ? "#e5e7eb"
+                    : "#1c1917"
+                  : isDark
+                    ? "#6b7280"
+                    : "#a8a29e",
             },
           ]}
           resizeMode="contain"
@@ -395,6 +402,7 @@ function AppContent() {
       <TouchableOpacity
         style={styles.tabItem}
         onPress={() => {
+          setShowStats(false);
           setShowQuiz(true);
           handleShowQuizChange(true);
         }}
@@ -417,6 +425,36 @@ function AppContent() {
           >
             Q
           </SvgText>
+        </Svg>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.tabItem}
+        onPress={() => {
+          setShowStats(true);
+          setShowQuiz(false);
+          handleShowQuizChange(false);
+        }}
+        activeOpacity={0.7}
+      >
+        <Svg width={28} height={28} viewBox="0 0 24 24" fill="none">
+          <Path
+            d="M18 20V10"
+            stroke={showStats ? (isDark ? "#e5e7eb" : "#1c1917") : isDark ? "#6b7280" : "#a8a29e"}
+            strokeWidth={1.5}
+            strokeLinecap="round"
+          />
+          <Path
+            d="M12 20V4"
+            stroke={showStats ? (isDark ? "#e5e7eb" : "#1c1917") : isDark ? "#6b7280" : "#a8a29e"}
+            strokeWidth={1.5}
+            strokeLinecap="round"
+          />
+          <Path
+            d="M6 20v-6"
+            stroke={showStats ? (isDark ? "#e5e7eb" : "#1c1917") : isDark ? "#6b7280" : "#a8a29e"}
+            strokeWidth={1.5}
+            strokeLinecap="round"
+          />
         </Svg>
       </TouchableOpacity>
     </View>
@@ -538,6 +576,7 @@ function AppContent() {
           accidental={accidental}
           baseLabelMode={baseLabelMode}
           showQuiz={showQuiz}
+          showStats={showStats}
           rootChangeDisabled={!quizRootChangeEnabled}
           onBaseLabelModeChange={setBaseLabelMode}
           onRootNoteChange={quizRootChangeEnabled ? handleNoteClick : () => {}}
@@ -554,32 +593,43 @@ function AppContent() {
       </View>
 
       <View style={{ flex: 1, overflow: "hidden" }}>
-        <View style={{ position: "relative" }}>
-          <View>{fretboardEl}</View>
-        </View>
-        <View style={{ flex: 1, position: "relative" }}>
-          {quizPanelEl}
-          <MainPracticePane
-            showQuiz={showQuiz}
+        {showStats ? (
+          <StatsPane
+            records={records}
             theme={theme}
-            rootNote={rootNote}
             accidental={accidental}
-            layers={layers}
-            slots={slots}
-            previewLayer={previewLayer}
-            overlayNotes={overlayNotes}
-            overlaySemitones={overlaySemitones}
-            layerNoteLabelsMap={layerNoteLabelsMap}
-            isDark={isDark}
-            onAddLayer={handleAddLayer}
-            onUpdateLayer={handleUpdateLayer}
-            onRemoveLayer={handleRemoveLayer}
-            onToggleLayer={handleToggleLayer}
-            onReorderLayers={handleReorderLayers}
-            onPreviewLayer={setPreviewLayer}
-            onLoadPreset={handleLoadPreset}
+            onClearRecords={clearRecords}
           />
-        </View>
+        ) : (
+          <>
+            <View style={{ position: "relative" }}>
+              <View>{fretboardEl}</View>
+            </View>
+            <View style={{ flex: 1, position: "relative" }}>
+              {quizPanelEl}
+              <MainPracticePane
+                showQuiz={showQuiz}
+                theme={theme}
+                rootNote={rootNote}
+                accidental={accidental}
+                layers={layers}
+                slots={slots}
+                previewLayer={previewLayer}
+                overlayNotes={overlayNotes}
+                overlaySemitones={overlaySemitones}
+                layerNoteLabelsMap={layerNoteLabelsMap}
+                isDark={isDark}
+                onAddLayer={handleAddLayer}
+                onUpdateLayer={handleUpdateLayer}
+                onRemoveLayer={handleRemoveLayer}
+                onToggleLayer={handleToggleLayer}
+                onReorderLayers={handleReorderLayers}
+                onPreviewLayer={setPreviewLayer}
+                onLoadPreset={handleLoadPreset}
+              />
+            </View>
+          </>
+        )}
       </View>
 
       {tabBarEl}

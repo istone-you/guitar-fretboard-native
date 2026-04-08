@@ -152,6 +152,17 @@ export interface DiatonicAnswerEntry {
   label: string;
 }
 
+export interface QuizRecord {
+  mode: QuizMode;
+  correct: boolean;
+  noteName?: string;
+  degreeLabel?: string;
+  stringIdx?: number;
+  fret?: number;
+  chordType?: ChordType;
+  scaleType?: ScaleType;
+}
+
 export interface QuizQuestion {
   stringIdx: number;
   fret: number;

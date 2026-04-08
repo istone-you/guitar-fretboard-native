@@ -199,6 +199,33 @@
       "Augmented": "長3度を2つ重ねた緊張感のあるトライアド。\n構成: R, M3, #5"
     }
   },
+  "stats": {
+    "title": "苦手傾向",
+    "totalRecords": "合計 {{count}} 問解答済み",
+    "noRecords": "まだ記録がありません。クイズを解いてみましょう！",
+    "sections": {
+      "byMode": "クイズモード別",
+      "byNote": "音名別",
+      "byDegree": "度数別",
+      "byString": "弦別",
+      "byFret": "フレット別",
+      "byStringFret": "弦×フレット（ヒートマップ）",
+      "byChordType": "コード種別",
+      "byScale": "スケール別"
+    },
+    "modes": {
+      "note": "音名",
+      "degree": "度数",
+      "chord": "コード",
+      "scale": "スケール",
+      "diatonic": "ダイアトニック"
+    },
+    "reset": "記録をリセット",
+    "resetTitle": "記録をリセット",
+    "resetMessage": "すべてのクイズ記録を削除しますか？",
+    "resetOk": "リセット",
+    "resetCancel": "キャンセル"
+  },
   "quiz": {
     "questionNote": "{{string}}弦 {{fret}}フレットの音は？",
     "questionDegree": "{{string}}弦 {{fret}}フレットの度数は？（ルート: {{root}}）",

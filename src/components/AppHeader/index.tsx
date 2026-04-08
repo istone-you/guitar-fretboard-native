@@ -176,6 +176,7 @@ interface HeaderBarProps {
   accidental: Accidental;
   baseLabelMode: BaseLabelMode;
   showQuiz: boolean;
+  showStats?: boolean;
   rootChangeDisabled?: boolean;
   onBaseLabelModeChange: (mode: BaseLabelMode) => void;
   onRootNoteChange: (note: string) => void;
@@ -196,6 +197,7 @@ export default function HeaderBar({
   accidental,
   baseLabelMode,
   showQuiz,
+  showStats = false,
   rootChangeDisabled = false,
   onBaseLabelModeChange,
   onRootNoteChange,
@@ -285,8 +287,8 @@ export default function HeaderBar({
         },
       ]}
     >
-      {/* Root stepper (absolute left) — hidden when root change is disabled */}
-      {!rootChangeDisabled && (
+      {/* Root stepper (absolute left) — hidden when root change is disabled or on stats */}
+      {!rootChangeDisabled && !showStats && (
         <View style={styles.stepperRow}>
           <TouchableOpacity onPress={() => stepNote(-1)} style={styles.stepBtn} activeOpacity={0.7}>
             <Text style={[styles.stepBtnText, { color: isDark ? "#9ca3af" : "#78716c" }]}>‹</Text>
@@ -309,7 +311,7 @@ export default function HeaderBar({
       )}
 
       {/* Quiz kind selector (center) */}
-      {showQuiz && quizKindValue && quizKindOptions && onQuizKindChange && (
+      {showQuiz && !showStats && quizKindValue && quizKindOptions && onQuizKindChange && (
         <View>
           <DropdownSelect
             theme={theme}
@@ -322,7 +324,7 @@ export default function HeaderBar({
       )}
 
       {/* Note / Degree toggle (center) */}
-      {!showQuiz && (
+      {!showQuiz && !showStats && (
         <View style={styles.labelToggle}>
           <TouchableOpacity
             onPress={() => onBaseLabelModeChange("note")}

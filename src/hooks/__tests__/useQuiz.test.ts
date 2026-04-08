@@ -1832,4 +1832,247 @@ describe("useQuiz", () => {
       expect(result.current.quizQuestion).toBe(mockQ);
     });
   });
+
+  // ===========================================================================
+  // onRecord callback
+  // ===========================================================================
+
+  describe("onRecord callback", () => {
+    function setupWithRecord(overrides: Partial<typeof defaultParams> = {}) {
+      const onRecord = jest.fn();
+      const hook = renderHook(() => useQuiz({ ...defaultParams, ...overrides, onRecord }));
+      act(() => {
+        hook.result.current.handleShowQuizChange(true);
+      });
+      return { hook, onRecord };
+    }
+
+    // ── handleSubmitChoice: note ────────────────────────────────────────────
+    it("calls onRecord with note data on choice submit (note mode)", () => {
+      const { hook, onRecord } = setupWithRecord();
+      const q = hook.result.current.quizQuestion!;
+      act(() => {
+        hook.result.current.handleQuizAnswer(q.correct);
+      });
+      act(() => {
+        hook.result.current.handleSubmitChoice();
+      });
+
+      expect(onRecord).toHaveBeenCalledTimes(1);
+      const record = onRecord.mock.calls[0][0];
+      expect(record.mode).toBe("note");
+      expect(record.correct).toBe(true);
+      expect(record.noteName).toBe(q.correct);
+      expect(record.stringIdx).toBe(q.stringIdx);
+      expect(record.fret).toBe(q.fret);
+    });
+
+    // ── handleSubmitChoice: degree ──────────────────────────────────────────
+    it("calls onRecord with degree data on choice submit (degree mode)", () => {
+      const { hook, onRecord } = setupWithRecord();
+      act(() => {
+        hook.result.current.handleQuizKindChange("degree", "choice");
+      });
+      const q = hook.result.current.quizQuestion!;
+      act(() => {
+        hook.result.current.handleQuizAnswer(q.correct);
+      });
+      act(() => {
+        hook.result.current.handleSubmitChoice();
+      });
+
+      expect(onRecord).toHaveBeenCalledTimes(1);
+      const record = onRecord.mock.calls[0][0];
+      expect(record.mode).toBe("degree");
+      expect(record.degreeLabel).toBe(q.correct);
+      expect(record.stringIdx).toBe(q.stringIdx);
+      expect(record.fret).toBe(q.fret);
+    });
+
+    // ── handleSubmitChoice: scale ───────────────────────────────────────────
+    it("calls onRecord with scaleType on choice submit (scale mode)", () => {
+      const { hook, onRecord } = setupWithRecord();
+      act(() => {
+        hook.result.current.handleQuizKindChange("scale", "choice");
+      });
+      const q = hook.result.current.quizQuestion!;
+      const notes = q.correctNoteNames!;
+      for (const n of notes) {
+        act(() => {
+          hook.result.current.handleQuizAnswer(n);
+        });
+      }
+      act(() => {
+        hook.result.current.handleSubmitChoice();
+      });
+
+      expect(onRecord).toHaveBeenCalledTimes(1);
+      const record = onRecord.mock.calls[0][0];
+      expect(record.mode).toBe("scale");
+      expect(record.scaleType).toBeDefined();
+    });
+
+    // ── handleSubmitChordChoice ─────────────────────────────────────────────
+    it("calls onRecord with chordType on chord choice submit", () => {
+      const { hook, onRecord } = setupWithRecord();
+      act(() => {
+        hook.result.current.handleQuizKindChange("chord", "choice");
+      });
+      const q = hook.result.current.quizQuestion!;
+      act(() => {
+        hook.result.current.handleChordQuizRootSelect(q.promptChordRoot!);
+      });
+      act(() => {
+        hook.result.current.handleChordQuizTypeSelect(q.promptChordType!);
+      });
+      act(() => {
+        hook.result.current.handleSubmitChordChoice();
+      });
+
+      expect(onRecord).toHaveBeenCalledTimes(1);
+      const record = onRecord.mock.calls[0][0];
+      expect(record.mode).toBe("chord");
+      expect(record.chordType).toBeDefined();
+    });
+
+    // ── handleSubmitFretboard: single-string note ───────────────────────────
+    it("calls onRecord with noteName/stringIdx/fret on fretboard submit (note single-string)", () => {
+      const { hook, onRecord } = setupWithRecord();
+      act(() => {
+        hook.result.current.handleQuizStringsChange([0]);
+      });
+      act(() => {
+        hook.result.current.handleQuizKindChange("note", "fretboard");
+      });
+      const q = hook.result.current.quizQuestion!;
+      act(() => {
+        hook.result.current.handleFretboardQuizAnswer(q.stringIdx, q.fret);
+      });
+      act(() => {
+        hook.result.current.handleSubmitFretboard();
+      });
+
+      expect(onRecord).toHaveBeenCalledTimes(1);
+      const record = onRecord.mock.calls[0][0];
+      expect(record.mode).toBe("note");
+      expect(record.noteName).toBe(q.correct);
+      expect(record.stringIdx).toBe(q.stringIdx);
+      expect(record.fret).toBe(q.fret);
+    });
+
+    // ── handleSubmitFretboard: single-string degree ─────────────────────────
+    it("calls onRecord with degreeLabel/stringIdx/fret on fretboard submit (degree single-string)", () => {
+      const { hook, onRecord } = setupWithRecord();
+      act(() => {
+        hook.result.current.handleQuizStringsChange([0]);
+      });
+      act(() => {
+        hook.result.current.handleQuizKindChange("degree", "fretboard");
+      });
+      const q = hook.result.current.quizQuestion!;
+      act(() => {
+        hook.result.current.handleFretboardQuizAnswer(q.stringIdx, q.fret);
+      });
+      act(() => {
+        hook.result.current.handleSubmitFretboard();
+      });
+
+      expect(onRecord).toHaveBeenCalledTimes(1);
+      const record = onRecord.mock.calls[0][0];
+      expect(record.mode).toBe("degree");
+      expect(record.degreeLabel).toBe(q.correct);
+      expect(record.stringIdx).toBe(q.stringIdx);
+      expect(record.fret).toBe(q.fret);
+    });
+
+    // ── handleSubmitFretboard: scale ────────────────────────────────────────
+    it("calls onRecord with scaleType on fretboard submit (scale mode)", () => {
+      const { hook, onRecord } = setupWithRecord();
+      act(() => {
+        hook.result.current.handleQuizKindChange("scale", "fretboard");
+      });
+      // Select one cell (may be wrong, but onRecord is called regardless)
+      act(() => {
+        hook.result.current.handleFretboardQuizAnswer(0, 0);
+      });
+      act(() => {
+        hook.result.current.handleSubmitFretboard();
+      });
+
+      expect(onRecord).toHaveBeenCalledTimes(1);
+      const record = onRecord.mock.calls[0][0];
+      expect(record.mode).toBe("scale");
+      expect(record.scaleType).toBeDefined();
+    });
+
+    // ── handleSubmitFretboard: all-strings note (no stringIdx/fret) ─────────
+    it("calls onRecord without stringIdx/fret on all-strings fretboard submit", () => {
+      const { hook, onRecord } = setupWithRecord();
+      act(() => {
+        hook.result.current.handleQuizStringsChange([0, 1, 2, 3, 4, 5]);
+      });
+      act(() => {
+        hook.result.current.handleQuizKindChange("note", "fretboard");
+      });
+      // Select one cell to pass the length guard, then submit
+      act(() => {
+        hook.result.current.handleFretboardQuizAnswer(0, 0);
+      });
+      act(() => {
+        hook.result.current.handleSubmitFretboard();
+      });
+
+      expect(onRecord).toHaveBeenCalledTimes(1);
+      const record = onRecord.mock.calls[0][0];
+      expect(record.mode).toBe("note");
+      expect(record.stringIdx).toBeUndefined();
+      expect(record.fret).toBeUndefined();
+    });
+
+    // ── handleDiatonicSubmitAll ─────────────────────────────────────────────
+    it("calls onRecord with diatonic mode on diatonic submit", () => {
+      const onRecord = jest.fn();
+      const hook = renderHook(() => useQuiz({ ...defaultParams, onRecord }));
+      act(() => {
+        hook.result.current.handleShowQuizChange(true);
+      });
+      act(() => {
+        hook.result.current.handleQuizKindChange("diatonic", "all");
+      });
+      const q = hook.result.current.quizQuestion!;
+      for (const answer of q.diatonicAnswers!) {
+        act(() => {
+          hook.result.current.handleDiatonicDegreeCardClick(answer.degree);
+        });
+        act(() => {
+          hook.result.current.handleDiatonicAnswerRootSelect(answer.root);
+        });
+        act(() => {
+          hook.result.current.handleDiatonicAnswerTypeSelect(answer.chordType);
+        });
+      }
+      act(() => {
+        hook.result.current.handleDiatonicSubmitAll();
+      });
+
+      expect(onRecord).toHaveBeenCalledTimes(1);
+      const record = onRecord.mock.calls[0][0];
+      expect(record.mode).toBe("diatonic");
+      expect(typeof record.correct).toBe("boolean");
+    });
+
+    // ── onRecord not required ───────────────────────────────────────────────
+    it("does not throw when onRecord is not provided", () => {
+      const hook = startedQuiz();
+      const q = hook.result.current.quizQuestion!;
+      act(() => {
+        hook.result.current.handleQuizAnswer(q.correct);
+      });
+      expect(() => {
+        act(() => {
+          hook.result.current.handleSubmitChoice();
+        });
+      }).not.toThrow();
+    });
+  });
 });

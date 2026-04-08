@@ -18,6 +18,7 @@ const defaultProps = {
   accidental: "sharp" as Accidental,
   baseLabelMode: "note" as BaseLabelMode,
   showQuiz: false,
+  showStats: false,
   rootChangeDisabled: false,
   onBaseLabelModeChange: jest.fn(),
   onRootNoteChange: jest.fn(),
@@ -430,5 +431,34 @@ describe("HeaderBar", () => {
     });
     // DropdownSelect should not be visible; note/degree toggle should be shown instead
     expect(queryByText("header.note")).toBeTruthy();
+  });
+
+  // ── showStats: hides non-settings controls ────────────────────────
+  it("hides root stepper when showStats is true", () => {
+    const { queryByText } = renderHeader({ showStats: true });
+    expect(queryByText("‹")).toBeNull();
+    expect(queryByText("›")).toBeNull();
+  });
+
+  it("hides note/degree toggle when showStats is true", () => {
+    const { queryByText } = renderHeader({ showStats: true, showQuiz: false });
+    expect(queryByText("header.note")).toBeNull();
+    expect(queryByText("header.degree")).toBeNull();
+  });
+
+  it("hides quiz kind dropdown when showStats is true", () => {
+    const { queryByText } = renderHeader({
+      showStats: true,
+      showQuiz: true,
+      quizKindValue: "note",
+      quizKindOptions: [{ value: "note", label: "NoteLabel" }],
+      onQuizKindChange: jest.fn(),
+    });
+    expect(queryByText("NoteLabel")).toBeNull();
+  });
+
+  it("still renders settings button when showStats is true", () => {
+    const { getByTestId } = renderHeader({ showStats: true });
+    expect(getByTestId("settings-button")).toBeTruthy();
   });
 });

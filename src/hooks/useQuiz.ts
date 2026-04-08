@@ -16,6 +16,7 @@ import type {
   QuizMode,
   QuizType,
   QuizQuestion,
+  QuizRecord,
   DiatonicAnswerEntry,
 } from "../types";
 
@@ -98,6 +99,7 @@ interface UseQuizParams {
   rootNote: string;
   scaleType: ScaleType;
   showQuiz: boolean;
+  onRecord?: (record: QuizRecord) => void;
 }
 
 const DEFAULT_CHORD_QUIZ_TYPES: ChordType[] = ["Major", "Minor", "7th", "maj7", "m7"];
@@ -106,7 +108,14 @@ function chordSuffix(chordType: ChordType): string {
   return CHORD_SUFFIX_MAP[chordType] ?? chordType;
 }
 
-export function useQuiz({ accidental, fretRange, rootNote, scaleType, showQuiz }: UseQuizParams) {
+export function useQuiz({
+  accidental,
+  fretRange,
+  rootNote,
+  scaleType,
+  showQuiz,
+  onRecord,
+}: UseQuizParams) {
   const [chordQuizTypes, setChordQuizTypes] = useState<ChordType[]>(DEFAULT_CHORD_QUIZ_TYPES);
   const [quizMode, setQuizMode] = useState<QuizMode>("note");
   const [quizType, setQuizType] = useState<QuizType>("choice");
@@ -497,6 +506,7 @@ export function useQuiz({ accidental, fretRange, rootNote, scaleType, showQuiz }
         correct: prev.correct + (allCorrect ? 1 : 0),
         total: prev.total + 1,
       }));
+      onRecord?.({ mode: "scale", correct: allCorrect, scaleType: quizQuestion.promptScaleType });
       return;
     }
 
@@ -507,7 +517,24 @@ export function useQuiz({ accidental, fretRange, rootNote, scaleType, showQuiz }
       correct: prev.correct + (isCorrect ? 1 : 0),
       total: prev.total + 1,
     }));
-  }, [quizMode, quizQuestion, quizSelectedChoices, quizType, selectedAnswer]);
+    if (quizMode === "note") {
+      onRecord?.({
+        mode: "note",
+        correct: isCorrect,
+        noteName: quizQuestion.correct,
+        stringIdx: quizQuestion.stringIdx,
+        fret: quizQuestion.fret,
+      });
+    } else if (quizMode === "degree") {
+      onRecord?.({
+        mode: "degree",
+        correct: isCorrect,
+        degreeLabel: quizQuestion.correct,
+        stringIdx: quizQuestion.stringIdx,
+        fret: quizQuestion.fret,
+      });
+    }
+  }, [onRecord, quizMode, quizQuestion, quizSelectedChoices, quizType, selectedAnswer]);
 
   const handleChordQuizRootSelect = useCallback(
     (root: string) => {
@@ -538,7 +565,8 @@ export function useQuiz({ accidental, fretRange, rootNote, scaleType, showQuiz }
       correct: prev.correct + (isCorrect ? 1 : 0),
       total: prev.total + 1,
     }));
-  }, [quizQuestion, quizSelectedChordRoot, quizSelectedChordType, selectedAnswer]);
+    onRecord?.({ mode: "chord", correct: isCorrect, chordType: quizQuestion.promptChordType });
+  }, [onRecord, quizQuestion, quizSelectedChordRoot, quizSelectedChordType, selectedAnswer]);
 
   // Fretboard: toggle cell selection only — no judgement
   const handleFretboardQuizAnswer = useCallback(
@@ -597,6 +625,7 @@ export function useQuiz({ accidental, fretRange, rootNote, scaleType, showQuiz }
         correct: prev.correct + (isCorrect ? 1 : 0),
         total: prev.total + 1,
       }));
+      onRecord?.({ mode: "scale", correct: isCorrect, scaleType: quizQuestion.promptScaleType });
       return;
     }
 
@@ -614,6 +643,7 @@ export function useQuiz({ accidental, fretRange, rootNote, scaleType, showQuiz }
         correct: prev.correct + (isCorrect ? 1 : 0),
         total: prev.total + 1,
       }));
+      onRecord?.({ mode: "chord", correct: isCorrect, chordType: quizQuestion.promptChordType });
       return;
     }
 
@@ -650,6 +680,7 @@ export function useQuiz({ accidental, fretRange, rootNote, scaleType, showQuiz }
         correct: prev.correct + (isCorrect ? 1 : 0),
         total: prev.total + 1,
       }));
+      onRecord?.({ mode: quizMode, correct: isCorrect });
       return;
     }
 
@@ -670,7 +701,25 @@ export function useQuiz({ accidental, fretRange, rootNote, scaleType, showQuiz }
       correct: prev.correct + (isCorrect ? 1 : 0),
       total: prev.total + 1,
     }));
+    if (quizMode === "note") {
+      onRecord?.({
+        mode: "note",
+        correct: isCorrect,
+        noteName: quizQuestion.correct,
+        stringIdx: quizQuestion.stringIdx,
+        fret: quizQuestion.fret,
+      });
+    } else {
+      onRecord?.({
+        mode: "degree",
+        correct: isCorrect,
+        degreeLabel: quizQuestion.correct,
+        stringIdx: quizQuestion.stringIdx,
+        fret: quizQuestion.fret,
+      });
+    }
   }, [
+    onRecord,
     selectedAnswer,
     quizQuestion,
     quizSelectedCells,
@@ -725,7 +774,8 @@ export function useQuiz({ accidental, fretRange, rootNote, scaleType, showQuiz }
       correct: prev.correct + (isCorrect ? 1 : 0),
       total: prev.total + 1,
     }));
-  }, [quizMode, quizType, selectedAnswer, quizQuestion, diatonicAllAnswers]);
+    onRecord?.({ mode: "diatonic", correct: isCorrect });
+  }, [onRecord, quizMode, quizType, selectedAnswer, quizQuestion, diatonicAllAnswers]);
 
   const handleDiatonicAnswerTypeSelect = useCallback(
     (chordType: ChordType) => {
