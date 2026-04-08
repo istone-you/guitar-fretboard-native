@@ -136,6 +136,69 @@
       "diminished": "Diminished"
     }
   },
+  "description": {
+    "layer": {
+      "scale": "Highlights scale tones on the fretboard. When you change the root note, the same scale shape shifts accordingly.",
+      "chord": {
+        "form": "Displays barre chord and open chord forms with 6th-string and 5th-string roots on the fretboard.",
+        "power": "Displays power chords using only the root and 5th. A simple, powerful sound used heavily in rock and punk.",
+        "triad": "Displays triads on 3-string sets with inversions. Great for learning chord tones and arpeggio practice.",
+        "diatonic": "Displays diatonic chords based on a key. See what role each chord degree plays within the key.",
+        "onChord": "Displays slash chord (on-chord) voicings. Changing the bass note creates different textures and smooth voice leading."
+      },
+      "caged": "The CAGED system maps 5 open chord shapes (C, A, G, E, D) across the entire fretboard. It helps you systematically understand chord tone positions everywhere.",
+      "custom": "Freely select notes or degrees to display on the fretboard. Useful for examining specific intervals or note combinations."
+    },
+    "scale": {
+      "major": "A bright, stable scale. The most fundamental scale in pop and classical music.\nFormula: R, M2, M3, P4, P5, M6, M7",
+      "naturalMinor": "A dark, melancholic scale. The foundation of minor keys.\nFormula: R, M2, m3, P4, P5, m6, m7",
+      "majorPenta": "A 5-note scale from the major scale (no 4th or 7th). Used for bright phrases in country and pop.\nFormula: R, M2, M3, P5, M6",
+      "minorPenta": "A 5-note scale from the minor scale (no 2nd or 6th). The most used scale in rock and blues.\nFormula: R, m3, P4, P5, m7",
+      "blues": "Minor pentatonic plus the ♭5 (blue note). Creates the gritty, soulful blues sound.\nFormula: R, m3, P4, ♭5, P5, m7",
+      "harmonicMinor": "Natural minor with a raised 7th. Enables V7 chords for stronger resolution in minor keys.\nFormula: R, M2, m3, P4, P5, m6, M7",
+      "melodicMinor": "Natural minor with raised 6th and 7th (ascending). Used symmetrically in jazz.\nFormula: R, M2, m3, P4, P5, M6, M7",
+      "ionian": "Same as the major scale. The 1st mode, bright and stable.\nFormula: R, M2, M3, P4, P5, M6, M7",
+      "dorian": "The brightest minor mode. Frequently used in funk and jazz minor tunes.\nFormula: R, M2, m3, P4, P5, M6, m7",
+      "phrygian": "A Spanish-flavored mode. The ♭2 gives it a distinctive flamenco or metal sound.\nFormula: R, m2, m3, P4, P5, m6, m7",
+      "lydian": "A floating, dreamy mode with #4. Common in film scores and fusion.\nFormula: R, M2, M3, #4, P5, M6, M7",
+      "mixolydian": "Major scale with a ♭7. A staple of blues rock and funk.\nFormula: R, M2, M3, P4, P5, M6, m7",
+      "aeolian": "Same as natural minor. The 6th mode.\nFormula: R, M2, m3, P4, P5, m6, m7",
+      "locrian": "The darkest, most unstable mode. The ♭5 makes it suited for diminished chords.\nFormula: R, m2, m3, P4, ♭5, m6, m7",
+      "phrygianDominant": "Phrygian with a major 3rd. An exotic, Arabic-sounding scale.\nFormula: R, m2, M3, P4, P5, m6, m7",
+      "lydianDominant": "Lydian with a ♭7. Creates a floating sound over dominant 7th chords.\nFormula: R, M2, M3, #4, P5, M6, m7",
+      "altered": "Used over dominant 7th chords. All tensions are altered, creating strong tension.\nFormula: R, m2, #2, M3, ♭5, m6, m7",
+      "wholeTone": "A symmetrical 6-note scale with all whole steps. Creates an ambiguous, dream-like quality.\nFormula: R, M2, M3, #4, #5, m7",
+      "diminished": "An 8-note scale alternating whole and half steps. Used over diminished and dominant chords.\nFormula: R, M2, m3, P4, ♭5, m6, M6, M7"
+    },
+    "chord": {
+      "Major": "A bright, stable basic triad.\nFormula: R, M3, P5",
+      "Minor": "A dark, melancholic basic triad.\nFormula: R, m3, P5",
+      "7th": "A major triad with ♭7 — the dominant 7th. Essential in blues and jazz.\nFormula: R, M3, P5, m7",
+      "maj7": "A major triad with M7. A soft, sophisticated sound.\nFormula: R, M3, P5, M7",
+      "m7": "A minor triad with ♭7. A dark, relaxed jazz staple.\nFormula: R, m3, P5, m7",
+      "m7b5": "Also called half-diminished. Common as the ii chord in minor keys.\nFormula: R, m3, ♭5, m7",
+      "dim7": "A symmetrical chord built entirely of minor 3rds. A tense passing chord.\nFormula: R, m3, ♭5, dim7",
+      "mmaj7": "A minor triad with M7. A mysterious, haunting sound used in jazz ballads.\nFormula: R, m3, P5, M7",
+      "sus2": "Replaces the 3rd with 2nd for an open, floating quality.\nFormula: R, M2, P5",
+      "sus4": "Replaces the 3rd with 4th for a suspended, tense quality that wants to resolve.\nFormula: R, P4, P5",
+      "6": "A major triad with added 6th. A jazzy, nostalgic sound.\nFormula: R, M3, P5, M6",
+      "m6": "A minor triad with added 6th.\nFormula: R, m3, P5, M6",
+      "dim": "Two stacked minor 3rds. An unstable triad.\nFormula: R, m3, ♭5",
+      "aug": "Two stacked major 3rds. A tense, unresolved triad.\nFormula: R, M3, #5",
+      "9": "Dominant 7th with added 9th. A funky, rich sound.\nFormula: R, M3, P5, m7, M9",
+      "b9": "Dominant 7th with ♭9. A tense, dramatic chord.\nFormula: R, M3, P5, m7, m9",
+      "sharp9": "Dominant 7th with #9. Also known as the Hendrix chord.\nFormula: R, M3, P5, m7, #9",
+      "add9": "Major triad with just the 9th added (no 7th).\nFormula: R, M3, P5, M9",
+      "11": "Dominant 7th with 9th and 11th. A thick, rich voicing.\nFormula: R, M3, P5, m7, M9, P11",
+      "sharp11": "Dominant 7th with #11. A Lydian-flavored sound.\nFormula: R, M3, P5, m7, #11",
+      "add11": "Major triad with just the 11th added.\nFormula: R, M3, P5, P11",
+      "addSharp11": "Major triad with just #11 added.\nFormula: R, M3, P5, #11",
+      "13": "Dominant 7th with 9th and 13th. A lush, colorful chord.\nFormula: R, M3, P5, m7, M9, M13",
+      "b13": "Dominant 7th with ♭13. A darker tension chord.\nFormula: R, M3, P5, m7, ♭13",
+      "Diminished": "A triad built from two stacked minor 3rds. Unstable.\nFormula: R, m3, ♭5",
+      "Augmented": "A triad built from two stacked major 3rds. Tense.\nFormula: R, M3, #5"
+    }
+  },
   "quiz": {
     "questionNote": "String {{string}}, Fret {{fret}} — what note?",
     "questionDegree": "String {{string}}, Fret {{fret}} — what degree? (Root: {{root}})",

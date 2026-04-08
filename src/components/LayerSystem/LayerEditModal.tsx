@@ -26,6 +26,7 @@ import { createDefaultLayer, COLOR_PRESETS } from "../../types";
 import { DropdownSelect } from "../ui/DropdownSelect";
 import ChevronIcon from "../ui/ChevronIcon";
 import { buildScaleOptions } from "../ui/scaleOptions";
+import LayerDescription from "./LayerDescription";
 import {
   CHORD_CAGED_ORDER,
   CHORD_SEMITONES,
@@ -169,6 +170,8 @@ export default function LayerEditModal({
     initialLayer ?? createDefaultLayer("scale", `layer-${Date.now()}`, defaultColor),
   );
   const [extractChordType, setExtractChordType] = useState("Major");
+  const [showDescription, setShowDescription] = useState(false);
+  const descAnim = useRef(new Animated.Value(0)).current;
 
   // Animation
   const modalScale = useRef(new Animated.Value(0.5)).current;
@@ -506,7 +509,70 @@ export default function LayerEditModal({
                   ]}
                   variant="plain"
                 />
+                <TouchableOpacity
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    const next = !showDescription;
+                    setShowDescription(next);
+                    if (next) {
+                      descAnim.setValue(0);
+                      Animated.timing(descAnim, {
+                        toValue: 1,
+                        duration: 400,
+                        easing: Easing.out(Easing.cubic),
+                        useNativeDriver: false,
+                      }).start();
+                    } else {
+                      Animated.timing(descAnim, {
+                        toValue: 0,
+                        duration: 350,
+                        easing: Easing.out(Easing.cubic),
+                        useNativeDriver: false,
+                      }).start();
+                    }
+                  }}
+                  style={[
+                    styles.helpBtn,
+                    {
+                      position: "absolute",
+                      right: 12,
+                      top: 5,
+                      backgroundColor: showDescription
+                        ? isDark
+                          ? "#374151"
+                          : "#e7e5e4"
+                        : "transparent",
+                    },
+                  ]}
+                  activeOpacity={0.7}
+                >
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      fontWeight: "700",
+                      color: isDark ? "#9ca3af" : "#78716c",
+                    }}
+                  >
+                    ?
+                  </Text>
+                </TouchableOpacity>
               </View>
+
+              <Animated.View
+                style={{
+                  paddingHorizontal: 16,
+                  maxHeight: descAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, 200],
+                  }),
+                  opacity: descAnim,
+                  overflow: "hidden",
+                }}
+              >
+                <View style={{ paddingTop: 8 }}>
+                  <LayerDescription theme={theme} layer={layer} />
+                </View>
+              </Animated.View>
 
               <View style={styles.settings}>
                 {/* Scale settings */}
@@ -1105,6 +1171,13 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
     zIndex: 1,
+  },
+  helpBtn: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: "center",
+    justifyContent: "center",
   },
   sheetScroll: {
     width: "100%",
