@@ -1259,7 +1259,7 @@ describe("getOnChordListForRoot", () => {
   it("returns on-chords for C# root (ASCII sharp triggers getNoteIndexByName conversion)", () => {
     const list = getOnChordListForRoot("C#");
     expect(list.length).toBeGreaterThan(0);
-    expect(list).toContain("C#m7/B");
+    expect(list).toContain("C♯m7/B");
   });
 
   it("returns on-chords for C♯ root (unicode sharp)", () => {

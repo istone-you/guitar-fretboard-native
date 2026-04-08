@@ -1735,14 +1735,14 @@ describe("useQuiz", () => {
       expect(q.correctNoteNames).toBeDefined();
     });
 
-    it("chord choice uses CHORD_IDENTIFY_ROOTS for root", () => {
-      const validRoots = ["A", "B", "C", "D", "E", "F", "G"];
+    it("chord choice uses all 12 notes for root", () => {
+      const allNotes = ["C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "A♯", "B"];
       const hook = startedQuiz();
       act(() => {
         hook.result.current.handleQuizKindChange("chord", "choice");
       });
       const q = hook.result.current.quizQuestion!;
-      expect(validRoots).toContain(q.promptChordRoot);
+      expect(allNotes).toContain(q.promptChordRoot);
     });
 
     it("diatonic question uses correct progression for key type", () => {
