@@ -1,5 +1,5 @@
 import React from "react";
-import { render, fireEvent, act } from "@testing-library/react-native";
+import { render, fireEvent } from "@testing-library/react-native";
 import { Animated } from "react-native";
 import LayerControls from "../index";
 import type { LayerControlsProps } from "../index";
@@ -413,13 +413,6 @@ describe("LayerControls", () => {
     expect(getByText("controls.displayMode")).toBeTruthy();
   });
 
-  it("renders chord card with caged display mode and opens picker", () => {
-    const { getByText } = renderControls({ chordDisplayMode: "caged" as any, showChord: true });
-    fireEvent.press(getByText("layers.chord"));
-    // Should render the CAGED trigger showing selected forms
-    expect(getByText("C, A")).toBeTruthy();
-  });
-
   it("renders diatonic key and chord size dropdowns", () => {
     const { getByText } = renderControls({ chordDisplayMode: "diatonic", showChord: true });
     fireEvent.press(getByText("layers.chord"));
@@ -562,83 +555,6 @@ describe("LayerControls", () => {
     springSpy.mockRestore();
   });
 
-  // ── ChordCagedButton bounce animation (lines 188-208) ─────────────
-  it("ChordCagedButton triggers bounce animation when toggled in caged picker", () => {
-    const springSpy = jest.spyOn(Animated, "spring");
-    const toggleCagedForm = jest.fn();
-    const { getByText, rerender } = renderControls({
-      chordDisplayMode: "caged" as any,
-      showChord: true,
-      cagedForms: new Set(["C", "A"]),
-      toggleCagedForm,
-    });
-    fireEvent.press(getByText("layers.chord"));
-    // Open the CAGED picker modal
-    fireEvent.press(getByText("C, A"));
-    // Re-render with different cagedForms to trigger ChordCagedButton bounce
-    rerender(
-      <LayerControls
-        {...defaultProps}
-        chordDisplayMode={"caged" as any}
-        showChord={true}
-        cagedForms={new Set(["C", "A", "G"])}
-        toggleCagedForm={toggleCagedForm}
-      />,
-    );
-    expect(springSpy).toHaveBeenCalled();
-    springSpy.mockRestore();
-  });
-
-  // ── Chord CAGED picker opens and shows buttons (lines 591-646) ────
-  it("opens CAGED picker modal and renders ChordCagedButtons", () => {
-    const toggleCagedForm = jest.fn();
-    const { getByText, UNSAFE_getAllByType } = renderControls({
-      chordDisplayMode: "caged" as any,
-      showChord: true,
-      cagedForms: new Set(["C"]),
-      toggleCagedForm,
-    });
-    fireEvent.press(getByText("layers.chord"));
-    // Open the CAGED picker
-    fireEvent.press(getByText("C"));
-    // Modal should now be visible with CAGED buttons
-    const Modal = require("react-native").Modal;
-    const modals = UNSAFE_getAllByType(Modal);
-    const visibleModal = modals.find((m: any) => m.props.visible === true);
-    expect(visibleModal).toBeTruthy();
-  });
-
-  // ── ChordCagedButton press calls toggleCagedForm (line 639) ───────
-  it("pressing ChordCagedButton in picker calls toggleCagedForm", () => {
-    const toggleCagedForm = jest.fn();
-    const { getByText, getAllByText } = renderControls({
-      chordDisplayMode: "caged" as any,
-      showChord: true,
-      cagedForms: new Set(["C"]),
-      toggleCagedForm,
-    });
-    fireEvent.press(getByText("layers.chord"));
-    // Open the CAGED picker
-    fireEvent.press(getByText("C"));
-    // Now there should be duplicate "G" buttons (one in CAGED tab area isn't shown, one in picker)
-    // Press G in the picker
-    const gButtons = getAllByText("G");
-    fireEvent.press(gButtons[gButtons.length - 1]);
-    expect(toggleCagedForm).toHaveBeenCalledWith("G");
-  });
-
-  // ── Chord CAGED picker shows dash when no forms selected ──────────
-  it("shows dash when no CAGED forms are selected", () => {
-    const { getAllByText } = renderControls({
-      chordDisplayMode: "caged" as any,
-      showChord: true,
-      cagedForms: new Set<string>(),
-    });
-    fireEvent.press(getAllByText("layers.chord")[0]);
-    // The CAGED trigger should show "—" when no forms selected
-    expect(getAllByText("—").length).toBeGreaterThan(0);
-  });
-
   // ── Double-tap on CAGED tab toggles layer (line 725) ──────────────
   it("toggles CAGED layer on double-tap of caged tab", () => {
     const setShowCaged = jest.fn();
@@ -757,16 +673,6 @@ describe("LayerControls", () => {
     expect(toggles.length).toBeGreaterThan(0);
   });
 
-  it("chord card with caged mode shows caged trigger text", () => {
-    const { getByText } = renderControls({
-      chordDisplayMode: "caged" as any,
-      showChord: true,
-      cagedForms: new Set(["C", "A", "G"]),
-    });
-    fireEvent.press(getByText("layers.chord"));
-    expect(getByText("C, A, G")).toBeTruthy();
-  });
-
   // ── Chord display mode label (line 561) ──────────────────────────
   it("shows empty label for second cell in power mode", () => {
     const { getByText, UNSAFE_getAllByType } = renderControls({
@@ -836,29 +742,6 @@ describe("LayerControls", () => {
   });
 
   // ── CAGED picker modal onRequestClose (lines 613-617) ────────────
-  it("CAGED picker modal closes via onRequestClose", () => {
-    const { getByText, UNSAFE_getAllByType } = renderControls({
-      chordDisplayMode: "caged" as any,
-      showChord: true,
-      cagedForms: new Set(["C"]),
-    });
-    fireEvent.press(getByText("layers.chord"));
-    // Open the CAGED picker
-    fireEvent.press(getByText("C"));
-    const ModalType = require("react-native").Modal;
-    const modals = UNSAFE_getAllByType(ModalType);
-    const visibleModal = modals.find((m: any) => m.props.visible === true);
-    expect(visibleModal).toBeTruthy();
-    // Trigger onRequestClose
-    act(() => {
-      visibleModal!.props.onRequestClose();
-    });
-    // Modal should close
-    const modalsAfter = UNSAFE_getAllByType(ModalType);
-    const stillVisible = modalsAfter.find((m: any) => m.props.visible === true);
-    expect(stillVisible).toBeFalsy();
-  });
-
   // ── On-chord mode renders chord dropdown (line 648-657) ───────────
   it("renders chord dropdown in on-chord mode", () => {
     const { getByText } = renderControls({

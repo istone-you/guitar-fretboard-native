@@ -59,8 +59,6 @@ const defaultProps = {
   accidental: "sharp" as const,
   initialLayer: null as LayerConfig | null,
   defaultColor: "#ff69b6",
-  overlayNotes: [] as string[],
-  overlaySemitones: new Set<number>(),
   onClose: jest.fn(),
   onSave: jest.fn(),
   onPreview: jest.fn(),
@@ -248,9 +246,8 @@ describe("LayerEditModal", () => {
     act(() => {
       jest.runAllTimers();
     });
-    // Should show the back arrow and extract/reset buttons
+    // Should show the back arrow and reset button
     expect(getByText("←")).toBeTruthy();
-    expect(getByText("layers.extractFromLayers")).toBeTruthy();
     expect(getByText("layers.reset")).toBeTruthy();
     // Should show note chips (C, D, E, etc.)
     expect(getByText("C")).toBeTruthy();
@@ -410,7 +407,6 @@ describe("LayerEditModal", () => {
     act(() => {
       jest.runAllTimers();
     });
-    expect(getByText("layers.extractFromLayers")).toBeTruthy();
     // Press back arrow
     fireEvent.press(getByText("←"));
     act(() => {
@@ -420,55 +416,9 @@ describe("LayerEditModal", () => {
     expect(getByText("noteFilter.title")).toBeTruthy();
   });
 
-  // ── Extract from layers button (disabled when no overlay) ─────────
-  it("extract from layers is disabled when overlaySemitones is empty", () => {
-    const existing = createDefaultLayer("custom", "l1", "#ff69b6");
-    const { getByText } = renderModal({
-      initialLayer: existing,
-      overlaySemitones: new Set(),
-    });
-    act(() => {
-      jest.runAllTimers();
-    });
-    fireEvent.press(getByText("—"));
-    act(() => {
-      jest.runAllTimers();
-    });
-    // The button should exist but pressing it should not trigger update
-    expect(getByText("layers.extractFromLayers")).toBeTruthy();
-  });
-
-  // ── Extract from layers with overlay data ─────────────────────────
-  it("extract from layers populates notes when overlay has data", () => {
-    const onPreview = jest.fn();
-    const existing = createDefaultLayer("custom", "l1", "#ff69b6");
-    const { getByText } = renderModal({
-      initialLayer: existing,
-      overlayNotes: ["C", "E", "G"],
-      overlaySemitones: new Set([0, 4, 7]),
-      onPreview,
-    });
-    act(() => {
-      jest.runAllTimers();
-    });
-    fireEvent.press(getByText("—"));
-    act(() => {
-      jest.runAllTimers();
-    });
-    fireEvent.press(getByText("layers.extractFromLayers"));
-    act(() => {
-      jest.runAllTimers();
-    });
-    const lastCall = onPreview.mock.calls[onPreview.mock.calls.length - 1][0];
-    expect(lastCall.selectedNotes).toEqual(new Set(["C", "E", "G"]));
-  });
-
-  // ── Chord CAGED form shows CAGED buttons ──────────────────────────
-  it("chord layer with caged display mode shows CAGED form buttons", () => {
-    const existing = {
-      ...createDefaultLayer("chord", "l2", "#ffd700"),
-      chordDisplayMode: "caged" as const,
-    };
+  // ── CAGED layer shows CAGED buttons ──────────────────────────
+  it("caged layer type shows CAGED form buttons", () => {
+    const existing = createDefaultLayer("caged", "l2", "#ffd700");
     const { getByText } = renderModal({ initialLayer: existing });
     act(() => {
       jest.runAllTimers();
@@ -557,8 +507,7 @@ describe("LayerEditModal", () => {
   it("pressing a CAGED button toggles that form off", () => {
     const onPreview = jest.fn();
     const existing = {
-      ...createDefaultLayer("chord", "l2", "#ffd700"),
-      chordDisplayMode: "caged" as const,
+      ...createDefaultLayer("caged", "l2", "#ffd700"),
       cagedForms: new Set(["C", "A", "G", "E", "D"]),
     };
     const { getByText } = renderModal({ initialLayer: existing, onPreview });
@@ -732,35 +681,6 @@ describe("LayerEditModal", () => {
     expect(onPreview).toHaveBeenCalled();
     const lastCall = onPreview.mock.calls[onPreview.mock.calls.length - 1][0];
     expect(lastCall.selectedDegrees.has("P1")).toBe(true);
-  });
-
-  // ── Extract from overlay in degree mode ───────────────────────────
-  it("extract from layers in degree mode populates selectedDegrees", () => {
-    const onPreview = jest.fn();
-    const existing = {
-      ...createDefaultLayer("custom", "l1", "#ff69b6"),
-      customMode: "degree" as const,
-    };
-    const { getByText } = renderModal({
-      initialLayer: existing,
-      overlayNotes: ["C", "E", "G"],
-      overlaySemitones: new Set([0, 4, 7]),
-      onPreview,
-    });
-    act(() => {
-      jest.runAllTimers();
-    });
-    fireEvent.press(getByText("—"));
-    act(() => {
-      jest.runAllTimers();
-    });
-    fireEvent.press(getByText("layers.extractFromLayers"));
-    act(() => {
-      jest.runAllTimers();
-    });
-    const lastCall = onPreview.mock.calls[onPreview.mock.calls.length - 1][0];
-    // Semitones 0, 4, 7 map to P1, M3, P5 in DEGREE_BY_SEMITONE
-    expect(lastCall.selectedDegrees).toEqual(new Set(["P1", "M3", "P5"]));
   });
 
   // ── Chord frame toggle press ──────────────────────────────────────

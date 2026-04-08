@@ -58,7 +58,7 @@ const defaultProps = {
 };
 
 function makeLayer(
-  type: "scale" | "chord" | "custom",
+  type: "scale" | "chord" | "caged" | "custom",
   id: string,
   overrides: Partial<LayerConfig> = {},
 ): LayerConfig {
@@ -206,15 +206,14 @@ describe("LayerList", () => {
     expect(getByText("options.chordDisplayMode.power")).toBeTruthy();
   });
 
-  it("getSummary for chord caged layer", () => {
+  it("getSummary for caged layer type", () => {
     const layers = [
-      makeLayer("chord", "l1", {
-        chordDisplayMode: "caged",
+      makeLayer("caged", "l1", {
         cagedForms: new Set(["C", "A"]),
       }),
     ];
     const { getByText } = renderList({ layers });
-    expect(getByText("options.chordDisplayMode.caged: C, A")).toBeTruthy();
+    expect(getByText("options.diatonicKey.major: C, A")).toBeTruthy();
   });
 
   it("getSummary for chord diatonic layer", () => {

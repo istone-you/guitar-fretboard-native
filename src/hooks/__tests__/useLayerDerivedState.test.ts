@@ -86,9 +86,8 @@ describe("useLayerDerivedState – overlaySemitones", () => {
     expect(result.current.overlaySemitones).toEqual(new Set([0, 4, 7]));
   });
 
-  it("returns Major semitones for chord caged mode", () => {
-    const layer = createDefaultLayer("chord", "l1", "#ff0000");
-    layer.chordDisplayMode = "caged";
+  it("returns Major semitones for caged layer type", () => {
+    const layer = createDefaultLayer("caged", "l1", "#ff0000");
     const { result } = setup({ layers: [layer], rootNote: "C" });
     // CAGED always uses Major semitones: {0, 4, 7}
     expect(result.current.overlaySemitones).toEqual(new Set([0, 4, 7]));

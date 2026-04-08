@@ -28,6 +28,7 @@ import ChevronIcon from "../ui/ChevronIcon";
 import { buildScaleOptions } from "../ui/scaleOptions";
 import {
   CHORD_CAGED_ORDER,
+  CHORD_SEMITONES,
   CHORD_TYPES_CORE,
   CUSTOM_DEGREE_CHIPS,
   DEGREE_BY_SEMITONE,
@@ -141,8 +142,6 @@ interface LayerEditModalProps {
   accidental: "sharp" | "flat";
   initialLayer?: LayerConfig | null;
   defaultColor: string;
-  overlayNotes: string[];
-  overlaySemitones: Set<number>;
   onClose: () => void;
   onSave: (layer: LayerConfig) => void;
   onPreview?: (layer: LayerConfig) => void;
@@ -155,8 +154,6 @@ export default function LayerEditModal({
   accidental,
   initialLayer,
   defaultColor,
-  overlayNotes,
-  overlaySemitones,
   onClose,
   onSave,
   onPreview,
@@ -171,6 +168,7 @@ export default function LayerEditModal({
   const [layer, setLayer] = useState<LayerConfig>(
     initialLayer ?? createDefaultLayer("scale", `layer-${Date.now()}`, defaultColor),
   );
+  const [extractChordType, setExtractChordType] = useState("Major");
 
   // Animation
   const modalScale = useRef(new Animated.Value(0.5)).current;
@@ -221,7 +219,7 @@ export default function LayerEditModal({
       tension: 120,
       useNativeDriver: true,
     }).start();
-  }, [visible, isTypeStep, step, bottomSheetY]);
+  }, [visible, isTypeStep, step, layer.type, layer.chordDisplayMode, bottomSheetY]);
 
   const update = (partial: Partial<LayerConfig>) => {
     setLayer((prev) => {
@@ -232,37 +230,17 @@ export default function LayerEditModal({
   };
 
   const bounceModal = () => {
-    if (isTypeStep) {
-      modalScale.stopAnimation();
-      modalScale.setValue(1);
-      Animated.sequence([
-        Animated.timing(modalScale, {
-          toValue: 1.06,
-          duration: 120,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-        Animated.spring(modalScale, {
-          toValue: 1,
-          friction: 8,
-          tension: 140,
-          useNativeDriver: true,
-        }),
-      ]).start();
-      return;
-    }
-
-    bottomSheetY.stopAnimation();
-    bottomSheetY.setValue(0);
+    modalScale.stopAnimation();
+    modalScale.setValue(1);
     Animated.sequence([
-      Animated.timing(bottomSheetY, {
-        toValue: -10,
-        duration: 90,
+      Animated.timing(modalScale, {
+        toValue: 1.06,
+        duration: 120,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }),
-      Animated.spring(bottomSheetY, {
-        toValue: 0,
+      Animated.spring(modalScale, {
+        toValue: 1,
         friction: 8,
         tension: 140,
         useNativeDriver: true,
@@ -273,7 +251,6 @@ export default function LayerEditModal({
   const navigateTo = (target: "settings" | "color" | "chips") => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setStep(target);
-    bounceModal();
   };
 
   const handleTypeSelect = (type: LayerType) => {
@@ -346,13 +323,13 @@ export default function LayerEditModal({
     { value: "triad", label: t("options.chordDisplayMode.triad") },
     { value: "diatonic", label: t("options.chordDisplayMode.diatonic") },
     { value: "on-chord", label: t("options.chordDisplayMode.on-chord") },
-    { value: "caged", label: t("options.chordDisplayMode.caged") },
   ];
   const onChordOptions = getOnChordListForRoot(rootNote).map((v) => ({ value: v, label: v }));
   const triadInversionOptions = TRIAD_INVERSION_OPTIONS.map(({ value }) => ({
     value,
     label: t(`options.triadInversions.${value}`),
   }));
+  const plainSmallText = { fontSize: 14, fontWeight: "500" } as const;
   const sheetHeight = Math.max(360, Math.min(520, Math.round(winHeight * 0.62)));
 
   const diatonicScaleType = `${layer.diatonicKeyType}-${layer.diatonicChordSize}`;
@@ -441,6 +418,27 @@ export default function LayerEditModal({
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
+                  onPress={() => handleTypeSelect("caged")}
+                  style={[
+                    styles.typeBtn,
+                    {
+                      borderColor: isDark ? "#374151" : "#d6d3d1",
+                      backgroundColor: isDark ? "#1f2937" : "#fafaf9",
+                    },
+                  ]}
+                  activeOpacity={0.7}
+                >
+                  <Text
+                    style={{
+                      fontSize: 15,
+                      fontWeight: "600",
+                      color: isDark ? "#fff" : "#1c1917",
+                    }}
+                  >
+                    {t("layers.caged")}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
                   onPress={() => handleTypeSelect("custom")}
                   style={[
                     styles.typeBtn,
@@ -503,6 +501,7 @@ export default function LayerEditModal({
                   options={[
                     { value: "scale", label: t("layers.scale") },
                     { value: "chord", label: t("layers.chord") },
+                    { value: "caged", label: t("layers.caged") },
                     { value: "custom", label: t("layers.custom") },
                   ]}
                   variant="plain"
@@ -512,7 +511,7 @@ export default function LayerEditModal({
               <View style={styles.settings}>
                 {/* Scale settings */}
                 {layer.type === "scale" && (
-                  <View style={styles.settingRow}>
+                  <View style={styles.settingRowInline}>
                     <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c" }]}>
                       {t("mobileControls.scaleKind")}
                     </Text>
@@ -521,7 +520,8 @@ export default function LayerEditModal({
                       value={layer.scaleType}
                       onChange={(v) => update({ scaleType: v as ScaleType })}
                       options={scaleOptions}
-                      fullWidth
+                      variant="plain"
+                      textStyle={plainSmallText}
                     />
                   </View>
                 )}
@@ -529,7 +529,7 @@ export default function LayerEditModal({
                 {/* Chord settings */}
                 {layer.type === "chord" && (
                   <>
-                    <View style={styles.settingRow}>
+                    <View style={styles.settingRowInline}>
                       <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c" }]}>
                         {t("controls.displayMode")}
                       </Text>
@@ -538,13 +538,13 @@ export default function LayerEditModal({
                         value={layer.chordDisplayMode}
                         onChange={(v) => update({ chordDisplayMode: v as ChordDisplayMode })}
                         options={chordDisplayOptions}
-                        fullWidth
+                        variant="plain"
+                        textStyle={plainSmallText}
                       />
                     </View>
                     {layer.chordDisplayMode !== "power" &&
-                      layer.chordDisplayMode !== "caged" &&
                       layer.chordDisplayMode !== "on-chord" && (
-                        <View style={styles.settingRow}>
+                        <View style={styles.settingRowInline}>
                           <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c" }]}>
                             {layer.chordDisplayMode === "diatonic"
                               ? t("controls.degree")
@@ -572,12 +572,13 @@ export default function LayerEditModal({
                                     }))
                                   : diatonicCodeOptions
                             }
-                            fullWidth
+                            variant="plain"
+                            textStyle={plainSmallText}
                           />
                         </View>
                       )}
                     {layer.chordDisplayMode === "on-chord" && (
-                      <View style={styles.settingRow}>
+                      <View style={styles.settingRowInline}>
                         <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c" }]}>
                           {t("controls.chord")}
                         </Text>
@@ -586,13 +587,14 @@ export default function LayerEditModal({
                           value={layer.onChordName}
                           onChange={(v) => update({ onChordName: v })}
                           options={onChordOptions}
-                          fullWidth
+                          variant="plain"
+                          textStyle={plainSmallText}
                         />
                       </View>
                     )}
                     {(layer.chordDisplayMode === "diatonic" ||
                       layer.chordDisplayMode === "triad") && (
-                      <View style={styles.settingRow}>
+                      <View style={styles.settingRowInline}>
                         <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c" }]}>
                           {layer.chordDisplayMode === "diatonic"
                             ? t("controls.key")
@@ -615,12 +617,13 @@ export default function LayerEditModal({
                               ? diatonicKeyOptions
                               : triadInversionOptions
                           }
-                          fullWidth
+                          variant="plain"
+                          textStyle={plainSmallText}
                         />
                       </View>
                     )}
                     {layer.chordDisplayMode === "diatonic" && (
-                      <View style={styles.settingRow}>
+                      <View style={styles.settingRowInline}>
                         <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c" }]}>
                           {t("controls.chordType")}
                         </Text>
@@ -629,78 +632,86 @@ export default function LayerEditModal({
                           value={layer.diatonicChordSize}
                           onChange={(v) => update({ diatonicChordSize: v })}
                           options={diatonicChordSizeOptions}
-                          fullWidth
+                          variant="plain"
+                          textStyle={plainSmallText}
                         />
-                      </View>
-                    )}
-                    {layer.chordDisplayMode === "caged" && (
-                      <View style={styles.settingRow}>
-                        <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-                          {t("options.chordDisplayMode.caged")}
-                        </Text>
-                        <View style={styles.cagedRow}>
-                          {CHORD_CAGED_ORDER.map((key) => {
-                            const active = layer.cagedForms.has(key);
-                            return (
-                              <TouchableOpacity
-                                key={key}
-                                onPress={() => {
-                                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                  const next = new Set(layer.cagedForms);
-                                  if (next.has(key)) next.delete(key);
-                                  else next.add(key);
-                                  update({ cagedForms: next });
-                                }}
-                                style={[
-                                  styles.cagedBtn,
-                                  {
-                                    backgroundColor: active
-                                      ? isDark
-                                        ? "#e5e7eb"
-                                        : "#1c1917"
-                                      : isDark
-                                        ? "#1f2937"
-                                        : "#fafaf9",
-                                    borderColor: active
-                                      ? "transparent"
-                                      : isDark
-                                        ? "#374151"
-                                        : "#d6d3d1",
-                                  },
-                                ]}
-                                activeOpacity={0.7}
-                              >
-                                <Text
-                                  style={{
-                                    fontSize: 14,
-                                    fontWeight: "bold",
-                                    color: active
-                                      ? isDark
-                                        ? "#1c1917"
-                                        : "#fff"
-                                      : isDark
-                                        ? "#f3f4f6"
-                                        : "#44403c",
-                                  }}
-                                >
-                                  {key}
-                                </Text>
-                              </TouchableOpacity>
-                            );
-                          })}
-                        </View>
                       </View>
                     )}
                   </>
                 )}
 
-                {layer.type === "chord" && (
-                  <View
-                    style={[
-                      styles.settingRow,
-                      { flexDirection: "row", alignItems: "center", minHeight: 38 },
-                    ]}
-                  >
+                {/* CAGED settings */}
+                {layer.type === "caged" && (
+                  <>
+                    <View style={styles.settingRowInline}>
+                      <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c" }]}>
+                        {t("controls.chord")}
+                      </Text>
+                      <DropdownSelect
+                        theme={theme}
+                        value={layer.cagedChordType}
+                        onChange={(v) => update({ cagedChordType: v as "major" | "minor" })}
+                        options={[
+                          { value: "major", label: t("options.diatonicKey.major") },
+                          { value: "minor", label: t("options.diatonicKey.naturalMinor") },
+                        ]}
+                        variant="plain"
+                        textStyle={plainSmallText}
+                      />
+                    </View>
+                    <View style={styles.settingRowInline}>
+                      <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c" }]}>
+                        {t("mobileControls.cagedForms")}
+                      </Text>
+                      <View style={styles.cagedRow}>
+                        {CHORD_CAGED_ORDER.map((key) => {
+                          const active = layer.cagedForms.has(key);
+                          return (
+                            <TouchableOpacity
+                              key={key}
+                              onPress={() => {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                const next = new Set(layer.cagedForms);
+                                if (next.has(key)) next.delete(key);
+                                else next.add(key);
+                                update({ cagedForms: next });
+                              }}
+                              style={[
+                                styles.cagedBtn,
+                                {
+                                  backgroundColor: active
+                                    ? layer.color
+                                    : isDark
+                                      ? "#1f2937"
+                                      : "#fafaf9",
+                                  borderColor: active
+                                    ? "transparent"
+                                    : isDark
+                                      ? "#374151"
+                                      : "#d6d3d1",
+                                },
+                              ]}
+                              activeOpacity={0.7}
+                            >
+                              <Text
+                                style={{
+                                  fontSize: 12,
+                                  fontWeight: "bold",
+                                  color: active ? "#fff" : isDark ? "#f3f4f6" : "#44403c",
+                                }}
+                              >
+                                {key}
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    </View>
+                  </>
+                )}
+
+                {(layer.type === "chord" || layer.type === "caged") && (
+                  <View style={styles.settingRowInline}>
                     <Text
                       style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c", flex: 1 }]}
                     >
@@ -722,7 +733,7 @@ export default function LayerEditModal({
 
                 {/* Navigate to chips page (custom type only) */}
                 {layer.type === "custom" && (
-                  <View style={styles.settingRow}>
+                  <View style={styles.settingRowInline}>
                     <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c" }]}>
                       {layer.customMode === "note"
                         ? t("noteFilter.title")
@@ -733,17 +744,15 @@ export default function LayerEditModal({
                       style={[
                         styles.navTrigger,
                         {
-                          borderColor: isDark ? "#374151" : "#d6d3d1",
-                          backgroundColor: isDark
-                            ? "rgba(255,255,255,0.06)"
-                            : "rgba(250,250,249,0.95)",
+                          borderColor: "transparent",
+                          backgroundColor: "transparent",
                         },
                       ]}
                       activeOpacity={0.7}
                     >
                       <Text
                         style={{
-                          fontSize: 13,
+                          fontSize: 14,
                           fontWeight: "500",
                           color: isDark ? "#fff" : "#1c1917",
                         }}
@@ -764,12 +773,7 @@ export default function LayerEditModal({
                 )}
 
                 {/* Navigate to color page */}
-                <View
-                  style={[
-                    styles.settingRow,
-                    { flexDirection: "row", alignItems: "center", minHeight: 38 },
-                  ]}
-                >
+                <View style={styles.settingRowInline}>
                   <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c", flex: 1 }]}>
                     {t("layerColors")}
                   </Text>
@@ -911,7 +915,8 @@ export default function LayerEditModal({
                     { value: "note", label: t("noteFilter.title") },
                     { value: "degree", label: t("degreeFilter.title") },
                   ]}
-                  fullWidth
+                  variant="plain"
+                  textStyle={plainSmallText}
                 />
                 <View style={styles.customChipsGrid}>
                   {(layer.customMode === "note" ? notes : [...CUSTOM_DEGREE_CHIPS]).map((item) => {
@@ -945,41 +950,46 @@ export default function LayerEditModal({
                   })}
                 </View>
                 <View style={styles.customActionRow}>
-                  <TouchableOpacity
-                    disabled={overlaySemitones.size === 0}
-                    onPress={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      if (layer.customMode === "note") {
-                        update({ selectedNotes: new Set(overlayNotes) });
-                      } else {
-                        update({
-                          selectedDegrees: new Set(
-                            DEGREE_BY_SEMITONE.filter((_, i) => overlaySemitones.has(i)),
-                          ),
-                        });
-                      }
+                  <View
+                    style={{
+                      flex: 1,
+                      borderWidth: 1,
+                      borderRadius: 10,
+                      borderColor: isDark ? "#374151" : "#d6d3d1",
+                      backgroundColor: isDark ? "#1f2937" : "#fafaf9",
+                      alignItems: "center",
                     }}
-                    style={[
-                      styles.customActionBtn,
-                      {
-                        borderColor: isDark ? "#374151" : "#d6d3d1",
-                        backgroundColor: isDark ? "#1f2937" : "#fafaf9",
-                        opacity: overlaySemitones.size === 0 ? 0.35 : 1,
-                      },
-                    ]}
-                    activeOpacity={0.7}
                   >
-                    <Text
-                      style={{
-                        fontSize: 13,
-                        fontWeight: "500",
-                        color: isDark ? "#e5e7eb" : "#44403c",
+                    <DropdownSelect
+                      theme={theme}
+                      value={extractChordType}
+                      onChange={(v) => {
+                        setExtractChordType(v);
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        const semitones = CHORD_SEMITONES[v];
+                        if (!semitones) return;
+                        if (layer.customMode === "note") {
+                          const rootIdx = getRootIndex(rootNote);
+                          const chordNotes = new Set(
+                            [...semitones].map((s) => notes[(rootIdx + s) % 12]),
+                          );
+                          update({ selectedNotes: chordNotes });
+                        } else {
+                          update({
+                            selectedDegrees: new Set(
+                              DEGREE_BY_SEMITONE.filter((_, i) => semitones.has(i)),
+                            ),
+                          });
+                        }
                       }}
-                    >
-                      {t("layers.extractFromLayers")}
-                    </Text>
-                  </TouchableOpacity>
+                      options={CHORD_TYPES.map((v) => ({ value: v, label: v }))}
+                      label={t("layers.extractFromChord")}
+                      variant="plain"
+                      textStyle={plainSmallText}
+                    />
+                  </View>
                   <TouchableOpacity
+                    disabled={layer.selectedNotes.size === 0 && layer.selectedDegrees.size === 0}
                     onPress={() => {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                       update({
@@ -992,6 +1002,10 @@ export default function LayerEditModal({
                       {
                         borderColor: isDark ? "rgba(239,68,68,0.3)" : "rgba(239,68,68,0.25)",
                         backgroundColor: isDark ? "rgba(239,68,68,0.08)" : "rgba(254,226,226,0.7)",
+                        opacity:
+                          layer.selectedNotes.size === 0 && layer.selectedDegrees.size === 0
+                            ? 0.35
+                            : 1,
                       },
                     ]}
                     activeOpacity={0.7}
@@ -1070,10 +1084,14 @@ const styles = StyleSheet.create({
   },
   typeButtons: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: 12,
+    justifyContent: "center",
   },
   typeBtn: {
-    flex: 1,
+    flexBasis: "45%",
+    flexGrow: 1,
+    maxWidth: "48%",
     borderWidth: 1,
     borderRadius: 12,
     paddingVertical: 16,
@@ -1097,6 +1115,13 @@ const styles = StyleSheet.create({
   settingRow: {
     gap: 6,
   },
+  settingRowInline: {
+    gap: 6,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    minHeight: 38,
+  },
   label: {
     fontSize: 12,
     fontWeight: "600",
@@ -1116,12 +1141,12 @@ const styles = StyleSheet.create({
   cagedRow: {
     flexDirection: "row",
     gap: 8,
-    justifyContent: "center",
+    justifyContent: "flex-end",
   },
   cagedBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     borderWidth: 2,
     alignItems: "center",
     justifyContent: "center",

@@ -215,11 +215,15 @@ export default function LayerList({
         `options.scale.${layer.scaleType.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase())}`,
       );
     }
+    if (layer.type === "caged") {
+      const chordLabel =
+        layer.cagedChordType === "minor"
+          ? t("options.diatonicKey.naturalMinor")
+          : t("options.diatonicKey.major");
+      return `${chordLabel}: ${[...layer.cagedForms].join(", ") || "-"}`;
+    }
     const mode = t(`options.chordDisplayMode.${layer.chordDisplayMode}`);
     if (layer.chordDisplayMode === "power") return mode;
-    if (layer.chordDisplayMode === "caged") {
-      return `${mode}: ${[...layer.cagedForms].join(", ")}`;
-    }
     if (layer.chordDisplayMode === "diatonic") {
       const key = t(
         `options.diatonicKey.${layer.diatonicKeyType === "natural-minor" ? "naturalMinor" : "major"}`,
@@ -398,9 +402,11 @@ export default function LayerList({
               <Text style={[styles.layerType, { color: isDark ? "#9ca3af" : "#78716c" }]}>
                 {layer.type === "scale"
                   ? t("layers.scale")
-                  : layer.type === "custom"
-                    ? t("layers.custom")
-                    : t("layers.chord")}
+                  : layer.type === "caged"
+                    ? t("layers.caged")
+                    : layer.type === "custom"
+                      ? t("layers.custom")
+                      : t("layers.chord")}
               </Text>
               <Text
                 style={[
@@ -580,8 +586,6 @@ export default function LayerList({
         }}
         onSave={handleSave}
         onPreview={onPreviewLayer}
-        overlayNotes={overlayNotes}
-        overlaySemitones={overlaySemitones}
       />
 
       <LayerPresetModal

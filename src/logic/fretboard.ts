@@ -1883,20 +1883,81 @@ const CHORD_CAGED_FORMS: Record<
 
 export const CHORD_CAGED_ORDER = ["C", "A", "G", "E", "D"] as const;
 
-export function getCagedFormCells(formKey: string, rootIndex: number): FretCell[] {
-  const form = CHORD_CAGED_FORMS[formKey];
+// マイナーCAGEDフォーム（メジャーの3度を半音下げ）
+const CHORD_CAGED_MINOR_FORMS: Record<
+  string,
+  { anchorString: number; positions: { string: number; fretOffset: number }[] }
+> = {
+  E: {
+    anchorString: 0,
+    positions: [
+      { string: 0, fretOffset: 0 },
+      { string: 1, fretOffset: 2 },
+      { string: 2, fretOffset: 2 },
+      { string: 3, fretOffset: 0 },
+      { string: 4, fretOffset: 0 },
+      { string: 5, fretOffset: 0 },
+    ],
+  },
+  D: {
+    anchorString: 2,
+    positions: [
+      { string: 2, fretOffset: 0 },
+      { string: 3, fretOffset: 2 },
+      { string: 4, fretOffset: 3 },
+      { string: 5, fretOffset: 1 },
+    ],
+  },
+  C: {
+    anchorString: 1,
+    positions: [
+      { string: 1, fretOffset: 0 },
+      { string: 2, fretOffset: -2 },
+      { string: 3, fretOffset: -3 },
+      { string: 4, fretOffset: -2 },
+      { string: 5, fretOffset: -4 },
+    ],
+  },
+  A: {
+    anchorString: 1,
+    positions: [
+      { string: 1, fretOffset: 0 },
+      { string: 2, fretOffset: 2 },
+      { string: 3, fretOffset: 2 },
+      { string: 4, fretOffset: 1 },
+      { string: 5, fretOffset: 0 },
+    ],
+  },
+  G: {
+    anchorString: 0,
+    positions: [
+      { string: 0, fretOffset: 0 },
+      { string: 1, fretOffset: -2 },
+      { string: 2, fretOffset: -3 },
+      { string: 3, fretOffset: -3 },
+      { string: 4, fretOffset: -4 },
+      { string: 5, fretOffset: 0 },
+    ],
+  },
+};
+
+export function getCagedFormCells(
+  formKey: string,
+  rootIndex: number,
+  chordType: "major" | "minor" = "major",
+): FretCell[] {
+  const forms = chordType === "minor" ? CHORD_CAGED_MINOR_FORMS : CHORD_CAGED_FORMS;
+  const form = forms[formKey];
   if (!form) return [];
-  let anchorFret = -1;
   for (let f = 0; f < FRET_COUNT; f++) {
-    if (getNoteIndex(form.anchorString, f) === rootIndex) {
-      anchorFret = f;
-      break;
-    }
+    if (getNoteIndex(form.anchorString, f) !== rootIndex) continue;
+    const cells = form.positions.map(({ string, fretOffset }) => ({
+      string,
+      fret: f + fretOffset,
+    }));
+    if (cells.every(({ fret }) => fret >= 0 && fret < FRET_COUNT)) return cells;
   }
-  if (anchorFret === -1) return [];
-  return form.positions
-    .map(({ string, fretOffset }) => ({ string, fret: anchorFret + fretOffset }))
-    .filter(({ fret }) => fret >= 0 && fret < FRET_COUNT);
+  return [];
 }
 
 // ===== オンコード (slash chord) =====
@@ -2269,7 +2330,6 @@ export function getChordLayerCells(
   triadInversion: string,
   diatonicScaleType: string,
   diatonicDegree: string,
-  cagedForms: Set<string>,
   onChordName: string = "C/E",
 ): FretCell[] {
   const dedupeCells = (input: FretCell[]): FretCell[] => {
@@ -2283,14 +2343,6 @@ export function getChordLayerCells(
 
   if (chordDisplayMode === "on-chord") {
     return getOnChordCells(onChordName, rootIndex);
-  }
-
-  if (chordDisplayMode === "caged") {
-    const cells: FretCell[] = [];
-    for (const key of cagedForms) {
-      cells.push(...getCagedFormCells(key, rootIndex));
-    }
-    return dedupeCells(cells);
   }
 
   const effectiveDisplayMode = chordDisplayMode === "diatonic" ? "form" : chordDisplayMode;

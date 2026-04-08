@@ -26,6 +26,8 @@ interface DropdownSelectProps {
   fullWidth?: boolean;
   variant?: "default" | "plain";
   onOpenChange?: (open: boolean) => void;
+  textStyle?: import("react-native").TextStyle;
+  label?: string;
 }
 
 export function DropdownSelect({
@@ -37,6 +39,8 @@ export function DropdownSelect({
   fullWidth = false,
   variant = "default",
   onOpenChange,
+  textStyle: textStyleOverride,
+  label,
 }: DropdownSelectProps) {
   const [visible, setVisible] = useState(false);
   const prevVisibleRef = useRef(false);
@@ -74,7 +78,7 @@ export function DropdownSelect({
   }
   const isDark = theme === "dark";
   const current = options.find((o) => o.value === value) ?? options[0];
-  const triggerLabel = current?.label ?? value;
+  const triggerLabel = label ?? current?.label ?? value;
   const open = visible && !disabled;
 
   const isPlain = variant === "plain";
@@ -132,6 +136,7 @@ export function DropdownSelect({
             style={[
               isPlain ? styles.plainTriggerText : styles.triggerText,
               { color: textColor, fontWeight: isPlain ? "600" : "500" },
+              textStyleOverride,
             ]}
             numberOfLines={1}
           >

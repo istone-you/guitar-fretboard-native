@@ -340,9 +340,8 @@ describe("Fretboard - Chord overlay via layers", () => {
 // ==================== 8. CAGED overlay (layer system) ====================
 
 describe("Fretboard - CAGED overlay via layers", () => {
-  it("shows CAGED overlay when a chord layer with caged mode is enabled", () => {
-    const layer = createDefaultLayer("chord", "cg1", "#40e0d0");
-    layer.chordDisplayMode = "caged";
+  it("shows CAGED overlay when a caged layer is enabled", () => {
+    const layer = createDefaultLayer("caged", "cg1", "#40e0d0");
     layer.cagedForms = new Set(["C"]);
     const { toJSON } = render(
       <Fretboard
@@ -358,8 +357,7 @@ describe("Fretboard - CAGED overlay via layers", () => {
   });
 
   it("uses custom CAGED color via layer", () => {
-    const layer = createDefaultLayer("chord", "cg1", "#abcdef");
-    layer.chordDisplayMode = "caged";
+    const layer = createDefaultLayer("caged", "cg1", "#abcdef");
     layer.cagedForms = new Set(["C"]);
     const { toJSON } = render(
       <Fretboard
@@ -375,8 +373,7 @@ describe("Fretboard - CAGED overlay via layers", () => {
   });
 
   it("does not show CAGED overlay when no forms are selected in layer", () => {
-    const layer = createDefaultLayer("chord", "cg1", "#40e0d0");
-    layer.chordDisplayMode = "caged";
+    const layer = createDefaultLayer("caged", "cg1", "#40e0d0");
     layer.cagedForms = new Set();
     const { toJSON } = render(
       <Fretboard
@@ -392,8 +389,7 @@ describe("Fretboard - CAGED overlay via layers", () => {
   });
 
   it("shows CAGED overlay for multiple forms via layer", () => {
-    const layer = createDefaultLayer("chord", "cg1", "#40e0d0");
-    layer.chordDisplayMode = "caged";
+    const layer = createDefaultLayer("caged", "cg1", "#40e0d0");
     layer.cagedForms = new Set(["C", "A", "G"]);
     const { toJSON } = render(
       <Fretboard

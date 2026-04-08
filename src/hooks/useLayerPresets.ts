@@ -25,6 +25,7 @@ function deserializeLayer(raw: Record<string, unknown>): LayerConfig {
   return {
     ...(raw as unknown as LayerConfig),
     cagedForms: new Set(raw.cagedForms as string[]),
+    cagedChordType: (raw.cagedChordType as "major" | "minor") ?? "major",
     selectedNotes: new Set(raw.selectedNotes as string[]),
     selectedDegrees: new Set(raw.selectedDegrees as string[]),
     hiddenCells: new Set(raw.hiddenCells as string[]),

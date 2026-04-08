@@ -50,6 +50,12 @@ export function useLayerDerivedState({
         for (const semitone of SCALE_DEGREES[layer.scaleType] ?? []) active.add(semitone);
         continue;
       }
+      if (layer.type === "caged") {
+        const cagedSemitones =
+          layer.cagedChordType === "minor" ? CHORD_SEMITONES.Minor : CHORD_SEMITONES.Major;
+        for (const semitone of cagedSemitones ?? []) active.add(semitone);
+        continue;
+      }
       if (layer.type !== "chord") continue;
 
       let semitones: Set<number> | undefined;
@@ -61,8 +67,6 @@ export function useLayerDerivedState({
           `${layer.diatonicKeyType}-${layer.diatonicChordSize}`,
           layer.diatonicDegree,
         );
-      } else if (layer.chordDisplayMode === "caged") {
-        semitones = CHORD_SEMITONES.Major;
       } else if (layer.chordDisplayMode === "on-chord") {
         const parsed = parseOnChord(layer.onChordName);
         semitones = parsed ? CHORD_SEMITONES[parsed.chordType] : undefined;
@@ -94,6 +98,10 @@ export function useLayerDerivedState({
       let semitones: number[] = [];
       if (l.type === "scale") {
         semitones = [...(SCALE_DEGREES[l.scaleType] ?? [])];
+      } else if (l.type === "caged") {
+        const cagedSemitones =
+          l.cagedChordType === "minor" ? CHORD_SEMITONES.Minor : CHORD_SEMITONES.Major;
+        semitones = [...(cagedSemitones ?? [])];
       } else if (l.type === "chord") {
         let s: Set<number> | undefined;
         if (l.chordDisplayMode === "power") {
@@ -104,8 +112,6 @@ export function useLayerDerivedState({
             `${l.diatonicKeyType}-${l.diatonicChordSize}`,
             l.diatonicDegree,
           );
-        } else if (l.chordDisplayMode === "caged") {
-          s = CHORD_SEMITONES.Major;
         } else if (l.chordDisplayMode === "on-chord") {
           const parsed = parseOnChord(l.onChordName);
           s = parsed ? CHORD_SEMITONES[parsed.chordType] : undefined;

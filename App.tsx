@@ -467,12 +467,13 @@ function AppContent() {
                     label = t(
                       `options.scale.${l.scaleType.replace(/-([a-z])/g, (_: string, c: string) => c.toUpperCase())}`,
                     );
+                  } else if (l.type === "caged") {
+                    const ct = l.cagedChordType === "minor" ? "m" : "";
+                    label = `CAGED${ct}: ${[...l.cagedForms].join(", ") || "-"}`;
                   } else {
                     const mode = t(`options.chordDisplayMode.${l.chordDisplayMode}`);
                     if (l.chordDisplayMode === "power") {
                       label = mode;
-                    } else if (l.chordDisplayMode === "caged") {
-                      label = `${mode}: ${[...l.cagedForms].join(", ")}`;
                     } else if (l.chordDisplayMode === "diatonic") {
                       label = `${mode}(${l.diatonicDegree} ${t(`options.diatonicKey.${l.diatonicKeyType === "natural-minor" ? "naturalMinor" : "major"}`)} ${t(`options.diatonicChordSize.${l.diatonicChordSize}`)})`;
                     } else if (l.chordDisplayMode === "triad") {

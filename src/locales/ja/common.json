@@ -25,7 +25,7 @@
     "confirm": "決定",
     "custom": "カスタム",
     "chordFrame": "コード枠",
-    "extractFromLayers": "既存レイヤーから抽出",
+    "extractFromChord": "コードから抽出",
     "reset": "リセット",
     "editDisplay": "表示",
     "createFrame": "コード枠",

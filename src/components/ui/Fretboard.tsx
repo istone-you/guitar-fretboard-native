@@ -360,6 +360,17 @@ export default function Fretboard({
             }
           }
         }
+      } else if (layer.type === "caged") {
+        const seen = new Set<string>();
+        for (const key of CHORD_CAGED_ORDER) {
+          if (!layer.cagedForms.has(key)) continue;
+          for (const cell of getCagedFormCells(key, rootIndex, layer.cagedChordType)) {
+            const k = `${cell.string}-${cell.fret}`;
+            if (seen.has(k)) continue;
+            seen.add(k);
+            cells.push(cell);
+          }
+        }
       } else if (layer.type === "chord") {
         const diatonicScale = `${layer.diatonicKeyType}-${layer.diatonicChordSize}`;
         cells.push(
@@ -370,7 +381,6 @@ export default function Fretboard({
             layer.triadInversion,
             diatonicScale,
             layer.diatonicDegree,
-            layer.cagedForms,
             layer.onChordName,
           ),
         );
@@ -416,7 +426,36 @@ export default function Fretboard({
   const layerChordGroups = useMemo(() => {
     const groups: { group: ChordGroup; color: string; visible: boolean }[] = [];
     for (const layer of layers) {
-      if (!layer.enabled || layer.type !== "chord") continue;
+      if (!layer.enabled) continue;
+
+      // CAGED layer type
+      if (layer.type === "caged") {
+        const color = layer.color;
+        const frameVisible = layer.showChordFrame !== false;
+        for (const key of CHORD_CAGED_ORDER) {
+          if (!layer.cagedForms.has(key)) continue;
+          const cells = getCagedFormCells(key, rootIndex, layer.cagedChordType);
+          if (cells.length === 0) continue;
+          const frets = cells.map((c) => c.fret);
+          const strings = cells.map((c) => c.string);
+          groups.push({
+            group: {
+              id: `layer-caged-${layer.id}-${key}`,
+              kind: "caged",
+              cells,
+              minFret: Math.min(...frets),
+              maxFret: Math.max(...frets),
+              minString: Math.min(...strings),
+              maxString: Math.max(...strings),
+            },
+            color,
+            visible: frameVisible,
+          });
+        }
+        continue;
+      }
+
+      if (layer.type !== "chord") continue;
       const color = layer.color;
       const frameVisible = layer.showChordFrame !== false;
       const ri = rootIndex;
@@ -432,30 +471,6 @@ export default function Fretboard({
             group: {
               id: `layer-triad-${layer.id}-${opt.value}`,
               kind: "triad",
-              cells,
-              minFret: Math.min(...frets),
-              maxFret: Math.max(...frets),
-              minString: Math.min(...strings),
-              maxString: Math.max(...strings),
-            },
-            color,
-            visible: frameVisible,
-          });
-        }
-        continue;
-      }
-
-      if (layer.chordDisplayMode === "caged") {
-        for (const key of CHORD_CAGED_ORDER) {
-          if (!layer.cagedForms.has(key)) continue;
-          const cells = getCagedFormCells(key, ri);
-          if (cells.length === 0) continue;
-          const frets = cells.map((c) => c.fret);
-          const strings = cells.map((c) => c.string);
-          groups.push({
-            group: {
-              id: `layer-caged-${layer.id}-${key}`,
-              kind: "caged",
               cells,
               minFret: Math.min(...frets),
               maxFret: Math.max(...frets),
@@ -942,7 +957,7 @@ function StringRow({
                 const overlay = layerOverlays?.get(cellKey)?.[idx];
                 return (
                   <LayerOverlayDot
-                    key={`layer-slot-${idx}`}
+                    key={`layer-slot-${idx}-r${rootIndex}`}
                     idx={idx}
                     overlay={overlay}
                     overlayInset={overlayInset}

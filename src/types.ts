@@ -1,7 +1,7 @@
 export type Theme = "dark" | "light";
 export type Accidental = "sharp" | "flat";
 export type BaseLabelMode = "note" | "degree";
-export type ChordDisplayMode = "form" | "power" | "triad" | "diatonic" | "caged" | "on-chord";
+export type ChordDisplayMode = "form" | "power" | "triad" | "diatonic" | "on-chord";
 export type ScaleType =
   | "major"
   | "natural-minor"
@@ -72,7 +72,7 @@ export type DegreeName =
   | "M7";
 
 // ===== Layer system =====
-export type LayerType = "scale" | "chord" | "custom";
+export type LayerType = "scale" | "chord" | "caged" | "custom";
 
 export const MAX_LAYERS = 3;
 
@@ -92,6 +92,7 @@ export interface LayerConfig {
   diatonicChordSize: string;
   diatonicDegree: string;
   cagedForms: Set<string>;
+  cagedChordType: "major" | "minor";
   showChordFrame?: boolean;
   // Marker settings
   customMode: "note" | "degree";
@@ -116,6 +117,7 @@ export function createDefaultLayer(type: LayerType, id: string, color: string): 
     diatonicChordSize: "triad",
     diatonicDegree: "I",
     cagedForms: new Set(["C", "A", "G", "E", "D"]),
+    cagedChordType: "major",
     showChordFrame: true,
     customMode: "note",
     selectedNotes: new Set(),

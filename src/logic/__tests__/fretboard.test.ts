@@ -1318,7 +1318,6 @@ describe("getChordLayerCells - on-chord mode", () => {
       "root",
       "major",
       "I",
-      new Set<string>(),
       "C/E",
     );
     expect(cells.length).toBeGreaterThan(0);
@@ -1335,7 +1334,6 @@ describe("getChordLayerCells - on-chord mode", () => {
       "root",
       "major",
       "I",
-      new Set<string>(),
     );
     // Default is "C/E"
     const directCells = getOnChordCells("C/E", 0);
