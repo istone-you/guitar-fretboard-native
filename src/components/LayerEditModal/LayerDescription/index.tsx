@@ -1,0 +1,99 @@
+import { View, Text, StyleSheet } from "react-native";
+import { useTranslation } from "react-i18next";
+import "../../../i18n";
+import type { Theme, LayerConfig } from "../../../types";
+
+/** Map ChordType values that contain special characters to safe i18n keys */
+const CHORD_KEY_MAP: Record<string, string> = {
+  "m7(b5)": "m7b5",
+  "m(maj7)": "mmaj7",
+  "#9": "sharp9",
+  "#11": "sharp11",
+  "add#11": "addSharp11",
+};
+
+/** Map ScaleType kebab-case to camelCase i18n keys */
+function scaleI18nKey(scaleType: string): string {
+  return scaleType.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase());
+}
+
+interface LayerDescriptionProps {
+  theme: Theme;
+  layer: LayerConfig;
+}
+
+export default function LayerDescription({ theme, layer }: LayerDescriptionProps) {
+  const { t } = useTranslation();
+  const isDark = theme === "dark";
+  const textColor = isDark ? "#d1d5db" : "#44403c";
+  const headingColor = isDark ? "#e5e7eb" : "#1c1917";
+  const dividerColor = isDark ? "rgba(255,255,255,0.08)" : "#e7e5e4";
+
+  let layerDesc = "";
+  let itemDesc = "";
+
+  if (layer.type === "scale") {
+    layerDesc = t("description.layer.scale");
+    itemDesc = t(`description.scale.${scaleI18nKey(layer.scaleType)}`);
+  } else if (layer.type === "chord") {
+    const mode = layer.chordDisplayMode;
+    if (mode === "form" || mode === "power" || mode === "triad" || mode === "diatonic") {
+      layerDesc = t(`description.layer.chord.${mode}`);
+    } else {
+      layerDesc = t("description.layer.chord.onChord");
+    }
+
+    if (mode === "form" || mode === "triad") {
+      const key = CHORD_KEY_MAP[layer.chordType] ?? layer.chordType;
+      const desc = t(`description.chord.${key}`, { defaultValue: "" });
+      if (desc) itemDesc = desc;
+    } else if (mode === "diatonic") {
+      // No per-degree descriptions
+    } else if (mode === "on-chord") {
+      // No per-voicing descriptions
+    }
+    // power has no dynamic part
+  } else if (layer.type === "caged") {
+    layerDesc = t("description.layer.caged");
+  } else {
+    layerDesc = t("description.layer.custom");
+  }
+
+  return (
+    <View style={[styles.container, { borderTopColor: dividerColor }]}>
+      <Text style={[styles.text, { color: textColor }]}>{layerDesc}</Text>
+      {itemDesc !== "" && (
+        <>
+          <View style={[styles.divider, { backgroundColor: dividerColor }]} />
+          <Text style={[styles.heading, { color: headingColor }]}>
+            {layer.type === "scale"
+              ? t(`options.scale.${scaleI18nKey(layer.scaleType)}`)
+              : layer.chordType}
+          </Text>
+          <Text style={[styles.text, { color: textColor }]}>{itemDesc}</Text>
+        </>
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    borderTopWidth: 1,
+    paddingTop: 12,
+    paddingBottom: 4,
+    gap: 6,
+  },
+  heading: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  text: {
+    fontSize: 13,
+    lineHeight: 20,
+  },
+  divider: {
+    height: 1,
+    marginVertical: 4,
+  },
+});

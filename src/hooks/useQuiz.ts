@@ -8,7 +8,7 @@ import {
   getDegreeName,
   getNoteIndex,
   getRootIndex,
-} from "../logic/fretboard";
+} from "../lib/fretboard";
 import type {
   Accidental,
   ChordType,

@@ -1,6 +1,6 @@
 import React from "react";
 import { render, fireEvent } from "@testing-library/react-native";
-import StatsPanel from "../StatsPanel";
+import StatsPanel from "../index";
 import type { QuizRecord, Theme, Accidental } from "../../../types";
 
 jest.mock("react-i18next", () => ({
@@ -12,7 +12,7 @@ jest.mock("react-i18next", () => ({
   }),
 }));
 
-jest.mock("../../../logic/fretboard", () => ({
+jest.mock("../../../lib/fretboard", () => ({
   DEGREE_BY_SEMITONE: ["P1", "m2", "M2", "m3", "M3", "P4", "TT", "P5", "m6", "M6", "m7", "M7"],
   getNotesByAccidental: (acc: string) =>
     acc === "flat"

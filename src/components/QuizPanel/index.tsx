@@ -1,74 +1,16 @@
 import { useMemo, useRef, useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-  Animated,
-  Modal,
-  Pressable,
-} from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Animated } from "react-native";
 import * as Haptics from "expo-haptics";
+import Svg, { Circle, Path } from "react-native-svg";
 import { useTranslation } from "react-i18next";
 import "../../i18n";
 import type { Theme, ChordType, ScaleType, QuizMode, QuizType, QuizQuestion } from "../../types";
-import { DropdownSelect } from "../ui/DropdownSelect";
-import ChevronIcon from "../ui/ChevronIcon";
 import { buildScaleOptions } from "../ui/scaleOptions";
-
-function BounceButton({
-  selected,
-  onPress,
-  style,
-  activeOpacity = 0.7,
-  children,
-}: {
-  selected: boolean;
-  onPress: () => void;
-  style: any;
-  activeOpacity?: number;
-  children: React.ReactNode;
-}) {
-  const scale = useRef(new Animated.Value(0.8)).current;
-  const mounted = useRef(false);
-  const prevSelected = useRef(selected);
-
-  if (!mounted.current) {
-    mounted.current = true;
-    Animated.spring(scale, {
-      toValue: 1,
-      friction: 5,
-      tension: 150,
-      useNativeDriver: true,
-    }).start();
-  } else if (prevSelected.current !== selected) {
-    prevSelected.current = selected;
-    scale.stopAnimation();
-    scale.setValue(0.8);
-    Animated.spring(scale, {
-      toValue: 1,
-      friction: 5,
-      tension: 150,
-      useNativeDriver: true,
-    }).start();
-  }
-
-  return (
-    <Animated.View style={{ transform: [{ scale }] }}>
-      <TouchableOpacity
-        onPress={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          onPress();
-        }}
-        style={style}
-        activeOpacity={activeOpacity}
-      >
-        {children}
-      </TouchableOpacity>
-    </Animated.View>
-  );
-}
+import SettingsModal from "./SettingsModal";
+import ChoicePanel from "./ChoicePanel";
+import ChordPanel from "./ChordPanel";
+import DiatonicPanel from "./DiatonicPanel";
+import BounceButton from "./BounceButton";
 
 function BounceView({ children, style }: { children: React.ReactNode; style?: any }) {
   const scale = useRef(new Animated.Value(0.8)).current;
@@ -86,211 +28,6 @@ function BounceView({ children, style }: { children: React.ReactNode; style?: an
 
   return <Animated.View style={[style, { transform: [{ scale }] }]}>{children}</Animated.View>;
 }
-
-function MultiSelectPopup({
-  theme,
-  label,
-  items,
-  selected,
-  onToggle,
-  disabled,
-}: {
-  theme: Theme;
-  label: string;
-  items: string[];
-  selected: string[];
-  onToggle: (item: string) => void;
-  disabled?: boolean;
-}) {
-  const { t } = useTranslation();
-  const [visible, setVisible] = useState(false);
-  const menuScale = useRef(new Animated.Value(1)).current;
-  const menuOpacity = useRef(new Animated.Value(1)).current;
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-  const isDark = theme === "dark";
-  const count = selected.length;
-  const total = items.length;
-  const summary = count === total ? t("quiz.filterAll") : `${count}/${total}`;
-  const textColor = disabled ? (isDark ? "#6b7280" : "#a8a29e") : isDark ? "#fff" : "#1c1917";
-
-  const prevSummary = useRef(summary);
-  if (prevSummary.current !== summary) {
-    prevSummary.current = summary;
-    scaleAnim.stopAnimation();
-    scaleAnim.setValue(0.8);
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      friction: 5,
-      tension: 150,
-      useNativeDriver: true,
-    }).start();
-  }
-
-  const close = () => {
-    Animated.timing(menuOpacity, { toValue: 0, duration: 150, useNativeDriver: true }).start(() => {
-      setVisible(false);
-    });
-  };
-
-  return (
-    <>
-      <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-        <TouchableOpacity
-          onPress={() => {
-            if (disabled) return;
-            menuScale.setValue(0.5);
-            menuOpacity.setValue(1);
-            setVisible(true);
-          }}
-          disabled={disabled}
-          style={popupStyles.trigger}
-          activeOpacity={0.7}
-        >
-          <Text style={[popupStyles.triggerText, { color: textColor }]} numberOfLines={1}>
-            {summary}
-          </Text>
-          {!disabled && (
-            <ChevronIcon
-              size={12}
-              color={isDark ? "#6b7280" : "#a8a29e"}
-              direction={visible ? "up" : "down"}
-            />
-          )}
-        </TouchableOpacity>
-      </Animated.View>
-      <Modal
-        visible={visible && !disabled}
-        transparent
-        animationType="none"
-        onRequestClose={close}
-        onShow={() => {
-          Animated.timing(menuScale, {
-            toValue: 1.05,
-            duration: 100,
-            useNativeDriver: true,
-          }).start(() => {
-            Animated.spring(menuScale, {
-              toValue: 1,
-              friction: 4,
-              tension: 200,
-              useNativeDriver: true,
-            }).start();
-          });
-        }}
-      >
-        <Pressable style={popupStyles.overlay} onPress={close}>
-          <Animated.View
-            style={[
-              popupStyles.menu,
-              {
-                backgroundColor: isDark ? "rgba(17,24,39,0.97)" : "rgba(250,250,249,0.97)",
-                borderColor: isDark ? "rgba(255,255,255,0.08)" : "#e7e5e4",
-                transform: [{ scale: menuScale }],
-                opacity: menuOpacity,
-              },
-            ]}
-          >
-            <Pressable>
-              <Text style={[popupStyles.menuTitle, { color: isDark ? "#e5e7eb" : "#1c1917" }]}>
-                {label}
-              </Text>
-              <View style={popupStyles.chipGrid}>
-                {items.map((item) => {
-                  const active = selected.includes(item);
-                  return (
-                    <TouchableOpacity
-                      key={item}
-                      onPress={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        onToggle(item);
-                      }}
-                      style={[
-                        popupStyles.chip,
-                        {
-                          backgroundColor: active
-                            ? isDark
-                              ? "#e5e7eb"
-                              : "#1c1917"
-                            : isDark
-                              ? "#374151"
-                              : "#fff",
-                          borderColor: active ? "transparent" : isDark ? "#4b5563" : "#d6d3d1",
-                        },
-                      ]}
-                      activeOpacity={0.7}
-                    >
-                      <Text
-                        style={{
-                          fontSize: 14,
-                          color: active
-                            ? isDark
-                              ? "#1c1917"
-                              : "#fff"
-                            : isDark
-                              ? "#e5e7eb"
-                              : "#44403c",
-                        }}
-                      >
-                        {item}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </Pressable>
-          </Animated.View>
-        </Pressable>
-      </Modal>
-    </>
-  );
-}
-
-const popupStyles = StyleSheet.create({
-  trigger: {
-    flexDirection: "row",
-    alignItems: "center",
-    alignSelf: "center",
-    gap: 6,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-  },
-  triggerText: {
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.35)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  menu: {
-    borderWidth: 1,
-    borderRadius: 20,
-    padding: 16,
-    width: 300,
-  },
-  menuTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    textAlign: "center",
-    marginBottom: 12,
-  },
-  chipGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "center",
-    gap: 8,
-  },
-  chip: {
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    minWidth: 48,
-    alignItems: "center",
-  },
-});
 
 function ResultSection({ children }: { children: React.ReactNode }) {
   const scale = useRef(new Animated.Value(0.8)).current;
@@ -405,11 +142,13 @@ export default function QuizPanel({
   const { t } = useTranslation();
   const isDark = theme === "dark";
   const answered = selectedAnswer !== null;
+
+  const [settingsVisible, setSettingsVisible] = useState(false);
+
   const isCorrect = selectedAnswer === question.correct;
   const stringNumber = 6 - question.stringIdx;
 
   const { options: scaleOptions } = buildScaleOptions(t);
-
   const scaleTypeKey = (s: string) => s.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase());
 
   const diatonicKeyOptions = [
@@ -420,6 +159,8 @@ export default function QuizPanel({
     { value: "triad", label: t("options.diatonicChordSize.triad") },
     { value: "seventh", label: t("options.diatonicChordSize.seventh") },
   ];
+
+  // ── Filter toggle handlers ──────────────────────────────────────
 
   const handleChordTypeToggle = (value: ChordType) => {
     if (answered) return;
@@ -462,6 +203,8 @@ export default function QuizPanel({
     onQuizStringsChange([...quizStrings, s].sort((a, b) => a - b));
   };
 
+  // ── Diatonic helpers ────────────────────────────────────────────
+
   const currentDiatonicDegree = useMemo(() => {
     if (diatonicEditingDegree != null) return diatonicEditingDegree;
     return (
@@ -476,7 +219,8 @@ export default function QuizPanel({
     [diatonicAllAnswers, question.diatonicAnswers],
   );
 
-  // Build question text
+  // ── Question text ───────────────────────────────────────────────
+
   const questionText = useMemo(() => {
     if (quizType === "fretboard") {
       if (mode === "degree") {
@@ -495,9 +239,8 @@ export default function QuizPanel({
           scale: t(`options.scale.${scaleTypeKey(question.promptScaleType ?? "")}`),
         });
       }
-      if (mode === "chord") {
+      if (mode === "chord")
         return t("quiz.questionChordFretboard", { chord: question.promptChordLabel });
-      }
       if (mode === "diatonic") return "";
       return quizStrings.length > 1
         ? t("quiz.questionNoteAllStrings", { note: question.correct })
@@ -528,248 +271,201 @@ export default function QuizPanel({
     });
   }, [mode, quizType, question, rootNote, stringNumber, quizStrings, t]);
 
+  // ── Settings rows ───────────────────────────────────────────────
+
+  const getSummary = (items: string[], selected: string[]) =>
+    selected.length === items.length ? t("quiz.filterAll") : `${selected.length}/${items.length}`;
+
+  const settingsRows = [
+    ...(mode === "note"
+      ? [
+          {
+            key: "noteNames",
+            label: t("quiz.quizNoteNames.label"),
+            summary: getSummary(noteOptions.slice(0, 12), quizNoteNames),
+          },
+        ]
+      : []),
+    ...(mode === "degree" || mode === "scale"
+      ? [
+          {
+            key: "keys",
+            label: t("quiz.quizKeys.label"),
+            summary: getSummary(noteOptions.slice(0, 12), quizKeys),
+          },
+        ]
+      : []),
+    ...((mode === "note" || mode === "degree" || mode === "scale") && quizType === "fretboard"
+      ? [
+          {
+            key: "strings",
+            label: t("quiz.quizStrings.label"),
+            summary: getSummary(
+              ["1", "2", "3", "4", "5", "6"],
+              quizStrings.map((s) => String(6 - s)),
+            ),
+          },
+        ]
+      : []),
+    ...(mode === "scale"
+      ? [
+          {
+            key: "scale",
+            label: t("layers.scale"),
+            summary: scaleOptions.find((o) => o.value === scaleType)?.label ?? scaleType,
+          },
+        ]
+      : []),
+    ...(mode === "chord"
+      ? [
+          {
+            key: "chordTypes",
+            label: t("quiz.chordTypes.label"),
+            summary: getSummary(availableChordQuizTypes, chordQuizTypes),
+          },
+        ]
+      : []),
+    ...(mode === "diatonic"
+      ? [
+          {
+            key: "diatonicKey",
+            label: t("controls.key"),
+            summary: diatonicKeyOptions.find((o) => o.value === diatonicQuizKeyType)?.label ?? "",
+          },
+          {
+            key: "diatonicChordSize",
+            label: t("controls.chordType"),
+            summary:
+              diatonicChordSizeOptions.find((o) => o.value === diatonicQuizChordSize)?.label ?? "",
+          },
+        ]
+      : []),
+  ];
+
+  // ── Settings sub-page data ──────────────────────────────────────
+  // These are passed to SettingsModal and driven by its internal settingsPage state.
+  // We compute all possible sub-pages and let the modal pick the right one.
+  const settingsSubPages: Record<
+    string,
+    {
+      title: string;
+      items: string[];
+      selected: string[];
+      labels: Record<string, string> | null;
+      toggle: (v: string) => void;
+    }
+  > = {
+    noteNames: {
+      title: t("quiz.quizNoteNames.label"),
+      items: noteOptions.slice(0, 12),
+      selected: quizNoteNames,
+      labels: null,
+      toggle: handleQuizNoteNameToggle,
+    },
+    strings: {
+      title: t("quiz.quizStrings.label"),
+      items: ["1", "2", "3", "4", "5", "6"],
+      selected: quizStrings.map((s) => String(6 - s)),
+      labels: null,
+      toggle: (item) => handleQuizStringToggle(String(6 - Number(item))),
+    },
+    keys: {
+      title: t("quiz.quizKeys.label"),
+      items: noteOptions.slice(0, 12),
+      selected: quizKeys,
+      labels: null,
+      toggle: handleQuizKeyToggle,
+    },
+    chordTypes: {
+      title: t("quiz.chordTypes.label"),
+      items: availableChordQuizTypes as string[],
+      selected: chordQuizTypes as string[],
+      labels: null,
+      toggle: (v) => handleChordTypeToggle(v as ChordType),
+    },
+    scale: {
+      title: t("layers.scale"),
+      items: scaleOptions.map((o) => o.value),
+      selected: [scaleType],
+      labels: Object.fromEntries(scaleOptions.map((o) => [o.value, o.label])),
+      toggle: (v) => onScaleTypeChange(v as ScaleType),
+    },
+    diatonicKey: {
+      title: t("controls.key"),
+      items: diatonicKeyOptions.map((o) => o.value),
+      selected: [diatonicQuizKeyType],
+      labels: Object.fromEntries(diatonicKeyOptions.map((o) => [o.value, o.label])),
+      toggle: (v) => onDiatonicQuizKeyTypeChange(v as "major" | "natural-minor"),
+    },
+    diatonicChordSize: {
+      title: t("controls.chordType"),
+      items: diatonicChordSizeOptions.map((o) => o.value),
+      selected: [diatonicQuizChordSize],
+      labels: Object.fromEntries(diatonicChordSizeOptions.map((o) => [o.value, o.label])),
+      toggle: (v) => onDiatonicQuizChordSizeChange(v as "triad" | "seventh"),
+    },
+  };
+
   return (
     <View style={styles.card}>
-      {/* Score */}
+      {/* Score + settings button */}
       <View style={styles.headerRow}>
         <Text style={[styles.score, { color: isDark ? "#9ca3af" : "#78716c" }]}>
           ✓ {score.correct} / {score.total}
         </Text>
+        <TouchableOpacity
+          testID="quiz-settings-button"
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            setSettingsVisible(true);
+          }}
+          activeOpacity={0.7}
+          style={styles.settingsBtn}
+        >
+          <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+            <Path
+              d="M4 6h16M4 12h16M4 18h16"
+              stroke={isDark ? "#6b7280" : "#a8a29e"}
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <Circle
+              cx={9}
+              cy={6}
+              r={2}
+              fill={isDark ? "#111827" : "#f9fafb"}
+              stroke={isDark ? "#6b7280" : "#a8a29e"}
+              strokeWidth={2}
+            />
+            <Circle
+              cx={15}
+              cy={12}
+              r={2}
+              fill={isDark ? "#111827" : "#f9fafb"}
+              stroke={isDark ? "#6b7280" : "#a8a29e"}
+              strokeWidth={2}
+            />
+            <Circle
+              cx={11}
+              cy={18}
+              r={2}
+              fill={isDark ? "#111827" : "#f9fafb"}
+              stroke={isDark ? "#6b7280" : "#a8a29e"}
+              strokeWidth={2}
+            />
+          </Svg>
+        </TouchableOpacity>
       </View>
 
-      {/* Note mode: note names + strings in a row */}
-      {mode === "note" && quizType === "fretboard" && (
-        <View style={styles.filterRow}>
-          <View style={styles.diatonicSettingsRow}>
-            <View style={{ alignItems: "center", gap: 4 }}>
-              <Text style={[styles.filterLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-                {t("quiz.quizNoteNames.label")}
-              </Text>
-              <MultiSelectPopup
-                theme={theme}
-                label={t("quiz.quizNoteNames.label")}
-                items={noteOptions.slice(0, 12)}
-                selected={quizNoteNames}
-                onToggle={handleQuizNoteNameToggle}
-                disabled={answered}
-              />
-            </View>
-            <View style={{ alignItems: "center", gap: 4 }}>
-              <Text style={[styles.filterLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-                {t("quiz.quizStrings.label")}
-              </Text>
-              <MultiSelectPopup
-                theme={theme}
-                label={t("quiz.quizStrings.label")}
-                items={["1", "2", "3", "4", "5", "6"]}
-                selected={quizStrings.map((s) => String(6 - s))}
-                onToggle={(item) => handleQuizStringToggle(String(6 - Number(item)))}
-                disabled={answered}
-              />
-            </View>
-          </View>
-        </View>
-      )}
-
-      {/* Note mode choice: note names only */}
-      {mode === "note" && quizType !== "fretboard" && (
-        <View style={styles.filterRow}>
-          <Text style={[styles.filterLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-            {t("quiz.quizNoteNames.label")}
-          </Text>
-          <MultiSelectPopup
-            theme={theme}
-            label={t("quiz.quizNoteNames.label")}
-            items={noteOptions.slice(0, 12)}
-            selected={quizNoteNames}
-            onToggle={handleQuizNoteNameToggle}
-            disabled={answered}
-          />
-        </View>
-      )}
-
-      {/* Degree mode: keys + strings in a row (fretboard only) */}
-      {mode === "degree" && quizType === "fretboard" && (
-        <View style={styles.filterRow}>
-          <View style={styles.diatonicSettingsRow}>
-            <View style={{ alignItems: "center", gap: 4 }}>
-              <Text style={[styles.filterLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-                {t("quiz.quizKeys.label")}
-              </Text>
-              <MultiSelectPopup
-                theme={theme}
-                label={t("quiz.quizKeys.label")}
-                items={noteOptions.slice(0, 12)}
-                selected={quizKeys}
-                onToggle={handleQuizKeyToggle}
-                disabled={answered}
-              />
-            </View>
-            <View style={{ alignItems: "center", gap: 4 }}>
-              <Text style={[styles.filterLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-                {t("quiz.quizStrings.label")}
-              </Text>
-              <MultiSelectPopup
-                theme={theme}
-                label={t("quiz.quizStrings.label")}
-                items={["1", "2", "3", "4", "5", "6"]}
-                selected={quizStrings.map((s) => String(6 - s))}
-                onToggle={(item) => handleQuizStringToggle(String(6 - Number(item)))}
-                disabled={answered}
-              />
-            </View>
-          </View>
-        </View>
-      )}
-
-      {/* Degree mode choice: keys only */}
-      {mode === "degree" && quizType !== "fretboard" && (
-        <View style={styles.filterRow}>
-          <Text style={[styles.filterLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-            {t("quiz.quizKeys.label")}
-          </Text>
-          <MultiSelectPopup
-            theme={theme}
-            label={t("quiz.quizKeys.label")}
-            items={noteOptions.slice(0, 12)}
-            selected={quizKeys}
-            onToggle={handleQuizKeyToggle}
-            disabled={answered}
-          />
-        </View>
-      )}
-
-      {/* Scale mode fretboard: keys + strings + scale in a row */}
-      {mode === "scale" && quizType === "fretboard" && (
-        <View style={styles.filterRow}>
-          <View style={styles.diatonicSettingsRow}>
-            <View style={{ alignItems: "center", gap: 4 }}>
-              <Text style={[styles.filterLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-                {t("quiz.quizKeys.label")}
-              </Text>
-              <MultiSelectPopup
-                theme={theme}
-                label={t("quiz.quizKeys.label")}
-                items={noteOptions.slice(0, 12)}
-                selected={quizKeys}
-                onToggle={handleQuizKeyToggle}
-                disabled={answered}
-              />
-            </View>
-            <View style={{ alignItems: "center", gap: 4 }}>
-              <Text style={[styles.filterLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-                {t("quiz.quizStrings.label")}
-              </Text>
-              <MultiSelectPopup
-                theme={theme}
-                label={t("quiz.quizStrings.label")}
-                items={["1", "2", "3", "4", "5", "6"]}
-                selected={quizStrings.map((s) => String(6 - s))}
-                onToggle={(item) => handleQuizStringToggle(String(6 - Number(item)))}
-                disabled={answered}
-              />
-            </View>
-            <View style={{ alignItems: "center", gap: 4 }}>
-              <Text style={[styles.filterLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-                {t("layers.scale")}
-              </Text>
-              <DropdownSelect
-                theme={theme}
-                value={scaleType}
-                onChange={(v) => onScaleTypeChange(v as ScaleType)}
-                options={scaleOptions}
-                disabled={answered}
-                variant="plain"
-              />
-            </View>
-          </View>
-        </View>
-      )}
-
-      {/* Scale mode choice: keys + scale in a row */}
-      {mode === "scale" && quizType !== "fretboard" && (
-        <View style={styles.filterRow}>
-          <View style={styles.diatonicSettingsRow}>
-            <View style={{ alignItems: "center", gap: 4 }}>
-              <Text style={[styles.filterLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-                {t("quiz.quizKeys.label")}
-              </Text>
-              <MultiSelectPopup
-                theme={theme}
-                label={t("quiz.quizKeys.label")}
-                items={noteOptions.slice(0, 12)}
-                selected={quizKeys}
-                onToggle={handleQuizKeyToggle}
-                disabled={answered}
-              />
-            </View>
-            <View style={{ alignItems: "center", gap: 4 }}>
-              <Text style={[styles.filterLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-                {t("layers.scale")}
-              </Text>
-              <DropdownSelect
-                theme={theme}
-                value={scaleType}
-                onChange={(v) => onScaleTypeChange(v as ScaleType)}
-                options={scaleOptions}
-                disabled={answered}
-                variant="plain"
-              />
-            </View>
-          </View>
-        </View>
-      )}
-
-      {/* Chord quiz types filter */}
-      {mode === "chord" && (
-        <View style={styles.filterRow}>
-          <Text style={[styles.filterLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-            {t("quiz.chordTypes.label")}
-          </Text>
-          <MultiSelectPopup
-            theme={theme}
-            label={t("quiz.chordTypes.label")}
-            items={availableChordQuizTypes}
-            selected={chordQuizTypes}
-            onToggle={(v) => handleChordTypeToggle(v as ChordType)}
-            disabled={answered}
-          />
-        </View>
-      )}
-
-      {/* Diatonic settings */}
-      {mode === "diatonic" && (
-        <View style={styles.filterRow}>
-          <View style={styles.diatonicSettingsRow}>
-            <View style={{ alignItems: "center", gap: 4 }}>
-              <Text style={[styles.filterLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-                {t("controls.key")}
-              </Text>
-              <DropdownSelect
-                theme={theme}
-                value={diatonicQuizKeyType}
-                onChange={(v) => onDiatonicQuizKeyTypeChange(v as "major" | "natural-minor")}
-                options={diatonicKeyOptions}
-                disabled={answered}
-                variant="plain"
-              />
-            </View>
-            <View style={{ alignItems: "center", gap: 4 }}>
-              <Text style={[styles.filterLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-                {t("controls.chordType")}
-              </Text>
-              <DropdownSelect
-                theme={theme}
-                value={diatonicQuizChordSize}
-                onChange={(v) => onDiatonicQuizChordSizeChange(v as "triad" | "seventh")}
-                options={diatonicChordSizeOptions}
-                disabled={answered}
-                variant="plain"
-              />
-            </View>
-          </View>
-        </View>
-      )}
+      {/* Settings modal */}
+      <SettingsModal
+        theme={theme}
+        visible={settingsVisible}
+        settingsRows={settingsRows}
+        settingsSubPages={settingsSubPages}
+        onClose={() => setSettingsVisible(false)}
+      />
 
       {/* Question text */}
       {questionText !== "" && (
@@ -780,415 +476,50 @@ export default function QuizPanel({
         </BounceView>
       )}
 
-      {/* Choices for note/degree/scale modes */}
+      {/* note / degree / scale choices */}
       {quizType === "choice" && (mode === "note" || mode === "degree" || mode === "scale") && (
-        <View style={{ gap: 10 }}>
-          <View style={styles.choicesGrid}>
-            {question.choices.map((choice) => {
-              const isSelected = selectedAnswer === choice || quizSelectedChoices.includes(choice);
-              const isCorrectChoice = question.correctNoteNames
-                ? question.correctNoteNames.includes(choice)
-                : choice === question.correct;
-              let bgColor: string;
-              let borderColor: string;
-              let textColor: string;
-              if (!answered) {
-                const sel = quizSelectedChoices.includes(choice);
-                bgColor = sel ? (isDark ? "#e5e7eb" : "#1c1917") : isDark ? "#374151" : "#fff";
-                borderColor = sel ? "transparent" : isDark ? "#4b5563" : "#d6d3d1";
-                textColor = sel ? (isDark ? "#1c1917" : "#fff") : isDark ? "#e5e7eb" : "#1c1917";
-              } else {
-                if (isCorrectChoice) {
-                  bgColor = "#16a34a";
-                  borderColor = "transparent";
-                  textColor = "#fff";
-                } else if (isSelected && !isCorrectChoice) {
-                  bgColor = "#ef4444";
-                  borderColor = "transparent";
-                  textColor = "#fff";
-                } else {
-                  bgColor = isDark ? "#374151" : "#f5f5f4";
-                  borderColor = isDark ? "#4b5563" : "#e7e5e4";
-                  textColor = isDark ? "#6b7280" : "#a8a29e";
-                }
-              }
-              return (
-                <BounceButton
-                  key={choice}
-                  selected={isSelected}
-                  onPress={() => !answered && onAnswer(choice)}
-                  style={[
-                    styles.choiceBtn,
-                    { backgroundColor: bgColor, borderColor, borderWidth: 1 },
-                  ]}
-                >
-                  <Text style={[styles.choiceBtnText, { color: textColor }]}>{choice}</Text>
-                </BounceButton>
-              );
-            })}
-          </View>
-          {!answered && quizSelectedChoices.length > 0 && (
-            <BounceButton
-              selected={false}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                onSubmitChoice();
-              }}
-              style={[styles.submitBtn, { backgroundColor: isDark ? "#e5e7eb" : "#1c1917" }]}
-              activeOpacity={0.8}
-            >
-              <Text style={[styles.submitBtnText, { color: isDark ? "#1c1917" : "#fff" }]}>
-                {t("quiz.submit")}
-              </Text>
-            </BounceButton>
-          )}
-        </View>
+        <ChoicePanel
+          theme={theme}
+          question={question}
+          answered={answered}
+          quizSelectedChoices={quizSelectedChoices}
+          onAnswer={onAnswer}
+          onSubmitChoice={onSubmitChoice}
+        />
       )}
 
-      {/* Chord choice: root + type selection */}
+      {/* chord quiz */}
       {quizType === "choice" && mode === "chord" && (
-        <View style={{ gap: 10 }}>
-          <View style={styles.choicesGrid}>
-            {["A", "B", "C", "D", "E", "F", "G"].map((choice) => {
-              const isCorrectChoice = choice === question.promptChordRoot;
-              const isSelectedChoice = choice === quizSelectedChordRoot;
-              let bgColor: string, borderColor: string, textColor: string;
-              if (!answered) {
-                bgColor = isSelectedChoice
-                  ? isDark
-                    ? "#e5e7eb"
-                    : "#1c1917"
-                  : isDark
-                    ? "#374151"
-                    : "#fff";
-                borderColor = isSelectedChoice ? "transparent" : isDark ? "#4b5563" : "#d6d3d1";
-                textColor = isSelectedChoice
-                  ? isDark
-                    ? "#1c1917"
-                    : "#fff"
-                  : isDark
-                    ? "#e5e7eb"
-                    : "#1c1917";
-              } else {
-                if (isCorrectChoice) {
-                  bgColor = "#16a34a";
-                  borderColor = "transparent";
-                  textColor = "#fff";
-                } else if (isSelectedChoice) {
-                  bgColor = "#ef4444";
-                  borderColor = "transparent";
-                  textColor = "#fff";
-                } else {
-                  bgColor = isDark ? "#374151" : "#f5f5f4";
-                  borderColor = isDark ? "#4b5563" : "#e7e5e4";
-                  textColor = isDark ? "#6b7280" : "#a8a29e";
-                }
-              }
-              return (
-                <BounceButton
-                  key={choice}
-                  selected={isSelectedChoice}
-                  onPress={() => onChordQuizRootSelect(choice)}
-                  style={[
-                    styles.choiceBtn,
-                    { backgroundColor: bgColor, borderColor, borderWidth: 1 },
-                  ]}
-                >
-                  <Text style={[styles.choiceBtnText, { color: textColor }]}>{choice}</Text>
-                </BounceButton>
-              );
-            })}
-          </View>
-          {quizSelectedChordRoot != null && !answered && (
-            <>
-              <View style={styles.choicesGrid}>
-                {(question.diatonicChordTypeOptions ?? chordQuizTypes).map((ct) => {
-                  const isSelected = ct === quizSelectedChordType;
-                  return (
-                    <BounceButton
-                      key={ct}
-                      selected={isSelected}
-                      onPress={() => onChordQuizTypeSelect(ct)}
-                      style={[
-                        styles.choiceBtn,
-                        {
-                          backgroundColor: isSelected
-                            ? isDark
-                              ? "#e5e7eb"
-                              : "#1c1917"
-                            : isDark
-                              ? "#374151"
-                              : "#fff",
-                          borderColor: isSelected ? "transparent" : isDark ? "#4b5563" : "#d6d3d1",
-                          borderWidth: 1,
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.choiceBtnText,
-                          {
-                            color: isSelected
-                              ? isDark
-                                ? "#1c1917"
-                                : "#fff"
-                              : isDark
-                                ? "#e5e7eb"
-                                : "#1c1917",
-                          },
-                        ]}
-                      >
-                        {ct}
-                      </Text>
-                    </BounceButton>
-                  );
-                })}
-              </View>
-              {quizSelectedChordType != null && (
-                <BounceButton
-                  selected={false}
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                    onSubmitChordChoice();
-                  }}
-                  style={[styles.submitBtn, { backgroundColor: isDark ? "#e5e7eb" : "#1c1917" }]}
-                  activeOpacity={0.8}
-                >
-                  <Text style={[styles.submitBtnText, { color: isDark ? "#1c1917" : "#fff" }]}>
-                    {t("quiz.submit")}
-                  </Text>
-                </BounceButton>
-              )}
-            </>
-          )}
-          {answered && (
-            <View style={styles.choicesGrid}>
-              {chordQuizTypes.map((ct) => {
-                const isCorrect = ct === question.promptChordType;
-                const isSelected = ct === quizSelectedChordType;
-                return (
-                  <TouchableOpacity
-                    key={ct}
-                    disabled
-                    style={[
-                      styles.choiceBtn,
-                      {
-                        backgroundColor: isCorrect
-                          ? "#16a34a"
-                          : isSelected
-                            ? "#ef4444"
-                            : isDark
-                              ? "#374151"
-                              : "#f5f5f4",
-                        borderWidth: 1,
-                        borderColor: "transparent",
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.choiceBtnText,
-                        {
-                          color: isCorrect || isSelected ? "#fff" : isDark ? "#6b7280" : "#a8a29e",
-                        },
-                      ]}
-                    >
-                      {ct}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          )}
-        </View>
+        <ChordPanel
+          theme={theme}
+          question={question}
+          answered={answered}
+          quizSelectedChordRoot={quizSelectedChordRoot}
+          quizSelectedChordType={quizSelectedChordType}
+          chordQuizTypes={chordQuizTypes}
+          onChordQuizRootSelect={onChordQuizRootSelect}
+          onChordQuizTypeSelect={onChordQuizTypeSelect}
+          onSubmitChordChoice={onSubmitChordChoice}
+        />
       )}
 
-      {/* Diatonic all mode */}
+      {/* diatonic quiz */}
       {mode === "diatonic" && quizType === "all" && (
-        <View style={{ gap: 8 }}>
-          {/* Degree cards */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View style={{ flexDirection: "row", gap: 8 }}>
-              {question.diatonicAnswers?.map((entry) => {
-                const answer = diatonicAllAnswers[entry.degree];
-                const isEditing = currentDiatonicDegree === entry.degree;
-                return (
-                  <BounceButton
-                    key={entry.degree}
-                    selected={false}
-                    onPress={() => !answered && onDiatonicDegreeCardClick(entry.degree)}
-                    style={[
-                      styles.diatonicCard,
-                      {
-                        borderColor:
-                          isEditing && !answered
-                            ? isDark
-                              ? "#e5e7eb"
-                              : "#1c1917"
-                            : isDark
-                              ? "#374151"
-                              : "#d6d3d1",
-                        backgroundColor: answered
-                          ? answer?.root === entry.root && answer?.chordType === entry.chordType
-                            ? "#16a34a"
-                            : answer
-                              ? "#ef4444"
-                              : isDark
-                                ? "#374151"
-                                : "#f5f5f4"
-                          : isDark
-                            ? "#1f2937"
-                            : "#fff",
-                      },
-                    ]}
-                  >
-                    <Text style={{ fontSize: 13, color: isDark ? "#9ca3af" : "#78716c" }}>
-                      {entry.degree}
-                    </Text>
-                    {answer ? (
-                      <Text
-                        style={{
-                          fontSize: 14,
-                          fontWeight: "bold",
-                          color: answered ? "#fff" : isDark ? "#e5e7eb" : "#1c1917",
-                        }}
-                      >
-                        {answer.root}
-                        {answer.chordType === "Major"
-                          ? ""
-                          : answer.chordType === "Minor"
-                            ? "m"
-                            : answer.chordType}
-                      </Text>
-                    ) : (
-                      <Text style={{ fontSize: 14, color: isDark ? "#4b5563" : "#d6d3d1" }}>
-                        --
-                      </Text>
-                    )}
-                    {answered && (
-                      <Text style={{ fontSize: 14, color: "rgba(255,255,255,0.8)" }}>
-                        {entry.root}
-                        {entry.chordType === "Major"
-                          ? ""
-                          : entry.chordType === "Minor"
-                            ? "m"
-                            : entry.chordType}
-                      </Text>
-                    )}
-                  </BounceButton>
-                );
-              })}
-            </View>
-          </ScrollView>
-
-          {/* Root selection */}
-          {!answered && currentDiatonicDegree != null && (
-            <View style={{ gap: 8 }}>
-              <View style={styles.choicesGrid}>
-                {noteOptions.slice(0, 12).map((note) => (
-                  <BounceButton
-                    key={note}
-                    selected={note === diatonicSelectedRoot}
-                    onPress={() => onDiatonicAnswerRootSelect(note)}
-                    style={[
-                      styles.choiceBtn,
-                      {
-                        backgroundColor:
-                          note === diatonicSelectedRoot
-                            ? isDark
-                              ? "#e5e7eb"
-                              : "#1c1917"
-                            : isDark
-                              ? "#374151"
-                              : "#fff",
-                        borderColor:
-                          note === diatonicSelectedRoot
-                            ? "transparent"
-                            : isDark
-                              ? "#4b5563"
-                              : "#d6d3d1",
-                        borderWidth: 1,
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={{
-                        fontSize: 13,
-                        color:
-                          note === diatonicSelectedRoot
-                            ? isDark
-                              ? "#1c1917"
-                              : "#fff"
-                            : isDark
-                              ? "#e5e7eb"
-                              : "#1c1917",
-                      }}
-                    >
-                      {note}
-                    </Text>
-                  </BounceButton>
-                ))}
-              </View>
-              {diatonicSelectedRoot != null && (
-                <View style={styles.choicesGrid}>
-                  {(question.diatonicChordTypeOptions ?? []).map((ct) => (
-                    <BounceButton
-                      key={ct}
-                      selected={ct === diatonicSelectedChordType}
-                      onPress={() => onDiatonicAnswerTypeSelect(ct)}
-                      style={[
-                        styles.choiceBtn,
-                        {
-                          backgroundColor:
-                            ct === diatonicSelectedChordType
-                              ? isDark
-                                ? "#e5e7eb"
-                                : "#1c1917"
-                              : isDark
-                                ? "#374151"
-                                : "#fff",
-                          borderColor: "transparent",
-                          borderWidth: 1,
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={{
-                          fontSize: 13,
-                          color:
-                            ct === diatonicSelectedChordType
-                              ? isDark
-                                ? "#1c1917"
-                                : "#fff"
-                              : isDark
-                                ? "#e5e7eb"
-                                : "#1c1917",
-                        }}
-                      >
-                        {ct}
-                      </Text>
-                    </BounceButton>
-                  ))}
-                </View>
-              )}
-              {diatonicAllFilled && (
-                <BounceButton
-                  selected={false}
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                    onDiatonicSubmitAll();
-                  }}
-                  style={[styles.submitBtn, { backgroundColor: isDark ? "#e5e7eb" : "#1c1917" }]}
-                  activeOpacity={0.8}
-                >
-                  <Text style={[styles.submitBtnText, { color: isDark ? "#1c1917" : "#fff" }]}>
-                    {t("quiz.submit")}
-                  </Text>
-                </BounceButton>
-              )}
-            </View>
-          )}
-        </View>
+        <DiatonicPanel
+          theme={theme}
+          question={question}
+          answered={answered}
+          noteOptions={noteOptions}
+          diatonicAllAnswers={diatonicAllAnswers}
+          diatonicSelectedRoot={diatonicSelectedRoot}
+          diatonicSelectedChordType={diatonicSelectedChordType}
+          currentDiatonicDegree={currentDiatonicDegree}
+          diatonicAllFilled={diatonicAllFilled}
+          onDiatonicAnswerRootSelect={onDiatonicAnswerRootSelect}
+          onDiatonicAnswerTypeSelect={onDiatonicAnswerTypeSelect}
+          onDiatonicDegreeCardClick={onDiatonicDegreeCardClick}
+          onDiatonicSubmitAll={onDiatonicSubmitAll}
+        />
       )}
 
       {/* Fretboard quiz: tap instruction + submit */}
@@ -1282,56 +613,17 @@ const styles = StyleSheet.create({
     fontFamily: "monospace",
     flexShrink: 0,
   },
-  filterRow: {
-    alignItems: "center",
-    gap: 8,
-  },
-  filterLabel: {
-    fontSize: 12,
-    fontWeight: "600",
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  diatonicSettingsRow: {
-    flexDirection: "row",
-    gap: 16,
-    alignItems: "flex-start",
+  settingsBtn: {
+    padding: 6,
   },
   questionText: {
     fontSize: 17,
     fontWeight: "600",
     textAlign: "center",
   },
-  choicesGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "center",
-    gap: 8,
-  },
-  choiceBtn: {
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    minWidth: 48,
-    alignItems: "center",
-  },
-  choiceBtnText: {
-    fontSize: 15,
-    fontWeight: "500",
-  },
   resultRow: {
     alignItems: "center",
     gap: 8,
-  },
-  resultBadge: {
-    borderRadius: 999,
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-  },
-  resultBadgeText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 14,
   },
   answerLabel: {
     fontSize: 16,
@@ -1346,14 +638,6 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingHorizontal: 16,
     paddingVertical: 8,
-  },
-  diatonicCard: {
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 8,
-    minWidth: 56,
-    alignItems: "center",
-    gap: 2,
   },
   submitBtn: {
     borderRadius: 999,

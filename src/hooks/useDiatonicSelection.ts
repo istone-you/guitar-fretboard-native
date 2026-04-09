@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { DIATONIC_CHORDS } from "../logic/fretboard";
+import { DIATONIC_CHORDS } from "../lib/fretboard";
 
 export function useDiatonicSelection() {
   const [diatonicKeyType, setDiatonicKeyType] = useState("major");

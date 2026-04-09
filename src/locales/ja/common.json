@@ -249,13 +249,22 @@
     "next": "次へ",
     "retry": "もう一度",
     "submit": "回答",
+    "back": "戻る",
+    "selectTitle": "クイズを選ぶ",
+    "changeQuiz": "クイズを変える",
     "mode": {
       "note": "音名",
-      "degree": "度数"
+      "degree": "度数",
+      "chord": "コード",
+      "scale": "スケール",
+      "diatonic": "ダイアトニック"
     },
     "type": {
       "choice": "12択",
-      "fretboard": "指板"
+      "fretboard": "指板",
+      "identify": "識別",
+      "noteSelect": "音名選択",
+      "all": "全答"
     },
     "kind": {
       "noteChoice": "音名・12択",

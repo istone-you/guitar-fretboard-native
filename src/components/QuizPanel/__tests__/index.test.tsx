@@ -324,17 +324,19 @@ describe("QuizPanel", () => {
 
   // ── Chord quiz type filter (popup) ────────────────────────────────
   it("renders chord type filter trigger in chord mode", () => {
-    const { getByText } = renderPanel({ mode: "chord" });
+    const { getByTestId, getByText } = renderPanel({ mode: "chord" });
+    fireEvent.press(getByTestId("quiz-settings-button"));
     expect(getByText(/quiz\.chordTypes\.label/)).toBeTruthy();
   });
 
   it("calls onChordQuizTypesChange to add a type", () => {
     const onChordQuizTypesChange = jest.fn();
-    const { getByText } = renderPanel({
+    const { getByTestId, getByText } = renderPanel({
       mode: "chord",
       chordQuizTypes: ["Major", "Minor"],
       onChordQuizTypesChange,
     });
+    fireEvent.press(getByTestId("quiz-settings-button"));
     // Open popup via trigger button then press chip
     fireEvent.press(getByText("2/14"));
     fireEvent.press(getByText("m7"));
@@ -343,11 +345,12 @@ describe("QuizPanel", () => {
 
   it("calls onChordQuizTypesChange to remove a type", () => {
     const onChordQuizTypesChange = jest.fn();
-    const { getByText } = renderPanel({
+    const { getByTestId, getByText } = renderPanel({
       mode: "chord",
       chordQuizTypes: ["Major", "Minor", "7th"],
       onChordQuizTypesChange,
     });
+    fireEvent.press(getByTestId("quiz-settings-button"));
     fireEvent.press(getByText("3/14"));
     fireEvent.press(getByText("Minor"));
     expect(onChordQuizTypesChange).toHaveBeenCalledWith(["Major", "7th"]);
@@ -355,11 +358,12 @@ describe("QuizPanel", () => {
 
   it("does not remove the last chord type", () => {
     const onChordQuizTypesChange = jest.fn();
-    const { getByText } = renderPanel({
+    const { getByTestId, getByText } = renderPanel({
       mode: "chord",
       chordQuizTypes: ["Major"],
       onChordQuizTypesChange,
     });
+    fireEvent.press(getByTestId("quiz-settings-button"));
     fireEvent.press(getByText("1/14"));
     fireEvent.press(getByText("Major"));
     expect(onChordQuizTypesChange).not.toHaveBeenCalled();
@@ -434,18 +438,20 @@ describe("QuizPanel", () => {
 
   // ── Fretboard all strings mode selector ───────────────────────────
   it("shows string selection for note fretboard quiz", () => {
-    const { getByText } = renderPanel({
+    const { getByTestId, getByText } = renderPanel({
       quizType: "fretboard",
       mode: "note",
     });
+    fireEvent.press(getByTestId("quiz-settings-button"));
     expect(getByText("quiz.quizStrings.label")).toBeTruthy();
   });
 
   it("shows string selection for degree fretboard quiz", () => {
-    const { getByText } = renderPanel({
+    const { getByTestId, getByText } = renderPanel({
       quizType: "fretboard",
       mode: "degree",
     });
+    fireEvent.press(getByTestId("quiz-settings-button"));
     expect(getByText("quiz.quizStrings.label")).toBeTruthy();
   });
 
@@ -553,7 +559,8 @@ describe("QuizPanel", () => {
 
   // ── Scale mode ────────────────────────────────────────────────────
   it("shows scale type selector in scale mode", () => {
-    const { getByText } = renderPanel({ mode: "scale" });
+    const { getByTestId, getByText } = renderPanel({ mode: "scale" });
+    fireEvent.press(getByTestId("quiz-settings-button"));
     expect(getByText("layers.scale")).toBeTruthy();
   });
 
@@ -571,7 +578,7 @@ describe("QuizPanel", () => {
 
   // ── Diatonic quiz workflow ────────────────────────────────────────
   it("renders diatonic settings in diatonic mode", () => {
-    const { getByText } = renderPanel({
+    const { getByTestId, getByText } = renderPanel({
       mode: "diatonic",
       quizType: "all",
       question: {
@@ -586,6 +593,7 @@ describe("QuizPanel", () => {
         diatonicChordTypeOptions: ["Major", "Minor"] as ChordType[],
       },
     });
+    fireEvent.press(getByTestId("quiz-settings-button"));
     expect(getByText("controls.key")).toBeTruthy();
     expect(getByText("controls.chordType")).toBeTruthy();
   });
@@ -882,38 +890,40 @@ describe("QuizPanel", () => {
 
   // ── Scale type dropdown in scale quiz ────────────────────────────
   it("renders scale type dropdown in scale mode", () => {
-    const { getByText } = renderPanel({ mode: "scale" });
-    // The scale dropdown trigger should show the scale label
+    const { getByTestId, getByText } = renderPanel({ mode: "scale" });
+    fireEvent.press(getByTestId("quiz-settings-button"));
     expect(getByText("layers.scale")).toBeTruthy();
   });
 
   it("calls onScaleTypeChange when scale type is changed", () => {
     const onScaleTypeChange = jest.fn();
-    const { getByText } = renderPanel({
+    const { getByTestId, getByText } = renderPanel({
       mode: "scale",
       scaleType: "major",
       onScaleTypeChange,
     });
-    // The scale type label should be visible
+    fireEvent.press(getByTestId("quiz-settings-button"));
     expect(getByText("layers.scale")).toBeTruthy();
   });
 
   // ── String selection popup for note/degree fretboard ─────────────
   it("shows string selection trigger for note fretboard quiz", () => {
-    const { getByText } = renderPanel({
+    const { getByTestId, getByText } = renderPanel({
       quizType: "fretboard",
       mode: "note",
       quizStrings: [0, 1, 2, 3, 4, 5],
     });
+    fireEvent.press(getByTestId("quiz-settings-button"));
     expect(getByText("quiz.quizStrings.label")).toBeTruthy();
   });
 
   it("shows string selection trigger for degree fretboard quiz", () => {
-    const { getByText } = renderPanel({
+    const { getByTestId, getByText } = renderPanel({
       quizType: "fretboard",
       mode: "degree",
       quizStrings: [0, 1, 2, 3, 4, 5],
     });
+    fireEvent.press(getByTestId("quiz-settings-button"));
     expect(getByText("quiz.quizStrings.label")).toBeTruthy();
   });
 
@@ -931,7 +941,7 @@ describe("QuizPanel", () => {
 
   // ── Diatonic key type and chord size settings ────────────────────
   it("renders diatonic key type dropdown", () => {
-    const { getByText } = renderPanel({
+    const { getByTestId, getByText } = renderPanel({
       mode: "diatonic",
       quizType: "all",
       question: {
@@ -943,11 +953,12 @@ describe("QuizPanel", () => {
       },
       diatonicQuizKeyType: "major",
     });
+    fireEvent.press(getByTestId("quiz-settings-button"));
     expect(getByText("controls.key")).toBeTruthy();
   });
 
   it("renders diatonic chord size dropdown", () => {
-    const { getByText } = renderPanel({
+    const { getByTestId, getByText } = renderPanel({
       mode: "diatonic",
       quizType: "all",
       question: {
@@ -959,6 +970,7 @@ describe("QuizPanel", () => {
       },
       diatonicQuizChordSize: "triad",
     });
+    fireEvent.press(getByTestId("quiz-settings-button"));
     expect(getByText("controls.chordType")).toBeTruthy();
   });
 
@@ -1009,11 +1021,12 @@ describe("QuizPanel", () => {
   // ── Scale type dropdown onChange callback ─────────────────────────
   it("calls onScaleTypeChange when a different scale is selected from dropdown", () => {
     const onScaleTypeChange = jest.fn();
-    const { getByText } = renderPanel({
+    const { getByTestId, getByText } = renderPanel({
       mode: "scale",
       scaleType: "major",
       onScaleTypeChange,
     });
+    fireEvent.press(getByTestId("quiz-settings-button"));
     // Open the scale type dropdown by pressing the trigger (shows current value label)
     fireEvent.press(getByText("options.scale.major"));
     // Select a different scale from the modal list
@@ -1025,7 +1038,7 @@ describe("QuizPanel", () => {
   // ── Diatonic key type dropdown onChange callback ─────────────────
   it("calls onDiatonicQuizKeyTypeChange when key type is changed from dropdown", () => {
     const onDiatonicQuizKeyTypeChange = jest.fn();
-    const { getByText } = renderPanel({
+    const { getByTestId, getByText } = renderPanel({
       mode: "diatonic",
       quizType: "all",
       question: {
@@ -1038,6 +1051,7 @@ describe("QuizPanel", () => {
       diatonicQuizKeyType: "major",
       onDiatonicQuizKeyTypeChange,
     });
+    fireEvent.press(getByTestId("quiz-settings-button"));
     // Open the key type dropdown
     fireEvent.press(getByText("options.diatonicKey.major"));
     // Select natural-minor
@@ -1048,7 +1062,7 @@ describe("QuizPanel", () => {
   // ── Diatonic chord size dropdown onChange callback ───────────────
   it("calls onDiatonicQuizChordSizeChange when chord size is changed from dropdown", () => {
     const onDiatonicQuizChordSizeChange = jest.fn();
-    const { getByText } = renderPanel({
+    const { getByTestId, getByText } = renderPanel({
       mode: "diatonic",
       quizType: "all",
       question: {
@@ -1061,6 +1075,7 @@ describe("QuizPanel", () => {
       diatonicQuizChordSize: "triad",
       onDiatonicQuizChordSizeChange,
     });
+    fireEvent.press(getByTestId("quiz-settings-button"));
     // Open the chord size dropdown
     fireEvent.press(getByText("options.diatonicChordSize.triad"));
     // Select seventh

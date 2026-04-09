@@ -180,9 +180,7 @@ interface HeaderBarProps {
   rootChangeDisabled?: boolean;
   onBaseLabelModeChange: (mode: BaseLabelMode) => void;
   onRootNoteChange: (note: string) => void;
-  quizKindValue?: string;
-  quizKindOptions?: { value: string; label: string }[];
-  onQuizKindChange?: (value: string) => void;
+  onBack?: () => void;
   fretRange: [number, number];
   onThemeChange: (theme: Theme) => void;
   onFretRangeChange: (range: [number, number]) => void;
@@ -201,9 +199,7 @@ export default function HeaderBar({
   rootChangeDisabled = false,
   onBaseLabelModeChange,
   onRootNoteChange,
-  quizKindValue,
-  quizKindOptions,
-  onQuizKindChange,
+  onBack,
   fretRange,
   onThemeChange,
   onFretRangeChange,
@@ -287,8 +283,15 @@ export default function HeaderBar({
         },
       ]}
     >
-      {/* Root stepper (absolute left) — hidden when root change is disabled or on stats */}
-      {!rootChangeDisabled && !showStats && (
+      {/* Back button (absolute left) — shown when onBack is provided */}
+      {onBack && (
+        <TouchableOpacity onPress={onBack} style={styles.backBtn} activeOpacity={0.7}>
+          <Text style={[styles.backBtnText, { color: isDark ? "#e5e7eb" : "#1c1917" }]}>‹</Text>
+        </TouchableOpacity>
+      )}
+
+      {/* Root stepper (absolute left) — hidden when root change is disabled, on stats, or back button shown */}
+      {!rootChangeDisabled && !showStats && !onBack && (
         <View style={styles.stepperRow}>
           <TouchableOpacity onPress={() => stepNote(-1)} style={styles.stepBtn} activeOpacity={0.7}>
             <Text style={[styles.stepBtnText, { color: isDark ? "#9ca3af" : "#78716c" }]}>‹</Text>
@@ -307,19 +310,6 @@ export default function HeaderBar({
           <TouchableOpacity onPress={() => stepNote(1)} style={styles.stepBtn} activeOpacity={0.7}>
             <Text style={[styles.stepBtnText, { color: isDark ? "#9ca3af" : "#78716c" }]}>›</Text>
           </TouchableOpacity>
-        </View>
-      )}
-
-      {/* Quiz kind selector (center) */}
-      {showQuiz && !showStats && quizKindValue && quizKindOptions && onQuizKindChange && (
-        <View>
-          <DropdownSelect
-            theme={theme}
-            value={quizKindValue}
-            onChange={onQuizKindChange}
-            options={quizKindOptions}
-            variant="plain"
-          />
         </View>
       )}
 
@@ -558,6 +548,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     height: 44,
     borderBottomWidth: 1,
+  },
+  backBtn: {
+    position: "absolute",
+    left: 0,
+    width: 56,
+    height: 56,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  backBtnText: {
+    fontSize: 36,
+    lineHeight: 42,
   },
   stepperRow: {
     position: "absolute",

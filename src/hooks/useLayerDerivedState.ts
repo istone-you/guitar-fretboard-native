@@ -10,7 +10,7 @@ import {
   getNotesByAccidental,
   getRootIndex,
   parseOnChord,
-} from "../logic/fretboard";
+} from "../lib/fretboard";
 
 const normalizeDegreeLabel = (label: string) => label.replace("♭", "b").replace("♯", "#");
 

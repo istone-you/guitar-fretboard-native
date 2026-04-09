@@ -23,7 +23,7 @@ import {
   CHORD_CAGED_ORDER,
   getRootIndex,
   type FretCell,
-} from "../../logic/fretboard";
+} from "../../lib/fretboard";
 import type { Theme, Accidental, BaseLabelMode, LayerConfig } from "../../types";
 import { MAX_LAYERS } from "../../types";
 

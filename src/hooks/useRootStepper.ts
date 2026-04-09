@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import type { Accidental } from "../types";
-import { getNotesByAccidental } from "../logic/fretboard";
+import { getNotesByAccidental } from "../lib/fretboard";
 
 interface UseRootStepperParams {
   accidental: Accidental;

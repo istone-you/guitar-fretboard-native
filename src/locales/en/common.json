@@ -249,13 +249,22 @@
     "next": "Next",
     "retry": "Retry",
     "submit": "Submit",
+    "back": "Back",
+    "selectTitle": "Select Quiz",
+    "changeQuiz": "Change Quiz",
     "mode": {
       "note": "Notes",
-      "degree": "Degrees"
+      "degree": "Degrees",
+      "chord": "Chord",
+      "scale": "Scale",
+      "diatonic": "Diatonic"
     },
     "type": {
       "choice": "12-choice",
-      "fretboard": "Fretboard"
+      "fretboard": "Fretboard",
+      "identify": "Identify",
+      "noteSelect": "Note Select",
+      "all": "Full"
     },
     "kind": {
       "noteChoice": "Note / 12-choice",

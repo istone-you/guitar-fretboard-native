@@ -1,6 +1,6 @@
 import { renderHook, act } from "@testing-library/react-native";
 import { useQuiz, CHORD_QUIZ_TYPES_ALL } from "../useQuiz";
-import { getNoteIndex, NOTES_SHARP, NOTES_FLAT } from "../../logic/fretboard";
+import { getNoteIndex, NOTES_SHARP, NOTES_FLAT } from "../../lib/fretboard";
 import type { Accidental, ScaleType, ChordType } from "../../types";
 
 // ---------------------------------------------------------------------------
