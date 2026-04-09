@@ -1,4 +1,4 @@
-import { useRef, useMemo } from "react";
+import { useRef, useMemo, memo } from "react";
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Animated } from "react-native";
 import * as Haptics from "expo-haptics";
 import {
@@ -165,7 +165,7 @@ function TriggerBounceView({
   return <Animated.View style={[style, { transform: [{ scale }] }]}>{children}</Animated.View>;
 }
 
-function LayerOverlayDot({
+const LayerOverlayDot = memo(function LayerOverlayDot({
   idx,
   overlay,
   overlayInset,
@@ -243,7 +243,7 @@ function LayerOverlayDot({
       )}
     </ScaleAnimView>
   );
-}
+});
 
 const FRETBOARD_SIZE = {
   cellWidth: 34,
@@ -807,7 +807,7 @@ interface StringRowProps {
   leftHanded?: boolean;
 }
 
-function StringRow({
+const StringRow = memo(function StringRow({
   theme,
   stringIdx,
   accidental,
@@ -1165,7 +1165,7 @@ function StringRow({
       })}
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   row: {

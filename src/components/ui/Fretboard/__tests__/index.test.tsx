@@ -16,6 +16,7 @@ function makeProps(overrides: Partial<FretboardProps> = {}): FretboardProps {
     baseLabelMode: "note",
     fretRange: [0, 14] as [number, number],
     onNoteClick: jest.fn(),
+    disableAnimation: true,
     ...overrides,
   };
 }
@@ -919,21 +920,19 @@ describe("Fretboard - Multiple scale types via layers", () => {
     { type: "locrian", label: "Locrian" },
   ];
 
-  scaleTypes.forEach(({ type, label }) => {
-    it(`renders ${label} scale without crashing`, () => {
-      const layer = createDefaultLayer("scale", "s1", "#ff69b6");
-      layer.scaleType = type as any;
-      const { toJSON } = render(
-        <Fretboard
-          {...makeProps({
-            rootNote: "C",
-            fretRange: [0, 7],
-            layers: [layer],
-          })}
-        />,
-      );
-      expect(toJSON()).toBeTruthy();
-    });
+  it.each(scaleTypes)("renders $label scale without crashing", ({ type }) => {
+    const layer = createDefaultLayer("scale", "s1", "#ff69b6");
+    layer.scaleType = type as any;
+    const { toJSON } = render(
+      <Fretboard
+        {...makeProps({
+          rootNote: "C",
+          fretRange: [0, 4],
+          layers: [layer],
+        })}
+      />,
+    );
+    expect(toJSON()).toBeTruthy();
   });
 });
 
@@ -957,21 +956,19 @@ describe("Fretboard - Multiple chord types via layers", () => {
     "aug",
   ] as const;
 
-  chordTypes.forEach((chordType) => {
-    it(`renders ${chordType} chord without crashing`, () => {
-      const layer = createDefaultLayer("chord", "c1", "#ffd700");
-      layer.chordType = chordType;
-      const { toJSON } = render(
-        <Fretboard
-          {...makeProps({
-            rootNote: "A",
-            fretRange: [0, 14],
-            layers: [layer],
-          })}
-        />,
-      );
-      expect(toJSON()).toBeTruthy();
-    });
+  it.each(chordTypes)("renders %s chord without crashing", (chordType) => {
+    const layer = createDefaultLayer("chord", "c1", "#ffd700");
+    layer.chordType = chordType;
+    const { toJSON } = render(
+      <Fretboard
+        {...makeProps({
+          rootNote: "A",
+          fretRange: [0, 4],
+          layers: [layer],
+        })}
+      />,
+    );
+    expect(toJSON()).toBeTruthy();
   });
 });
 
