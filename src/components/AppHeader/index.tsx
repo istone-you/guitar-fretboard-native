@@ -1,174 +1,11 @@
-import { useRef, useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Modal,
-  StyleSheet,
-  Pressable,
-  PanResponder,
-  Animated,
-} from "react-native";
-import * as Haptics from "expo-haptics";
+import { useRef } from "react";
+import { View, Text, TouchableOpacity, StyleSheet, Animated } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { useTranslation } from "react-i18next";
 import "../../i18n";
 import type { Accidental, BaseLabelMode, Theme } from "../../types";
-import { SegmentedToggle } from "../ui/SegmentedToggle";
-import { DropdownSelect } from "../ui/DropdownSelect";
 import { useRootStepper } from "../../hooks/useRootStepper";
-
-import { changeLocale } from "../../i18n";
-
-const THUMB = 24;
-
-// Dual-thumb range slider
-function RangeSlider({
-  value,
-  min,
-  max,
-  onChange,
-  isDark,
-}: {
-  value: [number, number];
-  min: number;
-  max: number;
-  onChange: (range: [number, number]) => void;
-  isDark: boolean;
-}) {
-  const twRef = useRef(0);
-  const [tw, setTw] = useState(0);
-  const valRef = useRef(value);
-  valRef.current = value;
-
-  const minStart = useRef({ x: 0, v: 0 });
-  const minPan = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: (e) => {
-        minStart.current = { x: e.nativeEvent.pageX, v: valRef.current[0] };
-      },
-      onPanResponderMove: (e) => {
-        const w = twRef.current;
-        if (w <= THUMB) return;
-        const dx = e.nativeEvent.pageX - minStart.current.x;
-        const newV = Math.round(
-          Math.max(
-            min,
-            Math.min(valRef.current[1] - 1, minStart.current.v + (dx / (w - THUMB)) * (max - min)),
-          ),
-        );
-        if (newV !== valRef.current[0]) {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        }
-        onChange([newV, valRef.current[1]]);
-      },
-    }),
-  ).current;
-
-  const maxStart = useRef({ x: 0, v: 0 });
-  const maxPan = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: (e) => {
-        maxStart.current = { x: e.nativeEvent.pageX, v: valRef.current[1] };
-      },
-      onPanResponderMove: (e) => {
-        const w = twRef.current;
-        if (w <= THUMB) return;
-        const dx = e.nativeEvent.pageX - maxStart.current.x;
-        const newV = Math.round(
-          Math.max(
-            valRef.current[0] + 1,
-            Math.min(max, maxStart.current.v + (dx / (w - THUMB)) * (max - min)),
-          ),
-        );
-        if (newV !== valRef.current[1]) {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        }
-        onChange([valRef.current[0], newV]);
-      },
-    }),
-  ).current;
-
-  const total = max - min;
-  const minFrac = tw > THUMB ? (value[0] - min) / total : 0;
-  const maxFrac = tw > THUMB ? (value[1] - min) / total : 1;
-  const minLeft = minFrac * (tw - THUMB);
-  const maxLeft = maxFrac * (tw - THUMB);
-  const fillLeft = minLeft + THUMB / 2;
-  const fillWidth = Math.max(0, maxLeft - minLeft);
-
-  return (
-    <View
-      style={{ paddingVertical: 16, position: "relative" }}
-      onLayout={(e) => {
-        twRef.current = e.nativeEvent.layout.width;
-        setTw(e.nativeEvent.layout.width);
-      }}
-    >
-      {/* Track */}
-      <View style={{ height: 4, borderRadius: 2, backgroundColor: isDark ? "#374151" : "#d6d3d1" }}>
-        <View
-          style={{
-            position: "absolute",
-            height: 4,
-            left: fillLeft,
-            width: fillWidth,
-            borderRadius: 2,
-            backgroundColor: isDark ? "#e5e7eb" : "#1c1917",
-          }}
-        />
-      </View>
-      {/* Min thumb */}
-      <View
-        style={{
-          position: "absolute",
-          top: 16 - THUMB / 2 + 2,
-          left: minLeft,
-          width: THUMB,
-          height: THUMB,
-          borderRadius: THUMB / 2,
-          backgroundColor: isDark ? "#e5e7eb" : "#1c1917",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 3,
-          elevation: 3,
-          shadowColor: "#000",
-          shadowOpacity: 0.2,
-          shadowRadius: 3,
-        }}
-        {...minPan.panHandlers}
-      >
-        <Text style={{ fontSize: 9, color: "#fff", fontWeight: "700" }}>{value[0]}</Text>
-      </View>
-      {/* Max thumb */}
-      <View
-        style={{
-          position: "absolute",
-          top: 16 - THUMB / 2 + 2,
-          left: maxLeft,
-          width: THUMB,
-          height: THUMB,
-          borderRadius: THUMB / 2,
-          backgroundColor: isDark ? "#e5e7eb" : "#1c1917",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 2,
-          elevation: 3,
-          shadowColor: "#000",
-          shadowOpacity: 0.2,
-          shadowRadius: 3,
-        }}
-        {...maxPan.panHandlers}
-      >
-        <Text style={{ fontSize: 9, color: "#fff", fontWeight: "700" }}>{value[1]}</Text>
-      </View>
-    </View>
-  );
-}
+import SettingsModal, { type SettingsModalRef } from "./SettingsModal";
 
 interface HeaderBarProps {
   theme: Theme;
@@ -207,12 +44,9 @@ export default function HeaderBar({
   leftHanded = false,
   onLeftHandedChange,
 }: HeaderBarProps) {
-  const { t, i18n } = useTranslation();
-  const [settingsVisible, setSettingsVisible] = useState(false);
+  const { t } = useTranslation();
   const isDark = theme === "dark";
-
-  const overlayAnim = useRef(new Animated.Value(0)).current;
-  const panelAnim = useRef(new Animated.Value(700)).current;
+  const settingsModalRef = useRef<SettingsModalRef>(null);
 
   // Label underline slide animation
   const underlineLeft = useRef(new Animated.Value(0)).current;
@@ -247,25 +81,6 @@ export default function HeaderBar({
     }).start();
   }
 
-  const openSettings = () => {
-    setSettingsVisible(true);
-    Animated.parallel([
-      Animated.timing(overlayAnim, { toValue: 1, duration: 220, useNativeDriver: true }),
-      Animated.timing(panelAnim, { toValue: 0, duration: 280, useNativeDriver: true }),
-    ]).start();
-  };
-
-  const closeSettings = () => {
-    Animated.parallel([
-      Animated.timing(overlayAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
-      Animated.timing(panelAnim, { toValue: 700, duration: 240, useNativeDriver: true }),
-    ]).start(() => setSettingsVisible(false));
-  };
-
-  const handleLocaleChange = (locale: "ja" | "en") => {
-    void changeLocale(locale);
-  };
-
   const { stepNote } = useRootStepper({
     accidental,
     rootNote,
@@ -283,14 +98,12 @@ export default function HeaderBar({
         },
       ]}
     >
-      {/* Back button (absolute left) — shown when onBack is provided */}
       {onBack && (
         <TouchableOpacity onPress={onBack} style={styles.backBtn} activeOpacity={0.7}>
           <Text style={[styles.backBtnText, { color: isDark ? "#e5e7eb" : "#1c1917" }]}>‹</Text>
         </TouchableOpacity>
       )}
 
-      {/* Root stepper (absolute left) — hidden when root change is disabled, on stats, or back button shown */}
       {!rootChangeDisabled && !showStats && !onBack && (
         <View style={styles.stepperRow}>
           <TouchableOpacity onPress={() => stepNote(-1)} style={styles.stepBtn} activeOpacity={0.7}>
@@ -299,10 +112,7 @@ export default function HeaderBar({
           <Animated.Text
             style={[
               styles.rootNote,
-              {
-                color: isDark ? "#fff" : "#1c1917",
-                transform: [{ scale: rootScale }],
-              },
+              { color: isDark ? "#fff" : "#1c1917", transform: [{ scale: rootScale }] },
             ]}
           >
             {rootNote}
@@ -313,7 +123,6 @@ export default function HeaderBar({
         </View>
       )}
 
-      {/* Note / Degree toggle (center) */}
       {!showQuiz && !showStats && (
         <View style={styles.labelToggle}>
           <TouchableOpacity
@@ -398,10 +207,9 @@ export default function HeaderBar({
         </View>
       )}
 
-      {/* Settings button (absolute right) */}
       <TouchableOpacity
         testID="settings-button"
-        onPress={openSettings}
+        onPress={() => settingsModalRef.current?.open()}
         style={styles.headerBtn}
         activeOpacity={0.7}
       >
@@ -416,126 +224,17 @@ export default function HeaderBar({
         </Svg>
       </TouchableOpacity>
 
-      <Modal
-        visible={settingsVisible}
-        transparent
-        animationType="none"
-        onRequestClose={closeSettings}
-      >
-        {/* Overlay fades in separately */}
-        <Animated.View style={[styles.modalOverlay, { opacity: overlayAnim }]}>
-          <Pressable style={{ flex: 1 }} onPress={closeSettings} />
-        </Animated.View>
-
-        {/* Panel slides up separately */}
-        <Animated.View
-          style={[
-            styles.settingsPanel,
-            {
-              backgroundColor: isDark ? "#1a1a1a" : "#fff",
-              borderColor: isDark ? "#374151" : "#e7e5e4",
-              transform: [{ translateY: panelAnim }],
-            },
-          ]}
-        >
-          <View style={styles.settingsHeader}>
-            <Text style={[styles.settingsTitle, { color: isDark ? "#fff" : "#1c1917" }]}>
-              {t("settings")}
-            </Text>
-            <TouchableOpacity onPress={closeSettings} activeOpacity={0.7}>
-              <Text style={{ fontSize: 20, color: isDark ? "#9ca3af" : "#78716c" }}>✕</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View>
-            {/* Theme */}
-            <View style={styles.settingRow}>
-              <Text style={[styles.settingLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-                {t("theme")}
-              </Text>
-              <SegmentedToggle
-                theme={theme}
-                value={theme}
-                onChange={onThemeChange}
-                options={[
-                  { value: "dark" as Theme, label: t("dark") },
-                  { value: "light" as Theme, label: t("light") },
-                ]}
-                size="compact"
-              />
-            </View>
-
-            {/* Accidental */}
-            <View style={styles.settingRow}>
-              <Text style={[styles.settingLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-                {t("accidental")}
-              </Text>
-              <SegmentedToggle
-                theme={theme}
-                value={accidental}
-                onChange={onAccidentalChange}
-                options={[
-                  { value: "sharp" as Accidental, label: "♯" },
-                  { value: "flat" as Accidental, label: "♭" },
-                ]}
-                size="compact"
-              />
-            </View>
-
-            {/* Language */}
-            <View style={styles.settingRow}>
-              <Text style={[styles.settingLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-                {t("language")}
-              </Text>
-              <SegmentedToggle
-                theme={theme}
-                value={(i18n.language === "en" ? "en" : "ja") as "ja" | "en"}
-                onChange={handleLocaleChange}
-                options={[
-                  { value: "ja" as const, label: "JA" },
-                  { value: "en" as const, label: "EN" },
-                ]}
-                size="compact"
-              />
-            </View>
-
-            {/* Left-handed */}
-            {onLeftHandedChange && (
-              <View style={styles.settingRow}>
-                <Text style={[styles.settingLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-                  {t("leftHanded")}
-                </Text>
-                <SegmentedToggle
-                  theme={theme}
-                  value={leftHanded}
-                  onChange={onLeftHandedChange}
-                  options={[
-                    { value: false, label: "OFF" },
-                    { value: true, label: "ON" },
-                  ]}
-                  size="compact"
-                />
-              </View>
-            )}
-
-            {/* Fret range */}
-            <View style={[styles.settingRow, { borderBottomWidth: 0, paddingBottom: 4 }]}>
-              <Text style={[styles.settingLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-                {t("settingsPanel.fretRange")}
-              </Text>
-            </View>
-            <View style={{ paddingTop: 4, paddingBottom: 16, paddingHorizontal: 4 }}>
-              <RangeSlider
-                value={fretRange}
-                min={0}
-                max={14}
-                onChange={onFretRangeChange}
-                isDark={isDark}
-              />
-            </View>
-          </View>
-        </Animated.View>
-      </Modal>
+      <SettingsModal
+        ref={settingsModalRef}
+        theme={theme}
+        accidental={accidental}
+        fretRange={fretRange}
+        leftHanded={leftHanded}
+        onThemeChange={onThemeChange}
+        onAccidentalChange={onAccidentalChange}
+        onFretRangeChange={onFretRangeChange}
+        onLeftHandedChange={onLeftHandedChange}
+      />
     </View>
   );
 }
@@ -589,9 +288,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontFamily: "monospace",
   },
-  disabled: {
-    opacity: 0.4,
-  },
   labelToggle: {
     flexDirection: "row",
     alignItems: "center",
@@ -605,45 +301,5 @@ const styles = StyleSheet.create({
     height: 2,
     borderRadius: 1,
     marginTop: 2,
-  },
-  settingsIcon: {
-    width: 22,
-    height: 22,
-  },
-  modalOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.5)",
-  },
-  settingsPanel: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    borderWidth: 1,
-    padding: 20,
-    paddingBottom: 40,
-  },
-  settingsHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  settingsTitle: {
-    fontSize: 17,
-    fontWeight: "700",
-  },
-  settingRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "rgba(128,128,128,0.2)",
-  },
-  settingLabel: {
-    fontSize: 14,
   },
 });

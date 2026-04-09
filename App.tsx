@@ -1,36 +1,23 @@
 import { useMemo, useState, useCallback, useRef } from "react";
-import {
-  View,
-  Text,
-  Image,
-  TouchableOpacity,
-  StatusBar,
-  StyleSheet,
-  useWindowDimensions,
-  PanResponder,
-  Animated,
-} from "react-native";
-import Svg, { Path, Line, Text as SvgText } from "react-native-svg";
+import { View, Animated, StatusBar, StyleSheet } from "react-native";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ScreenOrientation from "expo-screen-orientation";
 import * as Haptics from "expo-haptics";
 import "./src/i18n";
 import { useTranslation } from "react-i18next";
 import HeaderBar from "./src/components/AppHeader/index";
+import TabBar from "./src/components/TabBar";
+import LandscapeLayout from "./src/components/LandscapeLayout";
 import { usePersistedSetting } from "./src/hooks/usePersistedSetting";
 import { CHORD_QUIZ_TYPES_ALL, useQuiz } from "./src/hooks/useQuiz";
 import { useLayerDerivedState } from "./src/hooks/useLayerDerivedState";
 import { useQuizViewModel } from "./src/hooks/useQuizViewModel";
+import { useLayers } from "./src/hooks/useLayers";
+import { useOrientation } from "./src/hooks/useOrientation";
+import { useQuizNavigation } from "./src/hooks/useQuizNavigation";
 import { getNotesByAccidental, getRootIndex } from "./src/lib/fretboard";
-import type {
-  Theme,
-  Accidental,
-  BaseLabelMode,
-  ScaleType,
-  ChordType,
-  LayerConfig,
-} from "./src/types";
-import { createDefaultLayer, MAX_LAYERS } from "./src/types";
+import type { Theme, Accidental, BaseLabelMode, ScaleType } from "./src/types";
+import { createDefaultLayer } from "./src/types";
 import MainPracticePane from "./src/screens/MainPractice";
 import QuizPane from "./src/screens/Quiz";
 import QuizActivePracticePane from "./src/screens/QuizActive";
@@ -47,9 +34,9 @@ const STORAGE_KEYS = {
 function AppContent() {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
-  // Root note
+
+  // Settings
   const [rootNote, setRootNote] = useState("C");
-  // Fret range
   const [fretRange, setFretRange] = usePersistedSetting<[number, number]>(
     STORAGE_KEYS.fretRange,
     [0, 12],
@@ -67,35 +54,6 @@ function AppContent() {
       return [0, 14];
     },
   );
-  // Layout: force screen rotation via ScreenOrientation
-  const { width: winWidth, height: winHeight } = useWindowDimensions();
-  const isLandscape = winWidth > winHeight;
-  const rotatingRef = useRef(false);
-  const [animDisabled, setAnimDisabled] = useState(false);
-
-  const rotateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const toggleLayout = useCallback(async () => {
-    if (rotateTimerRef.current) clearTimeout(rotateTimerRef.current);
-    rotatingRef.current = true;
-    setAnimDisabled(true);
-    if (isLandscape) {
-      await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
-    } else {
-      await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE_RIGHT);
-    }
-    rotateTimerRef.current = setTimeout(() => {
-      rotatingRef.current = false;
-      setAnimDisabled(false);
-      rotateTimerRef.current = null;
-    }, 500);
-  }, [isLandscape]);
-
-  // Quiz
-  const [showQuiz, setShowQuiz] = useState(false);
-  const [quizModeSelected, setQuizModeSelected] = useState(false);
-  const [showStats, setShowStats] = useState(false);
-  const { records, addRecord, clearRecords } = useQuizRecords();
-  // Display settings
   const [accidental, setAccidental] = usePersistedSetting<Accidental>(
     STORAGE_KEYS.accidental,
     "flat",
@@ -109,51 +67,55 @@ function AppContent() {
     (v) => v,
     (v) => v as Theme,
   );
-  // Left-handed mode
   const [leftHanded, setLeftHanded] = usePersistedSetting<boolean>(
     STORAGE_KEYS.leftHanded,
     false,
     (v) => String(v),
     (v) => v === "true",
   );
-  // New layer system
-  // Fixed 3-slot layer system: each slot is either a layer or null
-  const [slots, setSlots] = useState<(LayerConfig | null)[]>([null, null, null]);
-  const layers = slots.filter((s): s is LayerConfig => s !== null);
-
-  const handleAddLayer = (layer: LayerConfig, slotIndex?: number) =>
-    setSlots((prev) => {
-      if (slotIndex != null && slotIndex >= 0 && slotIndex < MAX_LAYERS) {
-        const next = [...prev];
-        next[slotIndex] = layer;
-        return next;
-      }
-      // Fallback: fill first empty slot
-      const emptyIdx = prev.indexOf(null);
-      if (emptyIdx >= 0) {
-        const next = [...prev];
-        next[emptyIdx] = layer;
-        return next;
-      }
-      return prev;
-    });
-  const handleUpdateLayer = (id: string, layer: LayerConfig) =>
-    setSlots((prev) => prev.map((s) => (s?.id === id ? { ...layer, id } : s)));
-  const handleRemoveLayer = (id: string) =>
-    setSlots((prev) => prev.map((s) => (s?.id === id ? null : s)));
-  const handleToggleLayer = (id: string) =>
-    setSlots((prev) => prev.map((s) => (s?.id === id ? { ...s, enabled: !s.enabled } : s)));
-  const handleReorderLayers = (reordered: (LayerConfig | null)[]) => setSlots(reordered);
-  const handleLoadPreset = (preset: LayerConfig[]) => {
-    const next: (LayerConfig | null)[] = [null, null, null];
-    preset.forEach((l, i) => {
-      if (i < MAX_LAYERS) next[i] = l;
-    });
-    setSlots(next);
-  };
-  const [previewLayer, setPreviewLayer] = useState<LayerConfig | null>(null);
-
+  const [showStats, setShowStats] = useState(false);
   const [scaleType, setScaleType] = useState<ScaleType>("major");
+  const { records, addRecord, clearRecords } = useQuizRecords();
+
+  // Layout
+  const { isLandscape, toggleLayout, animDisabled, winWidth, winHeight } = useOrientation();
+
+  // Layers
+  const {
+    slots,
+    layers,
+    previewLayer,
+    setPreviewLayer,
+    handleAddLayer,
+    handleUpdateLayer,
+    handleRemoveLayer,
+    handleToggleLayer,
+    handleReorderLayers,
+    handleLoadPreset,
+  } = useLayers();
+
+  // Forwarding refs to break the circular dependency between
+  // useQuizNavigation (owns showQuiz) and useQuiz/useQuizViewModel
+  // (need showQuiz but provide the callbacks useQuizNavigation needs).
+  const quizNavCallbacksRef = useRef({
+    onQuizKindChange: (_: string) => {},
+    onShowQuizChange: (_: boolean) => {},
+  });
+
+  const {
+    showQuiz,
+    setShowQuiz,
+    quizModeSelected,
+    setQuizModeSelected,
+    quizSlideAnim,
+    handleQuizModeSelect,
+    handleChangeQuiz,
+    swipePanResponder,
+  } = useQuizNavigation({
+    winWidth,
+    onQuizKindChange: (v) => quizNavCallbacksRef.current.onQuizKindChange(v),
+    onShowQuizChange: (v) => quizNavCallbacksRef.current.onShowQuizChange(v),
+  });
 
   const {
     quizMode,
@@ -228,54 +190,11 @@ function AppContent() {
     },
   );
 
-  const quizSlideAnim = useRef(new Animated.Value(0)).current;
-
-  const handleQuizModeSelect = (value: string) => {
-    handleQuizKindDropdownChange(value);
-    quizSlideAnim.setValue(winWidth);
-    setQuizModeSelected(true);
-    setTimeout(() => {
-      Animated.timing(quizSlideAnim, {
-        toValue: 0,
-        duration: 120,
-        useNativeDriver: true,
-      }).start();
-    }, 0);
+  // Wire up forwarding refs now that all hooks have been called
+  quizNavCallbacksRef.current = {
+    onQuizKindChange: handleQuizKindDropdownChange,
+    onShowQuizChange: handleShowQuizChange,
   };
-
-  const handleChangeQuiz = () => {
-    Animated.timing(quizSlideAnim, {
-      toValue: winWidth,
-      duration: 120,
-      useNativeDriver: true,
-    }).start(() => {
-      handleShowQuizChange(false);
-      setQuizModeSelected(false);
-    });
-  };
-
-  const handleChangeQuizRef = useRef(handleChangeQuiz);
-  handleChangeQuizRef.current = handleChangeQuiz;
-  const showQuizRef = useRef(showQuiz);
-  showQuizRef.current = showQuiz;
-  const quizModeSelectedRef = useRef(quizModeSelected);
-  quizModeSelectedRef.current = quizModeSelected;
-
-  const swipePanResponder = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_, g) =>
-        showQuizRef.current &&
-        quizModeSelectedRef.current &&
-        g.dx > 10 &&
-        Math.abs(g.dx) > Math.abs(g.dy),
-      onPanResponderRelease: (_, g) => {
-        if (g.dx > 80) {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          handleChangeQuizRef.current();
-        }
-      },
-    }),
-  ).current;
 
   const quizNoteOptions = [...getNotesByAccidental(accidental)];
 
@@ -303,8 +222,6 @@ function AppContent() {
       ? quizQuestion.promptChordRoot
       : (quizQuestion?.promptQuizRoot ?? rootNote);
 
-  // ── Shared JSX pieces ──────────────────────────────────────────
-
   const lastTapRef = useRef(0);
   const handleFretboardDoubleTap = useCallback(() => {
     if (showQuiz) return;
@@ -317,7 +234,6 @@ function AppContent() {
 
   const quizAccentColor = quizMode === "chord" || quizMode === "diatonic" ? "#40E0D0" : "#ff69b6";
 
-  // Temporary chord layer for quiz mode
   const quizLayers = useMemo(() => {
     if (quizMode === "chord" && quizType === "choice") {
       const layer = createDefaultLayer("chord", "quiz-chord", quizAccentColor);
@@ -328,227 +244,36 @@ function AppContent() {
     return [];
   }, [quizMode, quizType, quizAccentColor, quizQuestion]);
 
-  const tabBarEl = (
-    <View
-      style={[
-        styles.tabBar,
-        {
-          backgroundColor: isDark ? "#111111" : "#fafaf9",
-          borderTopColor: isDark ? "rgba(255,255,255,0.08)" : "#e7e5e4",
-          paddingBottom: Math.max(insets.bottom, 8),
-        },
-      ]}
-    >
-      <TouchableOpacity
-        style={styles.tabItem}
-        onPress={() => {
-          setShowStats(false);
-          setShowQuiz(false);
-          handleShowQuizChange(false);
-        }}
-        activeOpacity={0.7}
-      >
-        <Image
-          source={isDark ? require("./public/guiter_dark.png") : require("./public/guiter.png")}
-          style={[
-            styles.tabIcon,
-            {
-              tintColor:
-                !showQuiz && !showStats
-                  ? isDark
-                    ? "#e5e7eb"
-                    : "#1c1917"
-                  : isDark
-                    ? "#6b7280"
-                    : "#a8a29e",
-            },
-          ]}
-          resizeMode="contain"
-        />
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.tabItem}
-        onPress={() => {
-          if (showQuiz) return;
-          setShowStats(false);
-          setShowQuiz(true);
-          setQuizModeSelected(false);
-        }}
-        activeOpacity={0.7}
-      >
-        <Svg width={28} height={28} viewBox="0 0 24 24" fill="none">
-          <Path
-            d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"
-            stroke={showQuiz ? (isDark ? "#e5e7eb" : "#1c1917") : isDark ? "#6b7280" : "#a8a29e"}
-            strokeWidth={1.5}
-            strokeLinejoin="round"
-          />
-          <SvgText
-            x="12"
-            y="16"
-            textAnchor="middle"
-            fontSize="13"
-            fontWeight="bold"
-            fill={showQuiz ? (isDark ? "#e5e7eb" : "#1c1917") : isDark ? "#6b7280" : "#a8a29e"}
-          >
-            Q
-          </SvgText>
-        </Svg>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.tabItem}
-        onPress={() => {
-          setShowStats(true);
-          setShowQuiz(false);
-          handleShowQuizChange(false);
-        }}
-        activeOpacity={0.7}
-      >
-        <Svg width={28} height={28} viewBox="0 0 24 24" fill="none">
-          <Path
-            d="M18 20V10"
-            stroke={showStats ? (isDark ? "#e5e7eb" : "#1c1917") : isDark ? "#6b7280" : "#a8a29e"}
-            strokeWidth={1.5}
-            strokeLinecap="round"
-          />
-          <Path
-            d="M12 20V4"
-            stroke={showStats ? (isDark ? "#e5e7eb" : "#1c1917") : isDark ? "#6b7280" : "#a8a29e"}
-            strokeWidth={1.5}
-            strokeLinecap="round"
-          />
-          <Path
-            d="M6 20v-6"
-            stroke={showStats ? (isDark ? "#e5e7eb" : "#1c1917") : isDark ? "#6b7280" : "#a8a29e"}
-            strokeWidth={1.5}
-            strokeLinecap="round"
-          />
-        </Svg>
-      </TouchableOpacity>
-    </View>
-  );
+  const sharedMainPaneProps = {
+    theme,
+    accidental,
+    baseLabelMode,
+    fretRange,
+    rootNote,
+    layers: effectiveLayers,
+    leftHanded,
+    onFretboardDoubleTap: handleFretboardDoubleTap,
+    previewLayer,
+    overlayNotes,
+    overlaySemitones,
+    layerNoteLabelsMap,
+    isDark,
+    slots,
+    onAddLayer: handleAddLayer,
+    onUpdateLayer: handleUpdateLayer,
+    onRemoveLayer: handleRemoveLayer,
+    onToggleLayer: handleToggleLayer,
+    onReorderLayers: handleReorderLayers,
+    onPreviewLayer: setPreviewLayer,
+    onLoadPreset: handleLoadPreset,
+  };
 
-  // ── Layout ──────────────────────────────────────────────────────
-
+  // ── Landscape ──────────────────────────────────────────────────
   if (isLandscape) {
-    // Fretboard: scale uniformly to fit available height (keep portrait proportions)
-    // Fretboard only (footer is outside the scaled area)
-    const availH = winHeight - 44;
-    const fbScale = (availH * 0.85) / 200;
-
-    return (
-      <View
-        style={[
-          styles.safeArea,
-          {
-            backgroundColor: bgColor,
-            paddingTop: insets.top,
-            paddingLeft: Math.max(insets.left, 16),
-          },
-        ]}
-      >
-        <StatusBar
-          translucent
-          barStyle={isDark ? "light-content" : "dark-content"}
-          backgroundColor="transparent"
-        />
-
-        {/* Info + fretboard block — centered vertically */}
-        <View
-          style={[
-            styles.landscapeInfoOverlay,
-            { marginTop: Math.max(0, (availH - 200 * fbScale) / 2) },
-          ]}
-        >
-          <View style={styles.landscapeInfoBar}>
-            <Text
-              style={[styles.infoText, { color: isDark ? "#e5e7eb" : "#1c1917", marginRight: 6 }]}
-            >
-              {t("header.root")} {rootNote}
-            </Text>
-          </View>
-          {/* New layer system info pills */}
-          {effectiveLayers.some((l) => l.enabled) && (
-            <View style={styles.landscapeInfoBar}>
-              {effectiveLayers
-                .filter((l) => l.enabled)
-                .map((l) => {
-                  let label: string;
-                  if (l.type === "custom") {
-                    const items =
-                      l.customMode === "note" ? [...l.selectedNotes] : [...l.selectedDegrees];
-                    label = items.length > 0 ? items.join(", ") : t("layers.custom");
-                  } else if (l.type === "scale") {
-                    label = t(
-                      `options.scale.${l.scaleType.replace(/-([a-z])/g, (_: string, c: string) => c.toUpperCase())}`,
-                    );
-                  } else if (l.type === "caged") {
-                    const ct = l.cagedChordType === "minor" ? "m" : "";
-                    label = `CAGED${ct}: ${[...l.cagedForms].join(", ") || "-"}`;
-                  } else {
-                    const mode = t(`options.chordDisplayMode.${l.chordDisplayMode}`);
-                    if (l.chordDisplayMode === "power") {
-                      label = mode;
-                    } else if (l.chordDisplayMode === "diatonic") {
-                      label = `${mode}(${l.diatonicDegree} ${t(`options.diatonicKey.${l.diatonicKeyType === "natural-minor" ? "naturalMinor" : "major"}`)} ${t(`options.diatonicChordSize.${l.diatonicChordSize}`)})`;
-                    } else if (l.chordDisplayMode === "triad") {
-                      label = `${mode}(${l.chordType} ${t(`options.triadInversions.${l.triadInversion}`)})`;
-                    } else if (l.chordDisplayMode === "on-chord") {
-                      label = `${mode}: ${l.onChordName}`;
-                    } else {
-                      label = `${mode}: ${l.chordType}`;
-                    }
-                  }
-                  return (
-                    <View key={l.id} style={[styles.infoPill, { backgroundColor: l.color }]}>
-                      <Text style={styles.infoPillText}>{label}</Text>
-                    </View>
-                  );
-                })}
-            </View>
-          )}
-        </View>
-
-        {/* Fretboard */}
-        <View style={{ flex: 1, overflow: "hidden" }}>
-          <View
-            style={{
-              transform: [{ scale: fbScale }],
-              transformOrigin: "top left",
-            }}
-          >
-            <MainPracticePane
-              isLandscape={isLandscape}
-              theme={theme}
-              accidental={accidental}
-              baseLabelMode={baseLabelMode}
-              fretRange={fretRange}
-              rootNote={rootNote}
-              layers={effectiveLayers}
-              disableAnimation={true}
-              leftHanded={leftHanded}
-              onFretboardDoubleTap={handleFretboardDoubleTap}
-              previewLayer={previewLayer}
-              overlayNotes={overlayNotes}
-              overlaySemitones={overlaySemitones}
-              layerNoteLabelsMap={layerNoteLabelsMap}
-              isDark={isDark}
-              slots={slots}
-              onAddLayer={handleAddLayer}
-              onUpdateLayer={handleUpdateLayer}
-              onRemoveLayer={handleRemoveLayer}
-              onToggleLayer={handleToggleLayer}
-              onReorderLayers={handleReorderLayers}
-              onPreviewLayer={setPreviewLayer}
-              onLoadPreset={handleLoadPreset}
-            />
-          </View>
-        </View>
-      </View>
-    );
+    return <LandscapeLayout {...sharedMainPaneProps} winHeight={winHeight} theme={theme} />;
   }
 
-  // Portrait layout
+  // ── Portrait ───────────────────────────────────────────────────
   return (
     <View style={[styles.safeArea, { backgroundColor: bgColor }]}>
       <StatusBar
@@ -556,12 +281,7 @@ function AppContent() {
         barStyle={isDark ? "light-content" : "dark-content"}
         backgroundColor="transparent"
       />
-      <View
-        style={{
-          backgroundColor: headerBg,
-          paddingTop: insets.top,
-        }}
-      >
+      <View style={{ backgroundColor: headerBg, paddingTop: insets.top }}>
         <HeaderBar
           theme={theme}
           rootNote={rootNote}
@@ -591,7 +311,6 @@ function AppContent() {
             onClearRecords={clearRecords}
           />
         ) : showQuiz && !quizModeSelected ? (
-          // クイズ選択画面
           <View style={{ flex: 1 }}>
             <QuizPane
               theme={theme}
@@ -600,7 +319,6 @@ function AppContent() {
             />
           </View>
         ) : showQuiz && quizModeSelected ? (
-          // クイズアクティブ（QuizFretboardPane + QuizPanel）
           <Animated.View style={{ flex: 1, transform: [{ translateX: quizSlideAnim }] }}>
             <QuizActivePracticePane
               isLandscape={isLandscape}
@@ -671,38 +389,38 @@ function AppContent() {
             />
           </Animated.View>
         ) : (
-          // 通常モード（MainFretboardPane + LayerList）
           <View style={{ flex: 1 }}>
             <MainPracticePane
+              {...sharedMainPaneProps}
               isLandscape={isLandscape}
-              theme={theme}
-              accidental={accidental}
-              baseLabelMode={baseLabelMode}
-              fretRange={fretRange}
-              rootNote={rootNote}
-              layers={effectiveLayers}
               disableAnimation={isLandscape || animDisabled}
-              leftHanded={leftHanded}
-              onFretboardDoubleTap={handleFretboardDoubleTap}
-              previewLayer={previewLayer}
-              overlayNotes={overlayNotes}
-              overlaySemitones={overlaySemitones}
-              layerNoteLabelsMap={layerNoteLabelsMap}
-              isDark={isDark}
-              slots={slots}
-              onAddLayer={handleAddLayer}
-              onUpdateLayer={handleUpdateLayer}
-              onRemoveLayer={handleRemoveLayer}
-              onToggleLayer={handleToggleLayer}
-              onReorderLayers={handleReorderLayers}
-              onPreviewLayer={setPreviewLayer}
-              onLoadPreset={handleLoadPreset}
             />
           </View>
         )}
       </View>
 
-      {tabBarEl}
+      <TabBar
+        isDark={isDark}
+        showQuiz={showQuiz}
+        showStats={showStats}
+        insetBottom={insets.bottom}
+        onPressHome={() => {
+          setShowStats(false);
+          setShowQuiz(false);
+          handleShowQuizChange(false);
+        }}
+        onPressQuiz={() => {
+          if (showQuiz) return;
+          setShowStats(false);
+          setShowQuiz(true);
+          setQuizModeSelected(false);
+        }}
+        onPressStats={() => {
+          setShowStats(true);
+          setShowQuiz(false);
+          handleShowQuizChange(false);
+        }}
+      />
     </View>
   );
 }
@@ -721,59 +439,5 @@ export default function App() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-  },
-  tabBar: {
-    flexDirection: "row",
-    borderTopWidth: 1,
-    paddingBottom: 8,
-  },
-  tabItem: {
-    flex: 1,
-    alignItems: "center",
-    paddingVertical: 10,
-  },
-  tabIcon: {
-    width: 28,
-    height: 28,
-  },
-  landscapeInfoOverlay: {},
-  landscapeInfoBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-  },
-  infoText: {
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  infoPill: {
-    borderRadius: 999,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderWidth: 1.5,
-    borderColor: "rgba(0,0,0,0.15)",
-  },
-  infoPillText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#fff",
-  },
-  infoChipsRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 4,
-  },
-  infoChip: {
-    borderWidth: 1.5,
-    borderRadius: 999,
-    paddingHorizontal: 5,
-    paddingVertical: 1,
-  },
-  infoChipText: {
-    fontSize: 14,
-    fontWeight: "600",
   },
 });

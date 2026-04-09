@@ -1,4 +1,4 @@
-import type { ScaleType } from "../../types";
+import type { ScaleType } from "../../../types";
 
 export interface ScaleOption {
   value: ScaleType;

@@ -23,9 +23,9 @@ import {
   CHORD_CAGED_ORDER,
   getRootIndex,
   type FretCell,
-} from "../../lib/fretboard";
-import type { Theme, Accidental, BaseLabelMode, LayerConfig } from "../../types";
-import { MAX_LAYERS } from "../../types";
+} from "../../../lib/fretboard";
+import type { Theme, Accidental, BaseLabelMode, LayerConfig } from "../../../types";
+import { MAX_LAYERS } from "../../../types";
 
 const STRING_COUNT = 6;
 

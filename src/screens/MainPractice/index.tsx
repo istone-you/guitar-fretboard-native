@@ -4,7 +4,7 @@ import NormalFretboard from "../../components/NormalFretboard";
 import PracticePane from "../../components/ui/PracticePane";
 import type { Accidental, BaseLabelMode, LayerConfig, Theme } from "../../types";
 
-interface MainPracticePaneProps {
+export interface MainPracticePaneProps {
   isLandscape: boolean;
   theme: Theme;
   accidental: Accidental;

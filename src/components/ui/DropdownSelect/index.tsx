@@ -9,8 +9,8 @@ import {
   Pressable,
   Animated,
 } from "react-native";
-import ChevronIcon from "./ChevronIcon";
-import type { Theme } from "../../types";
+import ChevronIcon from "../ChevronIcon";
+import type { Theme } from "../../../types";
 
 interface Option {
   value: string;

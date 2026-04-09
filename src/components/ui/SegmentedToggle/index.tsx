@@ -8,7 +8,7 @@ import {
   Animated,
   type LayoutChangeEvent,
 } from "react-native";
-import type { Theme } from "../../types";
+import type { Theme } from "../../../types";
 
 interface SegmentedToggleOption<T extends string | boolean> {
   value: T;
