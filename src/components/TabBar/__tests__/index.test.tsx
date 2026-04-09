@@ -9,6 +9,8 @@ jest.mock("react-native-svg", () => {
     default: ({ children }: any) => <View>{children}</View>,
     Path: () => null,
     Text: () => null,
+    Circle: () => null,
+    Line: () => null,
   };
 });
 
@@ -16,8 +18,10 @@ const defaultProps = {
   isDark: false,
   showQuiz: false,
   showStats: false,
+  showFinder: false,
   insetBottom: 0,
   onPressHome: jest.fn(),
+  onPressFinder: jest.fn(),
   onPressQuiz: jest.fn(),
   onPressStats: jest.fn(),
 };
@@ -31,9 +35,10 @@ describe("TabBar", () => {
     jest.clearAllMocks();
   });
 
-  it("renders 3 tab buttons", () => {
+  it("renders 4 tab buttons", () => {
     renderTabBar();
     expect(screen.getByTestId("tab-home")).toBeTruthy();
+    expect(screen.getByTestId("tab-finder")).toBeTruthy();
     expect(screen.getByTestId("tab-quiz")).toBeTruthy();
     expect(screen.getByTestId("tab-stats")).toBeTruthy();
   });
@@ -69,6 +74,17 @@ describe("TabBar", () => {
 
   it("renders without crashing when showStats is true", () => {
     expect(() => renderTabBar({ showStats: true })).not.toThrow();
+  });
+
+  it("onPressFinder is called when finder tab is pressed", () => {
+    const onPressFinder = jest.fn();
+    renderTabBar({ onPressFinder });
+    fireEvent.press(screen.getByTestId("tab-finder"));
+    expect(onPressFinder).toHaveBeenCalledTimes(1);
+  });
+
+  it("renders without crashing when showFinder is true", () => {
+    expect(() => renderTabBar({ showFinder: true })).not.toThrow();
   });
 
   it("applies bottom inset padding", () => {

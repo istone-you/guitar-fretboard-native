@@ -293,6 +293,7 @@ export interface FretboardProps {
   layers?: LayerConfig[];
   disableAnimation?: boolean;
   leftHanded?: boolean;
+  onNoteLongPress?: (noteName: string) => void;
 }
 
 export default function Fretboard({
@@ -317,6 +318,7 @@ export default function Fretboard({
   layers = [],
   disableAnimation = false,
   leftHanded = false,
+  onNoteLongPress,
 }: FretboardProps) {
   const [fretMin, fretMax] = fretRange;
   const quizActive = quizModeActive && quizCell !== undefined;
@@ -771,6 +773,7 @@ export default function Fretboard({
               quizColor={quizColor}
               layerOverlays={layerOverlays}
               disableAnimation={disableAnimation}
+              onNoteLongPress={onNoteLongPress}
             />
           ))}
         </View>
@@ -805,6 +808,7 @@ interface StringRowProps {
   layerOverlays?: Map<string, { color: string; zIndex: number }[]>;
   disableAnimation?: boolean;
   leftHanded?: boolean;
+  onNoteLongPress?: (noteName: string) => void;
 }
 
 const StringRow = memo(function StringRow({
@@ -833,6 +837,7 @@ const StringRow = memo(function StringRow({
   layerOverlays,
   disableAnimation = false,
   leftHanded = false,
+  onNoteLongPress,
 }: StringRowProps) {
   const isDark = theme === "dark";
   const NOTES = getNotesByAccidental(accidental);
@@ -883,6 +888,13 @@ const StringRow = memo(function StringRow({
           onNoteClick(noteName);
         };
 
+        const handleLongPress = onNoteLongPress
+          ? () => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              onNoteLongPress(noteName);
+            }
+          : undefined;
+
         const overlayInset = size.overlayInset;
         const overlaySize = size.rowHeight - overlayInset * 2;
         const cellKey = `${stringIdx}-${fret}`;
@@ -891,6 +903,7 @@ const StringRow = memo(function StringRow({
           <TouchableOpacity
             key={fret}
             onPress={handlePress}
+            onLongPress={handleLongPress}
             style={{
               width: size.cellWidth,
               height: size.rowHeight,

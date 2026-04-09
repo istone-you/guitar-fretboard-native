@@ -199,6 +199,16 @@
       "Augmented": "A triad built from two stacked major 3rds. Tense.\nFormula: R, M3, #5"
     }
   },
+  "finder": {
+    "longPressInstruction": "Long press the fretboard to set root note",
+    "tapInstruction": "Tap the fretboard to select notes",
+    "emptyHint": "Select notes to see matching results",
+    "reset": "Reset",
+    "exactMatch": "Exact Match",
+    "partialMatch": "Partial Match",
+    "none": "None",
+    "noteCount": "{{count}} notes"
+  },
   "stats": {
     "title": "Weak Points",
     "totalRecords": "{{count}} questions answered",

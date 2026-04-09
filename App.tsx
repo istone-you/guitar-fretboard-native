@@ -22,6 +22,7 @@ import MainPracticePane from "./src/screens/MainPractice";
 import QuizPane from "./src/screens/Quiz";
 import QuizActivePracticePane from "./src/screens/QuizActive";
 import StatsPane from "./src/screens/Stats";
+import FinderPane from "./src/screens/Finder";
 import { useQuizRecords } from "./src/hooks/useQuizRecords";
 
 const STORAGE_KEYS = {
@@ -74,6 +75,7 @@ function AppContent() {
     (v) => v === "true",
   );
   const [showStats, setShowStats] = useState(false);
+  const [showFinder, setShowFinder] = useState(false);
   const [scaleType, setScaleType] = useState<ScaleType>("major");
   const { records, addRecord, clearRecords } = useQuizRecords();
 
@@ -289,7 +291,7 @@ function AppContent() {
           baseLabelMode={baseLabelMode}
           showQuiz={showQuiz}
           showStats={showStats}
-          rootChangeDisabled={!quizRootChangeEnabled}
+          rootChangeDisabled={!quizRootChangeEnabled || showFinder}
           onBaseLabelModeChange={setBaseLabelMode}
           onRootNoteChange={quizRootChangeEnabled ? handleNoteClick : () => {}}
           onBack={showQuiz && quizModeSelected ? handleChangeQuiz : undefined}
@@ -309,6 +311,15 @@ function AppContent() {
             theme={theme}
             accidental={accidental}
             onClearRecords={clearRecords}
+          />
+        ) : showFinder ? (
+          <FinderPane
+            theme={theme}
+            accidental={accidental}
+            baseLabelMode={baseLabelMode}
+            fretRange={fretRange}
+            rootNote={rootNote}
+            leftHanded={leftHanded}
           />
         ) : showQuiz && !quizModeSelected ? (
           <View style={{ flex: 1 }}>
@@ -403,20 +414,30 @@ function AppContent() {
         isDark={isDark}
         showQuiz={showQuiz}
         showStats={showStats}
+        showFinder={showFinder}
         insetBottom={insets.bottom}
         onPressHome={() => {
+          setShowStats(false);
+          setShowFinder(false);
+          setShowQuiz(false);
+          handleShowQuizChange(false);
+        }}
+        onPressFinder={() => {
+          setShowFinder(true);
           setShowStats(false);
           setShowQuiz(false);
           handleShowQuizChange(false);
         }}
         onPressQuiz={() => {
           if (showQuiz) return;
+          setShowFinder(false);
           setShowStats(false);
           setShowQuiz(true);
           setQuizModeSelected(false);
         }}
         onPressStats={() => {
           setShowStats(true);
+          setShowFinder(false);
           setShowQuiz(false);
           handleShowQuizChange(false);
         }}

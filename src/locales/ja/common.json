@@ -199,6 +199,16 @@
       "Augmented": "長3度を2つ重ねた緊張感のあるトライアド。\n構成: R, M3, #5"
     }
   },
+  "finder": {
+    "longPressInstruction": "指板を長押ししてルート音を選択",
+    "tapInstruction": "指板をタップして音を選択",
+    "emptyHint": "音を選ぶと候補が表示されます",
+    "reset": "リセット",
+    "exactMatch": "完全一致",
+    "partialMatch": "部分一致",
+    "none": "なし",
+    "noteCount": "{{count}}音"
+  },
   "stats": {
     "title": "苦手傾向",
     "totalRecords": "合計 {{count}} 問解答済み",

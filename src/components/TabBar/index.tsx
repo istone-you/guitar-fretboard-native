@@ -1,12 +1,14 @@
 import { View, TouchableOpacity, Image, StyleSheet } from "react-native";
-import Svg, { Path, Text as SvgText } from "react-native-svg";
+import Svg, { Path, Text as SvgText, Circle, Line } from "react-native-svg";
 
 interface TabBarProps {
   isDark: boolean;
   showQuiz: boolean;
   showStats: boolean;
+  showFinder: boolean;
   insetBottom: number;
   onPressHome: () => void;
+  onPressFinder: () => void;
   onPressQuiz: () => void;
   onPressStats: () => void;
 }
@@ -15,14 +17,17 @@ export default function TabBar({
   isDark,
   showQuiz,
   showStats,
+  showFinder,
   insetBottom,
   onPressHome,
+  onPressFinder,
   onPressQuiz,
   onPressStats,
 }: TabBarProps) {
   const activeColor = isDark ? "#e5e7eb" : "#1c1917";
   const inactiveColor = isDark ? "#6b7280" : "#a8a29e";
-  const homeColor = !showQuiz && !showStats ? activeColor : inactiveColor;
+  const homeColor = !showQuiz && !showStats && !showFinder ? activeColor : inactiveColor;
+  const finderColor = showFinder ? activeColor : inactiveColor;
   const quizColor = showQuiz ? activeColor : inactiveColor;
   const statsColor = showStats ? activeColor : inactiveColor;
 
@@ -37,6 +42,7 @@ export default function TabBar({
         },
       ]}
     >
+      {/* Home */}
       <TouchableOpacity
         testID="tab-home"
         style={styles.tabItem}
@@ -54,6 +60,39 @@ export default function TabBar({
         />
       </TouchableOpacity>
 
+      {/* Finder */}
+      <TouchableOpacity
+        testID="tab-finder"
+        style={styles.tabItem}
+        onPress={onPressFinder}
+        activeOpacity={0.7}
+      >
+        <Svg width={28} height={28} viewBox="0 0 24 24" fill="none">
+          {/* Music note */}
+          <Path
+            d="M9 18V5l12-2v13"
+            stroke={finderColor}
+            strokeWidth={1.5}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <Circle cx="6" cy="18" r="3" stroke={finderColor} strokeWidth={1.5} />
+          <Circle cx="18" cy="16" r="3" stroke={finderColor} strokeWidth={1.5} />
+          {/* Magnifying glass overlay */}
+          <Circle cx="20" cy="20" r="2.2" stroke={finderColor} strokeWidth={1.3} />
+          <Line
+            x1="21.5"
+            y1="21.5"
+            x2="23"
+            y2="23"
+            stroke={finderColor}
+            strokeWidth={1.3}
+            strokeLinecap="round"
+          />
+        </Svg>
+      </TouchableOpacity>
+
+      {/* Quiz */}
       <TouchableOpacity
         testID="tab-quiz"
         style={styles.tabItem}
@@ -80,6 +119,7 @@ export default function TabBar({
         </Svg>
       </TouchableOpacity>
 
+      {/* Stats */}
       <TouchableOpacity
         testID="tab-stats"
         style={styles.tabItem}
