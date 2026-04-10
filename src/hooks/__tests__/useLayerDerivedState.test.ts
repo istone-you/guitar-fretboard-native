@@ -68,9 +68,10 @@ describe("useLayerDerivedState – overlaySemitones", () => {
     expect(result.current.overlaySemitones).toEqual(new Set([0, 2, 4, 5, 7, 9, 11]));
   });
 
-  it("returns power chord semitones for chord power mode", () => {
+  it("returns 5 chord semitones for form mode with chordType 5", () => {
     const layer = createDefaultLayer("chord", "l1", "#ff0000");
-    layer.chordDisplayMode = "power";
+    layer.chordDisplayMode = "form";
+    layer.chordType = "5";
     const { result } = setup({ layers: [layer], rootNote: "C" });
     expect(result.current.overlaySemitones).toEqual(new Set([0, 7]));
   });
@@ -127,16 +128,18 @@ describe("useLayerDerivedState – overlaySemitones", () => {
 describe("useLayerDerivedState – overlayNotes", () => {
   it("maps semitones to note names with sharp accidental", () => {
     const layer = createDefaultLayer("chord", "l1", "#ff0000");
-    layer.chordDisplayMode = "power";
-    // power = {0, 7} → rootNote C → C (index 0), G (index 7)
+    layer.chordDisplayMode = "form";
+    layer.chordType = "5";
+    // 5 = {0, 7} → rootNote C → C (index 0), G (index 7)
     const { result } = setup({ layers: [layer], rootNote: "C", accidental: "sharp" });
     expect(result.current.overlayNotes).toEqual(["C", "G"]);
   });
 
   it("maps semitones to note names with flat accidental and non-C root", () => {
     const layer = createDefaultLayer("chord", "l1", "#ff0000");
-    layer.chordDisplayMode = "power";
-    // power = {0, 7} → rootNote E♭ → E♭ (root+0), B♭ (root+7)
+    layer.chordDisplayMode = "form";
+    layer.chordType = "5";
+    // 5 = {0, 7} → rootNote E♭ → E♭ (root+0), B♭ (root+7)
     const { result } = setup({ layers: [layer], rootNote: "E♭", accidental: "flat" });
     expect(result.current.overlayNotes).toEqual(["E♭", "B♭"]);
   });

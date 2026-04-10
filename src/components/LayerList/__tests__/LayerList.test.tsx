@@ -200,10 +200,10 @@ describe("LayerList", () => {
     expect(getByText("options.chordDisplayMode.form: Major")).toBeTruthy();
   });
 
-  it("getSummary for chord power layer", () => {
-    const layers = [makeLayer("chord", "l1", { chordDisplayMode: "power" })];
+  it("getSummary for chord form layer with 5 type", () => {
+    const layers = [makeLayer("chord", "l1", { chordDisplayMode: "form", chordType: "5" })];
     const { getByText } = renderList({ layers });
-    expect(getByText("options.chordDisplayMode.power")).toBeTruthy();
+    expect(getByText("options.chordDisplayMode.form: 5")).toBeTruthy();
   });
 
   it("getSummary for caged layer type", () => {

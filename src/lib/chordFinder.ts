@@ -21,7 +21,8 @@ export interface ChordMatch {
 
 export interface ChordFinderResult {
   exact: ChordMatch[];
-  partial: ChordMatch[];
+  containing: ChordMatch[];
+  contained: ChordMatch[];
 }
 
 export function identifyChords(
@@ -29,7 +30,7 @@ export function identifyChords(
   accidental: Accidental,
   rootNote: string,
 ): ChordFinderResult {
-  if (selectedNoteNames.size === 0) return { exact: [], partial: [] };
+  if (selectedNoteNames.size === 0) return { exact: [], containing: [], contained: [] };
 
   const notes = accidental === "sharp" ? NOTES_SHARP : NOTES_FLAT;
   const rootIndex = getRootIndex(rootNote);
@@ -42,11 +43,12 @@ export function identifyChords(
     if (idx >= 0) selectedIndices.add(idx);
   }
 
-  if (selectedIndices.size === 0) return { exact: [], partial: [] };
+  if (selectedIndices.size === 0) return { exact: [], containing: [], contained: [] };
 
   const selectedArr = [...selectedIndices];
   const exact: ChordMatch[] = [];
-  const partial: ChordMatch[] = [];
+  const containing: ChordMatch[] = []; // chord ⊃ selected (含む)
+  const contained: ChordMatch[] = []; // chord ⊂ selected (含まれる)
 
   for (const [chordType, semitones] of Object.entries(CHORD_SEMITONES)) {
     if (SKIP_CHORD_TYPES.has(chordType)) continue;
@@ -58,42 +60,48 @@ export function identifyChords(
     const chordNotes = chordIndicesOrdered.map((i) => notes[i]);
     const chordDegrees = semitoneArr.map((s) => SEMITONE_TO_DEGREE[s]);
 
+    const match = {
+      chordName: `${rootName} ${chordType}`,
+      root: rootName,
+      chordType,
+      noteCount: chordIndicesOrdered.length,
+      chordNotes,
+      chordDegrees,
+    };
+
     // Exact match: selected === chord
     if (
       selectedArr.length === chordIndicesOrdered.length &&
       selectedArr.every((i) => chordIndices.has(i))
     ) {
-      exact.push({
-        chordName: `${rootName} ${chordType}`,
-        root: rootName,
-        chordType,
-        noteCount: chordIndicesOrdered.length,
-        chordNotes,
-        chordDegrees,
-      });
+      exact.push(match);
       continue;
     }
 
-    // Partial match: selected ⊂ chord
+    // Containing (含む): selected ⊂ chord
     if (
       selectedArr.length < chordIndicesOrdered.length &&
       selectedArr.every((i) => chordIndices.has(i))
     ) {
-      partial.push({
-        chordName: `${rootName} ${chordType}`,
-        root: rootName,
-        chordType,
-        noteCount: chordIndicesOrdered.length,
-        chordNotes,
-        chordDegrees,
-      });
+      containing.push(match);
+      continue;
+    }
+
+    // Contained (含まれる): chord ⊂ selected
+    if (
+      chordIndicesOrdered.length < selectedArr.length &&
+      chordIndicesOrdered.every((i) => selectedIndices.has(i))
+    ) {
+      contained.push(match);
     }
   }
 
   // Exact: note count descending (richer chords first)
-  // Partial: note count ascending (closest to completion first)
+  // Containing: note count ascending (closest to completion first)
+  // Contained: note count descending (richest sub-chord first)
   exact.sort((a, b) => b.noteCount - a.noteCount);
-  partial.sort((a, b) => a.noteCount - b.noteCount);
+  containing.sort((a, b) => a.noteCount - b.noteCount);
+  contained.sort((a, b) => b.noteCount - a.noteCount);
 
-  return { exact, partial };
+  return { exact, containing, contained };
 }

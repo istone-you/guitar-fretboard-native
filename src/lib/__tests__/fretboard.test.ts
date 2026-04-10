@@ -13,7 +13,6 @@ import {
   DEGREE_COLORS,
   CHORD_FORMS_6TH,
   CHORD_FORMS_5TH,
-  POWER_CHORD_FORMS,
   TRIAD_STRING_SET_OPTIONS,
   TRIAD_INVERSION_OPTIONS,
   TRIAD_LAYOUT_OPTIONS,
@@ -382,20 +381,18 @@ describe("CHORD_FORMS_5TH", () => {
   });
 });
 
-describe("POWER_CHORD_FORMS", () => {
-  it("has forms for 6th string root (0) and 5th string root (1)", () => {
-    expect(POWER_CHORD_FORMS[0]).toBeDefined();
-    expect(POWER_CHORD_FORMS[1]).toBeDefined();
+describe("CHORD_FORMS_6TH / CHORD_FORMS_5TH — 5 chord", () => {
+  it("6th string form has 2 positions (root + fifth)", () => {
+    expect(CHORD_FORMS_6TH["5"]).toHaveLength(2);
   });
 
-  it("each form has 2 positions (root + fifth)", () => {
-    expect(POWER_CHORD_FORMS[0]).toHaveLength(2);
-    expect(POWER_CHORD_FORMS[1]).toHaveLength(2);
+  it("5th string form has 2 positions (root + fifth)", () => {
+    expect(CHORD_FORMS_5TH["5"]).toHaveLength(2);
   });
 
   it("6th string form: root on string 0, fifth on string 1 offset +2", () => {
-    expect(POWER_CHORD_FORMS[0][0]).toEqual({ string: 0, fretOffset: 0 });
-    expect(POWER_CHORD_FORMS[0][1]).toEqual({ string: 1, fretOffset: 2 });
+    expect(CHORD_FORMS_6TH["5"]![0]).toEqual({ string: 0, fretOffset: 0 });
+    expect(CHORD_FORMS_6TH["5"]![1]).toEqual({ string: 1, fretOffset: 2 });
   });
 });
 
@@ -915,8 +912,8 @@ describe("CHORD_SEMITONES", () => {
     expect(CHORD_SEMITONES.dim7).toEqual(new Set([0, 3, 6, 9]));
   });
 
-  it("power chord has root and P5 only", () => {
-    expect(CHORD_SEMITONES.power).toEqual(new Set([0, 7]));
+  it("5 chord has root and P5 only", () => {
+    expect(CHORD_SEMITONES["5"]).toEqual(new Set([0, 7]));
   });
 
   it("sus2 has root, M2, P5", () => {
@@ -991,11 +988,12 @@ describe("getActiveOverlaySemitones", () => {
     expect(result).toEqual(new Set([0, 3, 7]));
   });
 
-  it("returns power chord semitones when power mode", () => {
+  it("returns 5 chord semitones when form mode with chordType 5", () => {
     const result = getActiveOverlaySemitones({
       ...baseParams,
       showChord: true,
-      chordDisplayMode: "power",
+      chordDisplayMode: "form",
+      chordType: "5",
     });
     expect(result).toEqual(new Set([0, 7]));
   });

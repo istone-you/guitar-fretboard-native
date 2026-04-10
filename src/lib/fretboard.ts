@@ -171,6 +171,7 @@ export const DEGREE_LABEL_ORDER = [
 export const CHORD_TYPES_CORE: ChordType[] = [
   "Major",
   "Minor",
+  "5",
   "dim",
   "aug",
   "7th",
@@ -478,10 +479,18 @@ export const CHORD_FORMS_6TH: Partial<Record<ChordType, FretPosition[]>> = {
     { string: 4, fretOffset: 2 }, // M6
     { string: 5, fretOffset: 2 }, // M9
   ],
+  "5": [
+    { string: 0, fretOffset: 0 }, // 6弦ルート
+    { string: 1, fretOffset: 2 }, // 5弦P5
+  ],
 };
 
 // 5弦ルートのバレーコードフォーム
 export const CHORD_FORMS_5TH: Partial<Record<ChordType, FretPosition[]>> = {
+  "5": [
+    { string: 1, fretOffset: 0 }, // 5弦ルート
+    { string: 2, fretOffset: 2 }, // 4弦P5
+  ],
   Major: [
     { string: 1, fretOffset: 0 }, // 5弦ルート
     { string: 2, fretOffset: 2 },
@@ -700,17 +709,6 @@ export const CHORD_FORMS_5TH: Partial<Record<ChordType, FretPosition[]>> = {
     { string: 3, fretOffset: -1 }, // M6
     { string: 4, fretOffset: 0 }, // M9
     { string: 5, fretOffset: 0 }, // P5
-  ],
-};
-
-export const POWER_CHORD_FORMS: Record<number, FretPosition[]> = {
-  0: [
-    { string: 0, fretOffset: 0 },
-    { string: 1, fretOffset: 2 },
-  ],
-  1: [
-    { string: 1, fretOffset: 0 },
-    { string: 2, fretOffset: 2 },
   ],
 };
 
@@ -1648,7 +1646,7 @@ export const CHORD_SEMITONES: Record<string, Set<number>> = {
   m6: new Set([0, 3, 7, 9]),
   dim: new Set([0, 3, 6]),
   aug: new Set([0, 4, 8]),
-  power: new Set([0, 7]),
+  "5": new Set([0, 7]),
   // --- Tension chords ---
   "9": new Set([0, 4, 7, 10, 2]), // R, M3, P5, m7, M9
   b9: new Set([0, 4, 7, 10, 1]), // R, M3, P5, m7, b9
@@ -1707,9 +1705,7 @@ export function getActiveOverlaySemitones({
 
   if (showChord) {
     let semitones: Set<number> | undefined;
-    if (chordDisplayMode === "power") {
-      semitones = CHORD_SEMITONES.power;
-    } else if (chordDisplayMode === "diatonic") {
+    if (chordDisplayMode === "diatonic") {
       semitones = getDiatonicChordSemitones(keyRootIndex, diatonicScaleType, diatonicDegree);
     } else {
       semitones = CHORD_SEMITONES[chordType];
@@ -2365,10 +2361,7 @@ export function getChordLayerCells(
 
   const cells: FretCell[] = [];
   for (const rootStringIdx of [0, 1]) {
-    const fullForm =
-      effectiveDisplayMode === "power"
-        ? POWER_CHORD_FORMS[rootStringIdx]
-        : (rootStringIdx === 0 ? CHORD_FORMS_6TH : CHORD_FORMS_5TH)[effectiveChordType];
+    const fullForm = (rootStringIdx === 0 ? CHORD_FORMS_6TH : CHORD_FORMS_5TH)[effectiveChordType];
     if (!fullForm) continue;
     let rootFret = -1;
     for (let f = 0; f < FRET_COUNT; f++) {

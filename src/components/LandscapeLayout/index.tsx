@@ -68,9 +68,7 @@ export default function LandscapeLayout({
                   label = `CAGED${ct}: ${[...l.cagedForms].join(", ") || "-"}`;
                 } else {
                   const mode = t(`options.chordDisplayMode.${l.chordDisplayMode}`);
-                  if (l.chordDisplayMode === "power") {
-                    label = mode;
-                  } else if (l.chordDisplayMode === "diatonic") {
+                  if (l.chordDisplayMode === "diatonic") {
                     label = `${mode}(${l.diatonicDegree} ${t(`options.diatonicKey.${l.diatonicKeyType === "natural-minor" ? "naturalMinor" : "major"}`)} ${t(`options.diatonicChordSize.${l.diatonicChordSize}`)})`;
                   } else if (l.chordDisplayMode === "triad") {
                     label = `${mode}(${l.chordType} ${t(`options.triadInversions.${l.triadInversion}`)})`;

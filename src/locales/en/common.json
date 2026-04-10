@@ -84,7 +84,6 @@
   "options": {
     "chordDisplayMode": {
       "form": "Chord Forms",
-      "power": "Power Chords",
       "triad": "Triads",
       "diatonic": "Diatonic",
       "caged": "CAGED",
@@ -141,7 +140,6 @@
       "scale": "Highlights scale tones on the fretboard. When you change the root note, the same scale shape shifts accordingly.",
       "chord": {
         "form": "Displays barre chord and open chord forms with 6th-string and 5th-string roots on the fretboard.",
-        "power": "Displays power chords using only the root and 5th. A simple, powerful sound used heavily in rock and punk.",
         "triad": "Displays triads on 3-string sets with inversions. Great for learning chord tones and arpeggio practice.",
         "diatonic": "Displays diatonic chords based on a key. See what role each chord degree plays within the key.",
         "onChord": "Displays slash chord (on-chord) voicings. Changing the bass note creates different textures and smooth voice leading."
@@ -196,7 +194,8 @@
       "13": "Dominant 7th with 9th and 13th. A lush, colorful chord.\nFormula: R, M3, P5, m7, M9, M13",
       "b13": "Dominant 7th with ♭13. A darker tension chord.\nFormula: R, M3, P5, m7, ♭13",
       "Diminished": "A triad built from two stacked minor 3rds. Unstable.\nFormula: R, m3, ♭5",
-      "Augmented": "A triad built from two stacked major 3rds. Tense.\nFormula: R, M3, #5"
+      "Augmented": "A triad built from two stacked major 3rds. Tense.\nFormula: R, M3, #5",
+      "5": "A two-note chord using only the root and 5th. Also known as a power chord, it's widely used in rock and punk for its simple, powerful sound.\nFormula: R, P5"
     }
   },
   "finder": {
@@ -205,9 +204,11 @@
     "emptyHint": "Select notes to see matching results",
     "reset": "Reset",
     "exactMatch": "Exact Match",
-    "partialMatch": "Partial Match",
+    "containingMatch": "Contains Selection",
+    "containedMatch": "Within Selection",
     "none": "None",
-    "noteCount": "{{count}} notes"
+    "noteCount": "{{count}} notes",
+    "settings": "Display Settings"
   },
   "stats": {
     "title": "Weak Points",

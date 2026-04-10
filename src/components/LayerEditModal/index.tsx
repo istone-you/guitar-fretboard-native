@@ -322,7 +322,6 @@ export default function LayerEditModal({
   ];
   const chordDisplayOptions: { value: ChordDisplayMode; label: string }[] = [
     { value: "form", label: t("options.chordDisplayMode.form") },
-    { value: "power", label: t("options.chordDisplayMode.power") },
     { value: "triad", label: t("options.chordDisplayMode.triad") },
     { value: "diatonic", label: t("options.chordDisplayMode.diatonic") },
     { value: "on-chord", label: t("options.chordDisplayMode.on-chord") },
@@ -608,41 +607,40 @@ export default function LayerEditModal({
                         textStyle={plainSmallText}
                       />
                     </View>
-                    {layer.chordDisplayMode !== "power" &&
-                      layer.chordDisplayMode !== "on-chord" && (
-                        <View style={styles.settingRowInline}>
-                          <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-                            {layer.chordDisplayMode === "diatonic"
-                              ? t("controls.degree")
-                              : t("controls.chord")}
-                          </Text>
-                          <DropdownSelect
-                            theme={theme}
-                            value={
-                              layer.chordDisplayMode === "diatonic"
-                                ? layer.diatonicDegree
-                                : layer.chordType
-                            }
-                            onChange={(v) =>
-                              layer.chordDisplayMode === "diatonic"
-                                ? update({ diatonicDegree: v })
-                                : update({ chordType: v as ChordType })
-                            }
-                            options={
-                              layer.chordDisplayMode === "form"
-                                ? CHORD_TYPES.map((v) => ({ value: v, label: v }))
-                                : layer.chordDisplayMode === "triad"
-                                  ? ["Major", "Minor", "Diminished", "Augmented"].map((v) => ({
-                                      value: v,
-                                      label: v,
-                                    }))
-                                  : diatonicCodeOptions
-                            }
-                            variant="plain"
-                            textStyle={plainSmallText}
-                          />
-                        </View>
-                      )}
+                    {layer.chordDisplayMode !== "on-chord" && (
+                      <View style={styles.settingRowInline}>
+                        <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c" }]}>
+                          {layer.chordDisplayMode === "diatonic"
+                            ? t("controls.degree")
+                            : t("controls.chord")}
+                        </Text>
+                        <DropdownSelect
+                          theme={theme}
+                          value={
+                            layer.chordDisplayMode === "diatonic"
+                              ? layer.diatonicDegree
+                              : layer.chordType
+                          }
+                          onChange={(v) =>
+                            layer.chordDisplayMode === "diatonic"
+                              ? update({ diatonicDegree: v })
+                              : update({ chordType: v as ChordType })
+                          }
+                          options={
+                            layer.chordDisplayMode === "form"
+                              ? CHORD_TYPES.map((v) => ({ value: v, label: v }))
+                              : layer.chordDisplayMode === "triad"
+                                ? ["Major", "Minor", "Diminished", "Augmented"].map((v) => ({
+                                    value: v,
+                                    label: v,
+                                  }))
+                                : diatonicCodeOptions
+                          }
+                          variant="plain"
+                          textStyle={plainSmallText}
+                        />
+                      </View>
+                    )}
                     {layer.chordDisplayMode === "on-chord" && (
                       <View style={styles.settingRowInline}>
                         <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c" }]}>

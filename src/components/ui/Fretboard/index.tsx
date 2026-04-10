@@ -9,7 +9,6 @@ import {
   calcDegree,
   CHORD_FORMS_6TH,
   CHORD_FORMS_5TH,
-  POWER_CHORD_FORMS,
   TRIAD_STRING_SET_OPTIONS,
   buildTriadVoicing,
   getDiatonicChord,
@@ -526,10 +525,7 @@ export default function Fretboard({
         layer.chordDisplayMode === "diatonic" ? "form" : layer.chordDisplayMode;
 
       const movable: ChordGroup[] = [0, 1].flatMap((rsi) => {
-        const fullForm =
-          effDisplayMode === "power"
-            ? POWER_CHORD_FORMS[rsi]
-            : (rsi === 0 ? CHORD_FORMS_6TH : CHORD_FORMS_5TH)[effChordType];
+        const fullForm = (rsi === 0 ? CHORD_FORMS_6TH : CHORD_FORMS_5TH)[effChordType];
         if (!fullForm) return [];
         let rootFret = -1;
         for (let f = 0; f < FRET_COUNT; f++) {

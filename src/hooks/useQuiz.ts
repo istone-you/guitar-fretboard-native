@@ -50,6 +50,7 @@ export const CHORD_QUIZ_TYPES_ALL: ChordType[] = [
 const CHORD_SUFFIX_MAP: Record<ChordType, string> = {
   Major: "",
   Minor: "m",
+  "5": "5",
   "7th": "7",
   maj7: "maj7",
   m7: "m7",

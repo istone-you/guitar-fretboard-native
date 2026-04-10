@@ -59,9 +59,7 @@ export function useLayerDerivedState({
       if (layer.type !== "chord") continue;
 
       let semitones: Set<number> | undefined;
-      if (layer.chordDisplayMode === "power") {
-        semitones = CHORD_SEMITONES.power;
-      } else if (layer.chordDisplayMode === "diatonic") {
+      if (layer.chordDisplayMode === "diatonic") {
         semitones = getDiatonicChordSemitones(
           keyRootIndex,
           `${layer.diatonicKeyType}-${layer.diatonicChordSize}`,
@@ -104,9 +102,7 @@ export function useLayerDerivedState({
         semitones = [...(cagedSemitones ?? [])];
       } else if (l.type === "chord") {
         let s: Set<number> | undefined;
-        if (l.chordDisplayMode === "power") {
-          s = CHORD_SEMITONES.power;
-        } else if (l.chordDisplayMode === "diatonic") {
+        if (l.chordDisplayMode === "diatonic") {
           s = getDiatonicChordSemitones(
             rootIndex,
             `${l.diatonicKeyType}-${l.diatonicChordSize}`,

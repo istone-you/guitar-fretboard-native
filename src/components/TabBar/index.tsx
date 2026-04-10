@@ -68,25 +68,14 @@ export default function TabBar({
         activeOpacity={0.7}
       >
         <Svg width={28} height={28} viewBox="0 0 24 24" fill="none">
-          {/* Music note */}
-          <Path
-            d="M9 18V5l12-2v13"
+          <Circle cx="11" cy="11" r="7" stroke={finderColor} strokeWidth={1.5} />
+          <Line
+            x1="16.5"
+            y1="16.5"
+            x2="22"
+            y2="22"
             stroke={finderColor}
             strokeWidth={1.5}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          <Circle cx="6" cy="18" r="3" stroke={finderColor} strokeWidth={1.5} />
-          <Circle cx="18" cy="16" r="3" stroke={finderColor} strokeWidth={1.5} />
-          {/* Magnifying glass overlay */}
-          <Circle cx="20" cy="20" r="2.2" stroke={finderColor} strokeWidth={1.3} />
-          <Line
-            x1="21.5"
-            y1="21.5"
-            x2="23"
-            y2="23"
-            stroke={finderColor}
-            strokeWidth={1.3}
             strokeLinecap="round"
           />
         </Svg>

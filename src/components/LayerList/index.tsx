@@ -223,7 +223,6 @@ export default function LayerList({
       return `${chordLabel}: ${[...layer.cagedForms].join(", ") || "-"}`;
     }
     const mode = t(`options.chordDisplayMode.${layer.chordDisplayMode}`);
-    if (layer.chordDisplayMode === "power") return mode;
     if (layer.chordDisplayMode === "diatonic") {
       const key = t(
         `options.diatonicKey.${layer.diatonicKeyType === "natural-minor" ? "naturalMinor" : "major"}`,

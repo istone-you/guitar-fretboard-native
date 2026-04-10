@@ -487,22 +487,6 @@ describe("LayerEditModal", () => {
     expect(getByText("controls.chord")).toBeTruthy();
   });
 
-  // ── Chord power display mode ──────────────────────────────────────
-  it("chord layer with power display mode shows no chord type dropdown", () => {
-    const existing = {
-      ...createDefaultLayer("chord", "l2", "#ffd700"),
-      chordDisplayMode: "power" as const,
-    };
-    const { queryByText } = renderModal({ initialLayer: existing });
-    act(() => {
-      jest.runAllTimers();
-    });
-    // power mode should not show chord/degree/key/inversion dropdowns
-    expect(queryByText("controls.chord")).toBeNull();
-    expect(queryByText("controls.degree")).toBeNull();
-    expect(queryByText("controls.inversion")).toBeNull();
-  });
-
   // ── CAGED toggle button press ─────────────────────────────────────
   it("pressing a CAGED button toggles that form off", () => {
     const onPreview = jest.fn();

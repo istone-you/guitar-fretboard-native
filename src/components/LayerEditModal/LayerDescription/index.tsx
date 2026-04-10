@@ -37,7 +37,7 @@ export default function LayerDescription({ theme, layer }: LayerDescriptionProps
     itemDesc = t(`description.scale.${scaleI18nKey(layer.scaleType)}`);
   } else if (layer.type === "chord") {
     const mode = layer.chordDisplayMode;
-    if (mode === "form" || mode === "power" || mode === "triad" || mode === "diatonic") {
+    if (mode === "form" || mode === "triad" || mode === "diatonic") {
       layerDesc = t(`description.layer.chord.${mode}`);
     } else {
       layerDesc = t("description.layer.chord.onChord");
@@ -52,7 +52,6 @@ export default function LayerDescription({ theme, layer }: LayerDescriptionProps
     } else if (mode === "on-chord") {
       // No per-voicing descriptions
     }
-    // power has no dynamic part
   } else if (layer.type === "caged") {
     layerDesc = t("description.layer.caged");
   } else {

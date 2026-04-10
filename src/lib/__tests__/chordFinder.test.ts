@@ -4,7 +4,8 @@ describe("identifyChords", () => {
   it("returns empty result for empty set", () => {
     const result = identifyChords(new Set(), "sharp", "C");
     expect(result.exact).toHaveLength(0);
-    expect(result.partial).toHaveLength(0);
+    expect(result.containing).toHaveLength(0);
+    expect(result.contained).toHaveLength(0);
   });
 
   it("exact match: C major triad (C, E, G)", () => {
@@ -19,10 +20,10 @@ describe("identifyChords", () => {
     expect(exactNames).toContain("C Minor");
   });
 
-  it("partial match: C and E are subset of Major, min7, etc.", () => {
+  it("containing match: C and E are subset of Major, maj7, etc.", () => {
     const result = identifyChords(new Set(["C", "E"]), "sharp", "C");
-    const partialNames = result.partial.map((m) => m.chordName);
-    expect(partialNames).toContain("C Major");
+    const containingNames = result.containing.map((m) => m.chordName);
+    expect(containingNames).toContain("C Major");
   });
 
   it("no exact match when selected notes don't form a chord", () => {
@@ -39,11 +40,13 @@ describe("identifyChords", () => {
     }
   });
 
-  it("partial matches are sorted by noteCount ascending (closest to completion first)", () => {
+  it("containing matches are sorted by noteCount ascending (closest to completion first)", () => {
     const result = identifyChords(new Set(["C", "E"]), "sharp", "C");
-    expect(result.partial.length).toBeGreaterThan(0);
-    for (let i = 1; i < result.partial.length; i++) {
-      expect(result.partial[i - 1].noteCount).toBeLessThanOrEqual(result.partial[i].noteCount);
+    expect(result.containing.length).toBeGreaterThan(0);
+    for (let i = 1; i < result.containing.length; i++) {
+      expect(result.containing[i - 1].noteCount).toBeLessThanOrEqual(
+        result.containing[i].noteCount,
+      );
     }
   });
 
@@ -70,11 +73,30 @@ describe("identifyChords", () => {
 
   it("skips duplicate chord types (dim, aug, b9, #9)", () => {
     const result = identifyChords(new Set(["C", "E", "G"]), "sharp", "C");
-    const allNames = [...result.exact, ...result.partial].map((m) => m.chordType);
+    const allNames = [...result.exact, ...result.containing, ...result.contained].map(
+      (m) => m.chordType,
+    );
     expect(allNames).not.toContain("dim");
     expect(allNames).not.toContain("aug");
     expect(allNames).not.toContain("b9");
     expect(allNames).not.toContain("#9");
+  });
+
+  it("contained match: C5 (C, G) is contained within C major triad (C, E, G)", () => {
+    const result = identifyChords(new Set(["C", "E", "G"]), "sharp", "C");
+    const containedNames = result.contained.map((m) => m.chordName);
+    // C power chord (C, G) is a subset of {C, E, G}
+    expect(containedNames).toContain("C 5");
+  });
+
+  it("contained matches are sorted by noteCount descending (richest sub-chord first)", () => {
+    const result = identifyChords(new Set(["C", "E", "G", "B"]), "sharp", "C");
+    expect(result.contained.length).toBeGreaterThan(0);
+    for (let i = 1; i < result.contained.length; i++) {
+      expect(result.contained[i - 1].noteCount).toBeGreaterThanOrEqual(
+        result.contained[i].noteCount,
+      );
+    }
   });
 
   it("works with non-C root (G major: G, B, D)", () => {

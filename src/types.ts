@@ -1,7 +1,7 @@
 export type Theme = "dark" | "light";
 export type Accidental = "sharp" | "flat";
 export type BaseLabelMode = "note" | "degree";
-export type ChordDisplayMode = "form" | "power" | "triad" | "diatonic" | "on-chord";
+export type ChordDisplayMode = "form" | "triad" | "diatonic" | "on-chord";
 export type ScaleType =
   | "major"
   | "natural-minor"
@@ -25,6 +25,7 @@ export type ScaleType =
 export type ChordType =
   | "Major"
   | "Minor"
+  | "5"
   | "7th"
   | "maj7"
   | "m7"

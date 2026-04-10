@@ -321,9 +321,10 @@ describe("Fretboard - Chord overlay via layers", () => {
     expect(json).toContain("#ffd70099");
   });
 
-  it("renders power chord via layer", () => {
+  it("renders 5 chord via layer", () => {
     const layer = createDefaultLayer("chord", "c1", "#ffd700");
-    layer.chordDisplayMode = "power";
+    layer.chordDisplayMode = "form";
+    layer.chordType = "5";
     const { toJSON } = render(
       <Fretboard
         {...makeProps({

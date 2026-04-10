@@ -1,10 +1,22 @@
 import { useState, useMemo, useRef } from "react";
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Animated } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  Animated,
+  Modal,
+  Switch,
+  Pressable,
+} from "react-native";
 import { useTranslation } from "react-i18next";
+import Svg, { Circle, Path } from "react-native-svg";
 import NormalFretboard from "../../components/NormalFretboard";
 import { identifyChords, type ChordMatch } from "../../lib/chordFinder";
 import { createDefaultLayer } from "../../types";
 import type { Accidental, BaseLabelMode, Theme } from "../../types";
+import { usePersistedSetting } from "../../hooks/usePersistedSetting";
 
 export interface FinderPaneProps {
   theme: Theme;
@@ -24,13 +36,32 @@ export default function FinderPane({
   leftHanded,
 }: FinderPaneProps) {
   const { t } = useTranslation();
+  // Settings
+  const [showContaining, setShowContaining] = usePersistedSetting(
+    "guiter:finder-show-containing",
+    true,
+    (v) => String(v),
+    (v) => v === "true",
+  );
+  const [showContained, setShowContained] = usePersistedSetting(
+    "guiter:finder-show-contained",
+    true,
+    (v) => String(v),
+    (v) => v === "true",
+  );
+  const [settingsVisible, setSettingsVisible] = useState(false);
   // Local root note — null until user long-presses to select
   const [rootNote, setRootNote] = useState<string | null>(null);
   // Tracks only user-added notes (root is always included separately)
   const [extraNotes, setExtraNotes] = useState<Set<string>>(new Set());
-  // Increments on each note change to remount NormalFretboard, eliminating
+  // Increments on each note tap to remount NormalFretboard, eliminating
   // concurrent bridge-style updates that conflict with native-driver animations
   const [fretboardKey, setFretboardKey] = useState(0);
+  // Tracks the last non-null rootNote so that on reset, the rootIndex passed to
+  // NormalFretboard stays stable — preventing LayerOverlayDot from remounting
+  // (which would reset prevVisible and prevent the ScaleAnimView fade-out)
+  const lastRootNoteRef = useRef<string>(initialRootNote);
+  if (rootNote !== null) lastRootNoteRef.current = rootNote;
 
   const isDark = theme === "dark";
   const bgColor = isDark ? "#030712" : "#f3f4f6";
@@ -66,14 +97,15 @@ export default function FinderPane({
   const handleReset = () => {
     setRootNote(null);
     setExtraNotes(new Set());
-    setFretboardKey((k) => k + 1);
+    // No fretboardKey bump — lets overlay dots play their fade-out animation naturally
   };
 
   const handleRootSet = (noteName: string) => {
     if (noteName === rootNote) return;
     setRootNote(noteName);
     setExtraNotes(new Set());
-    setFretboardKey((k) => k + 1);
+    // No fretboardKey bump — lets NormalFretboard detect the baseLabelMode change
+    // ("note" → "degree") and play the existing labelScale animation in Fretboard
   };
 
   // Animate chord notes label when baseLabelMode changes (same as fretboard)
@@ -124,9 +156,9 @@ export default function FinderPane({
           key={fretboardKey}
           theme={theme}
           accidental={accidental}
-          baseLabelMode={baseLabelMode}
+          baseLabelMode={rootNote ? baseLabelMode : "note"}
           fretRange={fretRange}
-          rootNote={rootNote ?? initialRootNote}
+          rootNote={rootNote ?? lastRootNoteRef.current}
           layers={layers}
           leftHanded={leftHanded}
           disableAnimation={false}
@@ -135,7 +167,7 @@ export default function FinderPane({
         />
       </View>
 
-      {/* Selected notes chips + reset button */}
+      {/* Selected notes chips + reset button + settings */}
       <View style={[styles.selectedRow, { borderBottomColor: borderColor }]}>
         <ScrollView
           horizontal
@@ -178,13 +210,102 @@ export default function FinderPane({
         {rootNote && (
           <TouchableOpacity
             onPress={handleReset}
-            style={[styles.resetBtn, { borderColor: isDark ? "#374151" : "#d1d5db" }]}
+            style={[
+              styles.resetBtn,
+              {
+                borderColor: isDark ? "rgba(239,68,68,0.3)" : "rgba(239,68,68,0.25)",
+                backgroundColor: isDark ? "rgba(239,68,68,0.08)" : "rgba(254,226,226,0.7)",
+              },
+            ]}
             activeOpacity={0.7}
           >
-            <Text style={[styles.resetBtnText, { color: subTextColor }]}>{t("finder.reset")}</Text>
+            <Text style={[styles.resetBtnText, { color: isDark ? "#f87171" : "#ef4444" }]}>
+              {t("finder.reset")}
+            </Text>
           </TouchableOpacity>
         )}
+
+        {/* Settings button */}
+        <TouchableOpacity
+          onPress={() => setSettingsVisible(true)}
+          style={styles.settingsBtn}
+          activeOpacity={0.7}
+          testID="finder-settings-btn"
+        >
+          <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+            <Path
+              d="M4 6h16M4 12h16M4 18h16"
+              stroke={isDark ? "#6b7280" : "#a8a29e"}
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <Circle
+              cx={9}
+              cy={6}
+              r={2}
+              fill={isDark ? "#111827" : "#f9fafb"}
+              stroke={isDark ? "#6b7280" : "#a8a29e"}
+              strokeWidth={2}
+            />
+            <Circle
+              cx={15}
+              cy={12}
+              r={2}
+              fill={isDark ? "#111827" : "#f9fafb"}
+              stroke={isDark ? "#6b7280" : "#a8a29e"}
+              strokeWidth={2}
+            />
+            <Circle
+              cx={11}
+              cy={18}
+              r={2}
+              fill={isDark ? "#111827" : "#f9fafb"}
+              stroke={isDark ? "#6b7280" : "#a8a29e"}
+              strokeWidth={2}
+            />
+          </Svg>
+        </TouchableOpacity>
       </View>
+
+      {/* Settings modal */}
+      <Modal
+        visible={settingsVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSettingsVisible(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setSettingsVisible(false)}>
+          <Pressable
+            style={[styles.modalCard, { backgroundColor: cardBg, borderColor }]}
+            onPress={() => {}}
+          >
+            <Text style={[styles.modalTitle, { color: textColor }]}>{t("finder.settings")}</Text>
+            <View style={[styles.modalRow, { borderBottomColor: borderColor }]}>
+              <Text style={[styles.modalRowLabel, { color: textColor }]}>
+                {t("finder.containedMatch")}
+              </Text>
+              <Switch
+                value={showContained}
+                onValueChange={setShowContained}
+                trackColor={{ false: "#767577", true: "#ff8c00" }}
+                thumbColor="#ffffff"
+              />
+            </View>
+            <View style={styles.modalRow}>
+              <Text style={[styles.modalRowLabel, { color: textColor }]}>
+                {t("finder.containingMatch")}
+              </Text>
+              <Switch
+                value={showContaining}
+                onValueChange={setShowContaining}
+                trackColor={{ false: "#767577", true: "#ff8c00" }}
+                thumbColor="#ffffff"
+              />
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       {/* Results */}
       {result && (
@@ -193,39 +314,66 @@ export default function FinderPane({
           contentContainerStyle={styles.resultContent}
           showsVerticalScrollIndicator={false}
         >
-          <>
-            {/* 完全一致 */}
-            <View style={[styles.sectionHeader, { backgroundColor: sectionHeaderBg }]}>
-              <Text style={[styles.sectionTitle, { color: textColor }]}>
-                {t("finder.exactMatch")}
-              </Text>
-              <Text style={[styles.sectionBadge, { color: subTextColor }]}>
-                {result.exact.length}
-              </Text>
-            </View>
-            {result.exact.length === 0 ? (
-              <Text style={[styles.emptySection, { color: subTextColor }]}>{t("finder.none")}</Text>
-            ) : (
-              result.exact.map(renderMatchRow)
-            )}
+          {/* 完全一致 */}
+          <View style={[styles.sectionHeader, { backgroundColor: sectionHeaderBg }]}>
+            <Text style={[styles.sectionTitle, { color: textColor }]}>
+              {t("finder.exactMatch")}
+            </Text>
+            <Text style={[styles.sectionBadge, { color: subTextColor }]}>
+              {result.exact.length}
+            </Text>
+          </View>
+          {result.exact.length === 0 ? (
+            <Text style={[styles.emptySection, { color: subTextColor }]}>{t("finder.none")}</Text>
+          ) : (
+            result.exact.map(renderMatchRow)
+          )}
 
-            {/* 部分一致 */}
-            <View
-              style={[styles.sectionHeader, { backgroundColor: sectionHeaderBg, marginTop: 12 }]}
-            >
-              <Text style={[styles.sectionTitle, { color: textColor }]}>
-                {t("finder.partialMatch")}
-              </Text>
-              <Text style={[styles.sectionBadge, { color: subTextColor }]}>
-                {result.partial.length}
-              </Text>
-            </View>
-            {result.partial.length === 0 ? (
-              <Text style={[styles.emptySection, { color: subTextColor }]}>{t("finder.none")}</Text>
-            ) : (
-              result.partial.map(renderMatchRow)
-            )}
-          </>
+          {/* 選択音に含まれる */}
+          {showContained && (
+            <>
+              <View
+                style={[styles.sectionHeader, { backgroundColor: sectionHeaderBg, marginTop: 12 }]}
+              >
+                <Text style={[styles.sectionTitle, { color: textColor }]}>
+                  {t("finder.containedMatch")}
+                </Text>
+                <Text style={[styles.sectionBadge, { color: subTextColor }]}>
+                  {result.contained.length}
+                </Text>
+              </View>
+              {result.contained.length === 0 ? (
+                <Text style={[styles.emptySection, { color: subTextColor }]}>
+                  {t("finder.none")}
+                </Text>
+              ) : (
+                result.contained.map(renderMatchRow)
+              )}
+            </>
+          )}
+
+          {/* 選択音を含む */}
+          {showContaining && (
+            <>
+              <View
+                style={[styles.sectionHeader, { backgroundColor: sectionHeaderBg, marginTop: 12 }]}
+              >
+                <Text style={[styles.sectionTitle, { color: textColor }]}>
+                  {t("finder.containingMatch")}
+                </Text>
+                <Text style={[styles.sectionBadge, { color: subTextColor }]}>
+                  {result.containing.length}
+                </Text>
+              </View>
+              {result.containing.length === 0 ? (
+                <Text style={[styles.emptySection, { color: subTextColor }]}>
+                  {t("finder.none")}
+                </Text>
+              ) : (
+                result.containing.map(renderMatchRow)
+              )}
+            </>
+          )}
         </ScrollView>
       )}
     </View>
@@ -280,13 +428,51 @@ const styles = StyleSheet.create({
   },
   resetBtn: {
     borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     marginLeft: 8,
+    alignItems: "center",
   },
   resetBtnText: {
     fontSize: 13,
+    fontWeight: "500",
+  },
+  settingsBtn: {
+    padding: 6,
+    marginLeft: 2,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalCard: {
+    width: 280,
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingTop: 16,
+    paddingBottom: 8,
+    paddingHorizontal: 0,
+  },
+  modalTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+  },
+  modalRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  modalRowLabel: {
+    fontSize: 14,
+    flex: 1,
   },
   resultScroll: {
     flex: 1,

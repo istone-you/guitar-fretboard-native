@@ -7,6 +7,10 @@ jest.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key, i18n: { language: "en" } }),
 }));
 jest.mock("../../../i18n", () => ({}));
+jest.mock("@react-native-async-storage/async-storage", () => ({
+  getItem: jest.fn(() => Promise.resolve(null)),
+  setItem: jest.fn(() => Promise.resolve()),
+}));
 
 jest.mock("../../../components/NormalFretboard", () => {
   const { View, TouchableOpacity } = require("react-native");
@@ -65,7 +69,8 @@ describe("FinderPane", () => {
   it("does not show results before root is set", () => {
     renderPane();
     expect(screen.queryByText("finder.exactMatch")).toBeNull();
-    expect(screen.queryByText("finder.partialMatch")).toBeNull();
+    expect(screen.queryByText("finder.containingMatch")).toBeNull();
+    expect(screen.queryByText("finder.containedMatch")).toBeNull();
   });
 
   it("sets root chip after long press", () => {
@@ -84,7 +89,8 @@ describe("FinderPane", () => {
     renderPane();
     fireEvent.press(screen.getByTestId("longpress-C"));
     expect(screen.getByText("finder.exactMatch")).toBeTruthy();
-    expect(screen.getByText("finder.partialMatch")).toBeTruthy();
+    expect(screen.getByText("finder.containingMatch")).toBeTruthy();
+    expect(screen.getByText("finder.containedMatch")).toBeTruthy();
   });
 
   it("tap does nothing before root is set", () => {
@@ -152,5 +158,16 @@ describe("FinderPane", () => {
 
   it("renders in light theme without crashing", () => {
     expect(() => renderPane({ theme: "light" as Theme })).not.toThrow();
+  });
+
+  it("renders settings button", () => {
+    renderPane();
+    expect(screen.getByTestId("finder-settings-btn")).toBeTruthy();
+  });
+
+  it("opens settings modal on settings button press", () => {
+    renderPane();
+    fireEvent.press(screen.getByTestId("finder-settings-btn"));
+    expect(screen.getByText("finder.settings")).toBeTruthy();
   });
 });
