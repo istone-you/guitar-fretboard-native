@@ -237,17 +237,17 @@ describe("LayerEditModal", () => {
   // ── Custom chips step - selecting note chips ──────────────────────
   it("navigates to chips step for custom layer", () => {
     const existing = createDefaultLayer("custom", "l1", "#ff69b6");
-    const { getByText } = renderModal({ initialLayer: existing });
+    const { getByText, getByTestId } = renderModal({ initialLayer: existing });
     act(() => {
       jest.runAllTimers();
     });
     // Press the chips navigation trigger (shows "—" since no notes selected)
-    fireEvent.press(getByText("—"));
+    fireEvent.press(getByText("finder.none"));
     act(() => {
       jest.runAllTimers();
     });
-    // Should show the back arrow and reset button
-    expect(getByText("←")).toBeTruthy();
+    // Should show the back button and reset button
+    expect(getByTestId("sub-page-back")).toBeTruthy();
     expect(getByText("layers.reset")).toBeTruthy();
     // Should show note chips (C, D, E, etc.)
     expect(getByText("C")).toBeTruthy();
@@ -263,7 +263,7 @@ describe("LayerEditModal", () => {
       jest.runAllTimers();
     });
     // Navigate to chips
-    fireEvent.press(getByText("—"));
+    fireEvent.press(getByText("finder.none"));
     act(() => {
       jest.runAllTimers();
     });
@@ -399,16 +399,16 @@ describe("LayerEditModal", () => {
   // ── Back arrow from chips step ────────────────────────────────────
   it("back arrow from chips step returns to settings", () => {
     const existing = createDefaultLayer("custom", "l1", "#ff69b6");
-    const { getByText } = renderModal({ initialLayer: existing });
+    const { getByText, getByTestId } = renderModal({ initialLayer: existing });
     act(() => {
       jest.runAllTimers();
     });
-    fireEvent.press(getByText("—"));
+    fireEvent.press(getByText("finder.none"));
     act(() => {
       jest.runAllTimers();
     });
-    // Press back arrow
-    fireEvent.press(getByText("←"));
+    // Press back button
+    fireEvent.press(getByTestId("sub-page-back"));
     act(() => {
       jest.runAllTimers();
     });
@@ -420,6 +420,10 @@ describe("LayerEditModal", () => {
   it("caged layer type shows CAGED form buttons", () => {
     const existing = createDefaultLayer("caged", "l2", "#ffd700");
     const { getByText } = renderModal({ initialLayer: existing });
+    act(() => {
+      jest.runAllTimers();
+    });
+    fireEvent.press(getByText("mobileControls.cagedForms"));
     act(() => {
       jest.runAllTimers();
     });
@@ -498,6 +502,10 @@ describe("LayerEditModal", () => {
     act(() => {
       jest.runAllTimers();
     });
+    fireEvent.press(getByText("mobileControls.cagedForms"));
+    act(() => {
+      jest.runAllTimers();
+    });
     fireEvent.press(getByText("C"));
     act(() => {
       jest.runAllTimers();
@@ -511,35 +519,23 @@ describe("LayerEditModal", () => {
   it("navigates to color picker and can select a color preset", () => {
     const onPreview = jest.fn();
     const existing = createDefaultLayer("scale", "l1", "#ff69b6");
-    const { getByText, UNSAFE_root } = renderModal({ initialLayer: existing, onPreview });
+    const { getByText, getByTestId, UNSAFE_root } = renderModal({
+      initialLayer: existing,
+      onPreview,
+    });
     act(() => {
       jest.runAllTimers();
     });
-    // Find and press the color circle (navigate to color step)
-    const { TouchableOpacity } = require("react-native");
-    // The color swatch is wrapped in a TouchableOpacity next to the layerColors label
-    // We use the layerColors text to find the row, then look for the circular button
+    // The color row is a TouchableOpacity containing the "layerColors" label
     expect(getByText("layerColors")).toBeTruthy();
-    // Press the color circle — it's the last TouchableOpacity before the save button in settings
-    // Find by navigateTo("color") — look for the color dot view
-    const allTouchables = UNSAFE_root.findAllByType(TouchableOpacity);
-    // Find the touchable that contains a View with borderRadius: 14 (the color dot)
-    const colorTouchable = allTouchables.find((t: any) => {
-      const children = t.props.children;
-      if (children && children.props && children.props.style) {
-        const s = children.props.style;
-        return s.borderRadius === 14 && s.width === 28;
-      }
-      return false;
-    });
-    expect(colorTouchable).toBeTruthy();
-    fireEvent.press(colorTouchable!);
+    fireEvent.press(getByText("layerColors"));
     act(() => {
       jest.runAllTimers();
     });
-    // Now we should be on the color step — back arrow should appear
-    expect(getByText("←")).toBeTruthy();
+    // Now we should be on the color step — back button should appear
+    expect(getByTestId("sub-page-back")).toBeTruthy();
     // Find color dot touchables (they have style with borderRadius: 14)
+    const { TouchableOpacity } = require("react-native");
     const colorDots = UNSAFE_root.findAllByType(TouchableOpacity).filter((t: any) => {
       const s = t.props.style;
       if (Array.isArray(s)) {
@@ -561,28 +557,18 @@ describe("LayerEditModal", () => {
   // ── Color picker back arrow returns to settings ───────────────────
   it("color picker back arrow returns to settings step", () => {
     const existing = createDefaultLayer("scale", "l1", "#ff69b6");
-    const { getByText, UNSAFE_root } = renderModal({ initialLayer: existing });
+    const { getByText, getByTestId } = renderModal({ initialLayer: existing });
     act(() => {
       jest.runAllTimers();
     });
-    // Navigate to color step
-    const { TouchableOpacity } = require("react-native");
-    const allTouchables = UNSAFE_root.findAllByType(TouchableOpacity);
-    const colorTouchable = allTouchables.find((t: any) => {
-      const children = t.props.children;
-      if (children && children.props && children.props.style) {
-        const s = children.props.style;
-        return s.borderRadius === 14 && s.width === 28;
-      }
-      return false;
-    });
-    fireEvent.press(colorTouchable!);
+    // Navigate to color step via the color row
+    fireEvent.press(getByText("layerColors"));
     act(() => {
       jest.runAllTimers();
     });
-    expect(getByText("←")).toBeTruthy();
+    expect(getByTestId("sub-page-back")).toBeTruthy();
     // Press back
-    fireEvent.press(getByText("←"));
+    fireEvent.press(getByTestId("sub-page-back"));
     act(() => {
       jest.runAllTimers();
     });
@@ -594,21 +580,12 @@ describe("LayerEditModal", () => {
   // ── Color picker confirm returns to settings ──────────────────────
   it("color picker confirm button returns to settings step", () => {
     const existing = createDefaultLayer("scale", "l1", "#ff69b6");
-    const { getByText, UNSAFE_root } = renderModal({ initialLayer: existing });
+    const { getByText } = renderModal({ initialLayer: existing });
     act(() => {
       jest.runAllTimers();
     });
-    const { TouchableOpacity } = require("react-native");
-    const allTouchables = UNSAFE_root.findAllByType(TouchableOpacity);
-    const colorTouchable = allTouchables.find((t: any) => {
-      const children = t.props.children;
-      if (children && children.props && children.props.style) {
-        const s = children.props.style;
-        return s.borderRadius === 14 && s.width === 28;
-      }
-      return false;
-    });
-    fireEvent.press(colorTouchable!);
+    // Navigate to color step via the color row
+    fireEvent.press(getByText("layerColors"));
     act(() => {
       jest.runAllTimers();
     });
@@ -632,7 +609,7 @@ describe("LayerEditModal", () => {
       jest.runAllTimers();
     });
     // Navigate to chips
-    fireEvent.press(getByText("—"));
+    fireEvent.press(getByText("finder.none"));
     act(() => {
       jest.runAllTimers();
     });
@@ -653,7 +630,7 @@ describe("LayerEditModal", () => {
     act(() => {
       jest.runAllTimers();
     });
-    fireEvent.press(getByText("—"));
+    fireEvent.press(getByText("finder.none"));
     act(() => {
       jest.runAllTimers();
     });
@@ -723,7 +700,7 @@ describe("LayerEditModal", () => {
     act(() => {
       jest.runAllTimers();
     });
-    fireEvent.press(getByText("—"));
+    fireEvent.press(getByText("finder.none"));
     act(() => {
       jest.runAllTimers();
     });
@@ -767,18 +744,21 @@ describe("LayerEditModal", () => {
     expect(queryByText("layers.addLayer")).toBeNull();
   });
 
-  // ── Type dropdown on settings step switches layer type ────────────
+  // ── Type nav row on settings step switches layer type ────────────
   it("type dropdown on settings step switches layer type", () => {
     const onPreview = jest.fn();
     const existing = createDefaultLayer("chord", "l1", "#ff69b6");
-    const { getAllByTestId } = renderModal({ initialLayer: existing, onPreview });
+    const { getByText } = renderModal({ initialLayer: existing, onPreview });
     act(() => {
       jest.runAllTimers();
     });
-    // The first DropdownSelect mock is the type selector with options [scale, chord, custom]
-    // Pressing triggers onChange with first option value ("scale")
-    const dropdowns = getAllByTestId("dropdown-default");
-    fireEvent.press(dropdowns[0]);
+    // Press the centered type name to open the select page (chord layer shows "layers.chord")
+    fireEvent.press(getByText("layers.chord"));
+    act(() => {
+      jest.runAllTimers();
+    });
+    // Now on select page — press "layers.scale" to switch to scale type
+    fireEvent.press(getByText("layers.scale"));
     act(() => {
       jest.runAllTimers();
     });

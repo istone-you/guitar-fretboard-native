@@ -46,6 +46,9 @@
     "savePreset": "保存",
     "presetName": "プリセット名",
     "noPresets": "保存済みプリセットなし",
+    "back": "戻る",
+    "type": "タイプ",
+    "customMode": "モード",
     "layerCount": "レイヤー"
   },
   "controls": {

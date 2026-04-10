@@ -1,4 +1,4 @@
-import { View, TouchableOpacity, StyleSheet } from "react-native";
+import { View, TouchableOpacity, StyleSheet, type ViewStyle } from "react-native";
 import * as Haptics from "expo-haptics";
 import { COLOR_PRESETS } from "../../../types";
 
@@ -6,11 +6,12 @@ interface ColorPickerProps {
   value: string;
   onChange: (color: string) => void;
   isDark: boolean;
+  style?: ViewStyle;
 }
 
-export default function ColorPicker({ value, onChange, isDark }: ColorPickerProps) {
+export default function ColorPicker({ value, onChange, isDark, style }: ColorPickerProps) {
   return (
-    <View style={styles.colorRow}>
+    <View style={[styles.colorRow, style]}>
       {COLOR_PRESETS.map((preset) => (
         <TouchableOpacity
           key={preset}
@@ -38,6 +39,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
+    justifyContent: "center",
   },
   colorDot: {
     width: 28,

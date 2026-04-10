@@ -46,7 +46,10 @@
     "savePreset": "Save",
     "presetName": "Preset name",
     "noPresets": "No saved presets",
-    "layerCount": "layers"
+    "layerCount": "layers",
+    "back": "Back",
+    "type": "Type",
+    "customMode": "Mode"
   },
   "controls": {
     "displayMode": "Display",

@@ -423,7 +423,7 @@ export default function FinderPane({
                 value={showChords}
                 onValueChange={setShowChords}
                 isDark={isDark}
-                activeColor={accentColor}
+                activeColor="#34c759"
               />
             </View>
             <View style={[styles.modalRow, { borderBottomColor: borderColor }]}>
@@ -434,7 +434,7 @@ export default function FinderPane({
                 value={showScales}
                 onValueChange={setShowScales}
                 isDark={isDark}
-                activeColor={accentColor}
+                activeColor="#34c759"
               />
             </View>
             <View style={[styles.modalRow, { borderBottomColor: borderColor }]}>
@@ -445,7 +445,7 @@ export default function FinderPane({
                 value={showContained}
                 onValueChange={setShowContained}
                 isDark={isDark}
-                activeColor={accentColor}
+                activeColor="#34c759"
               />
             </View>
             <View style={[styles.modalRow, { borderBottomColor: borderColor }]}>
@@ -456,7 +456,7 @@ export default function FinderPane({
                 value={showContaining}
                 onValueChange={setShowContaining}
                 isDark={isDark}
-                activeColor={accentColor}
+                activeColor="#34c759"
               />
             </View>
             <View style={styles.modalConfirmRow}>
