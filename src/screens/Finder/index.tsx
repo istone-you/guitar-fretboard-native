@@ -6,22 +6,19 @@ import {
   TouchableOpacity,
   StyleSheet,
   Animated,
-  Modal,
   Pressable,
 } from "react-native";
+import AnimatedModal from "../../components/ui/AnimatedModal";
 import { useTranslation } from "react-i18next";
 import Svg, { Circle, Path } from "react-native-svg";
 import NormalFretboard from "../../components/NormalFretboard";
 import { identifyChords, type ChordMatch } from "../../lib/chordFinder";
 import { identifyScales, scaleI18nKey, type ScaleMatch } from "../../lib/scaleFinder";
-import { createDefaultLayer, DEFAULT_LAYER_COLORS } from "../../types";
+import { createDefaultLayer } from "../../types";
 import type { Accidental, BaseLabelMode, Theme } from "../../types";
 import { usePersistedSetting } from "../../hooks/usePersistedSetting";
 import SlideToggle from "../../components/ui/SlideToggle";
-
-const ACCENT_COLOR = DEFAULT_LAYER_COLORS[0];
-const CHORD_TAG_COLOR = DEFAULT_LAYER_COLORS[1];
-const SCALE_TAG_COLOR = DEFAULT_LAYER_COLORS[2];
+import ColorPicker from "../../components/ui/ColorPicker";
 
 export interface FinderPaneProps {
   theme: Theme;
@@ -30,6 +27,12 @@ export interface FinderPaneProps {
   fretRange: [number, number];
   rootNote: string;
   leftHanded?: boolean;
+  finderRoot: string | null;
+  finderNotes: Set<string>;
+  onFinderRootChange: (note: string | null) => void;
+  onFinderNotesChange: (notes: Set<string>) => void;
+  dotColor: string;
+  onDotColorChange: (color: string) => void;
 }
 
 export default function FinderPane({
@@ -39,10 +42,14 @@ export default function FinderPane({
   fretRange,
   rootNote: initialRootNote,
   leftHanded,
+  finderRoot,
+  finderNotes,
+  onFinderRootChange,
+  onFinderNotesChange,
+  dotColor,
+  onDotColorChange,
 }: FinderPaneProps) {
   const { t } = useTranslation();
-
-  // Display settings
   const [showChords, setShowChords] = usePersistedSetting(
     "guiter:finder-show-chords",
     true,
@@ -69,10 +76,9 @@ export default function FinderPane({
   );
   const [settingsVisible, setSettingsVisible] = useState(false);
 
-  // Local root note — null until user long-presses to select
-  const [rootNote, setRootNote] = useState<string | null>(null);
-  // Tracks only user-added notes (root is always included separately)
-  const [extraNotes, setExtraNotes] = useState<Set<string>>(new Set());
+  // Lifted to parent — persists across navigation
+  const rootNote = finderRoot;
+  const extraNotes = finderNotes;
   // Increments on each note tap to remount NormalFretboard, eliminating
   // concurrent bridge-style updates that conflict with native-driver animations
   const [fretboardKey, setFretboardKey] = useState(0);
@@ -83,7 +89,7 @@ export default function FinderPane({
   if (rootNote !== null) lastRootNoteRef.current = rootNote;
 
   const isDark = theme === "dark";
-  const accentColor = ACCENT_COLOR;
+  const accentColor = dotColor;
   const bgColor = isDark ? "#030712" : "#f3f4f6";
   const cardBg = isDark ? "#1a1a2e" : "#ffffff";
   const textColor = isDark ? "#e5e7eb" : "#1c1917";
@@ -102,28 +108,26 @@ export default function FinderPane({
     if (!rootNote) return;
     // Root note is fixed — cannot be removed
     if (noteName === rootNote) return;
-    setExtraNotes((prev) => {
-      const next = new Set(prev);
-      if (next.has(noteName)) {
-        next.delete(noteName);
-      } else {
-        next.add(noteName);
-      }
-      return next;
-    });
+    const next = new Set(extraNotes);
+    if (next.has(noteName)) {
+      next.delete(noteName);
+    } else {
+      next.add(noteName);
+    }
+    onFinderNotesChange(next);
     setFretboardKey((k) => k + 1);
   };
 
   const handleReset = () => {
-    setRootNote(null);
-    setExtraNotes(new Set());
+    onFinderRootChange(null);
+    onFinderNotesChange(new Set());
     // No fretboardKey bump — lets overlay dots play their fade-out animation naturally
   };
 
   const handleRootSet = (noteName: string) => {
     if (noteName === rootNote) return;
-    setRootNote(noteName);
-    setExtraNotes(new Set());
+    onFinderRootChange(noteName);
+    onFinderNotesChange(new Set());
     // No fretboardKey bump — lets NormalFretboard detect the baseLabelMode change
     // ("note" → "degree") and play the existing labelScale animation in Fretboard
   };
@@ -188,7 +192,7 @@ export default function FinderPane({
     const layer = createDefaultLayer("custom", "finder", accentColor);
     layer.selectedNotes = new Set(effectiveNotes);
     return [layer];
-  }, [effectiveNotes]);
+  }, [effectiveNotes, accentColor]);
 
   const renderItem = (item: FinderItem, index: number) => {
     const isChord = item.kind === "chord";
@@ -205,9 +209,6 @@ export default function FinderPane({
         ).join("  ")
       : (item.match as ScaleMatch).scaleNotes.join("  ");
     const tagLabel = isChord ? t("finder.chords") : t("finder.scales");
-    const baseTagColor = isChord ? CHORD_TAG_COLOR : SCALE_TAG_COLOR;
-    const tagColor = `${baseTagColor}${isDark ? "40" : "20"}`;
-    const tagTextColor = baseTagColor;
 
     return (
       <View
@@ -216,8 +217,10 @@ export default function FinderPane({
       >
         <View style={styles.matchNameRow}>
           <Text style={[styles.matchName, { color: textColor }]}>{name}</Text>
-          <View style={[styles.tag, { backgroundColor: tagColor }]}>
-            <Text style={[styles.tagText, { color: tagTextColor }]}>{tagLabel}</Text>
+          <View style={[styles.tag, { borderColor: isDark ? "#374151" : "#d6d3d1" }]}>
+            <Text style={[styles.tagText, { color: isDark ? "#9ca3af" : "#78716c" }]}>
+              {tagLabel}
+            </Text>
           </View>
         </View>
         <Animated.Text
@@ -283,7 +286,7 @@ export default function FinderPane({
           ) : (
             <>
               {/* Root chip — not removable */}
-              <View style={styles.rootChip}>
+              <View style={[styles.rootChip, { backgroundColor: accentColor }]}>
                 <Text style={styles.chipText}>{rootNote}</Text>
               </View>
 
@@ -292,7 +295,7 @@ export default function FinderPane({
                 <TouchableOpacity
                   key={note}
                   onPress={() => handleNoteToggle(note)}
-                  style={styles.chip}
+                  style={[styles.chip, { backgroundColor: accentColor }]}
                   activeOpacity={0.7}
                 >
                   <Text style={styles.chipText}>{note}</Text>
@@ -370,37 +373,53 @@ export default function FinderPane({
       </View>
 
       {/* Settings modal */}
-      <Modal
-        visible={settingsVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setSettingsVisible(false)}
-      >
-        <Pressable style={styles.modalOverlay} onPress={() => setSettingsVisible(false)}>
+      <AnimatedModal visible={settingsVisible} onClose={() => setSettingsVisible(false)}>
+        {({ close }) => (
           <Pressable
-            style={[styles.modalCard, { backgroundColor: cardBg, borderColor }]}
             onPress={() => {}}
+            style={[styles.modalCard, { backgroundColor: cardBg, borderColor }]}
           >
             <Text style={[styles.modalTitle, { color: textColor }]}>{t("finder.settings")}</Text>
+            <View style={[styles.modalRow, { borderBottomColor: borderColor }]}>
+              <Text style={[styles.modalRowLabel, { color: textColor }]}>{t("finder.color")}</Text>
+            </View>
+            <View style={[styles.colorPickerRow, { borderBottomColor: borderColor }]}>
+              <ColorPicker value={dotColor} onChange={onDotColorChange} isDark={isDark} />
+            </View>
             <View style={[styles.modalRow, { borderBottomColor: borderColor }]}>
               <Text style={[styles.modalRowLabel, { color: textColor }]}>
                 {t("finder.showChords")}
               </Text>
-              <SlideToggle value={showChords} onValueChange={setShowChords} isDark={isDark} />
+              <SlideToggle
+                value={showChords}
+                onValueChange={setShowChords}
+                isDark={isDark}
+                activeColor={accentColor}
+              />
             </View>
             <View style={[styles.modalRow, { borderBottomColor: borderColor }]}>
               <Text style={[styles.modalRowLabel, { color: textColor }]}>
                 {t("finder.showScales")}
               </Text>
-              <SlideToggle value={showScales} onValueChange={setShowScales} isDark={isDark} />
+              <SlideToggle
+                value={showScales}
+                onValueChange={setShowScales}
+                isDark={isDark}
+                activeColor={accentColor}
+              />
             </View>
             <View style={[styles.modalRow, { borderBottomColor: borderColor }]}>
               <Text style={[styles.modalRowLabel, { color: textColor }]}>
                 {t("finder.showContained")}
               </Text>
-              <SlideToggle value={showContained} onValueChange={setShowContained} isDark={isDark} />
+              <SlideToggle
+                value={showContained}
+                onValueChange={setShowContained}
+                isDark={isDark}
+                activeColor={accentColor}
+              />
             </View>
-            <View style={styles.modalRow}>
+            <View style={[styles.modalRow, { borderBottomColor: borderColor }]}>
               <Text style={[styles.modalRowLabel, { color: textColor }]}>
                 {t("finder.showContaining")}
               </Text>
@@ -408,11 +427,23 @@ export default function FinderPane({
                 value={showContaining}
                 onValueChange={setShowContaining}
                 isDark={isDark}
+                activeColor={accentColor}
               />
             </View>
+            <View style={styles.modalConfirmRow}>
+              <TouchableOpacity
+                onPress={close}
+                style={[styles.confirmBtn, { backgroundColor: isDark ? "#e5e7eb" : "#1c1917" }]}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.confirmBtnText, { color: isDark ? "#1c1917" : "#fff" }]}>
+                  {t("layers.confirm")}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </Pressable>
-        </Pressable>
-      </Modal>
+        )}
+      </AnimatedModal>
 
       {/* Results */}
       {hasResult && (
@@ -456,7 +487,6 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   rootChip: {
-    backgroundColor: ACCENT_COLOR,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
@@ -465,7 +495,6 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.5)",
   },
   chip: {
-    backgroundColor: ACCENT_COLOR,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
@@ -492,12 +521,6 @@ const styles = StyleSheet.create({
     padding: 6,
     marginLeft: 2,
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.45)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
   modalCard: {
     width: 280,
     borderRadius: 14,
@@ -523,6 +546,25 @@ const styles = StyleSheet.create({
   modalRowLabel: {
     fontSize: 14,
     flex: 1,
+  },
+  colorPickerRow: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  modalConfirmRow: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 8,
+  },
+  confirmBtn: {
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  confirmBtnText: {
+    fontSize: 15,
+    fontWeight: "600",
   },
   resultScroll: {
     flex: 1,
@@ -570,9 +612,10 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   tag: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
     borderRadius: 4,
+    borderWidth: 1,
   },
   tagText: {
     fontSize: 10,

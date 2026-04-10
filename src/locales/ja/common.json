@@ -1,4 +1,10 @@
 {
+  "tabs": {
+    "home": "レイヤー",
+    "finder": "検索",
+    "quiz": "クイズ",
+    "stats": "弱点"
+  },
   "mode": {
     "normal": "通常",
     "quiz": "クイズ"
@@ -209,6 +215,7 @@
     "none": "なし",
     "noteCount": "{{count}}音",
     "settings": "表示設定",
+    "color": "カラー",
     "showChords": "コードを表示",
     "showScales": "スケールを表示",
     "showContained": "「含まれる」を表示",
@@ -237,6 +244,7 @@
       "scale": "スケール",
       "diatonic": "ダイアトニック"
     },
+    "back": "クイズに戻る",
     "reset": "記録をリセット",
     "resetTitle": "記録をリセット",
     "resetMessage": "すべてのクイズ記録を削除しますか？",
@@ -295,6 +303,13 @@
       "chordFretboard": "コード・指板"
     },
     "filterAll": "すべて",
+    "desc": {
+      "note": "指板上の指定ポジションの音名を答えるクイズ",
+      "degree": "指板上の指定ポジションの度数を答えるクイズ",
+      "chord": "指板上のコードフォームからコード名を答えるクイズ",
+      "scale": "スケールの構成音をすべて選ぶクイズ",
+      "diatonic": "キー内のダイアトニックコードをすべて答えるクイズ"
+    },
     "quizNoteNames": {
       "label": "出題音"
     },

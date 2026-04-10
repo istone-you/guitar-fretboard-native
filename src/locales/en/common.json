@@ -1,4 +1,10 @@
 {
+  "tabs": {
+    "home": "Layer",
+    "finder": "Finder",
+    "quiz": "Quiz",
+    "stats": "Stats"
+  },
   "mode": {
     "normal": "Normal",
     "quiz": "Quiz"
@@ -209,6 +215,7 @@
     "none": "None",
     "noteCount": "{{count}} notes",
     "settings": "Display Settings",
+    "color": "Color",
     "showChords": "Show Chords",
     "showScales": "Show Scales",
     "showContained": "Show \"Within Selection\"",
@@ -237,6 +244,7 @@
       "scale": "Scales",
       "diatonic": "Diatonic"
     },
+    "back": "Back to Quiz",
     "reset": "Reset Records",
     "resetTitle": "Reset Records",
     "resetMessage": "Delete all quiz records?",
@@ -295,6 +303,13 @@
       "chordFretboard": "Chord / Fretboard"
     },
     "filterAll": "All",
+    "desc": {
+      "note": "Identify the note at a given position on the fretboard",
+      "degree": "Identify the scale degree at a given fret position",
+      "chord": "Identify chord types from fretboard voicings",
+      "scale": "Select all notes that belong to a scale",
+      "diatonic": "Name every diatonic chord in a key"
+    },
     "quizNoteNames": {
       "label": "Notes"
     },

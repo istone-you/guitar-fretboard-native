@@ -1,6 +1,6 @@
-import QuizFretboard from "../../components/QuizFretboard";
-import QuizPanel from "../../components/QuizPanel";
-import PracticePane from "../../components/ui/PracticePane";
+import QuizFretboard from "../../../components/QuizFretboard";
+import QuizPanel from "../../../components/QuizPanel";
+import PracticePane from "../../../components/ui/PracticePane";
 import type {
   Accidental,
   BaseLabelMode,
@@ -11,7 +11,7 @@ import type {
   QuizType,
   ScaleType,
   Theme,
-} from "../../types";
+} from "../../../types";
 
 interface QuizActivePracticePaneProps {
   // Fretboard

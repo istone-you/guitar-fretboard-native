@@ -18,10 +18,10 @@ import { useQuizNavigation } from "./src/hooks/useQuizNavigation";
 import { getNotesByAccidental, getRootIndex } from "./src/lib/fretboard";
 import type { Theme, Accidental, BaseLabelMode, ScaleType } from "./src/types";
 import { createDefaultLayer } from "./src/types";
-import MainPracticePane from "./src/screens/MainPractice";
+import LayerPane from "./src/screens/Layer";
 import QuizPane from "./src/screens/Quiz";
-import QuizActivePracticePane from "./src/screens/QuizActive";
-import StatsPane from "./src/screens/Stats";
+import QuizActivePracticePane from "./src/screens/Quiz/Active";
+import StatsPane from "./src/screens/Quiz/Stats";
 import FinderPane from "./src/screens/Finder";
 import { useQuizRecords } from "./src/hooks/useQuizRecords";
 
@@ -74,8 +74,17 @@ function AppContent() {
     (v) => String(v),
     (v) => v === "true",
   );
-  const [showStats, setShowStats] = useState(false);
   const [showFinder, setShowFinder] = useState(false);
+  const [showStats, setShowStats] = useState(false);
+  const statsSlideAnim = useRef(new Animated.Value(0)).current;
+  const [finderRoot, setFinderRoot] = useState<string | null>(null);
+  const [finderNotes, setFinderNotes] = useState<Set<string>>(new Set());
+  const [finderDotColor, setFinderDotColor] = usePersistedSetting(
+    "guiter:finder-dot-color",
+    "#ff69b6",
+    (v) => v,
+    (v) => v,
+  );
   const [scaleType, setScaleType] = useState<ScaleType>("major");
   const { records, addRecord, clearRecords } = useQuizRecords();
 
@@ -198,6 +207,26 @@ function AppContent() {
     onShowQuizChange: handleShowQuizChange,
   };
 
+  const handleOpenStats = useCallback(() => {
+    statsSlideAnim.setValue(winWidth);
+    setShowStats(true);
+    setTimeout(() => {
+      Animated.timing(statsSlideAnim, {
+        toValue: 0,
+        duration: 120,
+        useNativeDriver: true,
+      }).start();
+    }, 0);
+  }, [statsSlideAnim, winWidth]);
+
+  const handleCloseStats = useCallback(() => {
+    Animated.timing(statsSlideAnim, {
+      toValue: winWidth,
+      duration: 120,
+      useNativeDriver: true,
+    }).start(() => setShowStats(false));
+  }, [statsSlideAnim, winWidth]);
+
   const quizNoteOptions = [...getNotesByAccidental(accidental)];
 
   const isDark = theme === "dark";
@@ -290,11 +319,16 @@ function AppContent() {
           accidental={accidental}
           baseLabelMode={baseLabelMode}
           showQuiz={showQuiz}
-          showStats={showStats}
           rootChangeDisabled={!quizRootChangeEnabled || showFinder}
           onBaseLabelModeChange={setBaseLabelMode}
           onRootNoteChange={quizRootChangeEnabled ? handleNoteClick : () => {}}
-          onBack={showQuiz && quizModeSelected ? handleChangeQuiz : undefined}
+          onBack={
+            showStats
+              ? handleCloseStats
+              : showQuiz && quizModeSelected
+                ? handleChangeQuiz
+                : undefined
+          }
           fretRange={fretRange}
           onThemeChange={setTheme}
           onFretRangeChange={setFretRange}
@@ -305,14 +339,7 @@ function AppContent() {
       </View>
 
       <View style={{ flex: 1, overflow: "hidden" }} {...swipePanResponder.panHandlers}>
-        {showStats ? (
-          <StatsPane
-            records={records}
-            theme={theme}
-            accidental={accidental}
-            onClearRecords={clearRecords}
-          />
-        ) : showFinder ? (
+        {showFinder ? (
           <FinderPane
             theme={theme}
             accidental={accidental}
@@ -320,14 +347,32 @@ function AppContent() {
             fretRange={fretRange}
             rootNote={rootNote}
             leftHanded={leftHanded}
+            finderRoot={finderRoot}
+            finderNotes={finderNotes}
+            onFinderRootChange={setFinderRoot}
+            onFinderNotesChange={setFinderNotes}
+            dotColor={finderDotColor}
+            onDotColorChange={setFinderDotColor}
           />
         ) : showQuiz && !quizModeSelected ? (
           <View style={{ flex: 1 }}>
-            <QuizPane
-              theme={theme}
-              quizKindOptions={quizKindOptions}
-              onQuizModeSelect={handleQuizModeSelect}
-            />
+            {showStats ? (
+              <Animated.View style={{ flex: 1, transform: [{ translateX: statsSlideAnim }] }}>
+                <StatsPane
+                  records={records}
+                  theme={theme}
+                  accidental={accidental}
+                  onClearRecords={clearRecords}
+                />
+              </Animated.View>
+            ) : (
+              <QuizPane
+                theme={theme}
+                quizKindOptions={quizKindOptions}
+                onQuizModeSelect={handleQuizModeSelect}
+                onShowStats={handleOpenStats}
+              />
+            )}
           </View>
         ) : showQuiz && quizModeSelected ? (
           <Animated.View style={{ flex: 1, transform: [{ translateX: quizSlideAnim }] }}>
@@ -401,7 +446,7 @@ function AppContent() {
           </Animated.View>
         ) : (
           <View style={{ flex: 1 }}>
-            <MainPracticePane
+            <LayerPane
               {...sharedMainPaneProps}
               isLandscape={isLandscape}
               disableAnimation={isLandscape || animDisabled}
@@ -413,19 +458,18 @@ function AppContent() {
       <TabBar
         isDark={isDark}
         showQuiz={showQuiz}
-        showStats={showStats}
         showFinder={showFinder}
         insetBottom={insets.bottom}
         onPressHome={() => {
-          setShowStats(false);
           setShowFinder(false);
           setShowQuiz(false);
+          setShowStats(false);
           handleShowQuizChange(false);
         }}
         onPressFinder={() => {
           setShowFinder(true);
-          setShowStats(false);
           setShowQuiz(false);
+          setShowStats(false);
           handleShowQuizChange(false);
         }}
         onPressQuiz={() => {
@@ -434,12 +478,6 @@ function AppContent() {
           setShowStats(false);
           setShowQuiz(true);
           setQuizModeSelected(false);
-        }}
-        onPressStats={() => {
-          setShowStats(true);
-          setShowFinder(false);
-          setShowQuiz(false);
-          handleShowQuizChange(false);
         }}
       />
     </View>

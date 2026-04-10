@@ -11,7 +11,7 @@ jest.mock("react-native-safe-area-context", () => ({
   useSafeAreaInsets: () => ({ top: 44, bottom: 0, left: 0, right: 0 }),
 }));
 
-jest.mock("../../../screens/MainPractice", () => ({
+jest.mock("../../../screens/Layer", () => ({
   __esModule: true,
   default: () => {
     const { View } = require("react-native");

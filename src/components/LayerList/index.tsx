@@ -286,9 +286,12 @@ export default function LayerList({
                 ]}
                 activeOpacity={0.7}
               >
-                {/* Invisible spacer matching summaryArea height */}
+                {/* Invisible spacer — keeps height identical to filled rows so
+                    layer deletion causes no layout shift and drag stays accurate */}
                 <View style={styles.summaryArea} pointerEvents="none">
-                  <Text style={[styles.layerType, { opacity: 0 }]}> </Text>
+                  <View style={[styles.typeBadge, { borderColor: "transparent" }]}>
+                    <Text style={[styles.layerType, { opacity: 0 }]}> </Text>
+                  </View>
                   <Text style={[styles.layerSummary, { opacity: 0 }]}> </Text>
                   <Text style={[styles.layerNoteLabels, { opacity: 0 }]}> </Text>
                 </View>
@@ -361,15 +364,17 @@ export default function LayerList({
 
             {/* Summary */}
             <View style={styles.summaryArea}>
-              <Text style={[styles.layerType, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-                {layer.type === "scale"
-                  ? t("layers.scale")
-                  : layer.type === "caged"
-                    ? t("layers.caged")
-                    : layer.type === "custom"
-                      ? t("layers.custom")
-                      : t("layers.chord")}
-              </Text>
+              <View style={[styles.typeBadge, { borderColor: isDark ? "#374151" : "#d6d3d1" }]}>
+                <Text style={[styles.layerType, { color: isDark ? "#9ca3af" : "#78716c" }]}>
+                  {layer.type === "scale"
+                    ? t("layers.scale")
+                    : layer.type === "caged"
+                      ? t("layers.caged")
+                      : layer.type === "custom"
+                        ? t("layers.custom")
+                        : t("layers.chord")}
+                </Text>
+              </View>
               <Text
                 style={[
                   styles.layerSummary,
@@ -518,7 +523,13 @@ export default function LayerList({
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           setPresetModalVisible(true);
         }}
-        style={[styles.presetBtn, { borderColor: isDark ? "#374151" : "#d6d3d1" }]}
+        style={[
+          styles.presetBtn,
+          {
+            borderColor: isDark ? "#374151" : "#d6d3d1",
+            backgroundColor: isDark ? "#1f2937" : "#fafaf9",
+          },
+        ]}
         activeOpacity={0.7}
       >
         <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
@@ -607,13 +618,21 @@ const styles = StyleSheet.create({
   actionBtn: {
     padding: 8,
   },
-  addBtn: {},
+  typeBadge: {
+    alignSelf: "flex-start",
+    borderWidth: 1,
+    borderRadius: 4,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+  },
   presetBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
-    paddingVertical: 8,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderRadius: 12,
   },
   presetBtnText: {
     fontSize: 12,

@@ -1,19 +1,11 @@
 import { useRef, useState } from "react";
-import {
-  Animated,
-  Easing,
-  Modal,
-  Pressable,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 import "../../../i18n";
 import type { Theme } from "../../../types";
 import ChevronIcon from "../../ui/ChevronIcon";
+import AnimatedModal, { type AnimatedModalControls } from "../../ui/AnimatedModal";
 
 interface SettingsRow {
   key: string;
@@ -48,76 +40,29 @@ export default function SettingsModal({
   const isDark = theme === "dark";
 
   const [settingsPage, setSettingsPage] = useState<string | null>(null);
-  const settingsScale = useRef(new Animated.Value(1)).current;
-  const settingsOpacity = useRef(new Animated.Value(1)).current;
-
-  const bouncePopup = () => {
-    settingsScale.stopAnimation();
-    settingsScale.setValue(1);
-    Animated.sequence([
-      Animated.timing(settingsScale, {
-        toValue: 1.06,
-        duration: 120,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
-      Animated.spring(settingsScale, {
-        toValue: 1,
-        friction: 8,
-        tension: 140,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  };
+  const controlsRef = useRef<AnimatedModalControls | null>(null);
 
   const navigateToPage = (page: string | null) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    bouncePopup();
+    controlsRef.current?.bounce();
     setSettingsPage(page);
   };
 
-  const handleClose = () => {
-    Animated.timing(settingsOpacity, {
-      toValue: 0,
-      duration: 150,
-      useNativeDriver: true,
-    }).start(() => {
-      setSettingsPage(null);
-      onClose();
-    });
-  };
-
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="none"
-      onRequestClose={handleClose}
-      onShow={() => {
-        setSettingsPage(null);
-        settingsOpacity.setValue(1);
-        settingsScale.setValue(0.5);
-        Animated.spring(settingsScale, {
-          toValue: 1,
-          friction: 8,
-          tension: 150,
-          useNativeDriver: true,
-        }).start();
-      }}
-    >
-      <Pressable style={styles.overlay} onPress={handleClose}>
-        <Animated.View
-          style={[
-            styles.popup,
-            {
-              backgroundColor: isDark ? "rgba(17,24,39,0.97)" : "rgba(250,250,249,0.97)",
-              borderColor: isDark ? "rgba(255,255,255,0.08)" : "#e7e5e4",
-              transform: [{ scale: settingsScale }],
-              opacity: settingsOpacity,
-            },
-          ]}
-        >
-          <Pressable>
+    <AnimatedModal visible={visible} onClose={onClose} onShow={() => setSettingsPage(null)}>
+      {(controls) => {
+        controlsRef.current = controls;
+        return (
+          <Pressable
+            onPress={() => {}}
+            style={[
+              styles.popup,
+              {
+                backgroundColor: isDark ? "rgba(17,24,39,0.97)" : "rgba(250,250,249,0.97)",
+                borderColor: isDark ? "rgba(255,255,255,0.08)" : "#e7e5e4",
+              },
+            ]}
+          >
             <View style={styles.content}>
               {settingsPage == null ? (
                 <View>
@@ -160,7 +105,7 @@ export default function SettingsModal({
                   <TouchableOpacity
                     onPress={() => {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                      handleClose();
+                      controls.close();
                     }}
                     style={[styles.confirmBtn, { backgroundColor: isDark ? "#e5e7eb" : "#1c1917" }]}
                     activeOpacity={0.7}
@@ -274,19 +219,13 @@ export default function SettingsModal({
               )}
             </View>
           </Pressable>
-        </Animated.View>
-      </Pressable>
-    </Modal>
+        );
+      }}
+    </AnimatedModal>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
   popup: {
     borderWidth: 1,
     borderRadius: 20,

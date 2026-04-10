@@ -228,7 +228,7 @@ function HeatmapGrid({
   const noDataBg = isDark ? "rgba(107,114,128,0.3)" : "rgba(156,163,175,0.3)";
 
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} testID="heatmap-grid">
       <View style={styles.heatmapContainer}>
         {/* Fret number header */}
         <View style={[styles.heatmapRow, { marginLeft: LABEL_W }]}>
@@ -457,9 +457,11 @@ export default function StatsPanel({
       </Text>
 
       {/* Heatmap (always expanded, top) */}
-      <SectionCard title={t("stats.sections.byStringFret")} isDark={isDark}>
-        <HeatmapGrid data={heatmapData} isDark={isDark} />
-      </SectionCard>
+      <View style={[styles.sectionCard, { backgroundColor: isDark ? "#1f2937" : "#ffffff" }]}>
+        <View style={styles.sectionCardInner}>
+          <HeatmapGrid data={heatmapData} isDark={isDark} />
+        </View>
+      </View>
 
       {/* Mode stats */}
       <CollapsibleSection title={t("stats.sections.byMode")} isDark={isDark}>

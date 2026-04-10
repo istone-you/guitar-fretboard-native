@@ -78,9 +78,9 @@ describe("StatsPanel", () => {
 
   // ── Sections ──────────────────────────────────────────────────────
 
-  it("renders heatmap section title", () => {
-    const { getByText } = renderPanel();
-    expect(getByText("stats.sections.byStringFret")).toBeTruthy();
+  it("renders heatmap section", () => {
+    const { getByTestId } = renderPanel();
+    expect(getByTestId("heatmap-grid")).toBeTruthy();
   });
 
   it("renders all collapsible section titles", () => {

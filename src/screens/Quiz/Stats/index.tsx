@@ -1,5 +1,5 @@
-import StatsPanel from "../../components/Stats";
-import type { Accidental, QuizRecord, Theme } from "../../types";
+import StatsPanel from "../../../components/Stats";
+import type { Accidental, QuizRecord, Theme } from "../../../types";
 
 interface StatsPaneProps {
   records: QuizRecord[];

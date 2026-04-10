@@ -9,23 +9,23 @@ import type {
   QuizType,
   ScaleType,
   Theme,
-} from "../../../types";
+} from "../../../../types";
 
 jest.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
 
-jest.mock("../../../components/QuizFretboard", () => {
+jest.mock("../../../../components/QuizFretboard", () => {
   const { View } = require("react-native");
   return { __esModule: true, default: () => <View testID="quiz-fretboard" /> };
 });
 
-jest.mock("../../../components/QuizPanel", () => {
+jest.mock("../../../../components/QuizPanel", () => {
   const { View } = require("react-native");
   return { __esModule: true, default: () => <View testID="quiz-panel" /> };
 });
 
-jest.mock("../../../components/ui/PracticePane", () => {
+jest.mock("../../../../components/ui/PracticePane", () => {
   const { View } = require("react-native");
   return {
     __esModule: true,

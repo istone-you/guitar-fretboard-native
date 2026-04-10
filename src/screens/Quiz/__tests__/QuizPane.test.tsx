@@ -15,6 +15,7 @@ const defaultProps = {
     { value: "degree-choice", label: "Degree / 12-choice" },
   ],
   onQuizModeSelect: jest.fn(),
+  onShowStats: jest.fn(),
 };
 
 function renderPane(overrides: Partial<typeof defaultProps> = {}) {

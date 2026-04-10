@@ -42,8 +42,27 @@ const defaultProps = {
   rootNote: "C",
 };
 
+// Stateful wrapper that mirrors how App.tsx manages the lifted state
+function FinderWrapper(props: Partial<typeof defaultProps>) {
+  const [finderRoot, setFinderRoot] = React.useState<string | null>(null);
+  const [finderNotes, setFinderNotes] = React.useState<Set<string>>(new Set());
+  const [dotColor, setDotColor] = React.useState("#ff69b6");
+  return (
+    <FinderPane
+      {...defaultProps}
+      {...props}
+      finderRoot={finderRoot}
+      finderNotes={finderNotes}
+      onFinderRootChange={setFinderRoot}
+      onFinderNotesChange={setFinderNotes}
+      dotColor={dotColor}
+      onDotColorChange={setDotColor}
+    />
+  );
+}
+
 function renderPane(overrides: Partial<typeof defaultProps> = {}) {
-  return render(<FinderPane {...defaultProps} {...overrides} />);
+  return render(<FinderWrapper {...overrides} />);
 }
 
 describe("FinderPane", () => {

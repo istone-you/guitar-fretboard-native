@@ -1,10 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
-  Modal,
-  Pressable,
   ScrollView,
   StyleSheet,
   Animated,
@@ -22,11 +20,14 @@ import type {
   ScaleType,
   ChordType,
 } from "../../types";
-import { createDefaultLayer, COLOR_PRESETS } from "../../types";
+import { createDefaultLayer } from "../../types";
 import { DropdownSelect } from "../ui/DropdownSelect";
 import ChevronIcon from "../ui/ChevronIcon";
+import ColorPicker from "../ui/ColorPicker";
 import { buildScaleOptions } from "../ui/scaleOptions";
 import LayerDescription from "./LayerDescription";
+import AnimatedModal from "../ui/AnimatedModal";
+import BottomSheetModal, { type BottomSheetModalControls } from "../ui/BottomSheetModal";
 import {
   CHORD_CAGED_ORDER,
   CHORD_SEMITONES,
@@ -173,10 +174,6 @@ export default function LayerEditModal({
   const [showDescription, setShowDescription] = useState(false);
   const descAnim = useRef(new Animated.Value(0)).current;
 
-  // Animation
-  const modalScale = useRef(new Animated.Value(0.5)).current;
-  const modalOpacity = useRef(new Animated.Value(1)).current;
-  const bottomSheetY = useRef(new Animated.Value(0)).current;
   const sheetScrollRef = useRef<ScrollView>(null);
   const flashSheetScrollIndicator = () => {
     requestAnimationFrame(() => {
@@ -184,45 +181,26 @@ export default function LayerEditModal({
     });
   };
 
-  // Reset state when modal opens with different layer
+  // Reset state when modal opens with different layer.
+  // resolvedStep is computed synchronously so Modal visible props are correct on the
+  // very first render (before setStep's re-render), preventing a native-layer flicker.
   const prevVisible = useRef(visible);
   const prevInitialId = useRef(initialLayer?.id);
+  let resolvedStep = step;
   if (visible && (!prevVisible.current || prevInitialId.current !== initialLayer?.id)) {
     prevVisible.current = visible;
     prevInitialId.current = initialLayer?.id;
-    modalScale.setValue(0.5);
-    modalOpacity.setValue(1);
-    Animated.spring(modalScale, {
-      toValue: 1,
-      friction: 8,
-      tension: 150,
-      useNativeDriver: true,
-    }).start();
+    resolvedStep = initialLayer ? "settings" : "type";
+    if (resolvedStep !== step) setStep(resolvedStep);
     if (initialLayer) {
       setLayer(initialLayer);
-      setStep("settings");
     } else {
       setLayer(createDefaultLayer("scale", `layer-${Date.now()}`, defaultColor));
-      setStep("type");
     }
   }
   if (!visible && prevVisible.current) {
     prevVisible.current = false;
-    bottomSheetY.setValue(0);
   }
-
-  const isTypeStep = step === "type";
-
-  useEffect(() => {
-    if (!visible || isTypeStep) return;
-    bottomSheetY.setValue(56);
-    Animated.spring(bottomSheetY, {
-      toValue: 0,
-      friction: 9,
-      tension: 120,
-      useNativeDriver: true,
-    }).start();
-  }, [visible, isTypeStep, step, layer.type, layer.chordDisplayMode, bottomSheetY]);
 
   const update = (partial: Partial<LayerConfig>) => {
     setLayer((prev) => {
@@ -232,80 +210,9 @@ export default function LayerEditModal({
     });
   };
 
-  const bounceModal = () => {
-    modalScale.stopAnimation();
-    modalScale.setValue(1);
-    Animated.sequence([
-      Animated.timing(modalScale, {
-        toValue: 1.06,
-        duration: 120,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
-      Animated.spring(modalScale, {
-        toValue: 1,
-        friction: 8,
-        tension: 140,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  };
-
   const navigateTo = (target: "settings" | "color" | "chips") => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setStep(target);
-  };
-
-  const handleTypeSelect = (type: LayerType) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    const newLayer = createDefaultLayer(type, layer.id, layer.color);
-    setLayer(newLayer);
-    onPreview?.(newLayer);
-    setStep("settings");
-    bounceModal();
-  };
-
-  const closeWithExitAnimation = (callback: () => void) => {
-    if (isTypeStep) {
-      Animated.timing(modalOpacity, {
-        toValue: 0,
-        duration: 150,
-        useNativeDriver: true,
-      }).start(() => {
-        callback();
-      });
-      return;
-    }
-
-    Animated.parallel([
-      Animated.timing(bottomSheetY, {
-        toValue: 84,
-        duration: 180,
-        easing: Easing.in(Easing.cubic),
-        useNativeDriver: true,
-      }),
-      Animated.timing(modalOpacity, {
-        toValue: 0,
-        duration: 180,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      callback();
-    });
-  };
-
-  const handleSave = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    onSave(layer);
-    closeWithExitAnimation(() => {
-      onClose();
-    });
-  };
-
-  const handleClose = () => {
-    closeWithExitAnimation(() => {
-      onClose();
-    });
   };
 
   const { options: scaleOptions } = buildScaleOptions(t);
@@ -353,723 +260,144 @@ export default function LayerEditModal({
     };
   });
 
+  const bgColor = isDark ? "#111827" : "#fafaf9";
+  const borderColor = isDark ? "rgba(255,255,255,0.08)" : "#e7e5e4";
+
   return (
-    <Modal visible={visible} transparent animationType="none" onRequestClose={handleClose}>
-      <View style={[styles.overlay, { justifyContent: isTypeStep ? "center" : "flex-end" }]}>
-        <Pressable style={styles.backdrop} onPress={handleClose} />
-        <Animated.View
-          style={[
-            styles.modal,
-            isTypeStep ? styles.centerModal : styles.bottomSheetModal,
-            !isTypeStep ? { height: sheetHeight } : null,
-            {
-              backgroundColor: isDark ? "#111827" : "#fafaf9",
-              borderColor: isDark ? "rgba(255,255,255,0.08)" : "#e7e5e4",
-              transform: isTypeStep ? [{ scale: modalScale }] : [{ translateY: bottomSheetY }],
-              opacity: modalOpacity,
-            },
-          ]}
-        >
-          {/* Step 1: Type selection */}
-          {step === "type" && (
+    <>
+      {/* Type selection — center modal */}
+      <AnimatedModal visible={visible && resolvedStep === "type"} onClose={onClose}>
+        {({ closeWithCallback }) => (
+          <View
+            style={[styles.modal, styles.centerModal, { backgroundColor: bgColor, borderColor }]}
+          >
             <View style={styles.typeSelection}>
               <Text style={[styles.title, { color: isDark ? "#fff" : "#1c1917" }]}>
                 {t("layers.addLayer")}
               </Text>
               <View style={styles.typeButtons}>
-                <TouchableOpacity
-                  onPress={() => handleTypeSelect("scale")}
-                  style={[
-                    styles.typeBtn,
-                    {
-                      borderColor: isDark ? "#374151" : "#d6d3d1",
-                      backgroundColor: isDark ? "#1f2937" : "#fafaf9",
-                    },
-                  ]}
-                  activeOpacity={0.7}
-                >
-                  <Text
-                    style={{
-                      fontSize: 15,
-                      fontWeight: "600",
-                      color: isDark ? "#fff" : "#1c1917",
-                    }}
-                  >
-                    {t("layers.scale")}
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => handleTypeSelect("chord")}
-                  style={[
-                    styles.typeBtn,
-                    {
-                      borderColor: isDark ? "#374151" : "#d6d3d1",
-                      backgroundColor: isDark ? "#1f2937" : "#fafaf9",
-                    },
-                  ]}
-                  activeOpacity={0.7}
-                >
-                  <Text
-                    style={{
-                      fontSize: 15,
-                      fontWeight: "600",
-                      color: isDark ? "#fff" : "#1c1917",
-                    }}
-                  >
-                    {t("layers.chord")}
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => handleTypeSelect("caged")}
-                  style={[
-                    styles.typeBtn,
-                    {
-                      borderColor: isDark ? "#374151" : "#d6d3d1",
-                      backgroundColor: isDark ? "#1f2937" : "#fafaf9",
-                    },
-                  ]}
-                  activeOpacity={0.7}
-                >
-                  <Text
-                    style={{
-                      fontSize: 15,
-                      fontWeight: "600",
-                      color: isDark ? "#fff" : "#1c1917",
-                    }}
-                  >
-                    {t("layers.caged")}
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => handleTypeSelect("custom")}
-                  style={[
-                    styles.typeBtn,
-                    {
-                      borderColor: isDark ? "#374151" : "#d6d3d1",
-                      backgroundColor: isDark ? "#1f2937" : "#fafaf9",
-                    },
-                  ]}
-                  activeOpacity={0.7}
-                >
-                  <Text
-                    style={{
-                      fontSize: 15,
-                      fontWeight: "600",
-                      color: isDark ? "#fff" : "#1c1917",
-                    }}
-                  >
-                    {t("layers.custom")}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
-
-          {/* Step 2: Settings */}
-          {step === "settings" && (
-            <ScrollView
-              ref={sheetScrollRef}
-              style={styles.sheetScroll}
-              contentContainerStyle={styles.sheetScrollContent}
-              showsVerticalScrollIndicator
-              indicatorStyle={isDark ? "white" : "black"}
-              persistentScrollbar
-              onLayout={flashSheetScrollIndicator}
-              onContentSizeChange={flashSheetScrollIndicator}
-              stickyHeaderIndices={[0]}
-            >
-              <View
-                style={[
-                  styles.settingsStickyHeader,
-                  {
-                    backgroundColor: isDark ? "#111827" : "#fafaf9",
-                    borderBottomColor: isDark ? "rgba(255,255,255,0.08)" : "#e7e5e4",
-                  },
-                ]}
-              >
-                <DropdownSelect
-                  theme={theme}
-                  value={layer.type}
-                  onChange={(v) => {
-                    const newType = v as LayerType;
-                    if (newType !== layer.type) {
-                      const nextLayer = {
-                        ...createDefaultLayer(newType, layer.id, layer.color),
-                      };
-                      setLayer(nextLayer);
-                      onPreview?.(nextLayer);
-                    }
-                  }}
-                  options={[
-                    { value: "scale", label: t("layers.scale") },
-                    { value: "chord", label: t("layers.chord") },
-                    { value: "caged", label: t("layers.caged") },
-                    { value: "custom", label: t("layers.custom") },
-                  ]}
-                  variant="plain"
-                />
-                <TouchableOpacity
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    const next = !showDescription;
-                    setShowDescription(next);
-                    if (next) {
-                      descAnim.setValue(0);
-                      Animated.timing(descAnim, {
-                        toValue: 1,
-                        duration: 400,
-                        easing: Easing.out(Easing.cubic),
-                        useNativeDriver: false,
-                      }).start();
-                    } else {
-                      Animated.timing(descAnim, {
-                        toValue: 0,
-                        duration: 350,
-                        easing: Easing.out(Easing.cubic),
-                        useNativeDriver: false,
-                      }).start();
-                    }
-                  }}
-                  style={[
-                    styles.helpBtn,
-                    {
-                      position: "absolute",
-                      right: 12,
-                      top: 5,
-                      backgroundColor: showDescription
-                        ? isDark
-                          ? "#374151"
-                          : "#e7e5e4"
-                        : "transparent",
-                    },
-                  ]}
-                  activeOpacity={0.7}
-                >
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      fontWeight: "700",
-                      color: isDark ? "#9ca3af" : "#78716c",
-                    }}
-                  >
-                    ?
-                  </Text>
-                </TouchableOpacity>
-              </View>
-
-              <Animated.View
-                style={{
-                  paddingHorizontal: 16,
-                  maxHeight: descAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0, 200],
-                  }),
-                  opacity: descAnim,
-                  overflow: "hidden",
-                }}
-              >
-                <View style={{ paddingTop: 8 }}>
-                  <LayerDescription theme={theme} layer={layer} />
-                </View>
-              </Animated.View>
-
-              <View style={styles.settings}>
-                {/* Scale settings */}
-                {layer.type === "scale" && (
-                  <View style={styles.settingRowInline}>
-                    <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-                      {t("mobileControls.scaleKind")}
-                    </Text>
-                    <DropdownSelect
-                      theme={theme}
-                      value={layer.scaleType}
-                      onChange={(v) => update({ scaleType: v as ScaleType })}
-                      options={scaleOptions}
-                      variant="plain"
-                      textStyle={plainSmallText}
-                    />
-                  </View>
-                )}
-
-                {/* Chord settings */}
-                {layer.type === "chord" && (
-                  <>
-                    <View style={styles.settingRowInline}>
-                      <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-                        {t("controls.displayMode")}
-                      </Text>
-                      <DropdownSelect
-                        theme={theme}
-                        value={layer.chordDisplayMode}
-                        onChange={(v) => update({ chordDisplayMode: v as ChordDisplayMode })}
-                        options={chordDisplayOptions}
-                        variant="plain"
-                        textStyle={plainSmallText}
-                      />
-                    </View>
-                    {layer.chordDisplayMode !== "on-chord" && (
-                      <View style={styles.settingRowInline}>
-                        <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-                          {layer.chordDisplayMode === "diatonic"
-                            ? t("controls.degree")
-                            : t("controls.chord")}
-                        </Text>
-                        <DropdownSelect
-                          theme={theme}
-                          value={
-                            layer.chordDisplayMode === "diatonic"
-                              ? layer.diatonicDegree
-                              : layer.chordType
-                          }
-                          onChange={(v) =>
-                            layer.chordDisplayMode === "diatonic"
-                              ? update({ diatonicDegree: v })
-                              : update({ chordType: v as ChordType })
-                          }
-                          options={
-                            layer.chordDisplayMode === "form"
-                              ? CHORD_TYPES.map((v) => ({ value: v, label: v }))
-                              : layer.chordDisplayMode === "triad"
-                                ? ["Major", "Minor", "Diminished", "Augmented"].map((v) => ({
-                                    value: v,
-                                    label: v,
-                                  }))
-                                : diatonicCodeOptions
-                          }
-                          variant="plain"
-                          textStyle={plainSmallText}
-                        />
-                      </View>
-                    )}
-                    {layer.chordDisplayMode === "on-chord" && (
-                      <View style={styles.settingRowInline}>
-                        <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-                          {t("controls.chord")}
-                        </Text>
-                        <DropdownSelect
-                          theme={theme}
-                          value={layer.onChordName}
-                          onChange={(v) => update({ onChordName: v })}
-                          options={onChordOptions}
-                          variant="plain"
-                          textStyle={plainSmallText}
-                        />
-                      </View>
-                    )}
-                    {(layer.chordDisplayMode === "diatonic" ||
-                      layer.chordDisplayMode === "triad") && (
-                      <View style={styles.settingRowInline}>
-                        <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-                          {layer.chordDisplayMode === "diatonic"
-                            ? t("controls.key")
-                            : t("controls.inversion")}
-                        </Text>
-                        <DropdownSelect
-                          theme={theme}
-                          value={
-                            layer.chordDisplayMode === "diatonic"
-                              ? layer.diatonicKeyType
-                              : layer.triadInversion
-                          }
-                          onChange={(v) =>
-                            layer.chordDisplayMode === "diatonic"
-                              ? update({ diatonicKeyType: v })
-                              : update({ triadInversion: v })
-                          }
-                          options={
-                            layer.chordDisplayMode === "diatonic"
-                              ? diatonicKeyOptions
-                              : triadInversionOptions
-                          }
-                          variant="plain"
-                          textStyle={plainSmallText}
-                        />
-                      </View>
-                    )}
-                    {layer.chordDisplayMode === "diatonic" && (
-                      <View style={styles.settingRowInline}>
-                        <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-                          {t("controls.chordType")}
-                        </Text>
-                        <DropdownSelect
-                          theme={theme}
-                          value={layer.diatonicChordSize}
-                          onChange={(v) => update({ diatonicChordSize: v })}
-                          options={diatonicChordSizeOptions}
-                          variant="plain"
-                          textStyle={plainSmallText}
-                        />
-                      </View>
-                    )}
-                  </>
-                )}
-
-                {/* CAGED settings */}
-                {layer.type === "caged" && (
-                  <>
-                    <View style={styles.settingRowInline}>
-                      <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-                        {t("controls.chord")}
-                      </Text>
-                      <DropdownSelect
-                        theme={theme}
-                        value={layer.cagedChordType}
-                        onChange={(v) => update({ cagedChordType: v as "major" | "minor" })}
-                        options={[
-                          { value: "major", label: t("options.diatonicKey.major") },
-                          { value: "minor", label: t("options.diatonicKey.naturalMinor") },
-                        ]}
-                        variant="plain"
-                        textStyle={plainSmallText}
-                      />
-                    </View>
-                    <View style={styles.settingRowInline}>
-                      <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-                        {t("mobileControls.cagedForms")}
-                      </Text>
-                      <View style={styles.cagedRow}>
-                        {CHORD_CAGED_ORDER.map((key) => {
-                          const active = layer.cagedForms.has(key);
-                          return (
-                            <TouchableOpacity
-                              key={key}
-                              onPress={() => {
-                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                const next = new Set(layer.cagedForms);
-                                if (next.has(key)) next.delete(key);
-                                else next.add(key);
-                                update({ cagedForms: next });
-                              }}
-                              style={[
-                                styles.cagedBtn,
-                                {
-                                  backgroundColor: active
-                                    ? layer.color
-                                    : isDark
-                                      ? "#1f2937"
-                                      : "#fafaf9",
-                                  borderColor: active
-                                    ? "transparent"
-                                    : isDark
-                                      ? "#374151"
-                                      : "#d6d3d1",
-                                },
-                              ]}
-                              activeOpacity={0.7}
-                            >
-                              <Text
-                                style={{
-                                  fontSize: 12,
-                                  fontWeight: "bold",
-                                  color: active ? "#fff" : isDark ? "#f3f4f6" : "#44403c",
-                                }}
-                              >
-                                {key}
-                              </Text>
-                            </TouchableOpacity>
-                          );
-                        })}
-                      </View>
-                    </View>
-                  </>
-                )}
-
-                {(layer.type === "chord" || layer.type === "caged") && (
-                  <View style={styles.settingRowInline}>
-                    <Text
-                      style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c", flex: 1 }]}
-                    >
-                      {t("layers.chordFrame")}
-                    </Text>
-                    <SlideToggle
-                      active={layer.showChordFrame ?? true}
-                      color={layer.color}
-                      isDark={isDark}
-                      onPress={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        update({
-                          showChordFrame: !(layer.showChordFrame ?? true),
-                        });
-                      }}
-                    />
-                  </View>
-                )}
-
-                {/* Navigate to chips page (custom type only) */}
-                {layer.type === "custom" && (
-                  <View style={styles.settingRowInline}>
-                    <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-                      {layer.customMode === "note"
-                        ? t("noteFilter.title")
-                        : t("degreeFilter.title")}
-                    </Text>
-                    <TouchableOpacity
-                      onPress={() => navigateTo("chips")}
-                      style={[
-                        styles.navTrigger,
-                        {
-                          borderColor: "transparent",
-                          backgroundColor: "transparent",
-                        },
-                      ]}
-                      activeOpacity={0.7}
-                    >
-                      <Text
-                        style={{
-                          fontSize: 14,
-                          fontWeight: "500",
-                          color: isDark ? "#fff" : "#1c1917",
-                        }}
-                      >
-                        {(() => {
-                          const items =
-                            layer.customMode === "note"
-                              ? [...layer.selectedNotes]
-                              : [...layer.selectedDegrees];
-                          if (items.length === 0) return "—";
-                          if (items.length <= 6) return items.join(", ");
-                          return `${items.slice(0, 6).join(", ")}…`;
-                        })()}
-                      </Text>
-                      <ChevronIcon size={10} color={isDark ? "#6b7280" : "#a8a29e"} />
-                    </TouchableOpacity>
-                  </View>
-                )}
-
-                {/* Navigate to color page */}
-                <View style={styles.settingRowInline}>
-                  <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c", flex: 1 }]}>
-                    {t("layerColors")}
-                  </Text>
-                  <TouchableOpacity onPress={() => navigateTo("color")} activeOpacity={0.7}>
-                    <View
-                      style={{
-                        width: 28,
-                        height: 28,
-                        borderRadius: 14,
-                        backgroundColor: layer.color,
-                      }}
-                    />
-                  </TouchableOpacity>
-                </View>
-
-                {/* Save button */}
-                <TouchableOpacity
-                  onPress={handleSave}
-                  style={[styles.saveBtn, { backgroundColor: isDark ? "#e5e7eb" : "#1c1917" }]}
-                  activeOpacity={0.8}
-                >
-                  <Text
-                    style={{
-                      fontSize: 15,
-                      fontWeight: "600",
-                      color: isDark ? "#1c1917" : "#fff",
-                    }}
-                  >
-                    {t("layers.confirm")}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </ScrollView>
-          )}
-
-          {/* Step: Color picker */}
-          {step === "color" && (
-            <ScrollView
-              ref={sheetScrollRef}
-              style={styles.sheetScroll}
-              contentContainerStyle={styles.sheetScrollContent}
-              showsVerticalScrollIndicator
-              indicatorStyle={isDark ? "white" : "black"}
-              persistentScrollbar
-              onLayout={flashSheetScrollIndicator}
-              onContentSizeChange={flashSheetScrollIndicator}
-            >
-              <View style={styles.settings}>
-                <TouchableOpacity
-                  onPress={() => navigateTo("settings")}
-                  style={{ padding: 10, alignSelf: "flex-start" }}
-                  activeOpacity={0.7}
-                >
-                  <Text
-                    style={{
-                      fontSize: 20,
-                      color: isDark ? "#e5e7eb" : "#1c1917",
-                    }}
-                  >
-                    ←
-                  </Text>
-                </TouchableOpacity>
-                <View style={styles.settingRow}>
-                  <View style={styles.colorRow}>
-                    {COLOR_PRESETS.map((preset) => (
-                      <TouchableOpacity
-                        key={preset}
-                        onPress={() => {
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                          update({ color: preset });
-                        }}
-                        style={[
-                          styles.colorDot,
-                          {
-                            backgroundColor: preset,
-                            borderWidth: layer.color === preset ? 3 : 0,
-                            borderColor: isDark ? "#fff" : "#1c1917",
-                          },
-                        ]}
-                        activeOpacity={0.7}
-                      />
-                    ))}
-                  </View>
-                </View>
-                <TouchableOpacity
-                  onPress={() => navigateTo("settings")}
-                  style={[styles.saveBtn, { backgroundColor: isDark ? "#e5e7eb" : "#1c1917" }]}
-                  activeOpacity={0.8}
-                >
-                  <Text
-                    style={{
-                      fontSize: 15,
-                      fontWeight: "600",
-                      color: isDark ? "#1c1917" : "#fff",
-                    }}
-                  >
-                    {t("layers.confirm")}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </ScrollView>
-          )}
-
-          {/* Step: Chips (custom layer notes/degrees) */}
-          {step === "chips" && (
-            <ScrollView
-              ref={sheetScrollRef}
-              style={styles.sheetScroll}
-              contentContainerStyle={styles.sheetScrollContent}
-              showsVerticalScrollIndicator
-              indicatorStyle={isDark ? "white" : "black"}
-              persistentScrollbar
-              onLayout={flashSheetScrollIndicator}
-              onContentSizeChange={flashSheetScrollIndicator}
-            >
-              <View style={styles.settings}>
-                <TouchableOpacity
-                  onPress={() => navigateTo("settings")}
-                  style={{ padding: 10, alignSelf: "flex-start" }}
-                  activeOpacity={0.7}
-                >
-                  <Text
-                    style={{
-                      fontSize: 20,
-                      color: isDark ? "#e5e7eb" : "#1c1917",
-                    }}
-                  >
-                    ←
-                  </Text>
-                </TouchableOpacity>
-                <DropdownSelect
-                  theme={theme}
-                  value={layer.customMode}
-                  onChange={(v) => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    update({ customMode: v as "note" | "degree" });
-                  }}
-                  options={[
-                    { value: "note", label: t("noteFilter.title") },
-                    { value: "degree", label: t("degreeFilter.title") },
-                  ]}
-                  variant="plain"
-                  textStyle={plainSmallText}
-                />
-                <View style={styles.customChipsGrid}>
-                  {(layer.customMode === "note" ? notes : [...CUSTOM_DEGREE_CHIPS]).map((item) => {
-                    const active =
-                      layer.customMode === "note"
-                        ? layer.selectedNotes.has(item)
-                        : layer.selectedDegrees.has(item);
-                    return (
-                      <BounceChip
-                        key={item}
-                        label={item}
-                        active={active}
-                        color={layer.color}
-                        isDark={isDark}
-                        onPress={() => {
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                          if (layer.customMode === "note") {
-                            const next = new Set(layer.selectedNotes);
-                            if (next.has(item)) next.delete(item);
-                            else next.add(item);
-                            update({ selectedNotes: next });
-                          } else {
-                            const next = new Set(layer.selectedDegrees);
-                            if (next.has(item)) next.delete(item);
-                            else next.add(item);
-                            update({ selectedDegrees: next });
-                          }
-                        }}
-                      />
-                    );
-                  })}
-                </View>
-                <View style={styles.customActionRow}>
-                  <View
-                    style={{
-                      flex: 1,
-                      borderWidth: 1,
-                      borderRadius: 10,
-                      borderColor: isDark ? "#374151" : "#d6d3d1",
-                      backgroundColor: isDark ? "#1f2937" : "#fafaf9",
-                      alignItems: "center",
-                    }}
-                  >
-                    <DropdownSelect
-                      theme={theme}
-                      value={extractChordType}
-                      onChange={(v) => {
-                        setExtractChordType(v);
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        const semitones = CHORD_SEMITONES[v];
-                        if (!semitones) return;
-                        if (layer.customMode === "note") {
-                          const rootIdx = getRootIndex(rootNote);
-                          const chordNotes = new Set(
-                            [...semitones].map((s) => notes[(rootIdx + s) % 12]),
-                          );
-                          update({ selectedNotes: chordNotes });
-                        } else {
-                          update({
-                            selectedDegrees: new Set(
-                              DEGREE_BY_SEMITONE.filter((_, i) => semitones.has(i)),
-                            ),
-                          });
-                        }
-                      }}
-                      options={CHORD_TYPES.map((v) => ({ value: v, label: v }))}
-                      label={t("layers.extractFromChord")}
-                      variant="plain"
-                      textStyle={plainSmallText}
-                    />
-                  </View>
+                {(["scale", "chord", "caged", "custom"] as LayerType[]).map((type) => (
                   <TouchableOpacity
-                    disabled={layer.selectedNotes.size === 0 && layer.selectedDegrees.size === 0}
+                    key={type}
                     onPress={() => {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      update({
-                        selectedNotes: new Set(),
-                        selectedDegrees: new Set(),
-                      });
+                      const newLayer = createDefaultLayer(type, layer.id, layer.color);
+                      setLayer(newLayer);
+                      onPreview?.(newLayer);
+                      closeWithCallback(() => setStep("settings"));
                     }}
                     style={[
-                      styles.customActionBtn,
+                      styles.typeBtn,
                       {
-                        borderColor: isDark ? "rgba(239,68,68,0.3)" : "rgba(239,68,68,0.25)",
-                        backgroundColor: isDark ? "rgba(239,68,68,0.08)" : "rgba(254,226,226,0.7)",
-                        opacity:
-                          layer.selectedNotes.size === 0 && layer.selectedDegrees.size === 0
-                            ? 0.35
-                            : 1,
+                        borderColor: isDark ? "#374151" : "#d6d3d1",
+                        backgroundColor: isDark ? "#1f2937" : "#fafaf9",
+                      },
+                    ]}
+                    activeOpacity={0.7}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 15,
+                        fontWeight: "600",
+                        color: isDark ? "#fff" : "#1c1917",
+                      }}
+                    >
+                      {t(`layers.${type}`)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </View>
+        )}
+      </AnimatedModal>
+
+      {/* Settings / color / chips — bottom sheet */}
+      <BottomSheetModal visible={visible && resolvedStep !== "type"} onClose={onClose}>
+        {({ close }) => (
+          <View
+            style={[
+              styles.modal,
+              styles.bottomSheetModal,
+              { height: sheetHeight, backgroundColor: bgColor, borderColor },
+            ]}
+          >
+            {/* Step 2: Settings */}
+            {step === "settings" && (
+              <ScrollView
+                ref={sheetScrollRef}
+                style={styles.sheetScroll}
+                contentContainerStyle={styles.sheetScrollContent}
+                showsVerticalScrollIndicator
+                indicatorStyle={isDark ? "white" : "black"}
+                persistentScrollbar
+                onLayout={flashSheetScrollIndicator}
+                onContentSizeChange={flashSheetScrollIndicator}
+                stickyHeaderIndices={[0]}
+              >
+                <View
+                  style={[
+                    styles.settingsStickyHeader,
+                    {
+                      backgroundColor: isDark ? "#111827" : "#fafaf9",
+                      borderBottomColor: isDark ? "rgba(255,255,255,0.08)" : "#e7e5e4",
+                    },
+                  ]}
+                >
+                  <DropdownSelect
+                    theme={theme}
+                    value={layer.type}
+                    onChange={(v) => {
+                      const newType = v as LayerType;
+                      if (newType !== layer.type) {
+                        const nextLayer = {
+                          ...createDefaultLayer(newType, layer.id, layer.color),
+                        };
+                        setLayer(nextLayer);
+                        onPreview?.(nextLayer);
+                      }
+                    }}
+                    options={[
+                      { value: "scale", label: t("layers.scale") },
+                      { value: "chord", label: t("layers.chord") },
+                      { value: "caged", label: t("layers.caged") },
+                      { value: "custom", label: t("layers.custom") },
+                    ]}
+                    variant="plain"
+                  />
+                  <TouchableOpacity
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      const next = !showDescription;
+                      setShowDescription(next);
+                      if (next) {
+                        descAnim.setValue(0);
+                        Animated.timing(descAnim, {
+                          toValue: 1,
+                          duration: 400,
+                          easing: Easing.out(Easing.cubic),
+                          useNativeDriver: false,
+                        }).start();
+                      } else {
+                        Animated.timing(descAnim, {
+                          toValue: 0,
+                          duration: 350,
+                          easing: Easing.out(Easing.cubic),
+                          useNativeDriver: false,
+                        }).start();
+                      }
+                    }}
+                    style={[
+                      styles.helpBtn,
+                      {
+                        position: "absolute",
+                        right: 12,
+                        top: 5,
+                        backgroundColor: showDescription
+                          ? isDark
+                            ? "#374151"
+                            : "#e7e5e4"
+                          : "transparent",
                       },
                     ]}
                     activeOpacity={0.7}
@@ -1077,35 +405,560 @@ export default function LayerEditModal({
                     <Text
                       style={{
                         fontSize: 13,
-                        fontWeight: "500",
-                        color: isDark ? "#f87171" : "#ef4444",
+                        fontWeight: "700",
+                        color: isDark ? "#9ca3af" : "#78716c",
                       }}
                     >
-                      {t("layers.reset")}
+                      ?
                     </Text>
                   </TouchableOpacity>
                 </View>
-                <TouchableOpacity
-                  onPress={() => navigateTo("settings")}
-                  style={[styles.saveBtn, { backgroundColor: isDark ? "#e5e7eb" : "#1c1917" }]}
-                  activeOpacity={0.8}
+
+                <Animated.View
+                  style={{
+                    paddingHorizontal: 16,
+                    maxHeight: descAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, 200],
+                    }),
+                    opacity: descAnim,
+                    overflow: "hidden",
+                  }}
                 >
-                  <Text
-                    style={{
-                      fontSize: 15,
-                      fontWeight: "600",
-                      color: isDark ? "#1c1917" : "#fff",
+                  <View style={{ paddingTop: 8 }}>
+                    <LayerDescription theme={theme} layer={layer} />
+                  </View>
+                </Animated.View>
+
+                <View style={styles.settings}>
+                  {/* Scale settings */}
+                  {layer.type === "scale" && (
+                    <View style={styles.settingRowInline}>
+                      <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c" }]}>
+                        {t("mobileControls.scaleKind")}
+                      </Text>
+                      <DropdownSelect
+                        theme={theme}
+                        value={layer.scaleType}
+                        onChange={(v) => update({ scaleType: v as ScaleType })}
+                        options={scaleOptions}
+                        variant="plain"
+                        textStyle={plainSmallText}
+                      />
+                    </View>
+                  )}
+
+                  {/* Chord settings */}
+                  {layer.type === "chord" && (
+                    <>
+                      <View style={styles.settingRowInline}>
+                        <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c" }]}>
+                          {t("controls.displayMode")}
+                        </Text>
+                        <DropdownSelect
+                          theme={theme}
+                          value={layer.chordDisplayMode}
+                          onChange={(v) => update({ chordDisplayMode: v as ChordDisplayMode })}
+                          options={chordDisplayOptions}
+                          variant="plain"
+                          textStyle={plainSmallText}
+                        />
+                      </View>
+                      {layer.chordDisplayMode !== "on-chord" && (
+                        <View style={styles.settingRowInline}>
+                          <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c" }]}>
+                            {layer.chordDisplayMode === "diatonic"
+                              ? t("controls.degree")
+                              : t("controls.chord")}
+                          </Text>
+                          <DropdownSelect
+                            theme={theme}
+                            value={
+                              layer.chordDisplayMode === "diatonic"
+                                ? layer.diatonicDegree
+                                : layer.chordType
+                            }
+                            onChange={(v) =>
+                              layer.chordDisplayMode === "diatonic"
+                                ? update({ diatonicDegree: v })
+                                : update({ chordType: v as ChordType })
+                            }
+                            options={
+                              layer.chordDisplayMode === "form"
+                                ? CHORD_TYPES.map((v) => ({ value: v, label: v }))
+                                : layer.chordDisplayMode === "triad"
+                                  ? ["Major", "Minor", "Diminished", "Augmented"].map((v) => ({
+                                      value: v,
+                                      label: v,
+                                    }))
+                                  : diatonicCodeOptions
+                            }
+                            variant="plain"
+                            textStyle={plainSmallText}
+                          />
+                        </View>
+                      )}
+                      {layer.chordDisplayMode === "on-chord" && (
+                        <View style={styles.settingRowInline}>
+                          <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c" }]}>
+                            {t("controls.chord")}
+                          </Text>
+                          <DropdownSelect
+                            theme={theme}
+                            value={layer.onChordName}
+                            onChange={(v) => update({ onChordName: v })}
+                            options={onChordOptions}
+                            variant="plain"
+                            textStyle={plainSmallText}
+                          />
+                        </View>
+                      )}
+                      {(layer.chordDisplayMode === "diatonic" ||
+                        layer.chordDisplayMode === "triad") && (
+                        <View style={styles.settingRowInline}>
+                          <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c" }]}>
+                            {layer.chordDisplayMode === "diatonic"
+                              ? t("controls.key")
+                              : t("controls.inversion")}
+                          </Text>
+                          <DropdownSelect
+                            theme={theme}
+                            value={
+                              layer.chordDisplayMode === "diatonic"
+                                ? layer.diatonicKeyType
+                                : layer.triadInversion
+                            }
+                            onChange={(v) =>
+                              layer.chordDisplayMode === "diatonic"
+                                ? update({ diatonicKeyType: v })
+                                : update({ triadInversion: v })
+                            }
+                            options={
+                              layer.chordDisplayMode === "diatonic"
+                                ? diatonicKeyOptions
+                                : triadInversionOptions
+                            }
+                            variant="plain"
+                            textStyle={plainSmallText}
+                          />
+                        </View>
+                      )}
+                      {layer.chordDisplayMode === "diatonic" && (
+                        <View style={styles.settingRowInline}>
+                          <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c" }]}>
+                            {t("controls.chordType")}
+                          </Text>
+                          <DropdownSelect
+                            theme={theme}
+                            value={layer.diatonicChordSize}
+                            onChange={(v) => update({ diatonicChordSize: v })}
+                            options={diatonicChordSizeOptions}
+                            variant="plain"
+                            textStyle={plainSmallText}
+                          />
+                        </View>
+                      )}
+                    </>
+                  )}
+
+                  {/* CAGED settings */}
+                  {layer.type === "caged" && (
+                    <>
+                      <View style={styles.settingRowInline}>
+                        <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c" }]}>
+                          {t("controls.chord")}
+                        </Text>
+                        <DropdownSelect
+                          theme={theme}
+                          value={layer.cagedChordType}
+                          onChange={(v) => update({ cagedChordType: v as "major" | "minor" })}
+                          options={[
+                            { value: "major", label: t("options.diatonicKey.major") },
+                            { value: "minor", label: t("options.diatonicKey.naturalMinor") },
+                          ]}
+                          variant="plain"
+                          textStyle={plainSmallText}
+                        />
+                      </View>
+                      <View style={styles.settingRowInline}>
+                        <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c" }]}>
+                          {t("mobileControls.cagedForms")}
+                        </Text>
+                        <View style={styles.cagedRow}>
+                          {CHORD_CAGED_ORDER.map((key) => {
+                            const active = layer.cagedForms.has(key);
+                            return (
+                              <TouchableOpacity
+                                key={key}
+                                onPress={() => {
+                                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                  const next = new Set(layer.cagedForms);
+                                  if (next.has(key)) next.delete(key);
+                                  else next.add(key);
+                                  update({ cagedForms: next });
+                                }}
+                                style={[
+                                  styles.cagedBtn,
+                                  {
+                                    backgroundColor: active
+                                      ? layer.color
+                                      : isDark
+                                        ? "#1f2937"
+                                        : "#fafaf9",
+                                    borderColor: active
+                                      ? "transparent"
+                                      : isDark
+                                        ? "#374151"
+                                        : "#d6d3d1",
+                                  },
+                                ]}
+                                activeOpacity={0.7}
+                              >
+                                <Text
+                                  style={{
+                                    fontSize: 12,
+                                    fontWeight: "bold",
+                                    color: active ? "#fff" : isDark ? "#f3f4f6" : "#44403c",
+                                  }}
+                                >
+                                  {key}
+                                </Text>
+                              </TouchableOpacity>
+                            );
+                          })}
+                        </View>
+                      </View>
+                    </>
+                  )}
+
+                  {(layer.type === "chord" || layer.type === "caged") && (
+                    <View style={styles.settingRowInline}>
+                      <Text
+                        style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c", flex: 1 }]}
+                      >
+                        {t("layers.chordFrame")}
+                      </Text>
+                      <SlideToggle
+                        active={layer.showChordFrame ?? true}
+                        color={layer.color}
+                        isDark={isDark}
+                        onPress={() => {
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                          update({
+                            showChordFrame: !(layer.showChordFrame ?? true),
+                          });
+                        }}
+                      />
+                    </View>
+                  )}
+
+                  {/* Navigate to chips page (custom type only) */}
+                  {layer.type === "custom" && (
+                    <View style={styles.settingRowInline}>
+                      <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c" }]}>
+                        {layer.customMode === "note"
+                          ? t("noteFilter.title")
+                          : t("degreeFilter.title")}
+                      </Text>
+                      <TouchableOpacity
+                        onPress={() => navigateTo("chips")}
+                        style={[
+                          styles.navTrigger,
+                          {
+                            borderColor: "transparent",
+                            backgroundColor: "transparent",
+                          },
+                        ]}
+                        activeOpacity={0.7}
+                      >
+                        <Text
+                          style={{
+                            fontSize: 14,
+                            fontWeight: "500",
+                            color: isDark ? "#fff" : "#1c1917",
+                          }}
+                        >
+                          {(() => {
+                            const items =
+                              layer.customMode === "note"
+                                ? [...layer.selectedNotes]
+                                : [...layer.selectedDegrees];
+                            if (items.length === 0) return "—";
+                            if (items.length <= 6) return items.join(", ");
+                            return `${items.slice(0, 6).join(", ")}…`;
+                          })()}
+                        </Text>
+                        <ChevronIcon size={10} color={isDark ? "#6b7280" : "#a8a29e"} />
+                      </TouchableOpacity>
+                    </View>
+                  )}
+
+                  {/* Navigate to color page */}
+                  <View style={styles.settingRowInline}>
+                    <Text
+                      style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c", flex: 1 }]}
+                    >
+                      {t("layerColors")}
+                    </Text>
+                    <TouchableOpacity onPress={() => navigateTo("color")} activeOpacity={0.7}>
+                      <View
+                        style={{
+                          width: 28,
+                          height: 28,
+                          borderRadius: 14,
+                          backgroundColor: layer.color,
+                        }}
+                      />
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* Save button */}
+                  <TouchableOpacity
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                      onSave(layer);
+                      close();
                     }}
+                    style={[styles.saveBtn, { backgroundColor: isDark ? "#e5e7eb" : "#1c1917" }]}
+                    activeOpacity={0.8}
                   >
-                    {t("layers.confirm")}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </ScrollView>
-          )}
-        </Animated.View>
-      </View>
-    </Modal>
+                    <Text
+                      style={{
+                        fontSize: 15,
+                        fontWeight: "600",
+                        color: isDark ? "#1c1917" : "#fff",
+                      }}
+                    >
+                      {t("layers.confirm")}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
+            )}
+
+            {/* Step: Color picker */}
+            {step === "color" && (
+              <ScrollView
+                ref={sheetScrollRef}
+                style={styles.sheetScroll}
+                contentContainerStyle={styles.sheetScrollContent}
+                showsVerticalScrollIndicator
+                indicatorStyle={isDark ? "white" : "black"}
+                persistentScrollbar
+                onLayout={flashSheetScrollIndicator}
+                onContentSizeChange={flashSheetScrollIndicator}
+              >
+                <View style={styles.settings}>
+                  <TouchableOpacity
+                    onPress={() => navigateTo("settings")}
+                    style={{ padding: 10, alignSelf: "flex-start" }}
+                    activeOpacity={0.7}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 20,
+                        color: isDark ? "#e5e7eb" : "#1c1917",
+                      }}
+                    >
+                      ←
+                    </Text>
+                  </TouchableOpacity>
+                  <View style={styles.settingRow}>
+                    <ColorPicker
+                      value={layer.color}
+                      onChange={(color) => update({ color })}
+                      isDark={isDark}
+                    />
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => navigateTo("settings")}
+                    style={[styles.saveBtn, { backgroundColor: isDark ? "#e5e7eb" : "#1c1917" }]}
+                    activeOpacity={0.8}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 15,
+                        fontWeight: "600",
+                        color: isDark ? "#1c1917" : "#fff",
+                      }}
+                    >
+                      {t("layers.confirm")}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
+            )}
+
+            {/* Step: Chips (custom layer notes/degrees) */}
+            {step === "chips" && (
+              <ScrollView
+                ref={sheetScrollRef}
+                style={styles.sheetScroll}
+                contentContainerStyle={styles.sheetScrollContent}
+                showsVerticalScrollIndicator
+                indicatorStyle={isDark ? "white" : "black"}
+                persistentScrollbar
+                onLayout={flashSheetScrollIndicator}
+                onContentSizeChange={flashSheetScrollIndicator}
+              >
+                <View style={styles.settings}>
+                  <TouchableOpacity
+                    onPress={() => navigateTo("settings")}
+                    style={{ padding: 10, alignSelf: "flex-start" }}
+                    activeOpacity={0.7}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 20,
+                        color: isDark ? "#e5e7eb" : "#1c1917",
+                      }}
+                    >
+                      ←
+                    </Text>
+                  </TouchableOpacity>
+                  <DropdownSelect
+                    theme={theme}
+                    value={layer.customMode}
+                    onChange={(v) => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      update({ customMode: v as "note" | "degree" });
+                    }}
+                    options={[
+                      { value: "note", label: t("noteFilter.title") },
+                      { value: "degree", label: t("degreeFilter.title") },
+                    ]}
+                    variant="plain"
+                    textStyle={plainSmallText}
+                  />
+                  <View style={styles.customChipsGrid}>
+                    {(layer.customMode === "note" ? notes : [...CUSTOM_DEGREE_CHIPS]).map(
+                      (item) => {
+                        const active =
+                          layer.customMode === "note"
+                            ? layer.selectedNotes.has(item)
+                            : layer.selectedDegrees.has(item);
+                        return (
+                          <BounceChip
+                            key={item}
+                            label={item}
+                            active={active}
+                            color={layer.color}
+                            isDark={isDark}
+                            onPress={() => {
+                              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                              if (layer.customMode === "note") {
+                                const next = new Set(layer.selectedNotes);
+                                if (next.has(item)) next.delete(item);
+                                else next.add(item);
+                                update({ selectedNotes: next });
+                              } else {
+                                const next = new Set(layer.selectedDegrees);
+                                if (next.has(item)) next.delete(item);
+                                else next.add(item);
+                                update({ selectedDegrees: next });
+                              }
+                            }}
+                          />
+                        );
+                      },
+                    )}
+                  </View>
+                  <View style={styles.customActionRow}>
+                    <View
+                      style={{
+                        flex: 1,
+                        borderWidth: 1,
+                        borderRadius: 10,
+                        borderColor: isDark ? "#374151" : "#d6d3d1",
+                        backgroundColor: isDark ? "#1f2937" : "#fafaf9",
+                        alignItems: "center",
+                      }}
+                    >
+                      <DropdownSelect
+                        theme={theme}
+                        value={extractChordType}
+                        onChange={(v) => {
+                          setExtractChordType(v);
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                          const semitones = CHORD_SEMITONES[v];
+                          if (!semitones) return;
+                          if (layer.customMode === "note") {
+                            const rootIdx = getRootIndex(rootNote);
+                            const chordNotes = new Set(
+                              [...semitones].map((s) => notes[(rootIdx + s) % 12]),
+                            );
+                            update({ selectedNotes: chordNotes });
+                          } else {
+                            update({
+                              selectedDegrees: new Set(
+                                DEGREE_BY_SEMITONE.filter((_, i) => semitones.has(i)),
+                              ),
+                            });
+                          }
+                        }}
+                        options={CHORD_TYPES.map((v) => ({ value: v, label: v }))}
+                        label={t("layers.extractFromChord")}
+                        variant="plain"
+                        textStyle={plainSmallText}
+                      />
+                    </View>
+                    <TouchableOpacity
+                      disabled={layer.selectedNotes.size === 0 && layer.selectedDegrees.size === 0}
+                      onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        update({
+                          selectedNotes: new Set(),
+                          selectedDegrees: new Set(),
+                        });
+                      }}
+                      style={[
+                        styles.customActionBtn,
+                        {
+                          borderColor: isDark ? "rgba(239,68,68,0.3)" : "rgba(239,68,68,0.25)",
+                          backgroundColor: isDark
+                            ? "rgba(239,68,68,0.08)"
+                            : "rgba(254,226,226,0.7)",
+                          opacity:
+                            layer.selectedNotes.size === 0 && layer.selectedDegrees.size === 0
+                              ? 0.35
+                              : 1,
+                        },
+                      ]}
+                      activeOpacity={0.7}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 13,
+                          fontWeight: "500",
+                          color: isDark ? "#f87171" : "#ef4444",
+                        }}
+                      >
+                        {t("layers.reset")}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => navigateTo("settings")}
+                    style={[styles.saveBtn, { backgroundColor: isDark ? "#e5e7eb" : "#1c1917" }]}
+                    activeOpacity={0.8}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 15,
+                        fontWeight: "600",
+                        color: isDark ? "#1c1917" : "#fff",
+                      }}
+                    >
+                      {t("layers.confirm")}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
+            )}
+          </View>
+        )}
+      </BottomSheetModal>
+    </>
   );
 }
 
@@ -1198,16 +1051,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     textTransform: "uppercase",
     letterSpacing: 0.8,
-  },
-  colorRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  colorDot: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
   },
   cagedRow: {
     flexDirection: "row",

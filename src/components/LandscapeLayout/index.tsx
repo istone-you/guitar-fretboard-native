@@ -1,11 +1,11 @@
 import { View, Text, StatusBar, StyleSheet } from "react-native";
 import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import MainPracticePane from "../../screens/MainPractice";
-import type { MainPracticePaneProps } from "../../screens/MainPractice";
+import LayerPane from "../../screens/Layer";
+import type { LayerPaneProps } from "../../screens/Layer";
 import type { Theme } from "../../types";
 
-type LandscapeLayoutProps = Omit<MainPracticePaneProps, "isLandscape" | "disableAnimation"> & {
+type LandscapeLayoutProps = Omit<LayerPaneProps, "isLandscape" | "disableAnimation"> & {
   winHeight: number;
   theme: Theme;
 };
@@ -95,7 +95,7 @@ export default function LandscapeLayout({
             transformOrigin: "top left",
           }}
         >
-          <MainPracticePane {...mainPaneProps} theme={theme} isLandscape disableAnimation />
+          <LayerPane {...mainPaneProps} theme={theme} isLandscape disableAnimation />
         </View>
       </View>
     </View>

@@ -2,6 +2,15 @@ import React from "react";
 import { render, fireEvent, screen } from "@testing-library/react-native";
 import TabBar from "../index";
 
+jest.mock("react-i18next", () => ({
+  useTranslation: () => ({ t: (key: string) => key, i18n: { language: "en" } }),
+}));
+jest.mock("../../../i18n", () => ({}));
+jest.mock("@react-native-async-storage/async-storage", () => ({
+  getItem: jest.fn(() => Promise.resolve(null)),
+  setItem: jest.fn(() => Promise.resolve()),
+}));
+
 jest.mock("react-native-svg", () => {
   const { View } = require("react-native");
   return {
@@ -17,13 +26,11 @@ jest.mock("react-native-svg", () => {
 const defaultProps = {
   isDark: false,
   showQuiz: false,
-  showStats: false,
   showFinder: false,
   insetBottom: 0,
   onPressHome: jest.fn(),
   onPressFinder: jest.fn(),
   onPressQuiz: jest.fn(),
-  onPressStats: jest.fn(),
 };
 
 function renderTabBar(overrides: Partial<typeof defaultProps> = {}) {
@@ -35,12 +42,11 @@ describe("TabBar", () => {
     jest.clearAllMocks();
   });
 
-  it("renders 4 tab buttons", () => {
+  it("renders 3 tab buttons", () => {
     renderTabBar();
     expect(screen.getByTestId("tab-home")).toBeTruthy();
     expect(screen.getByTestId("tab-finder")).toBeTruthy();
     expect(screen.getByTestId("tab-quiz")).toBeTruthy();
-    expect(screen.getByTestId("tab-stats")).toBeTruthy();
   });
 
   it("onPressHome is called when home tab is pressed", () => {
@@ -57,23 +63,12 @@ describe("TabBar", () => {
     expect(onPressQuiz).toHaveBeenCalledTimes(1);
   });
 
-  it("onPressStats is called when stats tab is pressed", () => {
-    const onPressStats = jest.fn();
-    renderTabBar({ onPressStats });
-    fireEvent.press(screen.getByTestId("tab-stats"));
-    expect(onPressStats).toHaveBeenCalledTimes(1);
-  });
-
   it("renders without crashing in dark mode", () => {
     expect(() => renderTabBar({ isDark: true })).not.toThrow();
   });
 
   it("renders without crashing when showQuiz is true", () => {
     expect(() => renderTabBar({ showQuiz: true })).not.toThrow();
-  });
-
-  it("renders without crashing when showStats is true", () => {
-    expect(() => renderTabBar({ showStats: true })).not.toThrow();
   });
 
   it("onPressFinder is called when finder tab is pressed", () => {

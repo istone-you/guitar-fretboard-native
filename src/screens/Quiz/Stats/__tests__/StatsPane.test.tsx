@@ -1,7 +1,7 @@
 import React from "react";
 import { render } from "@testing-library/react-native";
 import StatsPane from "..";
-import type { Accidental, QuizRecord, Theme } from "../../../types";
+import type { Accidental, QuizRecord, Theme } from "../../../../types";
 
 jest.mock("react-i18next", () => ({
   useTranslation: () => ({
@@ -12,7 +12,7 @@ jest.mock("react-i18next", () => ({
   }),
 }));
 
-jest.mock("../../../components/Stats", () => {
+jest.mock("../../../../components/Stats", () => {
   const { View } = require("react-native");
   return {
     __esModule: true,

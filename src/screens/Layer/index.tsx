@@ -4,7 +4,7 @@ import NormalFretboard from "../../components/NormalFretboard";
 import PracticePane from "../../components/ui/PracticePane";
 import type { Accidental, BaseLabelMode, LayerConfig, Theme } from "../../types";
 
-export interface MainPracticePaneProps {
+export interface LayerPaneProps {
   isLandscape: boolean;
   theme: Theme;
   accidental: Accidental;
@@ -30,7 +30,7 @@ export interface MainPracticePaneProps {
   onLoadPreset: (layers: LayerConfig[]) => void;
 }
 
-export default function MainPracticePane({
+export default function LayerPane({
   isLandscape,
   theme,
   accidental,
@@ -53,7 +53,7 @@ export default function MainPracticePane({
   onReorderLayers,
   onPreviewLayer,
   onLoadPreset,
-}: MainPracticePaneProps) {
+}: LayerPaneProps) {
   return (
     <PracticePane
       isLandscape={isLandscape}

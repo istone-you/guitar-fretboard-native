@@ -1,6 +1,6 @@
 import React from "react";
 import { render } from "@testing-library/react-native";
-import MainPracticePane from "..";
+import LayerPane from "..";
 import type { Accidental, BaseLabelMode, LayerConfig, Theme } from "../../../types";
 
 jest.mock("react-i18next", () => ({
@@ -51,10 +51,10 @@ const defaultProps = {
 };
 
 function renderPane(overrides: Partial<typeof defaultProps> = {}) {
-  return render(<MainPracticePane {...defaultProps} {...overrides} />);
+  return render(<LayerPane {...defaultProps} {...overrides} />);
 }
 
-describe("MainPracticePane", () => {
+describe("LayerPane", () => {
   it("renders MainFretboardPane", () => {
     const { getByTestId } = renderPane();
     expect(getByTestId("main-fretboard-pane")).toBeTruthy();

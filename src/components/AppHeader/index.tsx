@@ -13,7 +13,6 @@ interface HeaderBarProps {
   accidental: Accidental;
   baseLabelMode: BaseLabelMode;
   showQuiz: boolean;
-  showStats?: boolean;
   rootChangeDisabled?: boolean;
   onBaseLabelModeChange: (mode: BaseLabelMode) => void;
   onRootNoteChange: (note: string) => void;
@@ -32,7 +31,6 @@ export default function HeaderBar({
   accidental,
   baseLabelMode,
   showQuiz,
-  showStats = false,
   rootChangeDisabled = false,
   onBaseLabelModeChange,
   onRootNoteChange,
@@ -104,26 +102,31 @@ export default function HeaderBar({
         </TouchableOpacity>
       )}
 
-      {!rootChangeDisabled && !showStats && !onBack && (
+      {!rootChangeDisabled && !onBack && (
         <View style={styles.stepperRow}>
           <TouchableOpacity onPress={() => stepNote(-1)} style={styles.stepBtn} activeOpacity={0.7}>
             <Text style={[styles.stepBtnText, { color: isDark ? "#9ca3af" : "#78716c" }]}>‹</Text>
           </TouchableOpacity>
-          <Animated.Text
+          <Animated.View
             style={[
-              styles.rootNote,
-              { color: isDark ? "#fff" : "#1c1917", transform: [{ scale: rootScale }] },
+              styles.rootPill,
+              {
+                backgroundColor: isDark ? "#1f2937" : "#e7e5e4",
+                transform: [{ scale: rootScale }],
+              },
             ]}
           >
-            {rootNote}
-          </Animated.Text>
+            <Text style={[styles.rootNote, { color: isDark ? "#f9fafb" : "#1c1917" }]}>
+              {rootNote}
+            </Text>
+          </Animated.View>
           <TouchableOpacity onPress={() => stepNote(1)} style={styles.stepBtn} activeOpacity={0.7}>
             <Text style={[styles.stepBtnText, { color: isDark ? "#9ca3af" : "#78716c" }]}>›</Text>
           </TouchableOpacity>
         </View>
       )}
 
-      {!showQuiz && !showStats && (
+      {!showQuiz && !onBack && (
         <View style={styles.labelToggle}>
           <TouchableOpacity
             onPress={() => onBaseLabelModeChange("note")}
@@ -281,11 +284,18 @@ const styles = StyleSheet.create({
   stepBtnText: {
     fontSize: 20,
   },
+  rootPill: {
+    minWidth: 36,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   rootNote: {
-    width: 28,
     textAlign: "center",
-    fontSize: 14,
-    fontWeight: "bold",
+    fontSize: 15,
+    fontWeight: "700",
     fontFamily: "monospace",
   },
   labelToggle: {
