@@ -353,6 +353,14 @@ function AppContent() {
             onFinderNotesChange={setFinderNotes}
             dotColor={finderDotColor}
             onDotColorChange={setFinderDotColor}
+            layers={layers}
+            onAddLayerAndNavigate={(layer) => {
+              // setShowFinder を先に呼んで LayerList をマウント・初期化させてから
+              // handleAddLayer を別タスクで実行することで、スロット変化を検知して
+              // アニメーションが発動するようにバッチを分離する
+              setShowFinder(false);
+              setTimeout(() => handleAddLayer(layer), 0);
+            }}
           />
         ) : showQuiz && !quizModeSelected ? (
           <View style={{ flex: 1 }}>

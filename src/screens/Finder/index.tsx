@@ -14,9 +14,18 @@ import Svg, { Circle, Path } from "react-native-svg";
 import NormalFretboard from "../../components/NormalFretboard";
 import { identifyChords, type ChordMatch } from "../../lib/chordFinder";
 import { identifyScales, scaleI18nKey, type ScaleMatch } from "../../lib/scaleFinder";
-import { createDefaultLayer } from "../../types";
-import type { Accidental, BaseLabelMode, Theme } from "../../types";
+import { createDefaultLayer, pickNextLayerColor, MAX_LAYERS } from "../../types";
+import type {
+  Accidental,
+  BaseLabelMode,
+  Theme,
+  LayerConfig,
+  ChordType,
+  ScaleType,
+} from "../../types";
 import { usePersistedSetting } from "../../hooks/usePersistedSetting";
+
+type FinderItem = { kind: "chord"; match: ChordMatch } | { kind: "scale"; match: ScaleMatch };
 import SlideToggle from "../../components/ui/SlideToggle";
 import ColorPicker from "../../components/ui/ColorPicker";
 
@@ -33,6 +42,8 @@ export interface FinderPaneProps {
   onFinderNotesChange: (notes: Set<string>) => void;
   dotColor: string;
   onDotColorChange: (color: string) => void;
+  layers: LayerConfig[];
+  onAddLayerAndNavigate: (layer: LayerConfig) => void;
 }
 
 export default function FinderPane({
@@ -48,6 +59,8 @@ export default function FinderPane({
   onFinderNotesChange,
   dotColor,
   onDotColorChange,
+  layers,
+  onAddLayerAndNavigate,
 }: FinderPaneProps) {
   const { t } = useTranslation();
   const [showChords, setShowChords] = usePersistedSetting(
@@ -75,6 +88,7 @@ export default function FinderPane({
     (v) => v === "true",
   );
   const [settingsVisible, setSettingsVisible] = useState(false);
+  const [pendingItem, setPendingItem] = useState<FinderItem | null>(null);
 
   // Lifted to parent — persists across navigation
   const rootNote = finderRoot;
@@ -156,8 +170,6 @@ export default function FinderPane({
     [effectiveNotes, accidental, rootNote],
   );
 
-  type FinderItem = { kind: "chord"; match: ChordMatch } | { kind: "scale"; match: ScaleMatch };
-
   const exactItems = useMemo<FinderItem[]>(() => {
     const items: FinderItem[] = [];
     if (showChords && chordResult)
@@ -188,11 +200,26 @@ export default function FinderPane({
   const hasResult = chordResult !== null || scaleResult !== null;
 
   // Highlight all effective notes on the fretboard
-  const layers = useMemo(() => {
+  const finderLayers = useMemo(() => {
     const layer = createDefaultLayer("custom", "finder", accentColor);
     layer.selectedNotes = new Set(effectiveNotes);
     return [layer];
   }, [effectiveNotes, accentColor]);
+
+  const handleConfirmAdd = () => {
+    if (!pendingItem) return;
+    let newLayer: LayerConfig;
+    if (pendingItem.kind === "chord") {
+      newLayer = createDefaultLayer("chord", `layer-${Date.now()}`, pickNextLayerColor(layers));
+      newLayer.chordDisplayMode = "form";
+      newLayer.chordType = pendingItem.match.chordType as ChordType;
+    } else {
+      newLayer = createDefaultLayer("scale", `layer-${Date.now()}`, pickNextLayerColor(layers));
+      newLayer.scaleType = pendingItem.match.scaleType as ScaleType;
+    }
+    setPendingItem(null);
+    onAddLayerAndNavigate(newLayer);
+  };
 
   const renderItem = (item: FinderItem, index: number) => {
     const isChord = item.kind === "chord";
@@ -211,8 +238,10 @@ export default function FinderPane({
     const tagLabel = isChord ? t("finder.chords") : t("finder.scales");
 
     return (
-      <View
+      <TouchableOpacity
         key={key}
+        activeOpacity={0.7}
+        onPress={() => setPendingItem(item)}
         style={[styles.matchRow, { backgroundColor: cardBg, borderBottomColor: borderColor }]}
       >
         <View style={styles.matchNameRow}>
@@ -228,7 +257,7 @@ export default function FinderPane({
         >
           {notes}
         </Animated.Text>
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -263,7 +292,7 @@ export default function FinderPane({
           baseLabelMode={rootNote ? baseLabelMode : "note"}
           fretRange={fretRange}
           rootNote={rootNote ?? lastRootNoteRef.current}
-          layers={layers}
+          layers={finderLayers}
           leftHanded={leftHanded}
           disableAnimation={false}
           onNoteClick={handleNoteToggle}
@@ -445,6 +474,68 @@ export default function FinderPane({
         )}
       </AnimatedModal>
 
+      {/* Add-to-layer confirmation modal */}
+      <AnimatedModal visible={pendingItem !== null} onClose={() => setPendingItem(null)}>
+        {({ close }) => {
+          const isFull = layers.length >= MAX_LAYERS;
+          const itemName = pendingItem
+            ? pendingItem.kind === "chord"
+              ? pendingItem.match.chordName
+              : `${pendingItem.match.root} ${t(`options.scale.${scaleI18nKey(pendingItem.match.scaleType)}`)}`
+            : "";
+          return (
+            <Pressable
+              onPress={() => {}}
+              style={[styles.modalCard, { backgroundColor: cardBg, borderColor }]}
+            >
+              <Text style={[styles.modalTitle, { color: textColor }]}>
+                {t("finder.addToLayerTitle")}
+              </Text>
+              <Text style={[styles.addToLayerBody, { color: subTextColor }]}>
+                {isFull
+                  ? t("finder.addToLayerFull")
+                  : t("finder.addToLayerConfirm", { name: itemName })}
+              </Text>
+              <View style={styles.modalConfirmRow}>
+                {!isFull && (
+                  <TouchableOpacity
+                    onPress={() => {
+                      handleConfirmAdd();
+                      close();
+                    }}
+                    style={[
+                      styles.confirmBtn,
+                      { backgroundColor: isDark ? "#e5e7eb" : "#1c1917", marginBottom: 8 },
+                    ]}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[styles.confirmBtnText, { color: isDark ? "#1c1917" : "#fff" }]}>
+                      {t("finder.addToLayerAdd")}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity
+                  onPress={close}
+                  style={[
+                    styles.confirmBtn,
+                    {
+                      backgroundColor: "transparent",
+                      borderWidth: 1,
+                      borderColor: isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.12)",
+                    },
+                  ]}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.confirmBtnText, { color: subTextColor }]}>
+                    {t("finder.addToLayerClose")}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </Pressable>
+          );
+        }}
+      </AnimatedModal>
+
       {/* Results */}
       {hasResult && (
         <ScrollView
@@ -534,6 +625,12 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     paddingHorizontal: 16,
     paddingBottom: 12,
+  },
+  addToLayerBody: {
+    fontSize: 14,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    lineHeight: 20,
   },
   modalRow: {
     flexDirection: "row",

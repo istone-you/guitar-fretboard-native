@@ -130,6 +130,14 @@ export function createDefaultLayer(type: LayerType, id: string, color: string): 
 
 export const DEFAULT_LAYER_COLORS = ["#ff69b6", "#40e0d0", "#ffd700", "#7c3aed"];
 
+export function pickNextLayerColor(currentLayers: LayerConfig[]): string {
+  const usedColors = new Set(currentLayers.map((l) => l.color));
+  return (
+    DEFAULT_LAYER_COLORS.find((c) => !usedColors.has(c)) ??
+    DEFAULT_LAYER_COLORS[currentLayers.length % DEFAULT_LAYER_COLORS.length]
+  );
+}
+
 export const COLOR_PRESETS = [
   "#ff4d4d",
   "#ff8c00",

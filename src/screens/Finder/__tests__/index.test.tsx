@@ -57,6 +57,8 @@ function FinderWrapper(props: Partial<typeof defaultProps>) {
       onFinderNotesChange={setFinderNotes}
       dotColor={dotColor}
       onDotColorChange={setDotColor}
+      layers={[]}
+      onAddLayerAndNavigate={jest.fn()}
     />
   );
 }

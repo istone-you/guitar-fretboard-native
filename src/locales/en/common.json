@@ -3,7 +3,7 @@
     "home": "Layer",
     "finder": "Finder",
     "quiz": "Quiz",
-    "stats": "Stats"
+    "stats": "Analysis"
   },
   "mode": {
     "normal": "Normal",
@@ -221,7 +221,12 @@
     "showContained": "Show \"Within Selection\"",
     "showContaining": "Show \"Contains Selection\"",
     "chords": "Chords",
-    "scales": "Scales"
+    "scales": "Scales",
+    "addToLayerTitle": "Add to Layer",
+    "addToLayerConfirm": "Add {{name}} as a layer?",
+    "addToLayerFull": "You can have up to 3 layers. Remove an existing layer to add a new one.",
+    "addToLayerAdd": "Add",
+    "addToLayerClose": "Close"
   },
   "stats": {
     "title": "Weak Points",

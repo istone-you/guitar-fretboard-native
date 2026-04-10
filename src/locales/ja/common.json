@@ -3,7 +3,7 @@
     "home": "レイヤー",
     "finder": "検索",
     "quiz": "クイズ",
-    "stats": "弱点"
+    "stats": "苦手分析"
   },
   "mode": {
     "normal": "通常",
@@ -221,7 +221,12 @@
     "showContained": "「含まれる」を表示",
     "showContaining": "「含む」を表示",
     "chords": "コード",
-    "scales": "スケール"
+    "scales": "スケール",
+    "addToLayerTitle": "レイヤーに追加",
+    "addToLayerConfirm": "{{name}} をレイヤーに追加しますか？",
+    "addToLayerFull": "レイヤーは3つまでです。追加するには既存のレイヤーを削除してください。",
+    "addToLayerAdd": "追加する",
+    "addToLayerClose": "閉じる"
   },
   "stats": {
     "title": "苦手傾向",

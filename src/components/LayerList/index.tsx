@@ -13,7 +13,7 @@ import { useTranslation } from "react-i18next";
 import "../../i18n";
 import Svg, { Circle, Path } from "react-native-svg";
 import type { Theme, LayerConfig } from "../../types";
-import { MAX_LAYERS, DEFAULT_LAYER_COLORS } from "../../types";
+import { MAX_LAYERS, pickNextLayerColor } from "../../types";
 import LayerEditModal from "../LayerEditModal";
 import LayerPresetModal from "./LayerPresetModal";
 import { useLayerPresets } from "../../hooks/useLayerPresets";
@@ -155,14 +155,6 @@ export default function LayerList({
       onAddLayer(layer, addSlotIndexRef.current ?? undefined);
     }
     addSlotIndexRef.current = null;
-  };
-
-  const pickNextLayerColor = (currentLayers: LayerConfig[]) => {
-    const usedColors = new Set(currentLayers.map((l) => l.color));
-    return (
-      DEFAULT_LAYER_COLORS.find((c) => !usedColors.has(c)) ??
-      DEFAULT_LAYER_COLORS[currentLayers.length % DEFAULT_LAYER_COLORS.length]
-    );
   };
 
   const nextColor = pickNextLayerColor(layers);
