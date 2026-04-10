@@ -208,7 +208,13 @@
     "containedMatch": "Within Selection",
     "none": "None",
     "noteCount": "{{count}} notes",
-    "settings": "Display Settings"
+    "settings": "Display Settings",
+    "showChords": "Show Chords",
+    "showScales": "Show Scales",
+    "showContained": "Show \"Within Selection\"",
+    "showContaining": "Show \"Contains Selection\"",
+    "chords": "Chords",
+    "scales": "Scales"
   },
   "stats": {
     "title": "Weak Points",

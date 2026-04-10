@@ -7,16 +7,21 @@ import {
   StyleSheet,
   Animated,
   Modal,
-  Switch,
   Pressable,
 } from "react-native";
 import { useTranslation } from "react-i18next";
 import Svg, { Circle, Path } from "react-native-svg";
 import NormalFretboard from "../../components/NormalFretboard";
 import { identifyChords, type ChordMatch } from "../../lib/chordFinder";
-import { createDefaultLayer } from "../../types";
+import { identifyScales, scaleI18nKey, type ScaleMatch } from "../../lib/scaleFinder";
+import { createDefaultLayer, DEFAULT_LAYER_COLORS } from "../../types";
 import type { Accidental, BaseLabelMode, Theme } from "../../types";
 import { usePersistedSetting } from "../../hooks/usePersistedSetting";
+import SlideToggle from "../../components/ui/SlideToggle";
+
+const ACCENT_COLOR = DEFAULT_LAYER_COLORS[0];
+const CHORD_TAG_COLOR = DEFAULT_LAYER_COLORS[1];
+const SCALE_TAG_COLOR = DEFAULT_LAYER_COLORS[2];
 
 export interface FinderPaneProps {
   theme: Theme;
@@ -36,7 +41,20 @@ export default function FinderPane({
   leftHanded,
 }: FinderPaneProps) {
   const { t } = useTranslation();
-  // Settings
+
+  // Display settings
+  const [showChords, setShowChords] = usePersistedSetting(
+    "guiter:finder-show-chords",
+    true,
+    (v) => String(v),
+    (v) => v === "true",
+  );
+  const [showScales, setShowScales] = usePersistedSetting(
+    "guiter:finder-show-scales",
+    true,
+    (v) => String(v),
+    (v) => v === "true",
+  );
   const [showContaining, setShowContaining] = usePersistedSetting(
     "guiter:finder-show-containing",
     true,
@@ -50,6 +68,7 @@ export default function FinderPane({
     (v) => v === "true",
   );
   const [settingsVisible, setSettingsVisible] = useState(false);
+
   // Local root note — null until user long-presses to select
   const [rootNote, setRootNote] = useState<string | null>(null);
   // Tracks only user-added notes (root is always included separately)
@@ -64,6 +83,7 @@ export default function FinderPane({
   if (rootNote !== null) lastRootNoteRef.current = rootNote;
 
   const isDark = theme === "dark";
+  const accentColor = ACCENT_COLOR;
   const bgColor = isDark ? "#030712" : "#f3f4f6";
   const cardBg = isDark ? "#1a1a2e" : "#ffffff";
   const textColor = isDark ? "#e5e7eb" : "#1c1917";
@@ -108,7 +128,7 @@ export default function FinderPane({
     // ("note" → "degree") and play the existing labelScale animation in Fretboard
   };
 
-  // Animate chord notes label when baseLabelMode changes (same as fretboard)
+  // Animate notes label when baseLabelMode changes (same as fretboard)
   const labelScale = useRef(new Animated.Value(1)).current;
   const prevBaseLabelMode = useRef(baseLabelMode);
   if (prevBaseLabelMode.current !== baseLabelMode) {
@@ -122,30 +142,111 @@ export default function FinderPane({
     }).start();
   }
 
-  const result = useMemo(
+  const chordResult = useMemo(
     () => (rootNote ? identifyChords(effectiveNotes, accidental, rootNote) : null),
     [effectiveNotes, accidental, rootNote],
   );
 
+  const scaleResult = useMemo(
+    () => (rootNote ? identifyScales(effectiveNotes, accidental, rootNote) : null),
+    [effectiveNotes, accidental, rootNote],
+  );
+
+  type FinderItem = { kind: "chord"; match: ChordMatch } | { kind: "scale"; match: ScaleMatch };
+
+  const exactItems = useMemo<FinderItem[]>(() => {
+    const items: FinderItem[] = [];
+    if (showChords && chordResult)
+      chordResult.exact.forEach((m) => items.push({ kind: "chord", match: m }));
+    if (showScales && scaleResult)
+      scaleResult.exact.forEach((m) => items.push({ kind: "scale", match: m }));
+    return items;
+  }, [showChords, showScales, chordResult, scaleResult]);
+
+  const containedItems = useMemo<FinderItem[]>(() => {
+    const items: FinderItem[] = [];
+    if (showChords && chordResult)
+      chordResult.contained.forEach((m) => items.push({ kind: "chord", match: m }));
+    if (showScales && scaleResult)
+      scaleResult.contained.forEach((m) => items.push({ kind: "scale", match: m }));
+    return items;
+  }, [showChords, showScales, chordResult, scaleResult]);
+
+  const containingItems = useMemo<FinderItem[]>(() => {
+    const items: FinderItem[] = [];
+    if (showChords && chordResult)
+      chordResult.containing.forEach((m) => items.push({ kind: "chord", match: m }));
+    if (showScales && scaleResult)
+      scaleResult.containing.forEach((m) => items.push({ kind: "scale", match: m }));
+    return items;
+  }, [showChords, showScales, chordResult, scaleResult]);
+
+  const hasResult = chordResult !== null || scaleResult !== null;
+
   // Highlight all effective notes on the fretboard
   const layers = useMemo(() => {
-    const layer = createDefaultLayer("custom", "finder", "#ff8c00");
+    const layer = createDefaultLayer("custom", "finder", accentColor);
     layer.selectedNotes = new Set(effectiveNotes);
     return [layer];
   }, [effectiveNotes]);
 
-  const renderMatchRow = (match: ChordMatch, index: number) => (
-    <View
-      key={`${match.chordName}-${index}`}
-      style={[styles.matchRow, { backgroundColor: cardBg, borderBottomColor: borderColor }]}
-    >
-      <Text style={[styles.chordName, { color: textColor }]}>{match.chordName}</Text>
-      <Animated.Text
-        style={[styles.chordNotes, { color: subTextColor, transform: [{ scale: labelScale }] }]}
+  const renderItem = (item: FinderItem, index: number) => {
+    const isChord = item.kind === "chord";
+    const key = isChord
+      ? `chord-${(item.match as ChordMatch).chordName}-${index}`
+      : `scale-${(item.match as ScaleMatch).scaleType}-${index}`;
+    const name = isChord
+      ? (item.match as ChordMatch).chordName
+      : `${(item.match as ScaleMatch).root} ${t(`options.scale.${scaleI18nKey((item.match as ScaleMatch).scaleType)}`)}`;
+    const notes = isChord
+      ? (baseLabelMode === "degree"
+          ? (item.match as ChordMatch).chordDegrees
+          : (item.match as ChordMatch).chordNotes
+        ).join("  ")
+      : (item.match as ScaleMatch).scaleNotes.join("  ");
+    const tagLabel = isChord ? t("finder.chords") : t("finder.scales");
+    const baseTagColor = isChord ? CHORD_TAG_COLOR : SCALE_TAG_COLOR;
+    const tagColor = `${baseTagColor}${isDark ? "40" : "20"}`;
+    const tagTextColor = baseTagColor;
+
+    return (
+      <View
+        key={key}
+        style={[styles.matchRow, { backgroundColor: cardBg, borderBottomColor: borderColor }]}
       >
-        {(baseLabelMode === "degree" ? match.chordDegrees : match.chordNotes).join("  ")}
-      </Animated.Text>
-    </View>
+        <View style={styles.matchNameRow}>
+          <Text style={[styles.matchName, { color: textColor }]}>{name}</Text>
+          <View style={[styles.tag, { backgroundColor: tagColor }]}>
+            <Text style={[styles.tagText, { color: tagTextColor }]}>{tagLabel}</Text>
+          </View>
+        </View>
+        <Animated.Text
+          style={[styles.matchNotes, { color: subTextColor, transform: [{ scale: labelScale }] }]}
+        >
+          {notes}
+        </Animated.Text>
+      </View>
+    );
+  };
+
+  const renderSection = (label: string, items: FinderItem[], topSpacing: boolean) => (
+    <>
+      <View
+        style={[
+          styles.sectionHeader,
+          { backgroundColor: sectionHeaderBg },
+          topSpacing && { marginTop: 8 },
+        ]}
+      >
+        <Text style={[styles.sectionTitle, { color: textColor }]}>{label}</Text>
+        <Text style={[styles.sectionBadge, { color: subTextColor }]}>{items.length}</Text>
+      </View>
+      {items.length === 0 ? (
+        <Text style={[styles.emptySection, { color: subTextColor }]}>{t("finder.none")}</Text>
+      ) : (
+        items.map(renderItem)
+      )}
+    </>
   );
 
   return (
@@ -283,24 +384,30 @@ export default function FinderPane({
             <Text style={[styles.modalTitle, { color: textColor }]}>{t("finder.settings")}</Text>
             <View style={[styles.modalRow, { borderBottomColor: borderColor }]}>
               <Text style={[styles.modalRowLabel, { color: textColor }]}>
-                {t("finder.containedMatch")}
+                {t("finder.showChords")}
               </Text>
-              <Switch
-                value={showContained}
-                onValueChange={setShowContained}
-                trackColor={{ false: "#767577", true: "#ff8c00" }}
-                thumbColor="#ffffff"
-              />
+              <SlideToggle value={showChords} onValueChange={setShowChords} isDark={isDark} />
+            </View>
+            <View style={[styles.modalRow, { borderBottomColor: borderColor }]}>
+              <Text style={[styles.modalRowLabel, { color: textColor }]}>
+                {t("finder.showScales")}
+              </Text>
+              <SlideToggle value={showScales} onValueChange={setShowScales} isDark={isDark} />
+            </View>
+            <View style={[styles.modalRow, { borderBottomColor: borderColor }]}>
+              <Text style={[styles.modalRowLabel, { color: textColor }]}>
+                {t("finder.showContained")}
+              </Text>
+              <SlideToggle value={showContained} onValueChange={setShowContained} isDark={isDark} />
             </View>
             <View style={styles.modalRow}>
               <Text style={[styles.modalRowLabel, { color: textColor }]}>
-                {t("finder.containingMatch")}
+                {t("finder.showContaining")}
               </Text>
-              <Switch
+              <SlideToggle
                 value={showContaining}
                 onValueChange={setShowContaining}
-                trackColor={{ false: "#767577", true: "#ff8c00" }}
-                thumbColor="#ffffff"
+                isDark={isDark}
               />
             </View>
           </Pressable>
@@ -308,72 +415,15 @@ export default function FinderPane({
       </Modal>
 
       {/* Results */}
-      {result && (
+      {hasResult && (
         <ScrollView
           style={styles.resultScroll}
           contentContainerStyle={styles.resultContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* 完全一致 */}
-          <View style={[styles.sectionHeader, { backgroundColor: sectionHeaderBg }]}>
-            <Text style={[styles.sectionTitle, { color: textColor }]}>
-              {t("finder.exactMatch")}
-            </Text>
-            <Text style={[styles.sectionBadge, { color: subTextColor }]}>
-              {result.exact.length}
-            </Text>
-          </View>
-          {result.exact.length === 0 ? (
-            <Text style={[styles.emptySection, { color: subTextColor }]}>{t("finder.none")}</Text>
-          ) : (
-            result.exact.map(renderMatchRow)
-          )}
-
-          {/* 選択音に含まれる */}
-          {showContained && (
-            <>
-              <View
-                style={[styles.sectionHeader, { backgroundColor: sectionHeaderBg, marginTop: 12 }]}
-              >
-                <Text style={[styles.sectionTitle, { color: textColor }]}>
-                  {t("finder.containedMatch")}
-                </Text>
-                <Text style={[styles.sectionBadge, { color: subTextColor }]}>
-                  {result.contained.length}
-                </Text>
-              </View>
-              {result.contained.length === 0 ? (
-                <Text style={[styles.emptySection, { color: subTextColor }]}>
-                  {t("finder.none")}
-                </Text>
-              ) : (
-                result.contained.map(renderMatchRow)
-              )}
-            </>
-          )}
-
-          {/* 選択音を含む */}
-          {showContaining && (
-            <>
-              <View
-                style={[styles.sectionHeader, { backgroundColor: sectionHeaderBg, marginTop: 12 }]}
-              >
-                <Text style={[styles.sectionTitle, { color: textColor }]}>
-                  {t("finder.containingMatch")}
-                </Text>
-                <Text style={[styles.sectionBadge, { color: subTextColor }]}>
-                  {result.containing.length}
-                </Text>
-              </View>
-              {result.containing.length === 0 ? (
-                <Text style={[styles.emptySection, { color: subTextColor }]}>
-                  {t("finder.none")}
-                </Text>
-              ) : (
-                result.containing.map(renderMatchRow)
-              )}
-            </>
-          )}
+          {renderSection(t("finder.exactMatch"), exactItems, false)}
+          {showContained && renderSection(t("finder.containedMatch"), containedItems, true)}
+          {showContaining && renderSection(t("finder.containingMatch"), containingItems, true)}
         </ScrollView>
       )}
     </View>
@@ -406,7 +456,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   rootChip: {
-    backgroundColor: "#ff8c00",
+    backgroundColor: ACCENT_COLOR,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
@@ -415,7 +465,7 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.5)",
   },
   chip: {
-    backgroundColor: "#ff8c00",
+    backgroundColor: ACCENT_COLOR,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
@@ -509,12 +559,26 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  chordName: {
+  matchNameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+    gap: 6,
+  },
+  matchName: {
     fontSize: 16,
     fontWeight: "600",
-    flex: 1,
   },
-  chordNotes: {
+  tag: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  tagText: {
+    fontSize: 10,
+    fontWeight: "600",
+  },
+  matchNotes: {
     fontSize: 13,
     textAlign: "right",
   },

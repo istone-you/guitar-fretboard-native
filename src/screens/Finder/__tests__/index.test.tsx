@@ -88,9 +88,13 @@ describe("FinderPane", () => {
   it("shows results sections after root is set", () => {
     renderPane();
     fireEvent.press(screen.getByTestId("longpress-C"));
+    // sections appear once (merged)
     expect(screen.getByText("finder.exactMatch")).toBeTruthy();
     expect(screen.getByText("finder.containingMatch")).toBeTruthy();
     expect(screen.getByText("finder.containedMatch")).toBeTruthy();
+    // tags appear per row — at least one of each kind
+    expect(screen.getAllByText("finder.chords").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("finder.scales").length).toBeGreaterThanOrEqual(1);
   });
 
   it("tap does nothing before root is set", () => {

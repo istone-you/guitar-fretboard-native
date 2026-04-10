@@ -208,7 +208,13 @@
     "containedMatch": "選択音に含まれる",
     "none": "なし",
     "noteCount": "{{count}}音",
-    "settings": "表示設定"
+    "settings": "表示設定",
+    "showChords": "コードを表示",
+    "showScales": "スケールを表示",
+    "showContained": "「含まれる」を表示",
+    "showContaining": "「含む」を表示",
+    "chords": "コード",
+    "scales": "スケール"
   },
   "stats": {
     "title": "苦手傾向",

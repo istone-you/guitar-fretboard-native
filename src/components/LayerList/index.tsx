@@ -17,44 +17,7 @@ import { MAX_LAYERS, DEFAULT_LAYER_COLORS } from "../../types";
 import LayerEditModal from "../LayerEditModal";
 import LayerPresetModal from "./LayerPresetModal";
 import { useLayerPresets } from "../../hooks/useLayerPresets";
-
-function LayerToggle({
-  active,
-  color,
-  isDark,
-  onPress,
-}: {
-  active: boolean;
-  color: string;
-  isDark: boolean;
-  onPress: () => void;
-}) {
-  const anim = useRef(new Animated.Value(active ? 1 : 0)).current;
-  const prevActive = useRef(active);
-
-  if (prevActive.current !== active) {
-    prevActive.current = active;
-    Animated.timing(anim, {
-      toValue: active ? 1 : 0,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
-  }
-
-  const thumbX = anim.interpolate({ inputRange: [0, 1], outputRange: [2, 20] });
-  const bgColor = anim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [isDark ? "#4b5563" : "#d6d3d1", color],
-  });
-
-  return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
-      <Animated.View style={[styles.toggle, { backgroundColor: bgColor }]}>
-        <Animated.View style={[styles.toggleThumb, { transform: [{ translateX: thumbX }] }]} />
-      </Animated.View>
-    </TouchableOpacity>
-  );
-}
+import SlideToggle from "../ui/SlideToggle";
 
 interface LayerListProps {
   theme: Theme;
@@ -386,11 +349,11 @@ export default function LayerList({
             {...panResponder.panHandlers}
           >
             {/* Toggle */}
-            <LayerToggle
-              active={layer.enabled}
-              color={layer.color}
+            <SlideToggle
+              value={layer.enabled}
+              activeColor={layer.color}
               isDark={isDark}
-              onPress={() => {
+              onValueChange={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 onToggleLayer(layer.id);
               }}
@@ -621,25 +584,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingVertical: 10,
     paddingHorizontal: 12,
-  },
-  toggle: {
-    width: 36,
-    height: 20,
-    borderRadius: 10,
-    justifyContent: "center",
-  },
-  toggleThumb: {
-    position: "absolute",
-    top: 3,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: "#fff",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 1,
-    elevation: 2,
   },
   summaryArea: {
     flex: 1,
