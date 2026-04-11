@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import {
   CHORD_SEMITONES,
+  CHORD_SUFFIX_MAP,
   DEGREE_BY_SEMITONE,
   getNotesByAccidental,
   DIATONIC_CHORDS,
@@ -47,43 +48,6 @@ export const CHORD_QUIZ_TYPES_ALL: ChordType[] = [
   "b13",
 ];
 
-const CHORD_SUFFIX_MAP: Record<ChordType, string> = {
-  Major: "",
-  Minor: "m",
-  "5": "5",
-  "7th": "7",
-  maj7: "maj7",
-  m7: "m7",
-  "m7(b5)": "m7(b5)",
-  dim7: "dim7",
-  "m(maj7)": "m(maj7)",
-  sus2: "sus2",
-  sus4: "sus4",
-  "6": "6",
-  m6: "m6",
-  dim: "dim",
-  aug: "aug",
-  "9": "9",
-  b9: "7(b9)",
-  "#9": "7(#9)",
-  maj9: "maj9",
-  m9: "m9",
-  add9: "add9",
-  "7(b9)": "7(b9)",
-  "7(#9)": "7(#9)",
-  "11": "11",
-  "#11": "7(#11)",
-  add11: "add11",
-  "add#11": "add(#11)",
-  m11: "m11",
-  "13": "13",
-  b13: "7(b13)",
-  maj13: "maj13",
-  m13: "m13",
-  "6/9": "6/9",
-  "m6/9": "m6/9",
-};
-
 const QUIZ_HISTORY_SIZE = 4;
 
 function pickAvoiding<T extends string>(pool: readonly T[], recentKeys: string[]): T {
@@ -106,7 +70,7 @@ interface UseQuizParams {
 const DEFAULT_CHORD_QUIZ_TYPES: ChordType[] = ["Major", "Minor", "7th", "maj7", "m7"];
 
 function chordSuffix(chordType: ChordType): string {
-  return CHORD_SUFFIX_MAP[chordType] ?? chordType;
+  return CHORD_SUFFIX_MAP[chordType as keyof typeof CHORD_SUFFIX_MAP] ?? chordType;
 }
 
 export function useQuiz({

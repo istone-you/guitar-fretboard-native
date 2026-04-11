@@ -14,6 +14,13 @@ import "../../i18n";
 import Svg, { Circle, Path } from "react-native-svg";
 import type { Theme, LayerConfig } from "../../types";
 import { MAX_LAYERS, pickNextLayerColor } from "../../types";
+import {
+  PROGRESSION_TEMPLATES,
+  resolveProgressionDegree,
+  getNotesByAccidental,
+  getRootIndex,
+  chordSuffix,
+} from "../../lib/fretboard";
 import LayerEditModal from "../LayerEditModal";
 import LayerPresetModal from "./LayerPresetModal";
 import { useLayerPresets } from "../../hooks/useLayerPresets";
@@ -176,6 +183,28 @@ export default function LayerList({
           ? t("options.diatonicKey.naturalMinor")
           : t("options.diatonicKey.major");
       return `${chordLabel}: ${[...layer.cagedForms].join(", ") || "-"}`;
+    }
+    if (layer.type === "progression") {
+      const template = PROGRESSION_TEMPLATES.find(
+        (tp) => tp.id === (layer.progressionTemplateId ?? "251"),
+      );
+      if (!template) return "-";
+      const progKeyType = layer.progressionKeyType ?? "major";
+      const notes = getNotesByAccidental(accidental);
+      const keyRootIdx = getRootIndex(rootNote);
+      const step = Math.min(
+        Math.max(layer.progressionCurrentStep ?? 0, 0),
+        template.degrees.length - 1,
+      );
+      const degree = template.degrees[step];
+      const chord = resolveProgressionDegree(
+        keyRootIdx,
+        progKeyType,
+        layer.progressionChordSize ?? "seventh",
+        degree,
+      );
+      const chordName = `${notes[chord.rootIndex]}${chordSuffix(chord.chordType)}`;
+      return `${template.name}  ${chordName}`;
     }
     const mode = t(`options.chordDisplayMode.${layer.chordDisplayMode}`);
     if (layer.chordDisplayMode === "diatonic") {
@@ -364,7 +393,9 @@ export default function LayerList({
                       ? t("layers.caged")
                       : layer.type === "custom"
                         ? t("layers.custom")
-                        : t("layers.chord")}
+                        : layer.type === "progression"
+                          ? t("layers.progression")
+                          : t("layers.chord")}
                 </Text>
               </View>
               <Text
@@ -402,6 +433,68 @@ export default function LayerList({
                 {layerNoteLabels.get(layer.id)?.join("  ") || " "}
               </Animated.Text>
             </View>
+
+            {/* Progression: prev / next step buttons */}
+            {layer.type === "progression" &&
+              (() => {
+                const template = PROGRESSION_TEMPLATES.find(
+                  (tp) => tp.id === layer.progressionTemplateId,
+                );
+                const totalSteps = template?.degrees.length ?? 1;
+                const currentStep = layer.progressionCurrentStep ?? 0;
+                const iconColor = isDark ? "#6b7280" : "#a8a29e";
+                return (
+                  <>
+                    <TouchableOpacity
+                      onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        onUpdateLayer(layer.id, {
+                          ...layer,
+                          progressionCurrentStep: Math.max(0, currentStep - 1),
+                        });
+                      }}
+                      disabled={currentStep === 0}
+                      style={[styles.actionBtn, { opacity: currentStep === 0 ? 0.3 : 1 }]}
+                      activeOpacity={0.7}
+                    >
+                      <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+                        <Path
+                          d="M15 18l-6-6 6-6"
+                          stroke={iconColor}
+                          strokeWidth={2.2}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </Svg>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        onUpdateLayer(layer.id, {
+                          ...layer,
+                          progressionCurrentStep: Math.min(totalSteps - 1, currentStep + 1),
+                        });
+                      }}
+                      disabled={currentStep >= totalSteps - 1}
+                      style={[
+                        styles.actionBtn,
+                        { opacity: currentStep >= totalSteps - 1 ? 0.3 : 1 },
+                      ]}
+                      activeOpacity={0.7}
+                    >
+                      <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+                        <Path
+                          d="M9 18l6-6-6-6"
+                          stroke={iconColor}
+                          strokeWidth={2.2}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </Svg>
+                    </TouchableOpacity>
+                  </>
+                );
+              })()}
 
             {/* Duplicate button */}
             <TouchableOpacity

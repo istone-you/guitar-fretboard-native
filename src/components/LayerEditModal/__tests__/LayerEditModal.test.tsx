@@ -46,10 +46,16 @@ jest.mock("../../../lib/fretboard", () => ({
   DEGREE_BY_SEMITONE: ["P1", "m2", "M2", "m3", "M3", "P4", "b5", "P5", "m6", "M6", "m7", "M7"],
   DIATONIC_CHORDS: { "major-triad": [{ value: "I" }] },
   TRIAD_INVERSION_OPTIONS: [{ value: "root" }, { value: "first" }, { value: "second" }],
+  PROGRESSION_TEMPLATES: [
+    { id: "251", name: "ii-V-I", degrees: ["ii", "V", "I"] },
+    { id: "pop", name: "I-V-vi-IV", degrees: ["I", "V", "vi", "IV"] },
+  ],
+  chordSuffix: (t: string) => ({ Major: "", Minor: "m", "7th": "7" })[t] ?? t,
   getDiatonicChord: () => ({ rootIndex: 0, chordType: "Major" }),
   getNotesByAccidental: () => ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"],
   getOnChordListForRoot: () => ["C/E", "C/G"],
   getRootIndex: () => 0,
+  resolveProgressionDegree: () => ({ rootIndex: 0, chordType: "Major" }),
 }));
 
 const defaultProps = {

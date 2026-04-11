@@ -2418,3 +2418,110 @@ export function calcCagedPositions(
 
   return map;
 }
+
+// ===== Progression Layer =====
+
+export interface ProgressionTemplate {
+  id: string;
+  name: string;
+  degrees: string[];
+}
+
+export const PROGRESSION_TEMPLATES: ProgressionTemplate[] = [
+  { id: "145", name: "I-IV-V", degrees: ["I", "IV", "V"] },
+  { id: "251", name: "ii-V-I", degrees: ["ii", "V", "I"] },
+  { id: "1625", name: "I-vi-ii-V", degrees: ["I", "vi", "ii", "V"] },
+  { id: "1645", name: "I-VI-IV-V", degrees: ["I", "VI", "IV", "V"] },
+  { id: "pop", name: "I-V-vi-IV", degrees: ["I", "V", "vi", "IV"] },
+  { id: "3625", name: "iii-VI-ii-V", degrees: ["iii", "VI", "ii", "V"] },
+  { id: "1341m", name: "I-III-IV-iv", degrees: ["I", "III", "IV", "iv"] },
+  { id: "minor251", name: "minor ii-V-i", degrees: ["ii", "V", "i"] },
+  { id: "andalusian", name: "i-VII-VI-VII", degrees: ["i", "VII", "VI", "VII"] },
+  {
+    id: "blues",
+    name: "12bar blues",
+    degrees: ["I", "IV", "I", "I", "IV", "IV", "I", "I", "V", "IV", "I", "V"],
+  },
+];
+
+/**
+ * Resolves a progression degree string (e.g. "ii", "V", "I") to an absolute
+ * rootIndex and chordType, given a key root and key type.
+ *
+ * - Uses DIATONIC_CHORDS for standard lookup.
+ * - Special-cases "V" in minor context as the harmonic-minor dominant chord.
+ * - Falls back to case-insensitive match, then to root Major.
+ */
+export function resolveProgressionDegree(
+  keyRootIndex: number,
+  keyType: "major" | "minor",
+  chordSize: "triad" | "seventh",
+  degree: string,
+): { rootIndex: number; chordType: ChordType } {
+  const scaleKey = `${keyType === "minor" ? "natural-minor" : "major"}-${chordSize}`;
+  const progression = DIATONIC_CHORDS[scaleKey] ?? DIATONIC_CHORDS["major-triad"];
+  const found = progression.find((item) => item.value === degree);
+  if (found) {
+    return {
+      rootIndex: (keyRootIndex + found.offset) % 12,
+      chordType: found.chordType,
+    };
+  }
+  // "V" in minor → harmonic-minor dominant (offset 7, dominant 7th / major triad)
+  if (degree === "V" && keyType === "minor") {
+    return {
+      rootIndex: (keyRootIndex + 7) % 12,
+      chordType: chordSize === "seventh" ? "7th" : "Major",
+    };
+  }
+  // Case-insensitive fallback (e.g. "iv" matches "IV")
+  const fallback = progression.find((item) => item.value.toLowerCase() === degree.toLowerCase());
+  if (fallback) {
+    return {
+      rootIndex: (keyRootIndex + fallback.offset) % 12,
+      chordType: fallback.chordType,
+    };
+  }
+  return { rootIndex: keyRootIndex, chordType: "Major" };
+}
+
+export const CHORD_SUFFIX_MAP: Record<ChordType, string> = {
+  Major: "",
+  Minor: "m",
+  "5": "5",
+  "7th": "7",
+  maj7: "maj7",
+  m7: "m7",
+  "m7(b5)": "m7(b5)",
+  dim7: "dim7",
+  "m(maj7)": "m(maj7)",
+  sus2: "sus2",
+  sus4: "sus4",
+  "6": "6",
+  m6: "m6",
+  dim: "dim",
+  aug: "aug",
+  "9": "9",
+  b9: "7(b9)",
+  "#9": "7(#9)",
+  maj9: "maj9",
+  m9: "m9",
+  add9: "add9",
+  "7(b9)": "7(b9)",
+  "7(#9)": "7(#9)",
+  "11": "11",
+  "#11": "7(#11)",
+  add11: "add11",
+  "add#11": "add(#11)",
+  m11: "m11",
+  "13": "13",
+  b13: "7(b13)",
+  maj13: "maj13",
+  m13: "m13",
+  "6/9": "6/9",
+  "m6/9": "m6/9",
+};
+
+export function chordSuffix(chordType: ChordType): string {
+  return CHORD_SUFFIX_MAP[chordType] ?? chordType;
+}

@@ -21,8 +21,17 @@ import {
   getNotesByAccidental,
   CHORD_CAGED_ORDER,
   getRootIndex,
+  PROGRESSION_TEMPLATES,
+  resolveProgressionDegree,
   type FretCell,
 } from "../../../lib/fretboard";
+
+function hexToRgba(hex: string, alpha: number): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
 import type { Theme, Accidental, BaseLabelMode, LayerConfig } from "../../../types";
 import { MAX_LAYERS } from "../../../types";
 
@@ -412,6 +421,47 @@ export default function Fretboard({
             }
           }
         }
+      } else if (layer.type === "progression") {
+        const template = PROGRESSION_TEMPLATES.find(
+          (t) => t.id === (layer.progressionTemplateId ?? "251"),
+        );
+        if (!template) return;
+        const steps = template.degrees;
+        const currentStep = Math.min(
+          Math.max(layer.progressionCurrentStep ?? 0, 0),
+          steps.length - 1,
+        );
+        const ghostColor = hexToRgba(layer.color, 0.3);
+
+        const getStepCells = (stepIdx: number): FretCell[] => {
+          const degree = steps[stepIdx];
+          const chord = resolveProgressionDegree(
+            rootIndex,
+            layer.progressionKeyType ?? "major",
+            layer.progressionChordSize ?? "seventh",
+            degree,
+          );
+          return getChordLayerCells(chord.rootIndex, "form", chord.chordType, "root", "", degree);
+        };
+
+        // Ghost: previous step
+        if (layer.progressionShowPrevGhost && currentStep > 0) {
+          for (const cell of getStepCells(currentStep - 1)) {
+            const cellKey = `${cell.string}-${cell.fret}`;
+            if (!map.has(cellKey)) map.set(cellKey, []);
+            map.get(cellKey)!.push({ color: ghostColor, zIndex: 11 + idx });
+          }
+        }
+        // Ghost: next step
+        if (layer.progressionShowNextGhost && currentStep < steps.length - 1) {
+          for (const cell of getStepCells(currentStep + 1)) {
+            const cellKey = `${cell.string}-${cell.fret}`;
+            if (!map.has(cellKey)) map.set(cellKey, []);
+            map.get(cellKey)!.push({ color: ghostColor, zIndex: 11 + idx });
+          }
+        }
+        // Current step → pushed to cells, mapped to layer.color below
+        cells.push(...getStepCells(currentStep));
       }
       for (const cell of cells) {
         const cellKey = `${cell.string}-${cell.fret}`;
@@ -458,7 +508,11 @@ export default function Fretboard({
         continue;
       }
 
-      if (layer.type !== "chord") continue;
+      if (
+        layer.type !== "chord" &&
+        !(layer.type === "progression" && layer.showChordFrame === true)
+      )
+        continue;
       const color = layer.color;
       const frameVisible = layer.showChordFrame !== false;
       const ri = rootIndex;
@@ -512,7 +566,24 @@ export default function Fretboard({
 
       let effRootIndex = ri;
       let effChordType = layer.chordType;
-      if (layer.chordDisplayMode === "diatonic") {
+      if (layer.type === "progression") {
+        const template = PROGRESSION_TEMPLATES.find(
+          (t) => t.id === (layer.progressionTemplateId ?? "251"),
+        );
+        if (!template) continue;
+        const currentStep = Math.min(
+          Math.max(layer.progressionCurrentStep ?? 0, 0),
+          template.degrees.length - 1,
+        );
+        const chord = resolveProgressionDegree(
+          rootIndex,
+          layer.progressionKeyType ?? "major",
+          layer.progressionChordSize ?? "seventh",
+          template.degrees[currentStep],
+        );
+        effRootIndex = chord.rootIndex;
+        effChordType = chord.chordType;
+      } else if (layer.chordDisplayMode === "diatonic") {
         const chord = getDiatonicChord(
           ri,
           `${layer.diatonicKeyType}-${layer.diatonicChordSize}`,
@@ -522,7 +593,9 @@ export default function Fretboard({
         effChordType = chord.chordType;
       }
       const effDisplayMode =
-        layer.chordDisplayMode === "diatonic" ? "form" : layer.chordDisplayMode;
+        layer.type === "progression" || layer.chordDisplayMode === "diatonic"
+          ? "form"
+          : layer.chordDisplayMode;
 
       const movable: ChordGroup[] = [0, 1].flatMap((rsi) => {
         const fullForm = (rsi === 0 ? CHORD_FORMS_6TH : CHORD_FORMS_5TH)[effChordType];

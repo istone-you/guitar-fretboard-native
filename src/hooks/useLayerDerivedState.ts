@@ -5,11 +5,14 @@ import {
   DEGREE_BY_SEMITONE,
   DEGREE_LABEL_ORDER,
   DEGREE_TO_SEMITONE,
+  PROGRESSION_TEMPLATES,
   SCALE_DEGREES,
+  chordSuffix,
   getDiatonicChordSemitones,
   getNotesByAccidental,
   getRootIndex,
   parseOnChord,
+  resolveProgressionDegree,
 } from "../lib/fretboard";
 
 const normalizeDegreeLabel = (label: string) => label.replace("♭", "b").replace("♯", "#");
@@ -56,6 +59,28 @@ export function useLayerDerivedState({
         for (const semitone of cagedSemitones ?? []) active.add(semitone);
         continue;
       }
+      if (layer.type === "progression") {
+        const template = PROGRESSION_TEMPLATES.find(
+          (tp) => tp.id === (layer.progressionTemplateId ?? "251"),
+        );
+        if (!template) continue;
+        const currentStep = Math.min(
+          Math.max(layer.progressionCurrentStep ?? 0, 0),
+          template.degrees.length - 1,
+        );
+        const chord = resolveProgressionDegree(
+          keyRootIndex,
+          layer.progressionKeyType ?? "major",
+          layer.progressionChordSize ?? "seventh",
+          template.degrees[currentStep],
+        );
+        const chordSemitones = CHORD_SEMITONES[chord.chordType] ?? new Set<number>();
+        for (const s of chordSemitones) {
+          active.add((((chord.rootIndex + s - keyRootIndex + 12) % 12) + 12) % 12);
+        }
+        continue;
+      }
+
       if (layer.type !== "chord") continue;
 
       let semitones: Set<number> | undefined;
@@ -127,6 +152,31 @@ export function useLayerDerivedState({
             if (di !== undefined) semitones.push(di);
           }
         }
+      } else if (l.type === "progression") {
+        const template = PROGRESSION_TEMPLATES.find(
+          (tp) => tp.id === (l.progressionTemplateId ?? "251"),
+        );
+        if (template) {
+          const currentStep = Math.min(
+            Math.max(l.progressionCurrentStep ?? 0, 0),
+            template.degrees.length - 1,
+          );
+          const labels = template.degrees.map((degree, idx) => {
+            const chord = resolveProgressionDegree(
+              rootIndex,
+              l.progressionKeyType ?? "major",
+              l.progressionChordSize ?? "seventh",
+              degree,
+            );
+            const rootName = notes[chord.rootIndex];
+            const label = `${rootName}${chordSuffix(chord.chordType)}`;
+            return idx === currentStep ? `[${label}]` : label;
+          });
+          map.set(l.id, labels);
+        } else {
+          map.set(l.id, []);
+        }
+        continue;
       }
 
       const sorted = semitones.sort((a, b) => a - b);

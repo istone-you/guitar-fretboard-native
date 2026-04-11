@@ -31,6 +31,7 @@
     "addLayer": "Add Layer",
     "confirm": "Done",
     "custom": "Custom",
+    "progression": "Progression",
     "chordFrame": "Chord Frame",
     "extractFromChord": "Extract from chord",
     "reset": "Reset",
@@ -57,8 +58,13 @@
     "chord": "Chord",
     "strings": "Strings",
     "key": "Key",
+    "keyType": "Key Type",
     "inversion": "Inversion",
-    "chordType": "Chord"
+    "chordType": "Chord",
+    "template": "Template",
+    "step": "Step",
+    "showPrevGhost": "Show Prev (Ghost)",
+    "showNextGhost": "Show Next (Ghost)"
   },
   "header": {
     "root": "Root",
@@ -154,7 +160,20 @@
         "onChord": "Displays slash chord (on-chord) voicings. Changing the bass note creates different textures and smooth voice leading."
       },
       "caged": "The CAGED system maps 5 open chord shapes (C, A, G, E, D) across the entire fretboard. It helps you systematically understand chord tone positions everywhere.",
-      "custom": "Freely select notes or degrees to display on the fretboard. Useful for examining specific intervals or note combinations."
+      "custom": "Freely select notes or degrees to display on the fretboard. Useful for examining specific intervals or note combinations.",
+      "progression": "Displays a chord progression step by step. Keep other layers fixed and swap only the chord — perfect for comparing scale/CAGED patterns across a progression."
+    },
+    "progression": {
+      "145": "The most fundamental progression in blues and rock. Tonic→Subdominant→Dominant — appears in virtually every genre.",
+      "251": "The core jazz progression. Subdominant (ii)→Dominant (V)→Tonic (I) gives a clear sense of resolution. The starting point for jazz phrasing and modulation practice.",
+      "1625": "A classic jazz turnaround. I→vi→ii→V cycles endlessly and appears constantly in jazz standards.",
+      "1645": "The 50s pop / doo-wop progression. I→VI→IV→V has a bright, nostalgic feel found in countless oldies.",
+      "pop": "The most widely used progression in modern pop. I→V→vi→IV loops with a blend of brightness and wistfulness.",
+      "3625": "A jazz turnaround with a pickup. iii→VI→ii→V flows smoothly and frequently appears in the A sections of standards.",
+      "1341m": "A progression using the minor subdominant (iv). The III between I and IV, plus the final iv, creates a distinctive shadow. Common in rock and pop.",
+      "minor251": "The minor ii-V-i. The V chord is a dominant 7th from the harmonic minor scale, strengthening the sense of resolution. Ubiquitous in jazz and bossa nova.",
+      "andalusian": "The Andalusian cadence — a flamenco and rock staple. The descending i→VII line evokes melancholy with a Phrygian feel.",
+      "blues": "The standard 12-bar blues form. I→IV→I→V→IV→I — the foundation of blues and rock."
     },
     "scale": {
       "major": "A bright, stable scale. The most fundamental scale in pop and classical music.\nFormula: R, M2, M3, P4, P5, M6, M7",

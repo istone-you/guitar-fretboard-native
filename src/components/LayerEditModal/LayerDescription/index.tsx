@@ -2,6 +2,7 @@ import { View, Text, StyleSheet } from "react-native";
 import { useTranslation } from "react-i18next";
 import "../../../i18n";
 import type { Theme, LayerConfig } from "../../../types";
+import { PROGRESSION_TEMPLATES } from "../../../lib/fretboard";
 
 /** Map ChordType values that contain special characters to safe i18n keys */
 const CHORD_KEY_MAP: Record<string, string> = {
@@ -54,6 +55,11 @@ export default function LayerDescription({ theme, layer }: LayerDescriptionProps
     }
   } else if (layer.type === "caged") {
     layerDesc = t("description.layer.caged");
+  } else if (layer.type === "progression") {
+    layerDesc = t("description.layer.progression");
+    const templateId = layer.progressionTemplateId ?? "251";
+    const desc = t(`description.progression.${templateId}`, { defaultValue: "" });
+    if (desc) itemDesc = desc;
   } else {
     layerDesc = t("description.layer.custom");
   }
@@ -67,7 +73,11 @@ export default function LayerDescription({ theme, layer }: LayerDescriptionProps
           <Text style={[styles.heading, { color: headingColor }]}>
             {layer.type === "scale"
               ? t(`options.scale.${scaleI18nKey(layer.scaleType)}`)
-              : layer.chordType}
+              : layer.type === "progression"
+                ? (PROGRESSION_TEMPLATES.find(
+                    (tp) => tp.id === (layer.progressionTemplateId ?? "251"),
+                  )?.name ?? "")
+                : layer.chordType}
           </Text>
           <Text style={[styles.text, { color: textColor }]}>{itemDesc}</Text>
         </>

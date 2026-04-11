@@ -37,6 +37,8 @@ import {
   DEGREE_BY_SEMITONE,
   DIATONIC_CHORDS,
   TRIAD_INVERSION_OPTIONS,
+  PROGRESSION_TEMPLATES,
+  chordSuffix,
   getDiatonicChord,
   getNotesByAccidental,
   getOnChordListForRoot,
@@ -287,22 +289,27 @@ export default function LayerEditModal({
   }));
   const sheetHeight = Math.max(360, Math.min(520, Math.round(winHeight * 0.62)));
 
+  // Progression options
+  const progressionTemplateOptions = PROGRESSION_TEMPLATES.map((t_) => ({
+    value: t_.id,
+    label: t_.name,
+  }));
+  const progressionKeyTypeOptions = [
+    { value: "major", label: t("options.diatonicKey.major") },
+    { value: "minor", label: t("options.diatonicKey.naturalMinor") },
+  ];
+  const progressionChordSizeOptions = [
+    { value: "triad", label: t("options.diatonicChordSize.triad") },
+    { value: "seventh", label: t("options.diatonicChordSize.seventh") },
+  ];
+
   const diatonicScaleType = `${layer.diatonicKeyType}-${layer.diatonicChordSize}`;
-  const suffixMap: Record<string, string> = {
-    Major: "",
-    Minor: "m",
-    "7th": "7",
-    maj7: "maj7",
-    m7: "m7",
-    "m7(b5)": "m7(b5)",
-    dim7: "dim",
-    "m(maj7)": "m(maj7)",
-  };
+
   const diatonicCodeOptions = (DIATONIC_CHORDS[diatonicScaleType] ?? []).map(({ value }) => {
     const chord = getDiatonicChord(rootIndex, diatonicScaleType, value);
     return {
       value,
-      label: `${value} (${notes[chord.rootIndex]}${suffixMap[chord.chordType] ?? chord.chordType})`,
+      label: `${value} (${notes[chord.rootIndex]}${chordSuffix(chord.chordType)})`,
     };
   });
 
@@ -400,36 +407,38 @@ export default function LayerEditModal({
                 {t("layers.addLayer")}
               </Text>
               <View style={styles.typeButtons}>
-                {(["scale", "chord", "caged", "custom"] as LayerType[]).map((type) => (
-                  <TouchableOpacity
-                    key={type}
-                    onPress={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      const newLayer = createDefaultLayer(type, layer.id, layer.color);
-                      setLayer(newLayer);
-                      onPreview?.(newLayer);
-                      closeWithCallback(() => setStep("settings"));
-                    }}
-                    style={[
-                      styles.typeBtn,
-                      {
-                        borderColor: isDark ? "#374151" : "#d6d3d1",
-                        backgroundColor: isDark ? "#1f2937" : "#fafaf9",
-                      },
-                    ]}
-                    activeOpacity={0.7}
-                  >
-                    <Text
-                      style={{
-                        fontSize: 15,
-                        fontWeight: "600",
-                        color: isDark ? "#fff" : "#1c1917",
+                {(["scale", "chord", "caged", "custom", "progression"] as LayerType[]).map(
+                  (type) => (
+                    <TouchableOpacity
+                      key={type}
+                      onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        const newLayer = createDefaultLayer(type, layer.id, layer.color);
+                        setLayer(newLayer);
+                        onPreview?.(newLayer);
+                        closeWithCallback(() => setStep("settings"));
                       }}
+                      style={[
+                        styles.typeBtn,
+                        {
+                          borderColor: isDark ? "#374151" : "#d6d3d1",
+                          backgroundColor: isDark ? "#1f2937" : "#fafaf9",
+                        },
+                      ]}
+                      activeOpacity={0.7}
                     >
-                      {t(`layers.${type}`)}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+                      <Text
+                        style={{
+                          fontSize: 15,
+                          fontWeight: "600",
+                          color: isDark ? "#fff" : "#1c1917",
+                        }}
+                      >
+                        {t(`layers.${type}`)}
+                      </Text>
+                    </TouchableOpacity>
+                  ),
+                )}
               </View>
             </View>
           </View>
@@ -468,6 +477,7 @@ export default function LayerEditModal({
                               { value: "chord", label: t("layers.chord") },
                               { value: "caged", label: t("layers.caged") },
                               { value: "custom", label: t("layers.custom") },
+                              { value: "progression", label: t("layers.progression") },
                             ],
                             currentValue: layer.type,
                             onSelect: (v) => {
@@ -499,6 +509,7 @@ export default function LayerEditModal({
                               { value: "chord", label: t("layers.chord") },
                               { value: "caged", label: t("layers.caged") },
                               { value: "custom", label: t("layers.custom") },
+                              { value: "progression", label: t("layers.progression") },
                             ],
                             currentValue: layer.type,
                             onSelect: (v) => {
@@ -819,6 +830,91 @@ export default function LayerEditModal({
                               true,
                             ),
                           )}
+
+                        {/* Progression settings */}
+                        {layer.type === "progression" && (
+                          <>
+                            {renderSection(
+                              <>
+                                {renderNavRow(
+                                  t("controls.template"),
+                                  findLabel(
+                                    progressionTemplateOptions,
+                                    layer.progressionTemplateId ?? "251",
+                                  ),
+                                  () =>
+                                    navigate("select", {
+                                      title: t("controls.template"),
+                                      options: progressionTemplateOptions,
+                                      currentValue: layer.progressionTemplateId ?? "251",
+                                      onSelect: (v) =>
+                                        update({
+                                          progressionTemplateId: v,
+                                          progressionCurrentStep: 0,
+                                        }),
+                                    }),
+                                )}
+                                {renderNavRow(
+                                  t("controls.keyType"),
+                                  findLabel(
+                                    progressionKeyTypeOptions,
+                                    layer.progressionKeyType ?? "major",
+                                  ),
+                                  () =>
+                                    navigate("select", {
+                                      title: t("controls.keyType"),
+                                      options: progressionKeyTypeOptions,
+                                      currentValue: layer.progressionKeyType ?? "major",
+                                      onSelect: (v) =>
+                                        update({ progressionKeyType: v as "major" | "minor" }),
+                                    }),
+                                )}
+                                {renderNavRow(
+                                  t("controls.chordType"),
+                                  findLabel(
+                                    progressionChordSizeOptions,
+                                    layer.progressionChordSize ?? "seventh",
+                                  ),
+                                  () =>
+                                    navigate("select", {
+                                      title: t("controls.chordType"),
+                                      options: progressionChordSizeOptions,
+                                      currentValue: layer.progressionChordSize ?? "seventh",
+                                      onSelect: (v) =>
+                                        update({ progressionChordSize: v as "triad" | "seventh" }),
+                                    }),
+                                )}
+                                {renderToggleRow(
+                                  t("layers.chordFrame"),
+                                  layer.showChordFrame ?? false,
+                                  () =>
+                                    update({ showChordFrame: !(layer.showChordFrame ?? false) }),
+                                )}
+                                {renderToggleRow(
+                                  t("controls.showPrevGhost"),
+                                  layer.progressionShowPrevGhost ?? false,
+                                  () =>
+                                    update({
+                                      progressionShowPrevGhost: !(
+                                        layer.progressionShowPrevGhost ?? false
+                                      ),
+                                    }),
+                                )}
+                                {renderToggleRow(
+                                  t("controls.showNextGhost"),
+                                  layer.progressionShowNextGhost ?? false,
+                                  () =>
+                                    update({
+                                      progressionShowNextGhost: !(
+                                        layer.progressionShowNextGhost ?? false
+                                      ),
+                                    }),
+                                  true,
+                                )}
+                              </>,
+                            )}
+                          </>
+                        )}
 
                         {/* Color */}
                         {renderSection(

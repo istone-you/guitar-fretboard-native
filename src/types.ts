@@ -73,7 +73,7 @@ export type DegreeName =
   | "M7";
 
 // ===== Layer system =====
-export type LayerType = "scale" | "chord" | "caged" | "custom";
+export type LayerType = "scale" | "chord" | "caged" | "custom" | "progression";
 
 export const MAX_LAYERS = 3;
 
@@ -101,6 +101,13 @@ export interface LayerConfig {
   selectedDegrees: Set<string>;
   hiddenCells: Set<string>;
   chordFrames: { cells: string[] }[];
+  // Progression settings (optional for backwards compatibility with partial mocks/presets)
+  progressionTemplateId?: string;
+  progressionKeyType?: "major" | "minor";
+  progressionChordSize?: "triad" | "seventh";
+  progressionCurrentStep?: number;
+  progressionShowPrevGhost?: boolean;
+  progressionShowNextGhost?: boolean;
 }
 
 export function createDefaultLayer(type: LayerType, id: string, color: string): LayerConfig {
@@ -119,12 +126,18 @@ export function createDefaultLayer(type: LayerType, id: string, color: string): 
     diatonicDegree: "I",
     cagedForms: new Set(["C", "A", "G", "E", "D"]),
     cagedChordType: "major",
-    showChordFrame: true,
+    showChordFrame: type !== "progression",
     customMode: "note",
     selectedNotes: new Set(),
     selectedDegrees: new Set(),
     hiddenCells: new Set(),
     chordFrames: [],
+    progressionTemplateId: "251",
+    progressionKeyType: "major",
+    progressionChordSize: "seventh",
+    progressionCurrentStep: 0,
+    progressionShowPrevGhost: false,
+    progressionShowNextGhost: false,
   };
 }
 
