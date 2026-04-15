@@ -65,7 +65,7 @@ export default function LayerDescription({ theme, layer }: LayerDescriptionProps
   }
 
   return (
-    <View style={[styles.container, { borderTopColor: dividerColor }]}>
+    <View style={styles.container}>
       <Text style={[styles.text, { color: textColor }]}>{layerDesc}</Text>
       {itemDesc !== "" && (
         <>
@@ -88,7 +88,6 @@ export default function LayerDescription({ theme, layer }: LayerDescriptionProps
 
 const styles = StyleSheet.create({
   container: {
-    borderTopWidth: 1,
     paddingTop: 12,
     paddingBottom: 4,
     gap: 6,

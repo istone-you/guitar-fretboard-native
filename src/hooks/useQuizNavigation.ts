@@ -65,11 +65,32 @@ export function useQuizNavigation({
         quizModeSelectedRef.current &&
         g.dx > 10 &&
         Math.abs(g.dx) > Math.abs(g.dy),
+      onPanResponderMove: (_, g) => {
+        if (g.dx > 0) {
+          quizSlideAnim.setValue(g.dx);
+        }
+      },
       onPanResponderRelease: (_, g) => {
-        if (g.dx > 80) {
+        if (g.dx > 80 || (g.dx > 30 && g.vx > 0.5)) {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           handleChangeQuizRef.current();
+        } else {
+          // Snap back
+          Animated.spring(quizSlideAnim, {
+            toValue: 0,
+            friction: 9,
+            tension: 160,
+            useNativeDriver: true,
+          }).start();
         }
+      },
+      onPanResponderTerminate: () => {
+        Animated.spring(quizSlideAnim, {
+          toValue: 0,
+          friction: 9,
+          tension: 160,
+          useNativeDriver: true,
+        }).start();
       },
     }),
   ).current;

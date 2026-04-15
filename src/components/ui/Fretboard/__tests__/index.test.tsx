@@ -702,7 +702,7 @@ describe("Fretboard - Theme", () => {
 describe("Fretboard - Position marks", () => {
   it("renders position marks for frets 3, 5, 7, 9", () => {
     const { toJSON } = render(<Fretboard {...makeProps({ fretRange: [0, 14] })} />);
-    // Position marks are circles (borderRadius = markerSize/2 = 2)
+    // Position marks are circles (borderRadius = markerSize/2 = 3)
     // They appear at frets 3, 5, 7, 9, 12
     const json = JSON.stringify(toJSON());
     // Marker dots have borderRadius: 2 (markerSize 4 / 2)

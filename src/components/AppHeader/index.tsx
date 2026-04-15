@@ -1,21 +1,15 @@
 import { useRef } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Animated } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import Svg, { Path } from "react-native-svg";
-import { useTranslation } from "react-i18next";
-import "../../i18n";
-import type { Accidental, BaseLabelMode, Theme } from "../../types";
-import { useRootStepper } from "../../hooks/useRootStepper";
+import type { Theme } from "../../types";
 import SettingsModal, { type SettingsModalRef } from "./SettingsModal";
+import type { Accidental } from "../../types";
+import GlassIconButton from "../ui/GlassIconButton";
 
 interface HeaderBarProps {
   theme: Theme;
-  rootNote: string;
+  title?: string;
   accidental: Accidental;
-  baseLabelMode: BaseLabelMode;
-  showQuiz: boolean;
-  rootChangeDisabled?: boolean;
-  onBaseLabelModeChange: (mode: BaseLabelMode) => void;
-  onRootNoteChange: (note: string) => void;
   onBack?: () => void;
   fretRange: [number, number];
   onThemeChange: (theme: Theme) => void;
@@ -27,13 +21,8 @@ interface HeaderBarProps {
 
 export default function HeaderBar({
   theme,
-  rootNote,
+  title,
   accidental,
-  baseLabelMode,
-  showQuiz,
-  rootChangeDisabled = false,
-  onBaseLabelModeChange,
-  onRootNoteChange,
   onBack,
   fretRange,
   onThemeChange,
@@ -42,172 +31,28 @@ export default function HeaderBar({
   leftHanded = false,
   onLeftHandedChange,
 }: HeaderBarProps) {
-  const { t } = useTranslation();
   const isDark = theme === "dark";
   const settingsModalRef = useRef<SettingsModalRef>(null);
 
-  // Label underline slide animation
-  const underlineLeft = useRef(new Animated.Value(0)).current;
-  const underlineWidth = useRef(new Animated.Value(0)).current;
-  const labelLayouts = useRef<Record<string, { x: number; w: number }>>({});
-  const prevMode = useRef(baseLabelMode);
-  const underlineReady = useRef(false);
-
-  if (prevMode.current !== baseLabelMode) {
-    prevMode.current = baseLabelMode;
-    const l = labelLayouts.current[baseLabelMode];
-    if (l) {
-      Animated.parallel([
-        Animated.timing(underlineLeft, { toValue: l.x, duration: 300, useNativeDriver: false }),
-        Animated.timing(underlineWidth, { toValue: l.w, duration: 300, useNativeDriver: false }),
-      ]).start();
-    }
-  }
-
-  // Root note bounce animation
-  const rootScale = useRef(new Animated.Value(1)).current;
-  const prevRootNote = useRef(rootNote);
-  if (prevRootNote.current !== rootNote) {
-    prevRootNote.current = rootNote;
-    rootScale.stopAnimation();
-    rootScale.setValue(0.8);
-    Animated.spring(rootScale, {
-      toValue: 1,
-      friction: 5,
-      tension: 150,
-      useNativeDriver: true,
-    }).start();
-  }
-
-  const { stepNote } = useRootStepper({
-    accidental,
-    rootNote,
-    rootChangeDisabled,
-    onRootNoteChange,
-  });
-
   return (
-    <View
-      style={[
-        styles.header,
-        {
-          backgroundColor: isDark ? "#111111" : "#fafaf9",
-          borderBottomColor: isDark ? "rgba(255,255,255,0.08)" : "#e7e5e4",
-        },
-      ]}
-    >
-      {onBack && (
-        <TouchableOpacity onPress={onBack} style={styles.backBtn} activeOpacity={0.7}>
-          <Text style={[styles.backBtnText, { color: isDark ? "#e5e7eb" : "#1c1917" }]}>‹</Text>
-        </TouchableOpacity>
-      )}
-
-      {!rootChangeDisabled && !onBack && (
-        <View style={styles.stepperRow}>
-          <TouchableOpacity onPress={() => stepNote(-1)} style={styles.stepBtn} activeOpacity={0.7}>
-            <Text style={[styles.stepBtnText, { color: isDark ? "#9ca3af" : "#78716c" }]}>‹</Text>
-          </TouchableOpacity>
-          <Animated.View
-            style={[
-              styles.rootPill,
-              {
-                backgroundColor: isDark ? "#1f2937" : "#e7e5e4",
-                transform: [{ scale: rootScale }],
-              },
-            ]}
+    <View style={[styles.header, { backgroundColor: isDark ? "#000000" : "#ffffff" }]}>
+      {onBack ? (
+        <GlassIconButton
+          isDark={isDark}
+          onPress={onBack}
+          label="‹"
+          fontSize={22}
+          style={styles.backBtn}
+        />
+      ) : (
+        title && (
+          <Text
+            style={[styles.pageTitle, { color: isDark ? "#f9fafb" : "#1c1917" }]}
+            numberOfLines={1}
           >
-            <Text style={[styles.rootNote, { color: isDark ? "#f9fafb" : "#1c1917" }]}>
-              {rootNote}
-            </Text>
-          </Animated.View>
-          <TouchableOpacity onPress={() => stepNote(1)} style={styles.stepBtn} activeOpacity={0.7}>
-            <Text style={[styles.stepBtnText, { color: isDark ? "#9ca3af" : "#78716c" }]}>›</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {!showQuiz && !onBack && (
-        <View style={styles.labelToggle}>
-          <TouchableOpacity
-            onPress={() => onBaseLabelModeChange("note")}
-            onLayout={(e) => {
-              const { x, width } = e.nativeEvent.layout;
-              labelLayouts.current.note = { x, w: width };
-              if (!underlineReady.current && baseLabelMode === "note") {
-                underlineReady.current = true;
-                underlineLeft.setValue(x);
-                underlineWidth.setValue(width);
-              }
-            }}
-            activeOpacity={0.7}
-            hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
-          >
-            <Text
-              style={[
-                styles.labelToggleText,
-                {
-                  color:
-                    baseLabelMode === "note"
-                      ? isDark
-                        ? "#fff"
-                        : "#1c1917"
-                      : isDark
-                        ? "#6b7280"
-                        : "#a8a29e",
-                  fontWeight: baseLabelMode === "note" ? "700" : "400",
-                },
-              ]}
-            >
-              {t("header.note")}
-            </Text>
-            <View style={[styles.labelUnderline, { opacity: 0 }]} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => onBaseLabelModeChange("degree")}
-            onLayout={(e) => {
-              const { x, width } = e.nativeEvent.layout;
-              labelLayouts.current.degree = { x, w: width };
-              if (!underlineReady.current && baseLabelMode === "degree") {
-                underlineReady.current = true;
-                underlineLeft.setValue(x);
-                underlineWidth.setValue(width);
-              }
-            }}
-            activeOpacity={0.7}
-            hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
-          >
-            <Text
-              style={[
-                styles.labelToggleText,
-                {
-                  color:
-                    baseLabelMode === "degree"
-                      ? isDark
-                        ? "#fff"
-                        : "#1c1917"
-                      : isDark
-                        ? "#6b7280"
-                        : "#a8a29e",
-                  fontWeight: baseLabelMode === "degree" ? "700" : "400",
-                },
-              ]}
-            >
-              {t("header.degree")}
-            </Text>
-            <View style={[styles.labelUnderline, { opacity: 0 }]} />
-          </TouchableOpacity>
-          <Animated.View
-            style={{
-              position: "absolute",
-              bottom: 0,
-              height: 2,
-              borderRadius: 1,
-              left: underlineLeft,
-              width: underlineWidth,
-              backgroundColor: isDark ? "#fff" : "#1c1917",
-            }}
-          />
-        </View>
+            {title}
+          </Text>
+        )
       )}
 
       <TouchableOpacity
@@ -246,70 +91,21 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 12,
-    height: 44,
-    borderBottomWidth: 1,
+    paddingHorizontal: 16,
+    height: 52,
   },
   backBtn: {
-    position: "absolute",
-    left: 0,
-    width: 56,
-    height: 56,
-    alignItems: "center",
-    justifyContent: "center",
+    marginRight: 8,
   },
-  backBtnText: {
-    fontSize: 36,
-    lineHeight: 42,
-  },
-  stepperRow: {
-    position: "absolute",
-    left: 4,
-    flexDirection: "row",
-    alignItems: "center",
+  pageTitle: {
+    flex: 1,
+    fontSize: 34,
+    fontWeight: "700",
+    letterSpacing: -0.5,
   },
   headerBtn: {
     position: "absolute",
     right: 12,
     padding: 6,
-  },
-  stepBtn: {
-    width: 36,
-    height: 36,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 18,
-  },
-  stepBtnText: {
-    fontSize: 20,
-  },
-  rootPill: {
-    minWidth: 36,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  rootNote: {
-    textAlign: "center",
-    fontSize: 15,
-    fontWeight: "700",
-    fontFamily: "monospace",
-  },
-  labelToggle: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 16,
-    position: "relative",
-  },
-  labelToggleText: {
-    fontSize: 15,
-  },
-  labelUnderline: {
-    height: 2,
-    borderRadius: 1,
-    marginTop: 2,
   },
 });

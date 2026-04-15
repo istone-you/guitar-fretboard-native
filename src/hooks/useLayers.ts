@@ -33,8 +33,6 @@ export function useLayers() {
   const handleToggleLayer = (id: string) =>
     setSlots((prev) => prev.map((s) => (s?.id === id ? { ...s, enabled: !s.enabled } : s)));
 
-  const handleReorderLayers = (reordered: (LayerConfig | null)[]) => setSlots(reordered);
-
   const handleLoadPreset = (preset: LayerConfig[]) => {
     const next: (LayerConfig | null)[] = [null, null, null];
     preset.forEach((l, i) => {
@@ -52,7 +50,6 @@ export function useLayers() {
     handleUpdateLayer,
     handleRemoveLayer,
     handleToggleLayer,
-    handleReorderLayers,
     handleLoadPreset,
   };
 }

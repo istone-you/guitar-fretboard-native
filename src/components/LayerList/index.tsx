@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useLayoutEffect } from "react";
 import {
   View,
   Text,
@@ -6,6 +6,9 @@ import {
   StyleSheet,
   PanResponder,
   Animated,
+  Easing,
+  Modal,
+  TouchableWithoutFeedback,
   type PanResponderInstance,
 } from "react-native";
 import * as Haptics from "expo-haptics";
@@ -24,8 +27,259 @@ import {
 import LayerEditModal from "../LayerEditModal";
 import LayerPresetModal from "./LayerPresetModal";
 import { useLayerPresets } from "../../hooks/useLayerPresets";
-import SlideToggle from "../ui/SlideToggle";
 
+// ─────────────────────────────────────────────────────────────────
+// Checkbox (unchanged)
+// ─────────────────────────────────────────────────────────────────
+function LayerCheckbox({
+  enabled,
+  color,
+  isDark,
+  onPress,
+}: {
+  enabled: boolean;
+  color: string;
+  isDark: boolean;
+  onPress: () => void;
+}) {
+  const scale = useRef(new Animated.Value(1)).current;
+  const prevEnabled = useRef(enabled);
+  if (prevEnabled.current !== enabled) {
+    prevEnabled.current = enabled;
+    scale.stopAnimation();
+    scale.setValue(0.75);
+    Animated.spring(scale, {
+      toValue: 1,
+      friction: 4,
+      tension: 220,
+      useNativeDriver: true,
+    }).start();
+  }
+  const borderColor = isDark ? "rgba(255,255,255,0.28)" : "rgba(0,0,0,0.22)";
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.7}
+      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+    >
+      <Animated.View style={{ transform: [{ scale }] }}>
+        <Svg width={26} height={26} viewBox="0 0 26 26">
+          <Circle
+            cx={13}
+            cy={13}
+            r={11}
+            fill={enabled ? color : "transparent"}
+            stroke={enabled ? color : borderColor}
+            strokeWidth={1.8}
+          />
+          {enabled && (
+            <Path
+              d="M8 13.5l4 4 7-7"
+              fill="none"
+              stroke="white"
+              strokeWidth={2.2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          )}
+        </Svg>
+      </Animated.View>
+    </TouchableOpacity>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// iOS 26-style Context Menu
+// ─────────────────────────────────────────────────────────────────
+function ContextMenu({
+  visible,
+  isDark,
+  canDuplicate,
+  onEdit,
+  onDuplicate,
+  onDelete,
+  onClose,
+  t,
+}: {
+  visible: boolean;
+  isDark: boolean;
+  canDuplicate: boolean;
+  onEdit: () => void;
+  onDuplicate: () => void;
+  onDelete: () => void;
+  onClose: () => void;
+  t: (key: string) => string;
+}) {
+  const opacity = useRef(new Animated.Value(0)).current;
+  const scale = useRef(new Animated.Value(0.85)).current;
+  const prevVisible = useRef(false);
+
+  if (prevVisible.current !== visible) {
+    prevVisible.current = visible;
+    if (visible) {
+      opacity.setValue(0);
+      scale.setValue(0.85);
+      Animated.parallel([
+        Animated.timing(opacity, { toValue: 1, duration: 160, useNativeDriver: true }),
+        Animated.spring(scale, {
+          toValue: 1,
+          friction: 7,
+          tension: 220,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }
+
+  const dismiss = (callback?: () => void) => {
+    Animated.parallel([
+      Animated.timing(opacity, { toValue: 0, duration: 120, useNativeDriver: true }),
+      Animated.timing(scale, { toValue: 0.9, duration: 120, useNativeDriver: true }),
+    ]).start(() => {
+      onClose();
+      callback?.();
+    });
+  };
+
+  if (!visible) return null;
+
+  const menuBg = isDark ? "rgba(38,38,40,0.98)" : "rgba(255,255,255,0.98)";
+  const labelColor = isDark ? "#ffffff" : "#000000";
+  const dividerColor = isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.1)";
+  const iconStroke = isDark ? "#ebebf599" : "#3c3c4399";
+
+  return (
+    <Modal visible transparent animationType="none" statusBarTranslucent>
+      <TouchableWithoutFeedback onPress={() => dismiss()}>
+        <Animated.View
+          style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(0,0,0,0.25)", opacity }]}
+        />
+      </TouchableWithoutFeedback>
+      <View style={menuStyles.positioner} pointerEvents="box-none">
+        <Animated.View
+          style={[
+            menuStyles.card,
+            {
+              backgroundColor: menuBg,
+              transform: [{ scale }],
+              opacity,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 10 },
+              shadowOpacity: isDark ? 0.6 : 0.18,
+              shadowRadius: 24,
+              elevation: 20,
+            },
+          ]}
+        >
+          {/* Edit */}
+          <TouchableOpacity
+            onPress={() => dismiss(onEdit)}
+            style={menuStyles.item}
+            activeOpacity={0.7}
+          >
+            <Text style={[menuStyles.label, { color: labelColor }]}>{t("layers.edit")}</Text>
+            <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+              <Path
+                d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+                stroke={iconStroke}
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <Path
+                d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+                stroke={iconStroke}
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </Svg>
+          </TouchableOpacity>
+
+          <View style={[menuStyles.divider, { backgroundColor: dividerColor }]} />
+
+          {/* Duplicate */}
+          <TouchableOpacity
+            onPress={canDuplicate ? () => dismiss(onDuplicate) : undefined}
+            style={[menuStyles.item, !canDuplicate && { opacity: 0.35 }]}
+            activeOpacity={0.7}
+          >
+            <Text style={[menuStyles.label, { color: labelColor }]}>{t("layers.duplicate")}</Text>
+            <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+              <Path
+                d="M4 3h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"
+                stroke={iconStroke}
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <Path
+                d="M10 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2Z"
+                fill={menuBg}
+                stroke={iconStroke}
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </Svg>
+          </TouchableOpacity>
+
+          <View style={[menuStyles.divider, { backgroundColor: dividerColor }]} />
+
+          {/* Delete */}
+          <TouchableOpacity
+            onPress={() => dismiss(onDelete)}
+            style={menuStyles.item}
+            activeOpacity={0.7}
+          >
+            <Text style={[menuStyles.label, { color: "#ff3b30" }]}>{t("layers.delete")}</Text>
+            <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+              <Path
+                d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"
+                stroke="#ff3b30"
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </Svg>
+          </TouchableOpacity>
+        </Animated.View>
+      </View>
+    </Modal>
+  );
+}
+
+const menuStyles = StyleSheet.create({
+  positioner: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  card: {
+    width: 240,
+    borderRadius: 14,
+    overflow: "hidden",
+  },
+  item: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: "400",
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    marginHorizontal: 0,
+  },
+});
+
+// ─────────────────────────────────────────────────────────────────
+// LayerList props
+// ─────────────────────────────────────────────────────────────────
 interface LayerListProps {
   theme: Theme;
   rootNote: string;
@@ -36,15 +290,19 @@ interface LayerListProps {
   onUpdateLayer: (id: string, layer: LayerConfig) => void;
   onRemoveLayer: (id: string) => void;
   onToggleLayer: (id: string) => void;
-  onReorderLayers: (slots: (LayerConfig | null)[]) => void;
   onPreviewLayer: (layer: LayerConfig | null) => void;
   previewLayer?: LayerConfig | null;
   overlayNotes: string[];
   overlaySemitones: Set<number>;
   layerNoteLabels: Map<string, string[]>;
   onLoadPreset?: (layers: LayerConfig[]) => void;
+  presetModalVisible: boolean;
+  onPresetModalClose: () => void;
 }
 
+// ─────────────────────────────────────────────────────────────────
+// Main component
+// ─────────────────────────────────────────────────────────────────
 export default function LayerList({
   theme,
   rootNote,
@@ -55,29 +313,38 @@ export default function LayerList({
   onUpdateLayer,
   onRemoveLayer,
   onToggleLayer,
-  onReorderLayers,
   onPreviewLayer,
   previewLayer,
   overlayNotes,
   overlaySemitones,
   layerNoteLabels,
   onLoadPreset,
+  presetModalVisible,
+  onPresetModalClose,
 }: LayerListProps) {
   const { t } = useTranslation();
   const isDark = theme === "dark";
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editingLayer, setEditingLayer] = useState<LayerConfig | null>(null);
-  const [presetModalVisible, setPresetModalVisible] = useState(false);
   const { presets, savePreset, loadPreset, deletePreset } = useLayerPresets();
-  const [draggingSlotIdx, setDraggingSlotIdx] = useState<number | null>(null);
-  const rowHeight = useRef(56);
-  const dragY = useRef(new Animated.Value(0)).current;
-  const liftScale = useRef(new Animated.Value(1)).current;
+  const [contextMenuTarget, setContextMenuTarget] = useState<{
+    layer: LayerConfig;
+    slotIdx: number;
+  } | null>(null);
 
-  // One animation value per slot — used for all transitions (add/remove/swap)
+  // Per-slot slot animation (add/remove)
   const slotAnims = useRef(Array.from({ length: MAX_LAYERS }, () => new Animated.Value(1))).current;
   const prevSlotIdsRef = useRef(slots.map((s) => s?.id ?? null));
   const initializedRef = useRef(false);
+
+  // Per-layer swipe-to-delete animation
+  const swipeXByIdRef = useRef(new Map<string, Animated.Value>());
+  const getSwipeX = (id: string) => {
+    if (!swipeXByIdRef.current.has(id)) {
+      swipeXByIdRef.current.set(id, new Animated.Value(0));
+    }
+    return swipeXByIdRef.current.get(id)!;
+  };
 
   // Bounce animation for note labels
   const labelScaleMapRef = useRef<Map<string, Animated.Value>>(new Map());
@@ -101,10 +368,10 @@ export default function LayerList({
         .find((e) => e.startsWith(`${layer.id}:`));
       const currEntry = `${layer.id}:${layerNoteLabels.get(layer.id)?.join(",") ?? ""}`;
       if (prevEntry !== currEntry) {
-        const scale = getLabelScale(layer.id);
-        scale.stopAnimation();
-        scale.setValue(0.93);
-        Animated.spring(scale, {
+        const s = getLabelScale(layer.id);
+        s.stopAnimation();
+        s.setValue(0.93);
+        Animated.spring(s, {
           toValue: 1,
           friction: 6,
           tension: 180,
@@ -115,28 +382,47 @@ export default function LayerList({
   }
   prevLabelSnapshotRef.current = labelsSnapshot;
 
-  // Detect per-slot changes and bounce the slot that changed
-  const currentSlotIds = slots.map((s) => s?.id ?? null);
-  if (initializedRef.current) {
+  // Slot add/remove animations
+  useLayoutEffect(() => {
+    const currentSlotIds = slots.map((s) => s?.id ?? null);
+    if (!initializedRef.current) {
+      initializedRef.current = true;
+      prevSlotIdsRef.current = currentSlotIds;
+      return;
+    }
+
+    let hadSlotChange = false;
     for (let i = 0; i < MAX_LAYERS; i++) {
       if (prevSlotIdsRef.current[i] !== currentSlotIds[i]) {
-        const anim = slotAnims[i];
-        anim.stopAnimation();
-        anim.setValue(0);
-        Animated.spring(anim, {
-          toValue: 1,
-          friction: 8,
-          tension: 130,
-          useNativeDriver: true,
-        }).start();
+        hadSlotChange = true;
+        const wasEmpty = prevSlotIdsRef.current[i] === null;
+        const isNowFilled = currentSlotIds[i] !== null;
+        const wasFilledNowEmpty = !wasEmpty && currentSlotIds[i] === null;
+        if (wasEmpty && isNowFilled) {
+          const anim = slotAnims[i];
+          anim.stopAnimation();
+          anim.setValue(0);
+          Animated.spring(anim, {
+            toValue: 1,
+            friction: 8,
+            tension: 130,
+            useNativeDriver: true,
+          }).start();
+        } else if (wasFilledNowEmpty) {
+          const anim = slotAnims[i];
+          Animated.timing(anim, {
+            toValue: 1,
+            duration: 160,
+            easing: Easing.out(Easing.ease),
+            useNativeDriver: true,
+          }).start();
+        }
       }
     }
-  } else {
-    initializedRef.current = true;
-  }
-  prevSlotIdsRef.current = currentSlotIds;
 
-  // Reopen modal after cell edit ends
+    prevSlotIdsRef.current = currentSlotIds;
+  }, [slots, slotAnims]);
+
   const addSlotIndexRef = useRef<number | null>(null);
 
   const handleAdd = (slotIndex: number) => {
@@ -151,6 +437,20 @@ export default function LayerList({
     addSlotIndexRef.current = null;
     setEditingLayer(layer);
     setEditModalVisible(true);
+  };
+
+  const handleDeleteLayer = (id: string, slotIdx: number) => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    const anim = slotAnims[slotIdx];
+    anim.stopAnimation();
+    Animated.timing(anim, {
+      toValue: 0,
+      duration: 160,
+      easing: Easing.in(Easing.ease),
+      useNativeDriver: true,
+    }).start(() => {
+      onRemoveLayer(id);
+    });
   };
 
   const handleSave = (layer: LayerConfig) => {
@@ -224,69 +524,251 @@ export default function LayerList({
     return `${mode}: ${layer.chordType}`;
   };
 
-  // Drag: swap slots. Refs for fresh values inside PanResponder callbacks.
+  // Keep context menu open state as ref so PanResponder callbacks can read it
+  const contextMenuOpenRef = useRef(false);
+  // Ref for fresh slots value inside PanResponder callbacks
   const slotsRef = useRef(slots);
   slotsRef.current = slots;
-  const onReorderRef = useRef(onReorderLayers);
-  onReorderRef.current = onReorderLayers;
+  contextMenuOpenRef.current = contextMenuTarget !== null;
 
-  const panResponderMapRef = useRef<Map<number, PanResponderInstance>>(new Map());
+  const rowPanResponderMapRef = useRef<Map<number, PanResponderInstance>>(new Map());
 
-  const getSlotDragResponder = (slotIdx: number) => {
-    const existing = panResponderMapRef.current.get(slotIdx);
+  const getRowPanResponder = (slotIdx: number): PanResponderInstance => {
+    const existing = rowPanResponderMapRef.current.get(slotIdx);
     if (existing) return existing;
+
     const responder = PanResponder.create({
       onStartShouldSetPanResponder: () => false,
-      onMoveShouldSetPanResponder: (_, gs) =>
-        Math.abs(gs.dy) > 10 && Math.abs(gs.dy) > Math.abs(gs.dx),
-      onPanResponderGrant: () => {
-        setDraggingSlotIdx(slotIdx);
-        dragY.setValue(0);
-        Animated.spring(liftScale, {
-          toValue: 1.03,
-          friction: 8,
-          tension: 200,
-          useNativeDriver: true,
-        }).start();
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      onMoveShouldSetPanResponder: (_, gs) => {
+        if (contextMenuOpenRef.current) return false;
+        const absX = Math.abs(gs.dx);
+        const absY = Math.abs(gs.dy);
+        return absX > 10 && absX > absY * 1.4;
       },
       onPanResponderMove: (_, gs) => {
-        const stride = rowHeight.current + ROW_GAP;
-        const maxUp = -slotIdx * stride;
-        const maxDown = (MAX_LAYERS - 1 - slotIdx) * stride;
-        dragY.setValue(Math.max(maxUp, Math.min(maxDown, gs.dy)));
+        const slot = slotsRef.current[slotIdx];
+        if (!slot) return;
+        getSwipeX(slot.id).setValue(Math.min(0, gs.dx));
       },
       onPanResponderRelease: (_, gs) => {
-        const stride = rowHeight.current + ROW_GAP;
-        if (Math.abs(gs.dy) > stride * 0.4) {
-          const offset = Math.round(gs.dy / stride);
-          const targetIdx = Math.max(0, Math.min(slotIdx + offset, MAX_LAYERS - 1));
-          if (targetIdx !== slotIdx) {
-            const swapped = [...slotsRef.current];
-            [swapped[slotIdx], swapped[targetIdx]] = [swapped[targetIdx], swapped[slotIdx]];
-            onReorderRef.current(swapped);
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          }
+        const slot = slotsRef.current[slotIdx];
+        if (!slot) return;
+        const swipeX = getSwipeX(slot.id);
+        const shouldDelete = gs.dx < -80 || (gs.vx < -0.5 && gs.dx < -40);
+        if (shouldDelete) {
+          Animated.timing(swipeX, {
+            toValue: -500,
+            duration: 200,
+            easing: Easing.in(Easing.ease),
+            useNativeDriver: true,
+          }).start(() => {
+            const anim = slotAnims[slotIdx];
+            anim.stopAnimation();
+            Animated.timing(anim, {
+              toValue: 0,
+              duration: 150,
+              easing: Easing.in(Easing.ease),
+              useNativeDriver: true,
+            }).start(() => {
+              onRemoveLayer(slot.id);
+            });
+          });
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        } else {
+          Animated.spring(swipeX, {
+            toValue: 0,
+            friction: 10,
+            tension: 200,
+            useNativeDriver: true,
+          }).start();
         }
-        Animated.spring(liftScale, {
-          toValue: 1,
-          friction: 8,
-          tension: 200,
-          useNativeDriver: true,
-        }).start();
-        setDraggingSlotIdx(null);
-        dragY.setValue(0);
+      },
+      onPanResponderTerminate: () => {
+        const slot = slotsRef.current[slotIdx];
+        if (slot) {
+          Animated.spring(getSwipeX(slot.id), {
+            toValue: 0,
+            friction: 10,
+            tension: 200,
+            useNativeDriver: true,
+          }).start();
+        }
       },
     });
-    panResponderMapRef.current.set(slotIdx, responder);
+
+    rowPanResponderMapRef.current.set(slotIdx, responder);
     return responder;
   };
+
+  const emptySlotCount = slots.filter((s) => s === null).length;
+
+  const renderFilledRowContent = (
+    layer: LayerConfig,
+    slotIdx: number,
+    swipeX: Animated.Value,
+    panHandlers: PanResponderInstance["panHandlers"],
+  ) => (
+    <>
+      <View
+        style={[styles.deleteBackground, { backgroundColor: "#ff3b30", borderRadius: ROW_RADIUS }]}
+      >
+        <View style={styles.deleteIconWrap}>
+          <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+            <Path
+              d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"
+              stroke="white"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </Svg>
+        </View>
+      </View>
+
+      <Animated.View
+        style={[
+          styles.layerRow,
+          {
+            borderColor: isDark ? "#374151" : "#e7e5e4",
+            backgroundColor: isDark ? "#000000" : "#ffffff",
+            ...(swipeX ? { transform: [{ translateX: swipeX }] } : null),
+          },
+        ]}
+        {...(panHandlers ?? {})}
+      >
+        <LayerCheckbox
+          enabled={layer.enabled}
+          color={layer.color}
+          isDark={isDark}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            onToggleLayer(layer.id);
+          }}
+        />
+
+        <TouchableOpacity
+          style={styles.summaryTouchable}
+          onPress={() => handleEdit(layer)}
+          onLongPress={() => {
+            contextMenuOpenRef.current = true;
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+            setContextMenuTarget({ layer, slotIdx });
+          }}
+          delayLongPress={500}
+          activeOpacity={0.7}
+        >
+          <View style={styles.summaryArea}>
+            <View style={[styles.typeBadge, { borderColor: isDark ? "#374151" : "#d6d3d1" }]}>
+              <Text style={[styles.layerType, { color: isDark ? "#9ca3af" : "#78716c" }]}>
+                {layer.type === "scale"
+                  ? t("layers.scale")
+                  : layer.type === "caged"
+                    ? t("layers.caged")
+                    : layer.type === "custom"
+                      ? t("layers.custom")
+                      : layer.type === "progression"
+                        ? t("layers.progression")
+                        : t("layers.chord")}
+              </Text>
+            </View>
+            <Text
+              style={[styles.layerSummary, { color: isDark ? "#e5e7eb" : "#1c1917" }]}
+              numberOfLines={1}
+            >
+              {getSummary(layer)}
+              {layer.type === "custom" && layer.hiddenCells.size > 0 && (
+                <Text
+                  style={{
+                    fontSize: 12,
+                    fontWeight: "500",
+                    color: isDark ? "#9ca3af" : "#78716c",
+                  }}
+                >
+                  ({t("layers.displayEdited")})
+                </Text>
+              )}
+            </Text>
+            <Animated.Text
+              style={[
+                styles.layerNoteLabels,
+                {
+                  color: isDark ? "#9ca3af" : "#78716c",
+                  transform: [{ scale: getLabelScale(layer.id) }],
+                },
+              ]}
+              numberOfLines={1}
+            >
+              {layerNoteLabels.get(layer.id)?.join("  ") || " "}
+            </Animated.Text>
+          </View>
+        </TouchableOpacity>
+
+        {layer.type === "progression" &&
+          (() => {
+            const template = PROGRESSION_TEMPLATES.find(
+              (tp) => tp.id === layer.progressionTemplateId,
+            );
+            const totalSteps = template?.degrees.length ?? 1;
+            const currentStep = layer.progressionCurrentStep ?? 0;
+            const iconColor = isDark ? "#6b7280" : "#a8a29e";
+            return (
+              <>
+                <TouchableOpacity
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    onUpdateLayer(layer.id, {
+                      ...layer,
+                      progressionCurrentStep: Math.max(0, currentStep - 1),
+                    });
+                  }}
+                  disabled={currentStep === 0}
+                  style={[styles.actionBtn, { opacity: currentStep === 0 ? 0.3 : 1 }]}
+                  activeOpacity={0.7}
+                >
+                  <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+                    <Path
+                      d="M15 18l-6-6 6-6"
+                      stroke={iconColor}
+                      strokeWidth={2.2}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </Svg>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    onUpdateLayer(layer.id, {
+                      ...layer,
+                      progressionCurrentStep: Math.min(totalSteps - 1, currentStep + 1),
+                    });
+                  }}
+                  disabled={currentStep >= totalSteps - 1}
+                  style={[styles.actionBtn, { opacity: currentStep >= totalSteps - 1 ? 0.3 : 1 }]}
+                  activeOpacity={0.7}
+                >
+                  <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+                    <Path
+                      d="M9 18l6-6-6-6"
+                      stroke={iconColor}
+                      strokeWidth={2.2}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </Svg>
+                </TouchableOpacity>
+              </>
+            );
+          })()}
+      </Animated.View>
+    </>
+  );
 
   return (
     <View style={styles.container}>
       {slots.map((slot, slotIdx) => {
         if (!slot) {
-          // Empty slot → add button
+          // ── Empty slot: iOS 26-style add button ──────────────────
           return (
             <Animated.View
               key={`slot-${slotIdx}`}
@@ -300,15 +782,14 @@ export default function LayerList({
                 style={[
                   styles.layerRow,
                   {
-                    borderColor: isDark ? "#374151" : "#d6d3d1",
-                    borderStyle: "dashed",
+                    backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)",
+                    borderColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.07)",
                     justifyContent: "center",
                   },
                 ]}
-                activeOpacity={0.7}
+                activeOpacity={0.6}
               >
-                {/* Invisible spacer — keeps height identical to filled rows so
-                    layer deletion causes no layout shift and drag stays accurate */}
+                {/* Invisible spacer — keeps height identical to filled rows */}
                 <View style={styles.summaryArea} pointerEvents="none">
                   <View style={[styles.typeBadge, { borderColor: "transparent" }]}>
                     <Text style={[styles.layerType, { opacity: 0 }]}> </Text>
@@ -318,10 +799,10 @@ export default function LayerList({
                 </View>
                 <View style={StyleSheet.absoluteFill}>
                   <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-                    <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+                    <Svg width={26} height={26} viewBox="0 0 26 26">
                       <Path
-                        d="M12 5v14M5 12h14"
-                        stroke={isDark ? "#6b7280" : "#a8a29e"}
+                        d="M9 13h8M13 9v8"
+                        stroke={isDark ? "#9ca3af" : "#8e8e93"}
                         strokeWidth={2}
                         strokeLinecap="round"
                       />
@@ -333,303 +814,65 @@ export default function LayerList({
           );
         }
 
-        // Filled slot → layer row
+        // ── Filled slot ──────────────────────────────────────────────
         const layer = slot;
-        const panResponder = getSlotDragResponder(slotIdx);
-        const isDragging = draggingSlotIdx === slotIdx;
-        const emptySlotCount = slots.filter((s) => s === null).length;
+        const panResponder = getRowPanResponder(slotIdx);
         const slotScale = slotAnims[slotIdx];
+        const swipeX = getSwipeX(layer.id);
+
         return (
           <Animated.View
             key={`slot-${slotIdx}`}
-            onLayout={(e) => {
-              rowHeight.current = e.nativeEvent.layout.height;
+            style={{
+              transform: [{ scale: slotScale }],
+              opacity: layer.enabled
+                ? slotScale
+                : slotScale.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, 0.5],
+                  }),
             }}
-            style={[
-              styles.layerRow,
-              {
-                borderColor: isDark ? "#374151" : "#e7e5e4",
-                backgroundColor: isDark ? "#1f2937" : "#fafaf9",
-                transform: [
-                  ...(isDragging ? [{ translateY: dragY }, { scale: liftScale }] : []),
-                  { scale: slotScale },
-                ],
-                zIndex: isDragging ? 10 : 1,
-                opacity: layer.enabled
-                  ? slotScale
-                  : slotScale.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0, 0.5],
-                    }),
-                ...(isDragging && {
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.2,
-                  shadowRadius: 8,
-                  elevation: 8,
-                }),
-              },
-            ]}
-            {...panResponder.panHandlers}
           >
-            {/* Toggle */}
-            <SlideToggle
-              value={layer.enabled}
-              activeColor={layer.color}
-              isDark={isDark}
-              onValueChange={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                onToggleLayer(layer.id);
-              }}
-            />
-
-            {/* Summary */}
-            <View style={styles.summaryArea}>
-              <View style={[styles.typeBadge, { borderColor: isDark ? "#374151" : "#d6d3d1" }]}>
-                <Text style={[styles.layerType, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-                  {layer.type === "scale"
-                    ? t("layers.scale")
-                    : layer.type === "caged"
-                      ? t("layers.caged")
-                      : layer.type === "custom"
-                        ? t("layers.custom")
-                        : layer.type === "progression"
-                          ? t("layers.progression")
-                          : t("layers.chord")}
-                </Text>
-              </View>
-              <Text
-                style={[
-                  styles.layerSummary,
-                  {
-                    color: isDark ? "#e5e7eb" : "#1c1917",
-                  },
-                ]}
-                numberOfLines={1}
-              >
-                {getSummary(layer)}
-                {layer.type === "custom" && layer.hiddenCells.size > 0 && (
-                  <Text
-                    style={{
-                      fontSize: 12,
-                      fontWeight: "500",
-                      color: isDark ? "#9ca3af" : "#78716c",
-                    }}
-                  >
-                    ({t("layers.displayEdited")})
-                  </Text>
-                )}
-              </Text>
-              <Animated.Text
-                style={[
-                  styles.layerNoteLabels,
-                  {
-                    color: isDark ? "#9ca3af" : "#78716c",
-                    transform: [{ scale: getLabelScale(layer.id) }],
-                  },
-                ]}
-                numberOfLines={1}
-              >
-                {layerNoteLabels.get(layer.id)?.join("  ") || " "}
-              </Animated.Text>
-            </View>
-
-            {/* Progression: prev / next step buttons */}
-            {layer.type === "progression" &&
-              (() => {
-                const template = PROGRESSION_TEMPLATES.find(
-                  (tp) => tp.id === layer.progressionTemplateId,
-                );
-                const totalSteps = template?.degrees.length ?? 1;
-                const currentStep = layer.progressionCurrentStep ?? 0;
-                const iconColor = isDark ? "#6b7280" : "#a8a29e";
-                return (
-                  <>
-                    <TouchableOpacity
-                      onPress={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        onUpdateLayer(layer.id, {
-                          ...layer,
-                          progressionCurrentStep: Math.max(0, currentStep - 1),
-                        });
-                      }}
-                      disabled={currentStep === 0}
-                      style={[styles.actionBtn, { opacity: currentStep === 0 ? 0.3 : 1 }]}
-                      activeOpacity={0.7}
-                    >
-                      <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
-                        <Path
-                          d="M15 18l-6-6 6-6"
-                          stroke={iconColor}
-                          strokeWidth={2.2}
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </Svg>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        onUpdateLayer(layer.id, {
-                          ...layer,
-                          progressionCurrentStep: Math.min(totalSteps - 1, currentStep + 1),
-                        });
-                      }}
-                      disabled={currentStep >= totalSteps - 1}
-                      style={[
-                        styles.actionBtn,
-                        { opacity: currentStep >= totalSteps - 1 ? 0.3 : 1 },
-                      ]}
-                      activeOpacity={0.7}
-                    >
-                      <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
-                        <Path
-                          d="M9 18l6-6-6-6"
-                          stroke={iconColor}
-                          strokeWidth={2.2}
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </Svg>
-                    </TouchableOpacity>
-                  </>
-                );
-              })()}
-
-            {/* Duplicate button */}
-            <TouchableOpacity
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                const dupeColor = pickNextLayerColor(layers);
-                const clone: LayerConfig = {
-                  ...layer,
-                  id: `layer-${Date.now()}`,
-                  color: dupeColor,
-                  cagedForms: new Set(layer.cagedForms),
-                  selectedNotes: new Set(layer.selectedNotes),
-                  selectedDegrees: new Set(layer.selectedDegrees),
-                  hiddenCells: new Set(layer.hiddenCells),
-                  chordFrames: layer.chordFrames.map((f) => ({
-                    cells: [...f.cells],
-                  })),
-                };
-                onAddLayer(clone);
-              }}
-              disabled={emptySlotCount === 0}
-              style={[styles.actionBtn, { opacity: emptySlotCount === 0 ? 0.35 : 1 }]}
-              activeOpacity={0.7}
-            >
-              <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
-                <Path
-                  d="M4 3h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"
-                  stroke={isDark ? "#6b7280" : "#a8a29e"}
-                  strokeWidth={2}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <Path
-                  d="M10 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2Z"
-                  fill={isDark ? "#1f2937" : "#fafaf9"}
-                  stroke={isDark ? "#6b7280" : "#a8a29e"}
-                  strokeWidth={2}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </Svg>
-            </TouchableOpacity>
-
-            {/* Settings button */}
-            <TouchableOpacity
-              onPress={() => handleEdit(layer)}
-              style={styles.actionBtn}
-              activeOpacity={0.7}
-            >
-              <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
-                <Path
-                  d="M4 6h16M4 12h16M4 18h16"
-                  stroke={isDark ? "#6b7280" : "#a8a29e"}
-                  strokeWidth={2}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <Circle
-                  cx={9}
-                  cy={6}
-                  r={2}
-                  fill={isDark ? "#1f2937" : "#fafaf9"}
-                  stroke={isDark ? "#6b7280" : "#a8a29e"}
-                  strokeWidth={2}
-                />
-                <Circle
-                  cx={15}
-                  cy={12}
-                  r={2}
-                  fill={isDark ? "#1f2937" : "#fafaf9"}
-                  stroke={isDark ? "#6b7280" : "#a8a29e"}
-                  strokeWidth={2}
-                />
-                <Circle
-                  cx={11}
-                  cy={18}
-                  r={2}
-                  fill={isDark ? "#1f2937" : "#fafaf9"}
-                  stroke={isDark ? "#6b7280" : "#a8a29e"}
-                  strokeWidth={2}
-                />
-              </Svg>
-            </TouchableOpacity>
-
-            {/* Remove button */}
-            <TouchableOpacity
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                onRemoveLayer(layer.id);
-              }}
-              style={styles.actionBtn}
-              activeOpacity={0.7}
-            >
-              <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
-                <Path
-                  d="M18 6L6 18M6 6l12 12"
-                  stroke={isDark ? "#6b7280" : "#a8a29e"}
-                  strokeWidth={2.2}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </Svg>
-            </TouchableOpacity>
+            {renderFilledRowContent(layer, slotIdx, swipeX, panResponder.panHandlers)}
           </Animated.View>
         );
       })}
 
-      {/* Preset button */}
-      <TouchableOpacity
-        onPress={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          setPresetModalVisible(true);
+      {/* iOS 26 Context Menu */}
+      <ContextMenu
+        visible={contextMenuTarget !== null}
+        isDark={isDark}
+        canDuplicate={emptySlotCount > 0}
+        onEdit={() => {
+          if (contextMenuTarget) handleEdit(contextMenuTarget.layer);
         }}
-        style={[
-          styles.presetBtn,
-          {
-            borderColor: isDark ? "#374151" : "#d6d3d1",
-            backgroundColor: isDark ? "#1f2937" : "#fafaf9",
-          },
-        ]}
-        activeOpacity={0.7}
-      >
-        <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
-          <Path
-            d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"
-            stroke={isDark ? "#6b7280" : "#a8a29e"}
-            strokeWidth={2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </Svg>
-        <Text style={[styles.presetBtnText, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-          {t("layers.presets")}
-        </Text>
-      </TouchableOpacity>
+        onDuplicate={() => {
+          if (!contextMenuTarget) return;
+          const { layer } = contextMenuTarget;
+          const dupeColor = pickNextLayerColor(layers);
+          const clone: LayerConfig = {
+            ...layer,
+            id: `layer-${Date.now()}`,
+            color: dupeColor,
+            cagedForms: new Set(layer.cagedForms),
+            selectedNotes: new Set(layer.selectedNotes),
+            selectedDegrees: new Set(layer.selectedDegrees),
+            hiddenCells: new Set(layer.hiddenCells),
+            chordFrames: layer.chordFrames.map((f) => ({ cells: [...f.cells] })),
+          };
+          onAddLayer(clone);
+        }}
+        onDelete={() => {
+          if (contextMenuTarget) {
+            handleDeleteLayer(contextMenuTarget.layer.id, contextMenuTarget.slotIdx);
+          }
+        }}
+        onClose={() => {
+          contextMenuOpenRef.current = false;
+          setContextMenuTarget(null);
+        }}
+        t={t}
+      />
 
       <LayerEditModal
         theme={theme}
@@ -657,7 +900,7 @@ export default function LayerList({
           if (loaded) onLoadPreset?.(loaded);
         }}
         onDelete={deletePreset}
-        onClose={() => setPresetModalVisible(false)}
+        onClose={onPresetModalClose}
         t={t}
       />
     </View>
@@ -665,24 +908,34 @@ export default function LayerList({
 }
 
 const ROW_GAP = 8;
+const ROW_RADIUS = 14;
 
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 12,
     paddingVertical: 8,
     gap: ROW_GAP,
+    position: "relative",
   },
   layerRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
     borderWidth: 1,
-    borderRadius: 16,
+    borderRadius: ROW_RADIUS,
     paddingVertical: 10,
     paddingHorizontal: 12,
   },
-  summaryArea: {
+  addButton: {
+    borderRadius: ROW_RADIUS,
+    borderWidth: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+  },
+  summaryTouchable: {
     flex: 1,
+  },
+  summaryArea: {
     gap: 2,
   },
   layerType: {
@@ -710,17 +963,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5,
     paddingVertical: 1,
   },
-  presetBtn: {
-    flexDirection: "row",
+  deleteBackground: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: "center",
+    alignItems: "flex-end",
+  },
+  deleteIconWrap: {
+    paddingRight: 20,
     alignItems: "center",
     justifyContent: "center",
-    gap: 6,
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderRadius: 12,
-  },
-  presetBtnText: {
-    fontSize: 12,
-    fontWeight: "500",
   },
 });

@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { View } from "react-native";
 import LayerList from "../../components/LayerList";
 import NormalFretboard from "../../components/NormalFretboard";
 import PracticePane from "../../components/ui/PracticePane";
+import FretboardControls from "../../components/FretboardControls";
 import type { Accidental, BaseLabelMode, LayerConfig, Theme } from "../../types";
 
 export interface LayerPaneProps {
@@ -25,9 +27,10 @@ export interface LayerPaneProps {
   onUpdateLayer: (id: string, layer: LayerConfig) => void;
   onRemoveLayer: (id: string) => void;
   onToggleLayer: (id: string) => void;
-  onReorderLayers: (slots: (LayerConfig | null)[]) => void;
   onPreviewLayer: (layer: LayerConfig | null) => void;
   onLoadPreset: (layers: LayerConfig[]) => void;
+  onRootNoteChange: (note: string) => void;
+  onBaseLabelModeChange: (mode: BaseLabelMode) => void;
 }
 
 export default function LayerPane({
@@ -50,10 +53,13 @@ export default function LayerPane({
   onUpdateLayer,
   onRemoveLayer,
   onToggleLayer,
-  onReorderLayers,
   onPreviewLayer,
   onLoadPreset,
+  onRootNoteChange,
+  onBaseLabelModeChange,
 }: LayerPaneProps) {
+  const [presetModalVisible, setPresetModalVisible] = useState(false);
+
   return (
     <PracticePane
       isLandscape={isLandscape}
@@ -71,6 +77,17 @@ export default function LayerPane({
           onNoteClick={() => {}}
         />
       }
+      controls={
+        <FretboardControls
+          theme={theme}
+          rootNote={rootNote}
+          accidental={accidental}
+          baseLabelMode={baseLabelMode}
+          onRootNoteChange={onRootNoteChange}
+          onBaseLabelModeChange={onBaseLabelModeChange}
+          onPresetPress={() => setPresetModalVisible(true)}
+        />
+      }
     >
       <View>
         <LayerList
@@ -83,13 +100,14 @@ export default function LayerPane({
           onUpdateLayer={onUpdateLayer}
           onRemoveLayer={onRemoveLayer}
           onToggleLayer={onToggleLayer}
-          onReorderLayers={onReorderLayers}
           onPreviewLayer={onPreviewLayer}
           previewLayer={previewLayer}
           overlayNotes={overlayNotes}
           overlaySemitones={overlaySemitones}
           layerNoteLabels={layerNoteLabelsMap}
           onLoadPreset={onLoadPreset}
+          presetModalVisible={presetModalVisible}
+          onPresetModalClose={() => setPresetModalVisible(false)}
         />
       </View>
     </PracticePane>

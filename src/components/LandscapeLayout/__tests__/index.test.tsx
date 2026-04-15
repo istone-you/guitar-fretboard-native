@@ -64,9 +64,10 @@ const defaultProps = {
   onUpdateLayer: jest.fn(),
   onRemoveLayer: jest.fn(),
   onToggleLayer: jest.fn(),
-  onReorderLayers: jest.fn(),
   onPreviewLayer: jest.fn(),
   onLoadPreset: jest.fn(),
+  onRootNoteChange: jest.fn(),
+  onBaseLabelModeChange: jest.fn(),
 };
 
 describe("LandscapeLayout", () => {

@@ -28,6 +28,7 @@ import { usePersistedSetting } from "../../hooks/usePersistedSetting";
 type FinderItem = { kind: "chord"; match: ChordMatch } | { kind: "scale"; match: ScaleMatch };
 import SlideToggle from "../../components/ui/SlideToggle";
 import ColorPicker from "../../components/ui/ColorPicker";
+import { SegmentedToggle } from "../../components/ui/SegmentedToggle";
 
 export interface FinderPaneProps {
   theme: Theme;
@@ -44,6 +45,7 @@ export interface FinderPaneProps {
   onDotColorChange: (color: string) => void;
   layers: LayerConfig[];
   onAddLayerAndNavigate: (layer: LayerConfig) => void;
+  onBaseLabelModeChange: (mode: BaseLabelMode) => void;
 }
 
 export default function FinderPane({
@@ -61,6 +63,7 @@ export default function FinderPane({
   onDotColorChange,
   layers,
   onAddLayerAndNavigate,
+  onBaseLabelModeChange,
 }: FinderPaneProps) {
   const { t } = useTranslation();
   const [showChords, setShowChords] = usePersistedSetting(
@@ -104,7 +107,7 @@ export default function FinderPane({
 
   const isDark = theme === "dark";
   const accentColor = dotColor;
-  const bgColor = isDark ? "#030712" : "#f3f4f6";
+  const bgColor = isDark ? "#000000" : "#ffffff";
   const cardBg = isDark ? "#1a1a2e" : "#ffffff";
   const textColor = isDark ? "#e5e7eb" : "#1c1917";
   const subTextColor = isDark ? "#9ca3af" : "#6b7280";
@@ -285,6 +288,18 @@ export default function FinderPane({
     <View style={[styles.container, { backgroundColor: bgColor }]}>
       {/* Fretboard */}
       <View style={styles.fretboardWrapper}>
+        <View style={styles.labelToggleRow}>
+          <SegmentedToggle
+            theme={theme}
+            value={baseLabelMode}
+            onChange={onBaseLabelModeChange}
+            options={[
+              { value: "note" as BaseLabelMode, label: t("header.note") },
+              { value: "degree" as BaseLabelMode, label: t("header.degree") },
+            ]}
+            size="compact"
+          />
+        </View>
         <NormalFretboard
           key={fretboardKey}
           theme={theme}
@@ -558,6 +573,12 @@ const styles = StyleSheet.create({
   },
   fretboardWrapper: {
     paddingVertical: 8,
+  },
+  labelToggleRow: {
+    alignItems: "flex-start",
+    paddingHorizontal: 12,
+    paddingBottom: 6,
+    marginBottom: 10,
   },
   selectedRow: {
     flexDirection: "row",

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -6,9 +6,10 @@ import {
   ScrollView,
   StyleSheet,
   Animated,
-  Easing,
   useWindowDimensions,
   FlatList,
+  Switch,
+  type GestureResponderHandlers,
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
@@ -27,8 +28,9 @@ import ColorPicker from "../ui/ColorPicker";
 import { SegmentedToggle } from "../ui/SegmentedToggle";
 import { buildScaleOptions } from "../ui/scaleOptions";
 import LayerDescription from "./LayerDescription";
-import AnimatedModal from "../ui/AnimatedModal";
-import BottomSheetModal from "../ui/BottomSheetModal";
+import BottomSheetModal, { SHEET_HANDLE_CLEARANCE } from "../ui/BottomSheetModal";
+import GlassIconButton from "../ui/GlassIconButton";
+import SheetProgressiveHeader from "../ui/SheetProgressiveHeader";
 import {
   CHORD_CAGED_ORDER,
   CHORD_SEMITONES,
@@ -54,44 +56,6 @@ interface SelectContext {
   onSelect: (v: string) => void;
   hideBack?: boolean; // type selection: no back button (type is topmost page)
   backStep?: "settings" | "chips"; // override back destination (default: "settings")
-}
-
-function SlideToggle({
-  active,
-  color,
-  isDark,
-  onPress,
-}: {
-  active: boolean;
-  color: string;
-  isDark: boolean;
-  onPress: () => void;
-}) {
-  const anim = useRef(new Animated.Value(active ? 1 : 0)).current;
-  const prevActive = useRef(active);
-
-  if (prevActive.current !== active) {
-    prevActive.current = active;
-    Animated.timing(anim, {
-      toValue: active ? 1 : 0,
-      duration: 300,
-      useNativeDriver: false,
-    }).start();
-  }
-
-  const thumbX = anim.interpolate({ inputRange: [0, 1], outputRange: [3, 23] });
-  const bgColor = anim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [isDark ? "#4b5563" : "#d6d3d1", color],
-  });
-
-  return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
-      <Animated.View style={[styles.slideToggle, { backgroundColor: bgColor }]}>
-        <Animated.View style={[styles.slideToggleThumb, { transform: [{ translateX: thumbX }] }]} />
-      </Animated.View>
-    </TouchableOpacity>
-  );
 }
 
 function BounceChip({
@@ -176,38 +140,60 @@ export default function LayerEditModal({
   const isDark = theme === "dark";
   const { height: winHeight, width: winWidth } = useWindowDimensions();
 
-  const [step, setStep] = useState<"type" | "settings" | "color" | "chips" | "select" | "caged">(
-    initialLayer ? "settings" : "type",
+  const [step, setStep] = useState<"settings" | "color" | "chips" | "select" | "caged">(
+    initialLayer ? "settings" : "select",
   );
   const [layer, setLayer] = useState<LayerConfig>(
     initialLayer ?? createDefaultLayer("scale", `layer-${Date.now()}`, defaultColor),
   );
   const [extractChordType, setExtractChordType] = useState("Major");
-  const [showDescription, setShowDescription] = useState(false);
-  const descAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
   const selectContextRef = useRef<SelectContext | null>(null);
-
+  // Direction for the next slide animation: positive = from right, negative = from left, 0 = none
+  const pendingEnterDir = useRef(0);
   const sheetScrollRef = useRef<ScrollView>(null);
   const flashSheetScrollIndicator = () => {
     requestAnimationFrame(() => {
       sheetScrollRef.current?.flashScrollIndicators();
     });
   };
+  const [headerHeight, setHeaderHeight] = useState(96);
 
   // Reset state when modal opens with different layer.
-  const prevVisible = useRef(visible);
+  const prevVisible = useRef(false);
   const prevInitialId = useRef(initialLayer?.id);
   let resolvedStep = step;
   if (visible && (!prevVisible.current || prevInitialId.current !== initialLayer?.id)) {
     prevVisible.current = visible;
     prevInitialId.current = initialLayer?.id;
-    resolvedStep = initialLayer ? "settings" : "type";
-    if (resolvedStep !== step) setStep(resolvedStep);
+    resolvedStep = initialLayer ? "settings" : "select";
     if (initialLayer) {
+      if (resolvedStep !== step) setStep(resolvedStep);
       setLayer(initialLayer);
     } else {
-      setLayer(createDefaultLayer("scale", `layer-${Date.now()}`, defaultColor));
+      const newLayer = createDefaultLayer("scale", `layer-${Date.now()}`, defaultColor);
+      selectContextRef.current = {
+        title: t("layers.type"),
+        options: [
+          { value: "scale", label: t("layers.scale") },
+          { value: "chord", label: t("layers.chord") },
+          { value: "caged", label: t("layers.caged") },
+          { value: "custom", label: t("layers.custom") },
+          { value: "progression", label: t("layers.progression") },
+        ],
+        currentValue: "",
+        onSelect: (v) => {
+          const newType = v as LayerType;
+          const nextLayer = createDefaultLayer(newType, newLayer.id, newLayer.color);
+          setLayer(nextLayer);
+          onPreview?.(nextLayer);
+        },
+        hideBack: true,
+      };
+      if (resolvedStep !== step) setStep(resolvedStep);
+      setLayer(newLayer);
+      // No initial slide-in: content appears immediately when sheet opens
+      slideAnim.setValue(0);
     }
   }
   if (!visible && prevVisible.current) {
@@ -220,6 +206,24 @@ export default function LayerEditModal({
     onPreview?.(next);
   };
 
+  // After React commits a step change, set the start position and begin spring animation.
+  // useLayoutEffect fires synchronously after commit but before the native paint, so the new
+  // content is never visible at position 0 even for a single frame.
+  useLayoutEffect(() => {
+    const dir = pendingEnterDir.current;
+    if (dir !== 0) {
+      pendingEnterDir.current = 0;
+      slideAnim.stopAnimation();
+      slideAnim.setValue(dir * winWidth);
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        tension: 120,
+        friction: 20,
+        useNativeDriver: false,
+      }).start();
+    }
+  }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Navigate forward: new page slides in from right
   const navigate = (
     target: "settings" | "color" | "chips" | "select" | "caged",
@@ -227,41 +231,23 @@ export default function LayerEditModal({
   ) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (context) selectContextRef.current = context;
+    pendingEnterDir.current = 1;
     setStep(target);
-    slideAnim.setValue(winWidth);
-    Animated.spring(slideAnim, {
-      toValue: 0,
-      tension: 120,
-      friction: 20,
-      useNativeDriver: true,
-    }).start();
   };
 
   // Navigate back to settings: settings slides in from left
   const navigateBack = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    pendingEnterDir.current = -1;
     setStep("settings");
-    slideAnim.setValue(-winWidth);
-    Animated.spring(slideAnim, {
-      toValue: 0,
-      tension: 120,
-      friction: 20,
-      useNativeDriver: true,
-    }).start();
   };
 
   // Navigate to parent (type select): slides in from left (going up the hierarchy)
   const navigateToParent = (context: SelectContext) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     selectContextRef.current = context;
+    pendingEnterDir.current = -1;
     setStep("select");
-    slideAnim.setValue(-winWidth);
-    Animated.spring(slideAnim, {
-      toValue: 0,
-      tension: 120,
-      friction: 20,
-      useNativeDriver: true,
-    }).start();
   };
 
   const { options: scaleOptions } = buildScaleOptions(t);
@@ -355,14 +341,14 @@ export default function LayerEditModal({
       ]}
     >
       <Text style={[styles.iosRowLabel, { color: labelColor }]}>{label}</Text>
-      <SlideToggle
-        active={active}
-        color="#34c759"
-        isDark={isDark}
-        onPress={() => {
+      <Switch
+        value={active}
+        onValueChange={() => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           onToggle();
         }}
+        trackColor={{ false: isDark ? "#4b5563" : "#d6d3d1", true: "#34c759" }}
+        ios_backgroundColor={isDark ? "#4b5563" : "#d6d3d1"}
       />
     </View>
   );
@@ -372,22 +358,35 @@ export default function LayerEditModal({
     <View style={[styles.iosSection, { borderColor }]}>{children}</View>
   );
 
-  // Sub-page header: chevron back button + centered title
-  const renderSubPageHeader = (title: string, onBack: () => void) => (
-    <View style={[styles.pageHeader, { borderBottomColor: borderColor, backgroundColor: bgColor }]}>
-      <TouchableOpacity
-        onPress={onBack}
-        style={styles.headerLeft}
-        activeOpacity={0.7}
-        testID="sub-page-back"
-      >
-        <ChevronIcon size={20} color={chevronColor} direction="left" />
-      </TouchableOpacity>
-      <View style={styles.headerCenter}>
-        <Text style={[styles.headerTitle, { color: labelColor }]}>{title}</Text>
+  // Sub-page header: chevron back button + centered title (absolute — content scrolls behind it)
+  const renderSubPageHeader = (
+    title: string,
+    onBack: () => void,
+    dh?: GestureResponderHandlers,
+  ) => (
+    <SheetProgressiveHeader
+      isDark={isDark}
+      bgColor={bgColor}
+      dragHandlers={dh ?? {}}
+      contentPaddingHorizontal={14}
+      onLayout={setHeaderHeight}
+      style={styles.absoluteHeader}
+    >
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
+        <GlassIconButton
+          isDark={isDark}
+          onPress={onBack}
+          label="‹"
+          fontSize={22}
+          style={styles.headerLeft}
+          testID="sub-page-back"
+        />
+        <View style={styles.headerCenter}>
+          <Text style={[styles.headerTitle, { color: labelColor }]}>{title}</Text>
+        </View>
+        <View style={styles.headerRight} />
       </View>
-      <View style={styles.headerRight} />
-    </View>
+    </SheetProgressiveHeader>
   );
 
   // Find label by value from options array
@@ -396,58 +395,15 @@ export default function LayerEditModal({
 
   return (
     <>
-      {/* Type selection — center modal */}
-      <AnimatedModal visible={visible && resolvedStep === "type"} onClose={onClose}>
-        {({ closeWithCallback }) => (
-          <View
-            style={[styles.modal, styles.centerModal, { backgroundColor: bgColor, borderColor }]}
-          >
-            <View style={styles.typeSelection}>
-              <Text style={[styles.title, { color: isDark ? "#fff" : "#1c1917" }]}>
-                {t("layers.addLayer")}
-              </Text>
-              <View style={styles.typeButtons}>
-                {(["scale", "chord", "caged", "custom", "progression"] as LayerType[]).map(
-                  (type) => (
-                    <TouchableOpacity
-                      key={type}
-                      onPress={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        const newLayer = createDefaultLayer(type, layer.id, layer.color);
-                        setLayer(newLayer);
-                        onPreview?.(newLayer);
-                        closeWithCallback(() => setStep("settings"));
-                      }}
-                      style={[
-                        styles.typeBtn,
-                        {
-                          borderColor: isDark ? "#374151" : "#d6d3d1",
-                          backgroundColor: isDark ? "#1f2937" : "#fafaf9",
-                        },
-                      ]}
-                      activeOpacity={0.7}
-                    >
-                      <Text
-                        style={{
-                          fontSize: 15,
-                          fontWeight: "600",
-                          color: isDark ? "#fff" : "#1c1917",
-                        }}
-                      >
-                        {t(`layers.${type}`)}
-                      </Text>
-                    </TouchableOpacity>
-                  ),
-                )}
-              </View>
-            </View>
-          </View>
-        )}
-      </AnimatedModal>
-
-      {/* Settings / color / chips / select — bottom sheet */}
-      <BottomSheetModal visible={visible && resolvedStep !== "type"} onClose={onClose}>
-        {({ close }) => (
+      {/* Settings / color / chips / select / type — bottom sheet */}
+      <BottomSheetModal
+        visible={visible}
+        onClose={() => {
+          if (step !== "select") onSave(layer);
+          onClose();
+        }}
+      >
+        {({ close, closeWithCallback, dragHandlers }) => (
           <View
             style={[
               styles.modal,
@@ -460,148 +416,14 @@ export default function LayerEditModal({
                 {/* Step: Settings */}
                 {step === "settings" && (
                   <View style={{ flex: 1 }}>
-                    {/* Fixed header outside ScrollView — guarantees full width */}
-                    <View
-                      style={[
-                        styles.pageHeader,
-                        { backgroundColor: bgColor, borderBottomColor: borderColor },
-                      ]}
-                    >
-                      {/* LEFT: back to type selection (backward animation) */}
-                      <TouchableOpacity
-                        onPress={() =>
-                          navigateToParent({
-                            title: t("layers.type"),
-                            options: [
-                              { value: "scale", label: t("layers.scale") },
-                              { value: "chord", label: t("layers.chord") },
-                              { value: "caged", label: t("layers.caged") },
-                              { value: "custom", label: t("layers.custom") },
-                              { value: "progression", label: t("layers.progression") },
-                            ],
-                            currentValue: layer.type,
-                            onSelect: (v) => {
-                              const newType = v as LayerType;
-                              if (newType !== layer.type) {
-                                const nextLayer = {
-                                  ...createDefaultLayer(newType, layer.id, layer.color),
-                                };
-                                setLayer(nextLayer);
-                                onPreview?.(nextLayer);
-                              }
-                            },
-                            hideBack: true,
-                          })
-                        }
-                        style={styles.headerLeft}
-                        activeOpacity={0.7}
-                      >
-                        <ChevronIcon size={20} color={chevronColor} direction="left" />
-                      </TouchableOpacity>
-
-                      {/* CENTER: type name (also tappable, same backward animation) */}
-                      <TouchableOpacity
-                        onPress={() =>
-                          navigateToParent({
-                            title: t("layers.type"),
-                            options: [
-                              { value: "scale", label: t("layers.scale") },
-                              { value: "chord", label: t("layers.chord") },
-                              { value: "caged", label: t("layers.caged") },
-                              { value: "custom", label: t("layers.custom") },
-                              { value: "progression", label: t("layers.progression") },
-                            ],
-                            currentValue: layer.type,
-                            onSelect: (v) => {
-                              const newType = v as LayerType;
-                              if (newType !== layer.type) {
-                                const nextLayer = {
-                                  ...createDefaultLayer(newType, layer.id, layer.color),
-                                };
-                                setLayer(nextLayer);
-                                onPreview?.(nextLayer);
-                              }
-                            },
-                            hideBack: true,
-                          })
-                        }
-                        style={styles.headerCenter}
-                        activeOpacity={0.6}
-                      >
-                        <Text style={[styles.headerTitle, { color: labelColor }]}>
-                          {t(`layers.${layer.type}`)}
-                        </Text>
-                      </TouchableOpacity>
-
-                      {/* RIGHT: ? explanation button */}
-                      <View style={styles.headerRight}>
-                        <TouchableOpacity
-                          onPress={() => {
-                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                            const next = !showDescription;
-                            setShowDescription(next);
-                            if (next) {
-                              descAnim.setValue(0);
-                              Animated.timing(descAnim, {
-                                toValue: 1,
-                                duration: 400,
-                                easing: Easing.out(Easing.cubic),
-                                useNativeDriver: false,
-                              }).start();
-                            } else {
-                              Animated.timing(descAnim, {
-                                toValue: 0,
-                                duration: 350,
-                                easing: Easing.out(Easing.cubic),
-                                useNativeDriver: false,
-                              }).start();
-                            }
-                          }}
-                          style={[
-                            styles.helpBtn,
-                            {
-                              backgroundColor: showDescription
-                                ? isDark
-                                  ? "#374151"
-                                  : "#e7e5e4"
-                                : "transparent",
-                            },
-                          ]}
-                          activeOpacity={0.7}
-                        >
-                          <Text
-                            style={{
-                              fontSize: 17,
-                              fontWeight: "700",
-                              color: isDark ? "#9ca3af" : "#78716c",
-                            }}
-                          >
-                            ?
-                          </Text>
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-
-                    <Animated.View
-                      style={{
-                        paddingHorizontal: 16,
-                        maxHeight: descAnim.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [0, 200],
-                        }),
-                        opacity: descAnim,
-                        overflow: "hidden",
-                      }}
-                    >
-                      <View style={{ paddingTop: 8 }}>
-                        <LayerDescription theme={theme} layer={layer} />
-                      </View>
-                    </Animated.View>
-
+                    {/* Scroll content starts at top; paddingTop reserves space for the absolute header */}
                     <ScrollView
                       ref={sheetScrollRef}
                       style={styles.sheetScroll}
-                      contentContainerStyle={styles.sheetScrollContent}
+                      contentContainerStyle={[
+                        styles.sheetScrollContent,
+                        { paddingTop: headerHeight },
+                      ]}
                       showsVerticalScrollIndicator
                       indicatorStyle={isDark ? "white" : "black"}
                       persistentScrollbar
@@ -945,42 +767,119 @@ export default function LayerEditModal({
                           </TouchableOpacity>,
                         )}
 
-                        {/* Save button */}
-                        <TouchableOpacity
-                          onPress={() => {
-                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                            onSave(layer);
-                            close();
-                          }}
-                          style={[
-                            styles.saveBtn,
-                            { backgroundColor: isDark ? "#e5e7eb" : "#1c1917" },
-                          ]}
-                          activeOpacity={0.8}
-                        >
-                          <Text
-                            style={{
-                              fontSize: 15,
-                              fontWeight: "600",
-                              color: isDark ? "#1c1917" : "#fff",
-                            }}
-                          >
-                            {t("layers.confirm")}
-                          </Text>
-                        </TouchableOpacity>
+                        {/* Description — always visible at bottom */}
+                        <View style={{ paddingTop: 8, paddingBottom: 4 }}>
+                          <LayerDescription theme={theme} layer={layer} />
+                        </View>
                       </View>
                     </ScrollView>
+                    {/* Absolute glass header — settings rows scroll up behind it */}
+                    <SheetProgressiveHeader
+                      isDark={isDark}
+                      bgColor={bgColor}
+                      dragHandlers={dragHandlers}
+                      contentPaddingHorizontal={14}
+                      onLayout={setHeaderHeight}
+                      style={styles.absoluteHeader}
+                    >
+                      <View style={{ flexDirection: "row", alignItems: "center" }}>
+                        {/* LEFT: back to type selection (backward animation) */}
+                        <GlassIconButton
+                          isDark={isDark}
+                          onPress={() =>
+                            navigateToParent({
+                              title: t("layers.type"),
+                              options: [
+                                { value: "scale", label: t("layers.scale") },
+                                { value: "chord", label: t("layers.chord") },
+                                { value: "caged", label: t("layers.caged") },
+                                { value: "custom", label: t("layers.custom") },
+                                { value: "progression", label: t("layers.progression") },
+                              ],
+                              currentValue: layer.type,
+                              onSelect: (v) => {
+                                const newType = v as LayerType;
+                                if (newType !== layer.type) {
+                                  const nextLayer = {
+                                    ...createDefaultLayer(newType, layer.id, layer.color),
+                                  };
+                                  setLayer(nextLayer);
+                                  onPreview?.(nextLayer);
+                                }
+                              },
+                              hideBack: true,
+                            })
+                          }
+                          label="‹"
+                          fontSize={22}
+                          style={styles.headerLeft}
+                        />
+
+                        {/* CENTER: type name (also tappable, same backward animation) */}
+                        <TouchableOpacity
+                          onPress={() =>
+                            navigateToParent({
+                              title: t("layers.type"),
+                              options: [
+                                { value: "scale", label: t("layers.scale") },
+                                { value: "chord", label: t("layers.chord") },
+                                { value: "caged", label: t("layers.caged") },
+                                { value: "custom", label: t("layers.custom") },
+                                { value: "progression", label: t("layers.progression") },
+                              ],
+                              currentValue: layer.type,
+                              onSelect: (v) => {
+                                const newType = v as LayerType;
+                                if (newType !== layer.type) {
+                                  const nextLayer = {
+                                    ...createDefaultLayer(newType, layer.id, layer.color),
+                                  };
+                                  setLayer(nextLayer);
+                                  onPreview?.(nextLayer);
+                                }
+                              },
+                              hideBack: true,
+                            })
+                          }
+                          style={styles.headerCenter}
+                          activeOpacity={0.6}
+                        >
+                          <Text style={[styles.headerTitle, { color: labelColor }]}>
+                            {t(`layers.${layer.type}`)}
+                          </Text>
+                        </TouchableOpacity>
+
+                        {/* RIGHT: confirm (checkmark) button */}
+                        <View style={styles.headerRight}>
+                          <GlassIconButton
+                            isDark={isDark}
+                            onPress={() => {
+                              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                              closeWithCallback(() => {
+                                onSave(layer);
+                                onClose();
+                              });
+                            }}
+                            label="✓"
+                            testID="settings-confirm-btn"
+                            style={styles.helpBtn}
+                          />
+                        </View>
+                      </View>
+                    </SheetProgressiveHeader>
                   </View>
                 )}
 
                 {/* Step: Color picker */}
                 {step === "color" && (
                   <View style={{ flex: 1 }}>
-                    {renderSubPageHeader(t("layerColors"), navigateBack)}
                     <ScrollView
                       ref={sheetScrollRef}
                       style={styles.sheetScroll}
-                      contentContainerStyle={styles.sheetScrollContent}
+                      contentContainerStyle={[
+                        styles.sheetScrollContent,
+                        { paddingTop: headerHeight },
+                      ]}
                       showsVerticalScrollIndicator
                       indicatorStyle={isDark ? "white" : "black"}
                       persistentScrollbar
@@ -1001,40 +900,22 @@ export default function LayerEditModal({
                             />
                           </View>,
                         )}
-                        <TouchableOpacity
-                          onPress={navigateBack}
-                          style={[
-                            styles.saveBtn,
-                            { backgroundColor: isDark ? "#e5e7eb" : "#1c1917" },
-                          ]}
-                          activeOpacity={0.8}
-                        >
-                          <Text
-                            style={{
-                              fontSize: 15,
-                              fontWeight: "600",
-                              color: isDark ? "#1c1917" : "#fff",
-                            }}
-                          >
-                            {t("layers.confirm")}
-                          </Text>
-                        </TouchableOpacity>
                       </View>
                     </ScrollView>
+                    {renderSubPageHeader(t("layerColors"), navigateBack, dragHandlers)}
                   </View>
                 )}
 
                 {/* Step: Chips (custom layer notes/degrees) */}
                 {step === "chips" && (
                   <View style={{ flex: 1 }}>
-                    {renderSubPageHeader(
-                      layer.customMode === "note" ? t("noteFilter.title") : t("degreeFilter.title"),
-                      navigateBack,
-                    )}
                     <ScrollView
                       ref={sheetScrollRef}
                       style={styles.sheetScroll}
-                      contentContainerStyle={styles.sheetScrollContent}
+                      contentContainerStyle={[
+                        styles.sheetScrollContent,
+                        { paddingTop: headerHeight },
+                      ]}
                       showsVerticalScrollIndicator
                       indicatorStyle={isDark ? "white" : "black"}
                       persistentScrollbar
@@ -1169,37 +1050,26 @@ export default function LayerEditModal({
                             </Text>
                           </TouchableOpacity>
                         </View>
-                        <TouchableOpacity
-                          onPress={navigateBack}
-                          style={[
-                            styles.saveBtn,
-                            { backgroundColor: isDark ? "#e5e7eb" : "#1c1917" },
-                          ]}
-                          activeOpacity={0.8}
-                        >
-                          <Text
-                            style={{
-                              fontSize: 15,
-                              fontWeight: "600",
-                              color: isDark ? "#1c1917" : "#fff",
-                            }}
-                          >
-                            {t("layers.confirm")}
-                          </Text>
-                        </TouchableOpacity>
                       </View>
                     </ScrollView>
+                    {renderSubPageHeader(
+                      layer.customMode === "note" ? t("noteFilter.title") : t("degreeFilter.title"),
+                      navigateBack,
+                      dragHandlers,
+                    )}
                   </View>
                 )}
 
                 {/* Step: CAGED forms */}
                 {step === "caged" && (
                   <View style={{ flex: 1 }}>
-                    {renderSubPageHeader(t("mobileControls.cagedForms"), navigateBack)}
                     <ScrollView
                       ref={sheetScrollRef}
                       style={styles.sheetScroll}
-                      contentContainerStyle={styles.sheetScrollContent}
+                      contentContainerStyle={[
+                        styles.sheetScrollContent,
+                        { paddingTop: headerHeight },
+                      ]}
                       showsVerticalScrollIndicator
                       indicatorStyle={isDark ? "white" : "black"}
                     >
@@ -1275,47 +1145,24 @@ export default function LayerEditModal({
                         </TouchableOpacity>
                       </View>
                     </ScrollView>
+                    {renderSubPageHeader(
+                      t("mobileControls.cagedForms"),
+                      navigateBack,
+                      dragHandlers,
+                    )}
                   </View>
                 )}
 
                 {/* Step: Generic select list */}
                 {step === "select" && selectContextRef.current && (
                   <View style={{ flex: 1 }}>
-                    {selectContextRef.current.hideBack ? (
-                      /* Type selection: ✕ on LEFT — centered title — spacer RIGHT */
-                      <View
-                        style={[
-                          styles.pageHeader,
-                          { borderBottomColor: borderColor, backgroundColor: bgColor },
-                        ]}
-                      >
-                        <TouchableOpacity
-                          onPress={() => navigate("settings")}
-                          style={styles.headerLeft}
-                          activeOpacity={0.7}
-                          testID="sub-page-back"
-                        >
-                          <Text style={{ fontSize: 20, color: chevronColor, paddingLeft: 4 }}>
-                            ✕
-                          </Text>
-                        </TouchableOpacity>
-                        <View style={styles.headerCenter}>
-                          <Text style={[styles.headerTitle, { color: labelColor }]}>
-                            {selectContextRef.current.title}
-                          </Text>
-                        </View>
-                        <View style={styles.headerRight} />
-                      </View>
-                    ) : (
-                      renderSubPageHeader(selectContextRef.current.title, navigateBack)
-                    )}
                     <FlatList
                       data={selectContextRef.current.options}
                       keyExtractor={(item) => item.value}
                       style={styles.sheetScroll}
                       contentContainerStyle={[
                         styles.sheetScrollContent,
-                        { paddingTop: 8, paddingHorizontal: 16 },
+                        { paddingTop: headerHeight + 8, paddingHorizontal: 16 },
                       ]}
                       showsVerticalScrollIndicator
                       indicatorStyle={isDark ? "white" : "black"}
@@ -1334,14 +1181,8 @@ export default function LayerEditModal({
                                 navigate("settings");
                               } else if (ctx.backStep) {
                                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                pendingEnterDir.current = -1;
                                 setStep(ctx.backStep);
-                                slideAnim.setValue(-winWidth);
-                                Animated.spring(slideAnim, {
-                                  toValue: 0,
-                                  tension: 120,
-                                  friction: 20,
-                                  useNativeDriver: true,
-                                }).start();
                               } else {
                                 navigateBack();
                               }
@@ -1373,6 +1214,38 @@ export default function LayerEditModal({
                         );
                       }}
                     />
+                    {selectContextRef.current.hideBack ? (
+                      /* Type selection: ✕ on LEFT — centered title — spacer RIGHT */
+                      <SheetProgressiveHeader
+                        isDark={isDark}
+                        bgColor={bgColor}
+                        contentPaddingHorizontal={14}
+                        onLayout={setHeaderHeight}
+                        style={styles.absoluteHeader}
+                      >
+                        <View style={{ flexDirection: "row", alignItems: "center" }}>
+                          <GlassIconButton
+                            isDark={isDark}
+                            onPress={() => close()}
+                            label="✕"
+                            style={styles.headerLeft}
+                            testID="sub-page-back"
+                          />
+                          <View style={styles.headerCenter}>
+                            <Text style={[styles.headerTitle, { color: labelColor }]}>
+                              {selectContextRef.current.title}
+                            </Text>
+                          </View>
+                          <View style={styles.headerRight} />
+                        </View>
+                      </SheetProgressiveHeader>
+                    ) : (
+                      renderSubPageHeader(
+                        selectContextRef.current.title,
+                        navigateBack,
+                        dragHandlers,
+                      )
+                    )}
                   </View>
                 )}
               </Animated.View>
@@ -1393,20 +1266,34 @@ const styles = StyleSheet.create({
     width: 300,
     padding: 20,
   },
+  typeSheetModal: {
+    width: "100%",
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
+    overflow: "hidden",
+    paddingBottom: 40,
+  },
+  /** Absolute glass header — sits on top of scroll content */
+  absoluteHeader: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1,
+    paddingTop: SHEET_HANDLE_CLEARANCE,
+  },
   bottomSheetModal: {
     width: "100%",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
     borderBottomLeftRadius: 0,
     borderBottomRightRadius: 0,
     paddingHorizontal: 0,
     paddingTop: 0,
     paddingBottom: 0,
     overflow: "hidden",
-  },
-  typeSelection: {
-    alignItems: "center",
-    gap: 16,
   },
   title: {
     fontSize: 17,
@@ -1426,13 +1313,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 12,
     paddingVertical: 16,
-    alignItems: "center",
-  },
-  pageHeader: {
-    height: 48,
-    paddingHorizontal: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    flexDirection: "row",
     alignItems: "center",
   },
   headerLeft: {
@@ -1455,9 +1335,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   helpBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1527,30 +1404,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   saveBtn: {
-    borderRadius: 12,
+    borderRadius: 20,
     paddingVertical: 12,
     alignItems: "center",
     marginHorizontal: 16,
     marginTop: 4,
-  },
-  slideToggle: {
-    width: 44,
-    height: 24,
-    borderRadius: 12,
-    justifyContent: "center",
-  },
-  slideToggleThumb: {
-    position: "absolute",
-    top: 3,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: "#fff",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 1,
-    elevation: 2,
   },
   modeSegment: {
     flexDirection: "row",

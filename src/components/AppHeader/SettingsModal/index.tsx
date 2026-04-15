@@ -4,6 +4,8 @@ import { useTranslation } from "react-i18next";
 import { changeLocale } from "../../../i18n";
 import type { Accidental, Theme } from "../../../types";
 import { SegmentedToggle } from "../../ui/SegmentedToggle";
+import SlideToggle from "../../ui/SlideToggle";
+import SheetProgressiveHeader from "../../ui/SheetProgressiveHeader";
 import RangeSlider from "./RangeSlider";
 
 export interface SettingsModalRef {
@@ -36,9 +38,11 @@ const SettingsModal = forwardRef<SettingsModalRef, SettingsModalProps>(function 
 ) {
   const { t, i18n } = useTranslation();
   const [visible, setVisible] = useState(false);
+  const [headerHeight, setHeaderHeight] = useState(72);
   const overlayAnim = useRef(new Animated.Value(0)).current;
   const panelAnim = useRef(new Animated.Value(700)).current;
   const isDark = theme === "dark";
+  const bgColor = isDark ? "#1a1a1a" : "#fff";
 
   const open = () => {
     setVisible(true);
@@ -67,22 +71,14 @@ const SettingsModal = forwardRef<SettingsModalRef, SettingsModalProps>(function 
         style={[
           styles.panel,
           {
-            backgroundColor: isDark ? "#1a1a1a" : "#fff",
+            backgroundColor: bgColor,
             borderColor: isDark ? "#374151" : "#e7e5e4",
             transform: [{ translateY: panelAnim }],
           },
         ]}
       >
-        <View style={styles.header}>
-          <Text style={[styles.title, { color: isDark ? "#fff" : "#1c1917" }]}>
-            {t("settings")}
-          </Text>
-          <TouchableOpacity onPress={close} activeOpacity={0.7}>
-            <Text style={{ fontSize: 20, color: isDark ? "#9ca3af" : "#78716c" }}>✕</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View>
+        {/* Rows content — paddingTop reserves space for the absolute glass header */}
+        <View style={{ paddingHorizontal: 20, paddingTop: headerHeight }}>
           <View style={styles.row}>
             <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c" }]}>
               {t("theme")}
@@ -136,16 +132,7 @@ const SettingsModal = forwardRef<SettingsModalRef, SettingsModalProps>(function 
               <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c" }]}>
                 {t("leftHanded")}
               </Text>
-              <SegmentedToggle
-                theme={theme}
-                value={leftHanded}
-                onChange={onLeftHandedChange}
-                options={[
-                  { value: false, label: "OFF" },
-                  { value: true, label: "ON" },
-                ]}
-                size="compact"
-              />
+              <SlideToggle value={leftHanded} onValueChange={onLeftHandedChange} isDark={isDark} />
             </View>
           )}
 
@@ -164,6 +151,22 @@ const SettingsModal = forwardRef<SettingsModalRef, SettingsModalProps>(function 
             />
           </View>
         </View>
+        {/* Absolute glass header — rows appear behind it */}
+        <SheetProgressiveHeader
+          isDark={isDark}
+          bgColor={bgColor}
+          onLayout={setHeaderHeight}
+          style={styles.glassHeader}
+        >
+          <View style={styles.headerRow}>
+            <Text style={[styles.title, { color: isDark ? "#fff" : "#1c1917" }]}>
+              {t("settings")}
+            </Text>
+            <TouchableOpacity onPress={close} activeOpacity={0.7}>
+              <Text style={{ fontSize: 20, color: isDark ? "#9ca3af" : "#78716c" }}>✕</Text>
+            </TouchableOpacity>
+          </View>
+        </SheetProgressiveHeader>
       </Animated.View>
     </Modal>
   );
@@ -184,14 +187,21 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     borderWidth: 1,
-    padding: 20,
+    overflow: "hidden",
     paddingBottom: 40,
   },
-  header: {
+  glassHeader: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1,
+    paddingTop: 20,
+  },
+  headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 20,
   },
   title: {
     fontSize: 17,

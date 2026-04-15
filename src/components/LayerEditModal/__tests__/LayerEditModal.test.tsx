@@ -81,9 +81,9 @@ beforeEach(() => {
 describe("LayerEditModal", () => {
   // ── Visibility ──────────────────────────────────────────────────────
   it("does not render content when visible=false", () => {
-    const { queryByText } = renderModal({ visible: false });
-    expect(queryByText("layers.addLayer")).toBeNull();
-    expect(queryByText("layers.confirm")).toBeNull();
+    const { queryByText, queryByTestId } = renderModal({ visible: false });
+    expect(queryByText("layers.type")).toBeNull();
+    expect(queryByTestId("settings-confirm-btn")).toBeNull();
   });
 
   // ── Type selection step for new layer ──────────────────────────────
@@ -92,7 +92,7 @@ describe("LayerEditModal", () => {
     act(() => {
       jest.runAllTimers();
     });
-    expect(getByText("layers.addLayer")).toBeTruthy();
+    expect(getByText("layers.type")).toBeTruthy();
     expect(getByText("layers.scale")).toBeTruthy();
     expect(getByText("layers.chord")).toBeTruthy();
     expect(getByText("layers.custom")).toBeTruthy();
@@ -101,18 +101,18 @@ describe("LayerEditModal", () => {
   // ── Settings step for existing layer ────────────────────────────────
   it("shows settings step for existing layer", () => {
     const existing = createDefaultLayer("scale", "l1", "#ff69b6");
-    const { getByText, queryByText } = renderModal({ initialLayer: existing });
+    const { getByTestId, queryByText } = renderModal({ initialLayer: existing });
     act(() => {
       jest.runAllTimers();
     });
     // Should show save button, not type selection title
-    expect(queryByText("layers.addLayer")).toBeNull();
-    expect(getByText("layers.confirm")).toBeTruthy();
+    expect(queryByText("layers.type")).toBeNull();
+    expect(getByTestId("settings-confirm-btn")).toBeTruthy();
   });
 
   // ── Type selection buttons navigate to settings ─────────────────────
   it("selecting scale type navigates to settings step", () => {
-    const { getByText } = renderModal({ initialLayer: null });
+    const { getByText, getByTestId } = renderModal({ initialLayer: null });
     act(() => {
       jest.runAllTimers();
     });
@@ -120,11 +120,11 @@ describe("LayerEditModal", () => {
     act(() => {
       jest.runAllTimers();
     });
-    expect(getByText("layers.confirm")).toBeTruthy();
+    expect(getByTestId("settings-confirm-btn")).toBeTruthy();
   });
 
   it("selecting chord type navigates to settings step", () => {
-    const { getByText } = renderModal({ initialLayer: null });
+    const { getByText, getByTestId } = renderModal({ initialLayer: null });
     act(() => {
       jest.runAllTimers();
     });
@@ -132,11 +132,11 @@ describe("LayerEditModal", () => {
     act(() => {
       jest.runAllTimers();
     });
-    expect(getByText("layers.confirm")).toBeTruthy();
+    expect(getByTestId("settings-confirm-btn")).toBeTruthy();
   });
 
   it("selecting custom type navigates to settings step", () => {
-    const { getByText } = renderModal({ initialLayer: null });
+    const { getByText, getByTestId } = renderModal({ initialLayer: null });
     act(() => {
       jest.runAllTimers();
     });
@@ -144,7 +144,7 @@ describe("LayerEditModal", () => {
     act(() => {
       jest.runAllTimers();
     });
-    expect(getByText("layers.confirm")).toBeTruthy();
+    expect(getByTestId("settings-confirm-btn")).toBeTruthy();
   });
 
   // ── Close button ──────────────────────────────────────────────────
@@ -173,7 +173,7 @@ describe("LayerEditModal", () => {
     const onSave = jest.fn();
     const onClose = jest.fn();
     const existing = createDefaultLayer("scale", "l1", "#ff69b6");
-    const { getByText } = renderModal({
+    const { getByTestId } = renderModal({
       initialLayer: existing,
       onSave,
       onClose,
@@ -181,7 +181,7 @@ describe("LayerEditModal", () => {
     act(() => {
       jest.runAllTimers();
     });
-    fireEvent.press(getByText("layers.confirm"));
+    fireEvent.press(getByTestId("settings-confirm-btn"));
     act(() => {
       jest.runAllTimers();
     });
@@ -231,13 +231,13 @@ describe("LayerEditModal", () => {
   // ── Color picker step navigation ──────────────────────────────────
   it("color label is shown on settings step", () => {
     const existing = createDefaultLayer("scale", "l1", "#ff69b6");
-    const { getByText } = renderModal({ initialLayer: existing });
+    const { getByText, getByTestId } = renderModal({ initialLayer: existing });
     act(() => {
       jest.runAllTimers();
     });
     // Verify color label exists on settings step
     expect(getByText("layerColors")).toBeTruthy();
-    expect(getByText("layers.confirm")).toBeTruthy();
+    expect(getByTestId("settings-confirm-btn")).toBeTruthy();
   });
 
   // ── Custom chips step - selecting note chips ──────────────────────
@@ -313,7 +313,7 @@ describe("LayerEditModal", () => {
   // ── Save with a scale layer ───────────────────────────────────────
   it("save with scale layer passes scale config", () => {
     const onSave = jest.fn();
-    const { getByText } = renderModal({ initialLayer: null, onSave });
+    const { getByText, getByTestId } = renderModal({ initialLayer: null, onSave });
     act(() => {
       jest.runAllTimers();
     });
@@ -321,7 +321,7 @@ describe("LayerEditModal", () => {
     act(() => {
       jest.runAllTimers();
     });
-    fireEvent.press(getByText("layers.confirm"));
+    fireEvent.press(getByTestId("settings-confirm-btn"));
     act(() => {
       jest.runAllTimers();
     });
@@ -335,7 +335,7 @@ describe("LayerEditModal", () => {
   // ── Save with a chord layer ───────────────────────────────────────
   it("save with chord layer passes chord config", () => {
     const onSave = jest.fn();
-    const { getByText } = renderModal({ initialLayer: null, onSave });
+    const { getByText, getByTestId } = renderModal({ initialLayer: null, onSave });
     act(() => {
       jest.runAllTimers();
     });
@@ -343,7 +343,7 @@ describe("LayerEditModal", () => {
     act(() => {
       jest.runAllTimers();
     });
-    fireEvent.press(getByText("layers.confirm"));
+    fireEvent.press(getByTestId("settings-confirm-btn"));
     act(() => {
       jest.runAllTimers();
     });
@@ -361,13 +361,13 @@ describe("LayerEditModal", () => {
       ...createDefaultLayer("scale", "l1", "#40e0d0"),
       scaleType: "natural-minor" as const,
     };
-    const { getByText, queryByText } = renderModal({ initialLayer: existing });
+    const { getByText, getByTestId, queryByText } = renderModal({ initialLayer: existing });
     act(() => {
       jest.runAllTimers();
     });
     expect(queryByText("layers.addLayer")).toBeNull();
     expect(getByText("mobileControls.scaleKind")).toBeTruthy();
-    expect(getByText("layers.confirm")).toBeTruthy();
+    expect(getByTestId("settings-confirm-btn")).toBeTruthy();
   });
 
   // ── Editing existing chord layer ──────────────────────────────────
@@ -579,14 +579,14 @@ describe("LayerEditModal", () => {
       jest.runAllTimers();
     });
     // Should be back on settings
-    expect(getByText("layers.confirm")).toBeTruthy();
+    expect(getByTestId("settings-confirm-btn")).toBeTruthy();
     expect(getByText("layerColors")).toBeTruthy();
   });
 
-  // ── Color picker confirm returns to settings ──────────────────────
-  it("color picker confirm button returns to settings step", () => {
+  // ── Color picker back arrow returns to settings ──────────────────
+  it("color picker back button returns to settings step", () => {
     const existing = createDefaultLayer("scale", "l1", "#ff69b6");
-    const { getByText } = renderModal({ initialLayer: existing });
+    const { getByText, getByTestId } = renderModal({ initialLayer: existing });
     act(() => {
       jest.runAllTimers();
     });
@@ -595,8 +595,8 @@ describe("LayerEditModal", () => {
     act(() => {
       jest.runAllTimers();
     });
-    // Press confirm on color page (navigates back to settings)
-    fireEvent.press(getByText("layers.confirm"));
+    // Press back on color page (navigates back to settings)
+    fireEvent.press(getByTestId("sub-page-back"));
     act(() => {
       jest.runAllTimers();
     });
@@ -661,23 +661,13 @@ describe("LayerEditModal", () => {
     act(() => {
       jest.runAllTimers();
     });
-    // The SlideToggle is a TouchableOpacity inside the chord frame row
-    const { TouchableOpacity } = require("react-native");
-    const allTouchables = UNSAFE_root.findAllByType(TouchableOpacity);
-    // Find the SlideToggle — it wraps an Animated.View with slideToggle style
-    const { Animated } = require("react-native");
-    const slideToggle = allTouchables.find((t: any) => {
-      const child = t.props.children;
-      if (child && child.type === Animated.View) {
-        const s = child.props.style;
-        if (Array.isArray(s)) {
-          return s.some((si: any) => si && si.width === 44 && si.height === 24);
-        }
-      }
-      return false;
-    });
-    expect(slideToggle).toBeTruthy();
-    fireEvent.press(slideToggle!);
+    // The chord frame toggle is now a native Switch
+    const { Switch } = require("react-native");
+    const switches = UNSAFE_root.findAllByType(Switch);
+    // The first Switch in the chord settings panel is the chord frame toggle
+    const chordFrameSwitch = switches[0];
+    expect(chordFrameSwitch).toBeTruthy();
+    fireEvent(chordFrameSwitch, "valueChange", false);
     act(() => {
       jest.runAllTimers();
     });
@@ -699,10 +689,10 @@ describe("LayerEditModal", () => {
     expect(getByText("P1, M3, P5")).toBeTruthy();
   });
 
-  // ── Chips step confirm returns to settings ────────────────────────
-  it("chips step confirm button returns to settings", () => {
+  // ── Chips step back returns to settings ────────────────────────
+  it("chips step back button returns to settings", () => {
     const existing = createDefaultLayer("custom", "l1", "#ff69b6");
-    const { getByText } = renderModal({ initialLayer: existing });
+    const { getByText, getByTestId } = renderModal({ initialLayer: existing });
     act(() => {
       jest.runAllTimers();
     });
@@ -710,8 +700,8 @@ describe("LayerEditModal", () => {
     act(() => {
       jest.runAllTimers();
     });
-    // Press confirm on chips page
-    fireEvent.press(getByText("layers.confirm"));
+    // Press back on chips page
+    fireEvent.press(getByTestId("sub-page-back"));
     act(() => {
       jest.runAllTimers();
     });

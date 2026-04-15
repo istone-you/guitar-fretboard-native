@@ -125,24 +125,6 @@ describe("useLayers", () => {
     expect(result.current.slots[0]?.enabled).toBe(true);
   });
 
-  it("handleReorderLayers replaces the slot array", () => {
-    const { result } = renderHook(() => useLayers());
-    const a = makeLayer({ id: "a" });
-    const b = makeLayer({ id: "b" });
-
-    act(() => {
-      result.current.handleAddLayer(a, 0);
-      result.current.handleAddLayer(b, 1);
-    });
-    act(() => {
-      result.current.handleReorderLayers([null, a, b]);
-    });
-
-    expect(result.current.slots[0]).toBeNull();
-    expect(result.current.slots[1]?.id).toBe("a");
-    expect(result.current.slots[2]?.id).toBe("b");
-  });
-
   it("handleLoadPreset fills slots from preset array", () => {
     const { result } = renderHook(() => useLayers());
     const preset = [makeLayer({ id: "p1" }), makeLayer({ id: "p2" })];

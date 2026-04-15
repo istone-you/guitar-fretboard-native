@@ -136,12 +136,12 @@ describe("SettingsModal", () => {
     expect(screen.queryByText("leftHanded")).toBeNull();
   });
 
-  it("calls onLeftHandedChange when ON is pressed", () => {
+  it("calls onLeftHandedChange when switch is toggled", () => {
     const onLeftHandedChange = jest.fn();
     const ref = createRef<SettingsModalRef>();
     render(<SettingsModal ref={ref} {...defaultProps} onLeftHandedChange={onLeftHandedChange} />);
     openModal(ref);
-    fireEvent.press(screen.getByText("ON"));
+    fireEvent(screen.UNSAFE_getByType(require("react-native").Switch), "valueChange", true);
     expect(onLeftHandedChange).toHaveBeenCalledWith(true);
   });
 

@@ -73,7 +73,7 @@ function QuizSelectionScreen({ theme, onSelect, onShowStats }: QuizSelectionScre
 
   return (
     <ScrollView
-      style={[selectionStyles.container, { backgroundColor: isDark ? "#030712" : "#f3f4f6" }]}
+      style={[selectionStyles.container, { backgroundColor: isDark ? "#000000" : "#ffffff" }]}
       contentContainerStyle={selectionStyles.content}
       showsVerticalScrollIndicator={false}
     >

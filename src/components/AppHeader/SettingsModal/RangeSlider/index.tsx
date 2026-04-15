@@ -1,8 +1,9 @@
 import { useRef, useState } from "react";
-import { View, Text, PanResponder } from "react-native";
+import { View, Text, PanResponder, StyleSheet } from "react-native";
 import * as Haptics from "expo-haptics";
+import { GlassView } from "expo-glass-effect";
 
-const THUMB = 24;
+const THUMB = 28;
 
 interface RangeSliderProps {
   value: [number, number];
@@ -73,76 +74,83 @@ export default function RangeSlider({ value, min, max, onChange, isDark }: Range
   const total = max - min;
   const minFrac = tw > THUMB ? (value[0] - min) / total : 0;
   const maxFrac = tw > THUMB ? (value[1] - min) / total : 1;
+  // positions relative to the outer container
   const minLeft = minFrac * (tw - THUMB);
   const maxLeft = maxFrac * (tw - THUMB);
-  const fillLeft = minLeft + THUMB / 2;
+  // fill position relative to the track container (which has THUMB/2 inset on each side)
+  const fillLeft = minLeft;
   const fillWidth = Math.max(0, maxLeft - minLeft);
 
   return (
     <View
-      style={{ paddingVertical: 16, position: "relative" }}
+      style={styles.outer}
       onLayout={(e) => {
         twRef.current = e.nativeEvent.layout.width;
         setTw(e.nativeEvent.layout.width);
       }}
     >
-      {/* Track */}
-      <View style={{ height: 4, borderRadius: 2, backgroundColor: isDark ? "#374151" : "#d6d3d1" }}>
-        <View
-          style={{
-            position: "absolute",
-            height: 4,
-            left: fillLeft,
-            width: fillWidth,
-            borderRadius: 2,
-            backgroundColor: isDark ? "#e5e7eb" : "#1c1917",
-          }}
+      {/* Track: Liquid Glass background + blue fill */}
+      <View style={styles.trackContainer}>
+        <GlassView
+          style={StyleSheet.absoluteFillObject}
+          glassEffectStyle="regular"
+          colorScheme={isDark ? "dark" : "light"}
         />
+        <View style={[styles.fill, { left: fillLeft, width: fillWidth }]} />
       </View>
+
       {/* Min thumb */}
-      <View
-        style={{
-          position: "absolute",
-          top: 16 - THUMB / 2 + 2,
-          left: minLeft,
-          width: THUMB,
-          height: THUMB,
-          borderRadius: THUMB / 2,
-          backgroundColor: isDark ? "#e5e7eb" : "#1c1917",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 3,
-          elevation: 3,
-          shadowColor: "#000",
-          shadowOpacity: 0.2,
-          shadowRadius: 3,
-        }}
-        {...minPan.panHandlers}
-      >
-        <Text style={{ fontSize: 9, color: "#fff", fontWeight: "700" }}>{value[0]}</Text>
+      <View style={[styles.thumb, { left: minLeft }]} {...minPan.panHandlers}>
+        <Text style={styles.thumbLabel}>{value[0]}</Text>
       </View>
+
       {/* Max thumb */}
-      <View
-        style={{
-          position: "absolute",
-          top: 16 - THUMB / 2 + 2,
-          left: maxLeft,
-          width: THUMB,
-          height: THUMB,
-          borderRadius: THUMB / 2,
-          backgroundColor: isDark ? "#e5e7eb" : "#1c1917",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 2,
-          elevation: 3,
-          shadowColor: "#000",
-          shadowOpacity: 0.2,
-          shadowRadius: 3,
-        }}
-        {...maxPan.panHandlers}
-      >
-        <Text style={{ fontSize: 9, color: "#fff", fontWeight: "700" }}>{value[1]}</Text>
+      <View style={[styles.thumb, { left: maxLeft, zIndex: 2 }]} {...maxPan.panHandlers}>
+        <Text style={styles.thumbLabel}>{value[1]}</Text>
       </View>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  outer: {
+    paddingVertical: 20,
+    position: "relative",
+  },
+  trackContainer: {
+    height: 6,
+    marginHorizontal: THUMB / 2,
+    borderRadius: 3,
+    overflow: "hidden",
+  },
+  fill: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    backgroundColor: "#007AFF",
+    borderRadius: 3,
+  },
+  thumb: {
+    position: "absolute",
+    top: 20 - THUMB / 2 + 3,
+    width: THUMB,
+    height: THUMB,
+    borderRadius: THUMB / 2,
+    backgroundColor: "#ffffff",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 4,
+    borderWidth: 0.5,
+    borderColor: "rgba(0,0,0,0.08)",
+  },
+  thumbLabel: {
+    fontSize: 9,
+    color: "#374151",
+    fontWeight: "700",
+  },
+});

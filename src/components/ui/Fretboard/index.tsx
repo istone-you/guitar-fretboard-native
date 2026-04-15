@@ -241,7 +241,7 @@ const LayerOverlayDot = memo(function LayerOverlayDot({
         <Animated.Text
           style={{
             fontSize: overlayFontSize,
-            color: "#fff",
+            color: "#ffffff",
             fontWeight: "bold",
             transform: [{ scale: textScale }],
           }}
@@ -997,7 +997,7 @@ const StringRow = memo(function StringRow({
             }}
             activeOpacity={0.7}
           >
-            {/* Guitar string line */}
+            {/* Guitar string line — thickness varies by string (1st thin → 6th thick) */}
             <View
               style={{
                 position: "absolute",
@@ -1012,7 +1012,7 @@ const StringRow = memo(function StringRow({
             {!shouldSuppressRegularDisplay && (
               <Animated.View
                 style={{
-                  backgroundColor: isDark ? "#111827" : "#f5f5f4",
+                  backgroundColor: isDark ? "#000000" : "#ffffff",
                   borderRadius:
                     (baseLabelMode === "degree" ? overlaySize - 4 : overlaySize - 8) / 2,
                   width: baseLabelMode === "degree" ? overlaySize - 4 : overlaySize - 8,

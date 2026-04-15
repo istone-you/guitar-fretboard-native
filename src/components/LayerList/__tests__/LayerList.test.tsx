@@ -13,7 +13,10 @@ jest.mock("react-i18next", () => ({
 jest.mock("../../../i18n", () => ({ changeLocale: jest.fn() }));
 jest.mock("expo-haptics", () => ({
   impactAsync: jest.fn(),
-  ImpactFeedbackStyle: { Light: "light", Medium: "medium" },
+  selectionAsync: jest.fn(),
+  notificationAsync: jest.fn(),
+  ImpactFeedbackStyle: { Light: "light", Medium: "medium", Heavy: "heavy" },
+  NotificationFeedbackType: { Warning: "warning" },
 }));
 jest.mock("@react-native-async-storage/async-storage", () => ({
   getItem: jest.fn(() => Promise.resolve(null)),
@@ -26,7 +29,6 @@ jest.mock("../LayerPresetModal", () => {
     default: (props: any) => (props.visible ? <View testID="preset-modal" /> : null),
   };
 });
-// Mock LayerEditModal to avoid complex rendering – expose onSave/onClose for tests
 let capturedModalProps: any = null;
 jest.mock("../../LayerEditModal", () => {
   const { View } = require("react-native");
@@ -49,12 +51,13 @@ const defaultProps = {
   onUpdateLayer: jest.fn(),
   onRemoveLayer: jest.fn(),
   onToggleLayer: jest.fn(),
-  onReorderLayers: jest.fn(),
   onPreviewLayer: jest.fn(),
   previewLayer: null as LayerConfig | null,
   overlayNotes: [] as string[],
   overlaySemitones: new Set<number>(),
   layerNoteLabels: new Map<string, string[]>(),
+  presetModalVisible: false,
+  onPresetModalClose: jest.fn(),
 };
 
 function makeLayer(
@@ -67,7 +70,6 @@ function makeLayer(
 
 function renderList(overrides: Partial<typeof defaultProps> = {}) {
   const merged = { ...defaultProps, ...overrides };
-  // Auto-generate slots from layers if slots not explicitly provided
   if (overrides.layers && !overrides.slots) {
     const slotsFromLayers: (LayerConfig | null)[] = [null, null, null];
     merged.layers.forEach((l, i) => {
@@ -79,25 +81,22 @@ function renderList(overrides: Partial<typeof defaultProps> = {}) {
 }
 
 /**
- * Each layer row contains 4 TouchableOpacity buttons in order:
- *   [0] toggle, [1] duplicate, [2] settings, [3] remove
- * The add button (if present) follows all layer rows.
+ * Per filled row: [0] checkbox, [1] summaryTouchable (tap=edit / longPress=context)
+ * Empty slot rows: [0] addButton
  */
-function getRowButtons(root: ReturnType<typeof render>["UNSAFE_root"], rowIndex: number) {
+function getRowCheckbox(root: ReturnType<typeof render>["UNSAFE_root"], rowIndex: number) {
   const allTouchables = root.findAllByType(TouchableOpacity);
-  const base = rowIndex * 4;
-  return {
-    toggle: allTouchables[base],
-    duplicate: allTouchables[base + 1],
-    settings: allTouchables[base + 2],
-    remove: allTouchables[base + 3],
-  };
+  return allTouchables[rowIndex * 2];
+}
+
+function getSummaryTouchable(root: ReturnType<typeof render>["UNSAFE_root"], rowIndex: number) {
+  const allTouchables = root.findAllByType(TouchableOpacity);
+  return allTouchables[rowIndex * 2 + 1];
 }
 
 function getAddButton(root: ReturnType<typeof render>["UNSAFE_root"], layerCount: number) {
   const allTouchables = root.findAllByType(TouchableOpacity);
-  // Add button is the one after all layer row buttons
-  return allTouchables[layerCount * 4];
+  return allTouchables[layerCount * 2];
 }
 
 beforeEach(() => {
@@ -117,55 +116,109 @@ describe("LayerList", () => {
   });
 
   // ── Add button visibility ──────────────────────────────────────────
-  it("shows add button when layers < MAX_LAYERS", () => {
+  it("shows add buttons for empty slots", () => {
     const layers = [makeLayer("scale", "l1")];
     const { UNSAFE_root } = renderList({ layers });
+    act(() => {
+      jest.runAllTimers();
+    });
     const allTouchables = UNSAFE_root.findAllByType(TouchableOpacity);
-    // 4 buttons per row + 2 add slots (3-1) + 1 preset button = 7
-    expect(allTouchables.length).toBe(7);
+    // 1 filled row (2 buttons) + 2 empty slots (1 button each) = 4
+    expect(allTouchables.length).toBe(4);
   });
 
-  it("hides add button when layers = MAX_LAYERS", () => {
+  it("hides add buttons when layers = MAX_LAYERS", () => {
     const layers = [makeLayer("scale", "l1"), makeLayer("chord", "l2"), makeLayer("custom", "l3")];
     const { UNSAFE_root } = renderList({ layers });
     const allTouchables = UNSAFE_root.findAllByType(TouchableOpacity);
-    // 4 buttons per row * 3 rows = 12 + 1 preset button = 13
-    expect(allTouchables.length).toBe(13);
+    // 3 filled rows × 2 buttons = 6
+    expect(allTouchables.length).toBe(6);
   });
 
-  // ── Toggle button ──────────────────────────────────────────────────
-  it("toggle button calls onToggleLayer", () => {
+  // ── Checkbox toggle ────────────────────────────────────────────────
+  it("checkbox calls onToggleLayer", () => {
     const layers = [makeLayer("scale", "l1")];
     const onToggleLayer = jest.fn();
     const { UNSAFE_root } = renderList({ layers, onToggleLayer });
-    const { toggle } = getRowButtons(UNSAFE_root, 0);
-    fireEvent.press(toggle);
+    const checkbox = getRowCheckbox(UNSAFE_root, 0);
+    fireEvent.press(checkbox);
     act(() => {
       jest.runAllTimers();
     });
     expect(onToggleLayer).toHaveBeenCalledWith("l1");
   });
 
-  // ── Remove button ──────────────────────────────────────────────────
-  it("remove button calls onRemoveLayer", () => {
+  // ── Tap summary → edit modal ───────────────────────────────────────
+  it("tapping summary opens edit modal", () => {
+    const layers = [makeLayer("scale", "l1")];
+    const { UNSAFE_root, queryByTestId } = renderList({ layers });
+    expect(queryByTestId("edit-modal")).toBeNull();
+    const summaryBtn = getSummaryTouchable(UNSAFE_root, 0);
+    fireEvent.press(summaryBtn);
+    act(() => {
+      jest.runAllTimers();
+    });
+    expect(queryByTestId("edit-modal")).toBeTruthy();
+  });
+
+  // ── Long press → context menu ──────────────────────────────────────
+  it("long press on summary shows context menu with delete option", () => {
+    const layers = [makeLayer("scale", "l1")];
+    const { UNSAFE_root, getByText } = renderList({ layers });
+    const summaryBtn = getSummaryTouchable(UNSAFE_root, 0);
+    fireEvent(summaryBtn, "longPress");
+    act(() => {
+      jest.runAllTimers();
+    });
+    expect(getByText("layers.delete")).toBeTruthy();
+    expect(getByText("layers.duplicate")).toBeTruthy();
+    expect(getByText("layers.edit")).toBeTruthy();
+  });
+
+  it("context menu delete calls onRemoveLayer", () => {
     const layers = [makeLayer("scale", "l1")];
     const onRemoveLayer = jest.fn();
-    const { UNSAFE_root } = renderList({ layers, onRemoveLayer });
-    const { remove } = getRowButtons(UNSAFE_root, 0);
-    fireEvent.press(remove);
+    const { UNSAFE_root, getByText } = renderList({ layers, onRemoveLayer });
+    const summaryBtn = getSummaryTouchable(UNSAFE_root, 0);
+    fireEvent(summaryBtn, "longPress");
+    act(() => {
+      jest.runAllTimers();
+    });
+    const deleteBtn = getByText("layers.delete");
+    fireEvent.press(deleteBtn);
     act(() => {
       jest.runAllTimers();
     });
     expect(onRemoveLayer).toHaveBeenCalledWith("l1");
   });
 
-  // ── Duplicate button ────────────────────────────────────────────────
-  it("duplicate button calls onAddLayer", () => {
+  it("context menu edit opens edit modal", () => {
+    const layers = [makeLayer("scale", "l1")];
+    const { UNSAFE_root, getByText, queryByTestId } = renderList({ layers });
+    const summaryBtn = getSummaryTouchable(UNSAFE_root, 0);
+    fireEvent(summaryBtn, "longPress");
+    act(() => {
+      jest.runAllTimers();
+    });
+    const editBtn = getByText("layers.edit");
+    fireEvent.press(editBtn);
+    act(() => {
+      jest.runAllTimers();
+    });
+    expect(queryByTestId("edit-modal")).toBeTruthy();
+  });
+
+  it("context menu duplicate calls onAddLayer", () => {
     const layers = [makeLayer("scale", "l1")];
     const onAddLayer = jest.fn();
-    const { UNSAFE_root } = renderList({ layers, onAddLayer });
-    const { duplicate } = getRowButtons(UNSAFE_root, 0);
-    fireEvent.press(duplicate);
+    const { UNSAFE_root, getByText } = renderList({ layers, onAddLayer });
+    const summaryBtn = getSummaryTouchable(UNSAFE_root, 0);
+    fireEvent(summaryBtn, "longPress");
+    act(() => {
+      jest.runAllTimers();
+    });
+    const dupeBtn = getByText("layers.duplicate");
+    fireEvent.press(dupeBtn);
     act(() => {
       jest.runAllTimers();
     });
@@ -173,13 +226,37 @@ describe("LayerList", () => {
     expect(onAddLayer.mock.calls[0][0]).toMatchObject({ type: "scale" });
   });
 
-  it("duplicate is disabled when at MAX_LAYERS", () => {
-    const layers = [makeLayer("scale", "l1"), makeLayer("chord", "l2"), makeLayer("custom", "l3")];
-    const { UNSAFE_root } = renderList({ layers });
-    for (let i = 0; i < layers.length; i++) {
-      const { duplicate } = getRowButtons(UNSAFE_root, i);
-      expect(duplicate.props.disabled).toBe(true);
-    }
+  it("duplicate creates deep copy of Sets and chordFrames", () => {
+    const layers = [
+      makeLayer("custom", "l1", {
+        selectedNotes: new Set(["C", "E"]),
+        selectedDegrees: new Set(["P1"]),
+        hiddenCells: new Set(["0-1"]),
+        cagedForms: new Set(["C", "A"]),
+        chordFrames: [{ cells: ["0-1", "1-2"] }],
+      }),
+    ];
+    const onAddLayer = jest.fn();
+    const { UNSAFE_root, getByText } = renderList({ layers, onAddLayer });
+    const summaryBtn = getSummaryTouchable(UNSAFE_root, 0);
+    fireEvent(summaryBtn, "longPress");
+    act(() => {
+      jest.runAllTimers();
+    });
+    fireEvent.press(getByText("layers.duplicate"));
+    act(() => {
+      jest.runAllTimers();
+    });
+    expect(onAddLayer).toHaveBeenCalledTimes(1);
+    const clone = onAddLayer.mock.calls[0][0];
+    expect(clone.id).not.toBe("l1");
+    expect(clone.selectedNotes).toEqual(new Set(["C", "E"]));
+    expect(clone.cagedForms).toEqual(new Set(["C", "A"]));
+    expect(clone.hiddenCells).toEqual(new Set(["0-1"]));
+    expect(clone.chordFrames).toEqual([{ cells: ["0-1", "1-2"] }]);
+    expect(clone.selectedNotes).not.toBe(layers[0].selectedNotes);
+    expect(clone.chordFrames).not.toBe(layers[0].chordFrames);
+    expect(clone.chordFrames[0].cells).not.toBe(layers[0].chordFrames[0].cells);
   });
 
   // ── getSummary tests ────────────────────────────────────────────────
@@ -190,12 +267,7 @@ describe("LayerList", () => {
   });
 
   it("getSummary for chord form layer", () => {
-    const layers = [
-      makeLayer("chord", "l1", {
-        chordDisplayMode: "form",
-        chordType: "Major",
-      }),
-    ];
+    const layers = [makeLayer("chord", "l1", { chordDisplayMode: "form", chordType: "Major" })];
     const { getByText } = renderList({ layers });
     expect(getByText("options.chordDisplayMode.form: Major")).toBeTruthy();
   });
@@ -207,11 +279,7 @@ describe("LayerList", () => {
   });
 
   it("getSummary for caged layer type", () => {
-    const layers = [
-      makeLayer("caged", "l1", {
-        cagedForms: new Set(["C", "A"]),
-      }),
-    ];
+    const layers = [makeLayer("caged", "l1", { cagedForms: new Set(["C", "A"]) })];
     const { getByText } = renderList({ layers });
     expect(getByText("options.diatonicKey.major: C, A")).toBeTruthy();
   });
@@ -248,22 +316,14 @@ describe("LayerList", () => {
   });
 
   it("getSummary for chord on-chord layer", () => {
-    const layers = [
-      makeLayer("chord", "l1", {
-        chordDisplayMode: "on-chord",
-        onChordName: "C/E",
-      }),
-    ];
+    const layers = [makeLayer("chord", "l1", { chordDisplayMode: "on-chord", onChordName: "C/E" })];
     const { getByText } = renderList({ layers });
     expect(getByText("options.chordDisplayMode.on-chord: C/E")).toBeTruthy();
   });
 
   it("getSummary for custom note layer", () => {
     const layers = [
-      makeLayer("custom", "l1", {
-        customMode: "note",
-        selectedNotes: new Set(["C", "E", "G"]),
-      }),
+      makeLayer("custom", "l1", { customMode: "note", selectedNotes: new Set(["C", "E", "G"]) }),
     ];
     const { getByText } = renderList({ layers });
     expect(getByText("C, E, G")).toBeTruthy();
@@ -280,19 +340,6 @@ describe("LayerList", () => {
     expect(getByText("P1, M3, P5")).toBeTruthy();
   });
 
-  // ── Settings button opens edit modal ────────────────────────────────
-  it("settings button opens edit modal", () => {
-    const layers = [makeLayer("scale", "l1")];
-    const { UNSAFE_root, queryByTestId } = renderList({ layers });
-    expect(queryByTestId("edit-modal")).toBeNull();
-    const { settings } = getRowButtons(UNSAFE_root, 0);
-    fireEvent.press(settings);
-    act(() => {
-      jest.runAllTimers();
-    });
-    expect(queryByTestId("edit-modal")).toBeTruthy();
-  });
-
   // ── Add button opens edit modal ─────────────────────────────────────
   it("add button opens edit modal", () => {
     const layers = [makeLayer("scale", "l1")];
@@ -306,41 +353,16 @@ describe("LayerList", () => {
     expect(queryByTestId("edit-modal")).toBeTruthy();
   });
 
-  // ── LayerToggle animation on active change ─────────────────────────
-  it("LayerToggle triggers animation when active changes", () => {
-    const layers = [makeLayer("scale", "l1", { enabled: true })];
-    const { rerender } = renderList({ layers });
-    // Rerender with disabled layer to trigger the animation branch (lines 25-32)
-    const updatedLayers = [makeLayer("scale", "l1", { enabled: false })];
-    rerender(
-      <LayerList {...defaultProps} layers={updatedLayers} slots={[updatedLayers[0], null, null]} />,
-    );
-    act(() => {
-      jest.runAllTimers();
-    });
-    // Rerender back to enabled to trigger the reverse animation
-    const enabledLayers = [makeLayer("scale", "l1", { enabled: true })];
-    rerender(
-      <LayerList {...defaultProps} layers={enabledLayers} slots={[enabledLayers[0], null, null]} />,
-    );
-    act(() => {
-      jest.runAllTimers();
-    });
-    // No assertion needed beyond not throwing - this covers the animation code path
-  });
-
   // ── handleSave: update existing layer ──────────────────────────────
   it("handleSave calls onUpdateLayer for existing layer", () => {
     const layers = [makeLayer("scale", "l1")];
     const onUpdateLayer = jest.fn();
     const { UNSAFE_root } = renderList({ layers, onUpdateLayer });
-    // Open settings for the existing layer
-    const { settings } = getRowButtons(UNSAFE_root, 0);
-    fireEvent.press(settings);
+    const summaryBtn = getSummaryTouchable(UNSAFE_root, 0);
+    fireEvent.press(summaryBtn);
     act(() => {
       jest.runAllTimers();
     });
-    // Trigger save via the captured modal props
     const savedLayer = makeLayer("scale", "l1", { scaleType: "natural-minor" });
     act(() => {
       capturedModalProps.onSave(savedLayer);
@@ -353,13 +375,11 @@ describe("LayerList", () => {
     const layers = [makeLayer("scale", "l1")];
     const onAddLayer = jest.fn();
     const { UNSAFE_root } = renderList({ layers, onAddLayer });
-    // Open add modal (editingLayer will be null)
     const addBtn = getAddButton(UNSAFE_root, layers.length);
     fireEvent.press(addBtn);
     act(() => {
       jest.runAllTimers();
     });
-    // Trigger save – layer has a new id not in layers
     const newLayer = makeLayer("chord", "new-layer");
     act(() => {
       capturedModalProps.onSave(newLayer);
@@ -367,22 +387,17 @@ describe("LayerList", () => {
     expect(onAddLayer).toHaveBeenCalledWith(newLayer, 1);
   });
 
-  // ── pickNextLayerColor fallback ────────────────────────────────────
+  // ── pickNextLayerColor ─────────────────────────────────────────────
   it("pickNextLayerColor falls back when all default colors are used", () => {
-    // DEFAULT_LAYER_COLORS has 4 colors; MAX_LAYERS is 3.
-    // Test via modal defaultColor: open add modal with 2 layers
-    // whose colors exhaust available colors except one.
     const twoLayers = [
       makeLayer("scale", "l1", { color: "#ff69b6" }),
       makeLayer("chord", "l2", { color: "#40e0d0" }),
     ];
     renderList({ layers: twoLayers });
-    // The modal should receive the next unused color (#ffd700)
     expect(capturedModalProps.defaultColor).toBe("#ffd700");
   });
 
   it("pickNextLayerColor skips used colors and picks first available", () => {
-    // Use colors [0] and [3] so that [1] (#40e0d0) is the first available
     const twoLayers = [
       makeLayer("scale", "l1", { color: "#ff69b6" }),
       makeLayer("chord", "l2", { color: "#7c3aed" }),
@@ -391,14 +406,13 @@ describe("LayerList", () => {
     expect(capturedModalProps.defaultColor).toBe("#40e0d0");
   });
 
-  // ── Layer count changes trigger animations ─────────────────────────
+  // ── Layer count animations ─────────────────────────────────────────
   it("adding a layer triggers appear animation", () => {
     const layers1 = [makeLayer("scale", "l1")];
     const { rerender } = renderList({ layers: layers1 });
     act(() => {
       jest.runAllTimers();
     });
-    // Add a second layer
     const layers2 = [makeLayer("scale", "l1"), makeLayer("chord", "l2")];
     rerender(
       <LayerList {...defaultProps} layers={layers2} slots={[layers2[0], layers2[1], null]} />,
@@ -406,50 +420,45 @@ describe("LayerList", () => {
     act(() => {
       jest.runAllTimers();
     });
-    // The new row should be visible (animation completed)
   });
 
-  it("removing a layer triggers delete shift animation", () => {
+  it("removing a layer triggers delete animation", () => {
     const layers2 = [makeLayer("scale", "l1"), makeLayer("chord", "l2")];
     const { rerender } = renderList({ layers: layers2 });
     act(() => {
       jest.runAllTimers();
     });
-    // Remove first layer
     const layers1 = [makeLayer("chord", "l2")];
     rerender(<LayerList {...defaultProps} layers={layers1} slots={[null, layers1[0], null]} />);
     act(() => {
       jest.runAllTimers();
     });
-    // Animation cleanup completed without errors
   });
 
-  // ── Add button animation when transitioning from MAX to < MAX ──────
-  it("add button animates in when going from MAX_LAYERS to fewer", () => {
-    const layers3 = [makeLayer("scale", "l1"), makeLayer("chord", "l2"), makeLayer("custom", "l3")];
-    const { rerender, UNSAFE_root } = renderList({ layers: layers3 });
-    act(() => {
-      jest.runAllTimers();
-    });
-    // Now remove one layer so add button appears with animation
-    const layers2 = [makeLayer("scale", "l1"), makeLayer("chord", "l2")];
+  // ── LayerCheckbox animation ────────────────────────────────────────
+  it("LayerCheckbox triggers animation when enabled changes", () => {
+    const layers = [makeLayer("scale", "l1", { enabled: true })];
+    const { rerender } = renderList({ layers });
+    const updatedLayers = [makeLayer("scale", "l1", { enabled: false })];
     rerender(
-      <LayerList {...defaultProps} layers={layers2} slots={[layers2[0], layers2[1], null]} />,
+      <LayerList {...defaultProps} layers={updatedLayers} slots={[updatedLayers[0], null, null]} />,
     );
     act(() => {
       jest.runAllTimers();
     });
-    const allTouchables = UNSAFE_root.findAllByType(TouchableOpacity);
-    // 2 layers * 4 buttons + 1 add button + 1 preset button = 10
-    expect(allTouchables.length).toBe(10);
+    const enabledLayers = [makeLayer("scale", "l1", { enabled: true })];
+    rerender(
+      <LayerList {...defaultProps} layers={enabledLayers} slots={[enabledLayers[0], null, null]} />,
+    );
+    act(() => {
+      jest.runAllTimers();
+    });
   });
 
   // ── Disabled layer opacity ─────────────────────────────────────────
   it("disabled layer uses reduced opacity via interpolation", () => {
     const layers = [makeLayer("scale", "l1", { enabled: false })];
     const { UNSAFE_root } = renderList({ layers });
-    // The layer row renders with interpolated opacity (0→0.5 range)
-    // Just verify it renders without error
     const allTouchables = UNSAFE_root.findAllByType(TouchableOpacity);
     expect(allTouchables.length).toBeGreaterThan(0);
   });
@@ -459,14 +468,12 @@ describe("LayerList", () => {
     const layers = [makeLayer("scale", "l1")];
     const onPreviewLayer = jest.fn();
     const { UNSAFE_root, queryByTestId } = renderList({ layers, onPreviewLayer });
-    // Open modal
-    const { settings } = getRowButtons(UNSAFE_root, 0);
-    fireEvent.press(settings);
+    const summaryBtn = getSummaryTouchable(UNSAFE_root, 0);
+    fireEvent.press(summaryBtn);
     act(() => {
       jest.runAllTimers();
     });
     expect(queryByTestId("edit-modal")).toBeTruthy();
-    // Close modal
     act(() => {
       capturedModalProps.onClose();
     });
@@ -477,85 +484,22 @@ describe("LayerList", () => {
     expect(onPreviewLayer).toHaveBeenCalledWith(null);
   });
 
-  // ── Row layout handler (line 383) ────────────────────────────────
-  it("row onLayout updates rowHeight", () => {
-    const layers = [makeLayer("scale", "l1")];
-    const { UNSAFE_root } = renderList({ layers });
-    // Find the Animated.View that has onLayout (the layer row)
-    const AnimatedView = Animated.View;
-    const animatedViews = UNSAFE_root.findAllByType(AnimatedView);
-    const rowView = animatedViews.find((v: any) => v.props.onLayout);
-    expect(rowView).toBeTruthy();
-    // Fire onLayout event
-    act(() => {
-      rowView!.props.onLayout({
-        nativeEvent: { layout: { height: 72, x: 0, y: 0, width: 300 } },
-      });
-    });
-    // No crash – rowHeight.current is updated internally
-  });
-
-  // ── Add button layout handler (lines 560-566) ────────────────────
-  it("add button onLayout triggers animation when y changes", () => {
-    const layers = [makeLayer("scale", "l1")];
-    const { UNSAFE_root } = renderList({ layers });
-    const AnimatedView = Animated.View;
-    const animatedViews = UNSAFE_root.findAllByType(AnimatedView);
-    // The add button is wrapped in an Animated.View with onLayout
-    // It's the second Animated.View with onLayout (first is the row)
-    const layoutViews = animatedViews.filter((v: any) => v.props.onLayout);
-    const addBtnWrapper = layoutViews[layoutViews.length - 1];
-    expect(addBtnWrapper).toBeTruthy();
-    // First layout call sets prevY
-    act(() => {
-      addBtnWrapper.props.onLayout({
-        nativeEvent: { layout: { y: 100, x: 0, height: 56, width: 300 } },
-      });
-    });
+  // ── Add button from MAX_LAYERS to < MAX ────────────────────────────
+  it("add button appears when going from MAX_LAYERS to fewer", () => {
+    const layers3 = [makeLayer("scale", "l1"), makeLayer("chord", "l2"), makeLayer("custom", "l3")];
+    const { rerender, UNSAFE_root } = renderList({ layers: layers3 });
     act(() => {
       jest.runAllTimers();
     });
-    // Second layout call with different y triggers animation
-    act(() => {
-      addBtnWrapper.props.onLayout({
-        nativeEvent: { layout: { y: 160, x: 0, height: 56, width: 300 } },
-      });
-    });
+    const layers2 = [makeLayer("scale", "l1"), makeLayer("chord", "l2")];
+    rerender(
+      <LayerList {...defaultProps} layers={layers2} slots={[layers2[0], layers2[1], null]} />,
+    );
     act(() => {
       jest.runAllTimers();
     });
-    // No crash – animation was triggered
-  });
-
-  // ── Duplicate deep copies Sets and arrays ──────────────────────────
-  it("duplicate creates deep copy of Sets and chordFrames", () => {
-    const layers = [
-      makeLayer("custom", "l1", {
-        selectedNotes: new Set(["C", "E"]),
-        selectedDegrees: new Set(["P1"]),
-        hiddenCells: new Set(["0-1"]),
-        cagedForms: new Set(["C", "A"]),
-        chordFrames: [{ cells: ["0-1", "1-2"] }],
-      }),
-    ];
-    const onAddLayer = jest.fn();
-    const { UNSAFE_root } = renderList({ layers, onAddLayer });
-    const { duplicate } = getRowButtons(UNSAFE_root, 0);
-    fireEvent.press(duplicate);
-    act(() => {
-      jest.runAllTimers();
-    });
-    expect(onAddLayer).toHaveBeenCalledTimes(1);
-    const clone = onAddLayer.mock.calls[0][0];
-    // Verify deep copies - modifying original shouldn't affect clone
-    expect(clone.id).not.toBe("l1");
-    expect(clone.selectedNotes).toEqual(new Set(["C", "E"]));
-    expect(clone.cagedForms).toEqual(new Set(["C", "A"]));
-    expect(clone.hiddenCells).toEqual(new Set(["0-1"]));
-    expect(clone.chordFrames).toEqual([{ cells: ["0-1", "1-2"] }]);
-    // Ensure they are different object references
-    expect(clone.selectedNotes).not.toBe(layers[0].selectedNotes);
-    expect(clone.chordFrames).not.toBe(layers[0].chordFrames);
-    expect(clone.chordFrames[0].cells).not.toBe(layers[0].chordFrames[0].cells);
+    const allTouchables = UNSAFE_root.findAllByType(TouchableOpacity);
+    // 2 layers × 2 buttons + 1 add button = 5
+    expect(allTouchables.length).toBe(5);
   });
 });

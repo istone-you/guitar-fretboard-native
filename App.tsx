@@ -1,12 +1,12 @@
 import { useMemo, useState, useCallback, useRef } from "react";
-import { View, Animated, StatusBar, StyleSheet } from "react-native";
+import { View, Animated, PanResponder, StatusBar, StyleSheet } from "react-native";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ScreenOrientation from "expo-screen-orientation";
 import * as Haptics from "expo-haptics";
 import "./src/i18n";
 import { useTranslation } from "react-i18next";
+import TabView from "react-native-bottom-tabs";
 import HeaderBar from "./src/components/AppHeader/index";
-import TabBar from "./src/components/TabBar";
 import LandscapeLayout from "./src/components/LandscapeLayout";
 import { usePersistedSetting } from "./src/hooks/usePersistedSetting";
 import { CHORD_QUIZ_TYPES_ALL, useQuiz } from "./src/hooks/useQuiz";
@@ -76,6 +76,7 @@ function AppContent() {
   );
   const [showFinder, setShowFinder] = useState(false);
   const [showStats, setShowStats] = useState(false);
+  const [currentTabIndex, setCurrentTabIndex] = useState(0);
   const statsSlideAnim = useRef(new Animated.Value(0)).current;
   const [finderRoot, setFinderRoot] = useState<string | null>(null);
   const [finderNotes, setFinderNotes] = useState<Set<string>>(new Set());
@@ -101,7 +102,6 @@ function AppContent() {
     handleUpdateLayer,
     handleRemoveLayer,
     handleToggleLayer,
-    handleReorderLayers,
     handleLoadPreset,
   } = useLayers();
 
@@ -191,15 +191,13 @@ function AppContent() {
       baseLabelMode,
     });
 
-  const { quizRootChangeEnabled, quizKindOptions, handleQuizKindDropdownChange } = useQuizViewModel(
-    {
-      showQuiz,
-      quizMode,
-      quizType,
-      t,
-      onQuizKindChange: handleQuizKindChange,
-    },
-  );
+  const { quizKindOptions, handleQuizKindDropdownChange } = useQuizViewModel({
+    showQuiz,
+    quizMode,
+    quizType,
+    t,
+    onQuizKindChange: handleQuizKindChange,
+  });
 
   // Wire up forwarding refs now that all hooks have been called
   quizNavCallbacksRef.current = {
@@ -227,11 +225,45 @@ function AppContent() {
     }).start(() => setShowStats(false));
   }, [statsSlideAnim, winWidth]);
 
+  // Swipe-right to close stats pane
+  const showStatsRef = useRef(showStats);
+  showStatsRef.current = showStats;
+  const handleCloseStatsRef = useRef(handleCloseStats);
+  handleCloseStatsRef.current = handleCloseStats;
+  const statsSwipeResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, g) =>
+        showStatsRef.current && g.dx > 10 && Math.abs(g.dx) > Math.abs(g.dy),
+      onPanResponderMove: (_, g) => {
+        if (g.dx > 0) statsSlideAnim.setValue(g.dx);
+      },
+      onPanResponderRelease: (_, g) => {
+        if (g.dx > 80 || (g.dx > 30 && g.vx > 0.5)) {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          handleCloseStatsRef.current();
+        } else {
+          Animated.timing(statsSlideAnim, {
+            toValue: 0,
+            duration: 120,
+            useNativeDriver: true,
+          }).start();
+        }
+      },
+      onPanResponderTerminate: () => {
+        Animated.timing(statsSlideAnim, {
+          toValue: 0,
+          duration: 120,
+          useNativeDriver: true,
+        }).start();
+      },
+    }),
+  ).current;
+
   const quizNoteOptions = [...getNotesByAccidental(accidental)];
 
   const isDark = theme === "dark";
-  const bgColor = isDark ? "#030712" : "#f3f4f6";
-  const headerBg = isDark ? "#111111" : "#fafaf9";
+  const bgColor = isDark ? "#000000" : "#ffffff";
+  const headerBg = bgColor;
 
   const handleAccidentalChange = (mode: Accidental) => {
     const idx = getRootIndex(rootNote);
@@ -294,9 +326,223 @@ function AppContent() {
     onUpdateLayer: handleUpdateLayer,
     onRemoveLayer: handleRemoveLayer,
     onToggleLayer: handleToggleLayer,
-    onReorderLayers: handleReorderLayers,
     onPreviewLayer: setPreviewLayer,
     onLoadPreset: handleLoadPreset,
+    onRootNoteChange: handleNoteClick,
+    onBaseLabelModeChange: setBaseLabelMode,
+  };
+
+  // ── Tab navigation ─────────────────────────────────────────────
+  // Derive tab index from existing state (0=home, 1=finder, 2=quiz)
+  const tabIndex = showFinder ? 1 : showQuiz ? 2 : 0;
+
+  const routes = useMemo(
+    () => [
+      {
+        key: "home",
+        title: t("tabs.home"),
+        focusedIcon: require("./public/guiter.png"),
+        unfocusedIcon: require("./public/guiter.png"),
+      },
+      {
+        key: "finder",
+        title: t("tabs.finder"),
+        focusedIcon: { sfSymbol: "magnifyingglass" } as const,
+        unfocusedIcon: { sfSymbol: "magnifyingglass" } as const,
+      },
+      {
+        key: "quiz",
+        title: t("tabs.quiz"),
+        focusedIcon: { sfSymbol: "questionmark.circle.fill" } as const,
+        unfocusedIcon: { sfSymbol: "questionmark.circle" } as const,
+      },
+    ],
+    [t],
+  );
+
+  const handleTabIndexChange = useCallback(
+    (index: number) => {
+      setCurrentTabIndex(index);
+      if (index === 0) {
+        setShowFinder(false);
+        setShowStats(false);
+        handleShowQuizChange(false);
+        setShowQuiz(false);
+      } else if (index === 1) {
+        setShowFinder(true);
+        setShowStats(false);
+        handleShowQuizChange(false);
+        setShowQuiz(false);
+      } else if (index === 2) {
+        if (showQuiz) return;
+        setShowFinder(false);
+        setShowStats(false);
+        setShowQuiz(true);
+        setQuizModeSelected(false);
+      }
+    },
+    [
+      showQuiz,
+      setShowFinder,
+      setShowQuiz,
+      setQuizModeSelected,
+      handleShowQuizChange,
+      setCurrentTabIndex,
+    ],
+  );
+
+  const renderScene = ({ route }: { route: { key: string } }) => {
+    if (route.key === "home") {
+      return (
+        <LayerPane
+          {...sharedMainPaneProps}
+          isLandscape={isLandscape}
+          disableAnimation={isLandscape || animDisabled}
+        />
+      );
+    }
+    if (route.key === "finder") {
+      return (
+        <FinderPane
+          theme={theme}
+          accidental={accidental}
+          baseLabelMode={baseLabelMode}
+          fretRange={fretRange}
+          rootNote={rootNote}
+          leftHanded={leftHanded}
+          finderRoot={finderRoot}
+          finderNotes={finderNotes}
+          onFinderRootChange={setFinderRoot}
+          onFinderNotesChange={setFinderNotes}
+          dotColor={finderDotColor}
+          onDotColorChange={setFinderDotColor}
+          layers={layers}
+          onBaseLabelModeChange={setBaseLabelMode}
+          onAddLayerAndNavigate={(layer) => {
+            setShowFinder(false);
+            setTimeout(() => handleAddLayer(layer), 0);
+          }}
+        />
+      );
+    }
+    if (route.key === "quiz") {
+      return (
+        <View style={styles.quizScene} {...swipePanResponder.panHandlers}>
+          {/* QuizPane always rendered as background */}
+          <View style={[styles.flex1, { backgroundColor: bgColor }]}>
+            <QuizPane
+              theme={theme}
+              quizKindOptions={quizKindOptions}
+              onQuizModeSelect={handleQuizModeSelect}
+              onShowStats={handleOpenStats}
+            />
+          </View>
+
+          {/* StatsPane slides over QuizPane with solid background */}
+          {showStats && (
+            <Animated.View
+              style={[
+                StyleSheet.absoluteFill,
+                { backgroundColor: bgColor, transform: [{ translateX: statsSlideAnim }] },
+              ]}
+              {...statsSwipeResponder.panHandlers}
+            >
+              <StatsPane
+                records={records}
+                theme={theme}
+                accidental={accidental}
+                onClearRecords={clearRecords}
+              />
+            </Animated.View>
+          )}
+
+          {/* QuizActivePracticePane slides in with solid background; QuizPane visible from side during swipe */}
+          {quizModeSelected && (
+            <Animated.View
+              style={[
+                StyleSheet.absoluteFill,
+                {
+                  backgroundColor: bgColor,
+                  transform: [{ translateX: quizSlideAnim }],
+                  borderTopLeftRadius: 28,
+                  borderBottomLeftRadius: 28,
+                  overflow: "hidden",
+                },
+              ]}
+            >
+              <QuizActivePracticePane
+                isLandscape={isLandscape}
+                theme={theme}
+                accidental={accidental}
+                baseLabelMode={baseLabelMode}
+                fretRange={fretRange}
+                quizEffectiveRootNote={quizEffectiveRootNote}
+                quizLayers={quizLayers}
+                quizAccentColor={quizAccentColor}
+                quizQuestion={quizQuestion}
+                quizType={quizType}
+                quizMode={quizMode}
+                quizAnsweredCell={quizAnsweredCell}
+                quizCorrectCell={quizCorrectCell}
+                quizSelectedCells={quizSelectedCells}
+                quizRevealNoteNames={quizRevealNoteNames}
+                quizStrings={quizStrings}
+                leftHanded={leftHanded}
+                onFretboardDoubleTap={handleFretboardDoubleTap}
+                onQuizCellClick={handleFretboardQuizAnswer}
+                quizScore={quizScore}
+                selectedAnswer={selectedAnswer}
+                rootNote={rootNote}
+                quizSelectedChoices={quizSelectedChoices}
+                noteOptions={quizNoteOptions}
+                quizSelectedChordRoot={quizSelectedChordRoot}
+                quizSelectedChordType={quizSelectedChordType}
+                diatonicSelectedRoot={diatonicSelectedRoot}
+                diatonicSelectedChordType={diatonicSelectedChordType}
+                diatonicAllAnswers={diatonicAllAnswers}
+                diatonicEditingDegree={diatonicEditingDegree}
+                diatonicQuizKeyType={diatonicQuizKeyType}
+                diatonicQuizChordSize={diatonicQuizChordSize}
+                chordQuizTypes={chordQuizTypes}
+                availableChordQuizTypes={CHORD_QUIZ_TYPES_ALL}
+                scaleType={scaleType}
+                quizKeys={quizKeys}
+                onQuizKeysChange={handleQuizKeysChange}
+                quizNoteNames={quizNoteNames}
+                onQuizNoteNamesChange={handleQuizNoteNamesChange}
+                onChordQuizTypesChange={handleChordQuizTypesChange}
+                onScaleTypeChange={(v) => {
+                  setScaleType(v as ScaleType);
+                  regenerateQuiz();
+                }}
+                onDiatonicQuizKeyTypeChange={(v) => {
+                  setDiatonicQuizKeyType(v);
+                  regenerateQuiz();
+                }}
+                onDiatonicQuizChordSizeChange={(v) => {
+                  setDiatonicQuizChordSize(v);
+                  regenerateQuiz();
+                }}
+                onAnswer={handleQuizAnswer}
+                onSubmitChoice={handleSubmitChoice}
+                onChordQuizRootSelect={handleChordQuizRootSelect}
+                onChordQuizTypeSelect={handleChordQuizTypeSelect}
+                onSubmitChordChoice={handleSubmitChordChoice}
+                onDiatonicAnswerRootSelect={handleDiatonicAnswerRootSelect}
+                onDiatonicAnswerTypeSelect={handleDiatonicAnswerTypeSelect}
+                onDiatonicDegreeCardClick={handleDiatonicDegreeCardClick}
+                onDiatonicSubmitAll={handleDiatonicSubmitAll}
+                onSubmitFretboard={handleSubmitFretboard}
+                onNextQuestion={handleNextQuestion}
+                onRetryQuestion={handleRetryQuestion}
+                onQuizStringsChange={handleQuizStringsChange}
+              />
+            </Animated.View>
+          )}
+        </View>
+      );
+    }
+    return null;
   };
 
   // ── Landscape ──────────────────────────────────────────────────
@@ -312,16 +558,19 @@ function AppContent() {
         barStyle={isDark ? "light-content" : "dark-content"}
         backgroundColor="transparent"
       />
-      <View style={{ backgroundColor: headerBg, paddingTop: insets.top }}>
+      <View style={{ paddingTop: insets.top, backgroundColor: headerBg }}>
         <HeaderBar
           theme={theme}
-          rootNote={rootNote}
+          title={
+            showStats || (showQuiz && quizModeSelected)
+              ? undefined
+              : currentTabIndex === 1
+                ? t("tabs.finder")
+                : currentTabIndex === 2
+                  ? t("tabs.quiz")
+                  : t("tabs.home")
+          }
           accidental={accidental}
-          baseLabelMode={baseLabelMode}
-          showQuiz={showQuiz}
-          rootChangeDisabled={!quizRootChangeEnabled || showFinder}
-          onBaseLabelModeChange={setBaseLabelMode}
-          onRootNoteChange={quizRootChangeEnabled ? handleNoteClick : () => {}}
           onBack={
             showStats
               ? handleCloseStats
@@ -338,156 +587,15 @@ function AppContent() {
         />
       </View>
 
-      <View style={{ flex: 1, overflow: "hidden" }} {...swipePanResponder.panHandlers}>
-        {showFinder ? (
-          <FinderPane
-            theme={theme}
-            accidental={accidental}
-            baseLabelMode={baseLabelMode}
-            fretRange={fretRange}
-            rootNote={rootNote}
-            leftHanded={leftHanded}
-            finderRoot={finderRoot}
-            finderNotes={finderNotes}
-            onFinderRootChange={setFinderRoot}
-            onFinderNotesChange={setFinderNotes}
-            dotColor={finderDotColor}
-            onDotColorChange={setFinderDotColor}
-            layers={layers}
-            onAddLayerAndNavigate={(layer) => {
-              // setShowFinder を先に呼んで LayerList をマウント・初期化させてから
-              // handleAddLayer を別タスクで実行することで、スロット変化を検知して
-              // アニメーションが発動するようにバッチを分離する
-              setShowFinder(false);
-              setTimeout(() => handleAddLayer(layer), 0);
-            }}
-          />
-        ) : showQuiz && !quizModeSelected ? (
-          <View style={{ flex: 1 }}>
-            {showStats ? (
-              <Animated.View style={{ flex: 1, transform: [{ translateX: statsSlideAnim }] }}>
-                <StatsPane
-                  records={records}
-                  theme={theme}
-                  accidental={accidental}
-                  onClearRecords={clearRecords}
-                />
-              </Animated.View>
-            ) : (
-              <QuizPane
-                theme={theme}
-                quizKindOptions={quizKindOptions}
-                onQuizModeSelect={handleQuizModeSelect}
-                onShowStats={handleOpenStats}
-              />
-            )}
-          </View>
-        ) : showQuiz && quizModeSelected ? (
-          <Animated.View style={{ flex: 1, transform: [{ translateX: quizSlideAnim }] }}>
-            <QuizActivePracticePane
-              isLandscape={isLandscape}
-              theme={theme}
-              accidental={accidental}
-              baseLabelMode={baseLabelMode}
-              fretRange={fretRange}
-              quizEffectiveRootNote={quizEffectiveRootNote}
-              quizLayers={quizLayers}
-              quizAccentColor={quizAccentColor}
-              quizQuestion={quizQuestion}
-              quizType={quizType}
-              quizMode={quizMode}
-              quizAnsweredCell={quizAnsweredCell}
-              quizCorrectCell={quizCorrectCell}
-              quizSelectedCells={quizSelectedCells}
-              quizRevealNoteNames={quizRevealNoteNames}
-              quizStrings={quizStrings}
-              leftHanded={leftHanded}
-              onFretboardDoubleTap={handleFretboardDoubleTap}
-              onQuizCellClick={handleFretboardQuizAnswer}
-              quizScore={quizScore}
-              selectedAnswer={selectedAnswer}
-              rootNote={rootNote}
-              quizSelectedChoices={quizSelectedChoices}
-              noteOptions={quizNoteOptions}
-              quizSelectedChordRoot={quizSelectedChordRoot}
-              quizSelectedChordType={quizSelectedChordType}
-              diatonicSelectedRoot={diatonicSelectedRoot}
-              diatonicSelectedChordType={diatonicSelectedChordType}
-              diatonicAllAnswers={diatonicAllAnswers}
-              diatonicEditingDegree={diatonicEditingDegree}
-              diatonicQuizKeyType={diatonicQuizKeyType}
-              diatonicQuizChordSize={diatonicQuizChordSize}
-              chordQuizTypes={chordQuizTypes}
-              availableChordQuizTypes={CHORD_QUIZ_TYPES_ALL}
-              scaleType={scaleType}
-              quizKeys={quizKeys}
-              onQuizKeysChange={handleQuizKeysChange}
-              quizNoteNames={quizNoteNames}
-              onQuizNoteNamesChange={handleQuizNoteNamesChange}
-              onChordQuizTypesChange={handleChordQuizTypesChange}
-              onScaleTypeChange={(v) => {
-                setScaleType(v as ScaleType);
-                regenerateQuiz();
-              }}
-              onDiatonicQuizKeyTypeChange={(v) => {
-                setDiatonicQuizKeyType(v);
-                regenerateQuiz();
-              }}
-              onDiatonicQuizChordSizeChange={(v) => {
-                setDiatonicQuizChordSize(v);
-                regenerateQuiz();
-              }}
-              onAnswer={handleQuizAnswer}
-              onSubmitChoice={handleSubmitChoice}
-              onChordQuizRootSelect={handleChordQuizRootSelect}
-              onChordQuizTypeSelect={handleChordQuizTypeSelect}
-              onSubmitChordChoice={handleSubmitChordChoice}
-              onDiatonicAnswerRootSelect={handleDiatonicAnswerRootSelect}
-              onDiatonicAnswerTypeSelect={handleDiatonicAnswerTypeSelect}
-              onDiatonicDegreeCardClick={handleDiatonicDegreeCardClick}
-              onDiatonicSubmitAll={handleDiatonicSubmitAll}
-              onSubmitFretboard={handleSubmitFretboard}
-              onNextQuestion={handleNextQuestion}
-              onRetryQuestion={handleRetryQuestion}
-              onQuizStringsChange={handleQuizStringsChange}
-            />
-          </Animated.View>
-        ) : (
-          <View style={{ flex: 1 }}>
-            <LayerPane
-              {...sharedMainPaneProps}
-              isLandscape={isLandscape}
-              disableAnimation={isLandscape || animDisabled}
-            />
-          </View>
-        )}
+      <View style={styles.flex1}>
+        <TabView
+          navigationState={{ index: tabIndex, routes }}
+          renderScene={renderScene}
+          onIndexChange={handleTabIndexChange}
+          hapticFeedbackEnabled
+          disablePageAnimations
+        />
       </View>
-
-      <TabBar
-        isDark={isDark}
-        showQuiz={showQuiz}
-        showFinder={showFinder}
-        insetBottom={insets.bottom}
-        onPressHome={() => {
-          setShowFinder(false);
-          setShowQuiz(false);
-          setShowStats(false);
-          handleShowQuizChange(false);
-        }}
-        onPressFinder={() => {
-          setShowFinder(true);
-          setShowQuiz(false);
-          setShowStats(false);
-          handleShowQuizChange(false);
-        }}
-        onPressQuiz={() => {
-          if (showQuiz) return;
-          setShowFinder(false);
-          setShowStats(false);
-          setShowQuiz(true);
-          setQuizModeSelected(false);
-        }}
-      />
     </View>
   );
 }
@@ -506,5 +614,12 @@ export default function App() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
+  },
+  flex1: {
+    flex: 1,
+  },
+  quizScene: {
+    flex: 1,
+    overflow: "hidden",
   },
 });

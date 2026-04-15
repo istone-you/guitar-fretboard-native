@@ -9,8 +9,8 @@ function renderModal(props: Partial<React.ComponentProps<typeof BottomSheetModal
   const onClose = jest.fn();
   const result = render(
     <BottomSheetModal visible={true} onClose={onClose} {...props}>
-      {({ close, closeWithCallback }) => (
-        <View testID="sheet-content">
+      {({ close, closeWithCallback, dragHandlers }) => (
+        <View testID="sheet-content" {...dragHandlers}>
           <Text testID="close-btn" onPress={close}>
             Close
           </Text>
@@ -104,21 +104,9 @@ describe("BottomSheetModal", () => {
     expect(onClose).toHaveBeenCalled();
   });
 
-  it("onShow resets animation values and starts spring", () => {
-    const springSpy = jest.spyOn(Animated, "spring").mockReturnValue({
-      start: jest.fn(),
-    } as unknown as Animated.CompositeAnimation);
-
-    const { UNSAFE_root } = renderModal();
-    const { Modal } = require("react-native");
-    const modal = UNSAFE_root.findByType(Modal);
-    act(() => {
-      modal.props.onShow();
-    });
-    expect(springSpy).toHaveBeenCalledWith(
-      expect.any(Animated.Value),
-      expect.objectContaining({ toValue: 0, friction: 9, tension: 120, useNativeDriver: true }),
-    );
-    springSpy.mockRestore();
+  it("sheet content is rendered inside the modal when visible", () => {
+    renderModal();
+    expect(screen.getByTestId("sheet-content")).toBeTruthy();
+    expect(screen.getByTestId("bottom-sheet-modal")).toBeTruthy();
   });
 });

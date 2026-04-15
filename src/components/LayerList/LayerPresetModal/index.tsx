@@ -1,20 +1,20 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
-  Pressable,
-  Modal,
   FlatList,
   StyleSheet,
-  Animated,
-  Easing,
+  useWindowDimensions,
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import Svg, { Path } from "react-native-svg";
 import type { Theme, LayerConfig } from "../../../types";
 import type { LayerPreset } from "../../../hooks/useLayerPresets";
+import BottomSheetModal, { SHEET_HANDLE_CLEARANCE } from "../../ui/BottomSheetModal";
+import SheetProgressiveHeader from "../../ui/SheetProgressiveHeader";
+import GlassIconButton from "../../ui/GlassIconButton";
 
 interface LayerPresetModalProps {
   theme: Theme;
@@ -40,38 +40,9 @@ export default function LayerPresetModal({
   t,
 }: LayerPresetModalProps) {
   const isDark = theme === "dark";
+  const { height: winHeight } = useWindowDimensions();
+  const sheetHeight = Math.max(360, Math.min(520, Math.round(winHeight * 0.62)));
   const [name, setName] = useState("");
-  const modalOpacity = useRef(new Animated.Value(0)).current;
-  const modalScale = useRef(new Animated.Value(0.9)).current;
-
-  const handleShow = () => {
-    modalOpacity.setValue(0);
-    modalScale.setValue(0.9);
-    Animated.parallel([
-      Animated.timing(modalOpacity, {
-        toValue: 1,
-        duration: 150,
-        useNativeDriver: true,
-      }),
-      Animated.spring(modalScale, {
-        toValue: 1,
-        friction: 8,
-        tension: 150,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  };
-
-  const fadeOut = (cb: () => void) => {
-    Animated.timing(modalOpacity, {
-      toValue: 0,
-      duration: 120,
-      easing: Easing.in(Easing.cubic),
-      useNativeDriver: true,
-    }).start(cb);
-  };
-
-  const handleClose = () => fadeOut(onClose);
 
   const handleSave = () => {
     const trimmed = name.trim();
@@ -81,59 +52,37 @@ export default function LayerPresetModal({
     setName("");
   };
 
-  const handleLoad = (id: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    fadeOut(() => {
-      onClose();
-      requestAnimationFrame(() => onLoad(id));
-    });
-  };
-
-  const handleDelete = (id: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onDelete(id);
-  };
-
   const bg = isDark ? "#1f2937" : "#fff";
   const border = isDark ? "#374151" : "#e7e5e4";
   const textPrimary = isDark ? "#e5e7eb" : "#1c1917";
   const textSecondary = isDark ? "#9ca3af" : "#78716c";
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="none"
-      onShow={handleShow}
-      onRequestClose={handleClose}
-    >
-      <View style={styles.backdrop}>
-        <Pressable style={StyleSheet.absoluteFillObject} onPress={handleClose} />
-        <Animated.View
-          style={[
-            styles.modal,
-            {
-              backgroundColor: bg,
-              borderColor: border,
-              opacity: modalOpacity,
-              transform: [{ scale: modalScale }],
-            },
-          ]}
+    <BottomSheetModal visible={visible} onClose={onClose}>
+      {({ close, dragHandlers }) => (
+        <View
+          style={[styles.sheet, { height: sheetHeight, backgroundColor: bg, borderColor: border }]}
         >
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={[styles.title, { color: textPrimary }]}>{t("layers.presets")}</Text>
-            <TouchableOpacity onPress={handleClose} hitSlop={12}>
-              <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-                <Path
-                  d="M18 6L6 18M6 6l12 12"
-                  stroke={textSecondary}
-                  strokeWidth={2}
-                  strokeLinecap="round"
-                />
-              </Svg>
-            </TouchableOpacity>
-          </View>
+          <SheetProgressiveHeader
+            isDark={isDark}
+            bgColor={bg}
+            dragHandlers={dragHandlers}
+            style={{ paddingTop: SHEET_HANDLE_CLEARANCE }}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <GlassIconButton
+                isDark={isDark}
+                onPress={close}
+                label="✕"
+                size={36}
+                style={styles.headerLeft}
+              />
+              <View style={styles.headerCenter}>
+                <Text style={[styles.title, { color: textPrimary }]}>{t("layers.presets")}</Text>
+              </View>
+              <View style={styles.headerRight} />
+            </View>
+          </SheetProgressiveHeader>
 
           {/* Save section */}
           <View style={[styles.saveRow, { borderColor: border }]}>
@@ -186,7 +135,11 @@ export default function LayerPresetModal({
                 <View style={[styles.presetRow, { borderColor: border }]}>
                   <TouchableOpacity
                     style={styles.presetInfo}
-                    onPress={() => handleLoad(item.id)}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      close();
+                      requestAnimationFrame(() => onLoad(item.id));
+                    }}
                     activeOpacity={0.6}
                   >
                     <Text style={[styles.presetName, { color: textPrimary }]} numberOfLines={1}>
@@ -197,7 +150,10 @@ export default function LayerPresetModal({
                     </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    onPress={() => handleDelete(item.id)}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      onDelete(item.id);
+                    }}
                     style={styles.deleteBtn}
                     activeOpacity={0.7}
                     hitSlop={8}
@@ -215,45 +171,45 @@ export default function LayerPresetModal({
               )}
             />
           )}
-        </Animated.View>
-      </View>
-    </Modal>
+        </View>
+      )}
+    </BottomSheetModal>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 24,
-  },
-  modal: {
-    width: "100%",
-    maxWidth: 360,
-    maxHeight: "70%",
-    borderRadius: 20,
+  sheet: {
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
     borderWidth: 1,
+    paddingBottom: 32,
     overflow: "hidden",
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingTop: 18,
-    paddingBottom: 12,
   },
   title: {
     fontSize: 17,
     fontWeight: "700",
+    textAlign: "center",
+  },
+  headerLeft: {
+    width: 40,
+    alignItems: "flex-start",
+    justifyContent: "center",
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: "center",
+  },
+  headerRight: {
+    width: 40,
+    alignItems: "flex-end",
+    justifyContent: "center",
   },
   saveRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
     paddingHorizontal: 16,
+    paddingTop: 4,
     paddingBottom: 14,
     borderBottomWidth: 1,
   },
@@ -278,6 +234,7 @@ const styles = StyleSheet.create({
   },
   list: {
     flexGrow: 0,
+    maxHeight: 300,
   },
   emptyContainer: {
     paddingVertical: 32,
