@@ -52,6 +52,7 @@ const defaultProps = {
   onRemoveLayer: jest.fn(),
   onToggleLayer: jest.fn(),
   onPreviewLayer: jest.fn(),
+  onReorderLayer: jest.fn(),
   previewLayer: null as LayerConfig | null,
   overlayNotes: [] as string[],
   overlaySemitones: new Set<number>(),

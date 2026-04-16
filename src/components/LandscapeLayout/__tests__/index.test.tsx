@@ -65,6 +65,7 @@ const defaultProps = {
   onRemoveLayer: jest.fn(),
   onToggleLayer: jest.fn(),
   onPreviewLayer: jest.fn(),
+  onReorderLayer: jest.fn(),
   onLoadPreset: jest.fn(),
   onRootNoteChange: jest.fn(),
   onBaseLabelModeChange: jest.fn(),

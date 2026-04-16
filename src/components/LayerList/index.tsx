@@ -1,4 +1,4 @@
-import { useRef, useState, useLayoutEffect } from "react";
+import { useRef, useState } from "react";
 import {
   View,
   Text,
@@ -28,8 +28,14 @@ import LayerEditModal from "../LayerEditModal";
 import LayerPresetModal from "./LayerPresetModal";
 import { useLayerPresets } from "../../hooks/useLayerPresets";
 
+// Layout constants
+const ROW_GAP = 8;
+const ROW_RADIUS = 14;
+// Estimated slot height used as initial value for layout measurement
+const ROW_ESTIMATED_HEIGHT = 84;
+
 // ─────────────────────────────────────────────────────────────────
-// Checkbox (unchanged)
+// Checkbox
 // ─────────────────────────────────────────────────────────────────
 function LayerCheckbox({
   enabled,
@@ -291,6 +297,7 @@ interface LayerListProps {
   onRemoveLayer: (id: string) => void;
   onToggleLayer: (id: string) => void;
   onPreviewLayer: (layer: LayerConfig | null) => void;
+  onReorderLayer: (orderedIds: string[]) => void;
   previewLayer?: LayerConfig | null;
   overlayNotes: string[];
   overlaySemitones: Set<number>;
@@ -314,9 +321,10 @@ export default function LayerList({
   onRemoveLayer,
   onToggleLayer,
   onPreviewLayer,
-  previewLayer,
-  overlayNotes,
-  overlaySemitones,
+  onReorderLayer,
+  previewLayer: _previewLayer,
+  overlayNotes: _overlayNotes,
+  overlaySemitones: _overlaySemitones,
   layerNoteLabels,
   onLoadPreset,
   presetModalVisible,
@@ -332,12 +340,56 @@ export default function LayerList({
     slotIdx: number;
   } | null>(null);
 
-  // Per-slot slot animation (add/remove)
-  const slotAnims = useRef(Array.from({ length: MAX_LAYERS }, () => new Animated.Value(1))).current;
-  const prevSlotIdsRef = useRef(slots.map((s) => s?.id ?? null));
-  const initializedRef = useRef(false);
+  // ── Drag-and-drop state ────────────────────────────────────────
+  // Rendered state (triggers re-renders for visual updates)
+  const [draggingFromSlotIdx, setDraggingFromSlotIdx] = useState<number | null>(null);
+  const [hoveredSlotIdx, setHoveredSlotIdx] = useState<number | null>(null);
+  // Ref mirrors for use inside PanResponder callbacks (no stale closure issues)
+  const draggingFromSlotIdxRef = useRef<number | null>(null);
+  const hoveredSlotIdxRef = useRef<number | null>(null);
+  const isDragActiveRef = useRef(false);
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Per-layer swipe-to-delete animation
+  // Animated Y position of the floating panel (relative to list container)
+  const floatY = useRef(new Animated.Value(0)).current;
+
+  // Layout measurement refs
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const listContainerRef = useRef<any>(null);
+  const listContainerPageY = useRef(0);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const slotViewRefs = useRef<any[]>(Array(MAX_LAYERS).fill(null));
+  // Slot layout positions relative to list container (updated via onLayout)
+  const slotLayouts = useRef<{ y: number; height: number }[]>(
+    Array.from({ length: MAX_LAYERS }, (_, i) => ({
+      y: i * (ROW_ESTIMATED_HEIGHT + ROW_GAP),
+      height: ROW_ESTIMATED_HEIGHT,
+    })),
+  );
+
+  // Stable refs so PanResponder closures always see latest values
+  const slotsRef = useRef(slots);
+  slotsRef.current = slots;
+  const onReorderLayerRef = useRef(onReorderLayer);
+  onReorderLayerRef.current = onReorderLayer;
+
+  // Map from layerId → current slot index (refreshed every render)
+  const layerSlotIdxMap = useRef<Map<string, number>>(new Map());
+  layerSlotIdxMap.current.clear();
+  slots.forEach((slot, idx) => {
+    if (slot) layerSlotIdxMap.current.set(slot.id, idx);
+  });
+
+  // ── Helper: reset drag state ───────────────────────────────────
+  const clearDragState = () => {
+    isDragActiveRef.current = false;
+    draggingFromSlotIdxRef.current = null;
+    hoveredSlotIdxRef.current = null;
+    setDraggingFromSlotIdx(null);
+    setHoveredSlotIdx(null);
+  };
+
+  // ── Per-layer swipe-to-delete animation ────────────────────────
   const swipeXByIdRef = useRef(new Map<string, Animated.Value>());
   const getSwipeX = (id: string) => {
     if (!swipeXByIdRef.current.has(id)) {
@@ -346,7 +398,7 @@ export default function LayerList({
     return swipeXByIdRef.current.get(id)!;
   };
 
-  // Bounce animation for note labels
+  // ── Bounce animation for note labels ──────────────────────────
   const labelScaleMapRef = useRef<Map<string, Animated.Value>>(new Map());
   const prevLabelSnapshotRef = useRef("");
 
@@ -382,48 +434,49 @@ export default function LayerList({
   }
   prevLabelSnapshotRef.current = labelsSnapshot;
 
-  // Slot add/remove animations
-  useLayoutEffect(() => {
-    const currentSlotIds = slots.map((s) => s?.id ?? null);
-    if (!initializedRef.current) {
-      initializedRef.current = true;
-      prevSlotIdsRef.current = currentSlotIds;
-      return;
-    }
-
-    let hadSlotChange = false;
-    for (let i = 0; i < MAX_LAYERS; i++) {
-      if (prevSlotIdsRef.current[i] !== currentSlotIds[i]) {
-        hadSlotChange = true;
-        const wasEmpty = prevSlotIdsRef.current[i] === null;
-        const isNowFilled = currentSlotIds[i] !== null;
-        const wasFilledNowEmpty = !wasEmpty && currentSlotIds[i] === null;
-        if (wasEmpty && isNowFilled) {
-          const anim = slotAnims[i];
-          anim.stopAnimation();
-          anim.setValue(0);
-          Animated.spring(anim, {
-            toValue: 1,
-            friction: 8,
-            tension: 130,
-            useNativeDriver: true,
-          }).start();
-        } else if (wasFilledNowEmpty) {
-          const anim = slotAnims[i];
-          Animated.timing(anim, {
-            toValue: 1,
-            duration: 160,
-            easing: Easing.out(Easing.ease),
-            useNativeDriver: true,
-          }).start();
-        }
+  // ── Slot change animations (per slot index) ───────────────────
+  // plusScales: bounces the + icon when a slot goes filled → empty.
+  // panelScales: bounces the panel row when a new panel arrives in a slot.
+  const plusScales = useRef(
+    Array.from({ length: MAX_LAYERS }, () => new Animated.Value(1)),
+  ).current;
+  const panelScales = useRef(
+    Array.from({ length: MAX_LAYERS }, () => new Animated.Value(1)),
+  ).current;
+  const prevSlotsSnapshotRef = useRef("");
+  const slotsSnapshot = slots.map((s) => s?.id ?? "null").join(",");
+  if (prevSlotsSnapshotRef.current !== "" && prevSlotsSnapshotRef.current !== slotsSnapshot) {
+    const prevIds = prevSlotsSnapshotRef.current.split(",");
+    slots.forEach((slot, idx) => {
+      const prevId = prevIds[idx];
+      const currId = slot?.id ?? "null";
+      if (prevId !== "null" && currId === "null") {
+        // Slot just became empty → bounce plus icon in
+        plusScales[idx].setValue(0);
+        Animated.spring(plusScales[idx], {
+          toValue: 1,
+          friction: 5,
+          tension: 280,
+          useNativeDriver: true,
+        }).start();
       }
-    }
-
-    prevSlotIdsRef.current = currentSlotIds;
-  }, [slots, slotAnims]);
+      if (currId !== "null" && prevId !== currId) {
+        // A new (or different) panel arrived in this slot → bounce the panel
+        panelScales[idx].setValue(0.88);
+        Animated.spring(panelScales[idx], {
+          toValue: 1,
+          friction: 6,
+          tension: 300,
+          useNativeDriver: true,
+        }).start();
+      }
+    });
+  }
+  prevSlotsSnapshotRef.current = slotsSnapshot;
 
   const addSlotIndexRef = useRef<number | null>(null);
+  const contextMenuOpenRef = useRef(false);
+  contextMenuOpenRef.current = contextMenuTarget !== null;
 
   const handleAdd = (slotIndex: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -439,12 +492,11 @@ export default function LayerList({
     setEditModalVisible(true);
   };
 
-  const handleDeleteLayer = (id: string, slotIdx: number) => {
+  const handleDeleteLayer = (id: string) => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-    const anim = slotAnims[slotIdx];
-    anim.stopAnimation();
-    Animated.timing(anim, {
-      toValue: 0,
+    const swipeX = getSwipeX(id);
+    Animated.timing(swipeX, {
+      toValue: -500,
       duration: 160,
       easing: Easing.in(Easing.ease),
       useNativeDriver: true,
@@ -462,6 +514,181 @@ export default function LayerList({
       onAddLayer(layer, addSlotIndexRef.current ?? undefined);
     }
     addSlotIndexRef.current = null;
+  };
+
+  // ── Swipe-to-delete PanResponder (keyed by layer.id) ──────────
+  const rowPanResponderMapRef = useRef<Map<string, PanResponderInstance>>(new Map());
+
+  const getRowPanResponder = (layerId: string): PanResponderInstance => {
+    const existing = rowPanResponderMapRef.current.get(layerId);
+    if (existing) return existing;
+
+    const responder = PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_, gs) => {
+        if (contextMenuOpenRef.current) return false;
+        if (isDragActiveRef.current) return false;
+        const absX = Math.abs(gs.dx);
+        const absY = Math.abs(gs.dy);
+        return absX > 10 && absX > absY * 1.4;
+      },
+      onPanResponderMove: (_, gs) => {
+        getSwipeX(layerId).setValue(Math.min(0, gs.dx));
+      },
+      onPanResponderRelease: (_, gs) => {
+        const swipeX = getSwipeX(layerId);
+        const shouldDelete = gs.dx < -80 || (gs.vx < -0.5 && gs.dx < -40);
+        if (shouldDelete) {
+          Animated.timing(swipeX, {
+            toValue: -500,
+            duration: 200,
+            easing: Easing.in(Easing.ease),
+            useNativeDriver: true,
+          }).start(() => {
+            onRemoveLayer(layerId);
+          });
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        } else {
+          Animated.spring(swipeX, {
+            toValue: 0,
+            friction: 10,
+            tension: 200,
+            useNativeDriver: true,
+          }).start();
+        }
+      },
+      onPanResponderTerminate: () => {
+        Animated.spring(getSwipeX(layerId), {
+          toValue: 0,
+          friction: 10,
+          tension: 200,
+          useNativeDriver: true,
+        }).start();
+      },
+    });
+
+    rowPanResponderMapRef.current.set(layerId, responder);
+    return responder;
+  };
+
+  // ── Drag-handle PanResponder (keyed by layer.id) ──────────────
+  // Long press (200ms) activates drag; movement tracks float position.
+  // Empty slots stay fixed — only the dragged panel floats.
+  const dragHandlePanResponderMapRef = useRef<Map<string, PanResponderInstance>>(new Map());
+
+  const getDragHandlePanResponder = (layerId: string): PanResponderInstance => {
+    const existing = dragHandlePanResponderMapRef.current.get(layerId);
+    if (existing) return existing;
+
+    const responder = PanResponder.create({
+      // Always capture touch on the handle so the long-press timer can start.
+      onStartShouldSetPanResponder: () => true,
+      // Don't surrender the gesture while drag is active.
+      onPanResponderTerminationRequest: () => !isDragActiveRef.current,
+
+      onPanResponderGrant: () => {
+        isDragActiveRef.current = false;
+
+        longPressTimerRef.current = setTimeout(() => {
+          const slotIdx = layerSlotIdxMap.current.get(layerId) ?? -1;
+          if (slotIdx < 0) return;
+
+          // Measure list container's absolute page Y for coordinate conversion
+          listContainerRef.current?.measure(
+            (_x: number, _y: number, _w: number, _h: number, _px: number, pageY: number) => {
+              listContainerPageY.current = pageY;
+            },
+          );
+
+          isDragActiveRef.current = true;
+          floatY.setValue(slotLayouts.current[slotIdx]?.y ?? 0);
+          draggingFromSlotIdxRef.current = slotIdx;
+          hoveredSlotIdxRef.current = slotIdx;
+          setDraggingFromSlotIdx(slotIdx);
+          setHoveredSlotIdx(slotIdx);
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        }, 200);
+      },
+
+      onPanResponderMove: (evt, gs) => {
+        if (!isDragActiveRef.current) {
+          // Cancel timer if the finger moved too much before 200ms
+          if (Math.abs(gs.dx) > 10 || Math.abs(gs.dy) > 10) {
+            if (longPressTimerRef.current) {
+              clearTimeout(longPressTimerRef.current);
+              longPressTimerRef.current = null;
+            }
+          }
+          return;
+        }
+
+        // Move the floating panel
+        const fromSlotIdx = draggingFromSlotIdxRef.current ?? 0;
+        const baseY = slotLayouts.current[fromSlotIdx]?.y ?? 0;
+        floatY.setValue(baseY + gs.dy);
+
+        // Determine which slot the finger is currently over
+        const fingerPageY = evt.nativeEvent.pageY;
+        const fingerRelY = fingerPageY - listContainerPageY.current;
+        let newHovered = hoveredSlotIdxRef.current ?? fromSlotIdx;
+
+        for (let i = 0; i < MAX_LAYERS; i++) {
+          const layout = slotLayouts.current[i];
+          if (layout && fingerRelY >= layout.y && fingerRelY <= layout.y + layout.height) {
+            newHovered = i;
+            break;
+          }
+        }
+        // Clamp to valid slot range
+        if (fingerRelY < (slotLayouts.current[0]?.y ?? 0)) {
+          newHovered = 0;
+        }
+        const lastLayout = slotLayouts.current[MAX_LAYERS - 1];
+        if (lastLayout && fingerRelY > lastLayout.y + lastLayout.height) {
+          newHovered = MAX_LAYERS - 1;
+        }
+
+        if (newHovered !== hoveredSlotIdxRef.current) {
+          hoveredSlotIdxRef.current = newHovered;
+          setHoveredSlotIdx(newHovered);
+          Haptics.selectionAsync();
+        }
+      },
+
+      onPanResponderRelease: () => {
+        if (longPressTimerRef.current) {
+          clearTimeout(longPressTimerRef.current);
+          longPressTimerRef.current = null;
+        }
+
+        if (isDragActiveRef.current) {
+          const from = draggingFromSlotIdxRef.current!;
+          const to = hoveredSlotIdxRef.current ?? from;
+
+          if (from !== to) {
+            // Swap the two slot positions and commit to parent
+            const newSlots = [...slotsRef.current];
+            [newSlots[from], newSlots[to]] = [newSlots[to], newSlots[from]];
+            const orderedIds = newSlots.map((s, i) => s?.id ?? `empty-slot-${i}`);
+            onReorderLayerRef.current(orderedIds);
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          }
+        }
+
+        clearDragState();
+      },
+
+      onPanResponderTerminate: () => {
+        if (longPressTimerRef.current) {
+          clearTimeout(longPressTimerRef.current);
+          longPressTimerRef.current = null;
+        }
+        clearDragState();
+      },
+    });
+
+    dragHandlePanResponderMapRef.current.set(layerId, responder);
+    return responder;
   };
 
   const nextColor = pickNextLayerColor(layers);
@@ -524,319 +751,411 @@ export default function LayerList({
     return `${mode}: ${layer.chordType}`;
   };
 
-  // Keep context menu open state as ref so PanResponder callbacks can read it
-  const contextMenuOpenRef = useRef(false);
-  // Ref for fresh slots value inside PanResponder callbacks
-  const slotsRef = useRef(slots);
-  slotsRef.current = slots;
-  contextMenuOpenRef.current = contextMenuTarget !== null;
-
-  const rowPanResponderMapRef = useRef<Map<number, PanResponderInstance>>(new Map());
-
-  const getRowPanResponder = (slotIdx: number): PanResponderInstance => {
-    const existing = rowPanResponderMapRef.current.get(slotIdx);
-    if (existing) return existing;
-
-    const responder = PanResponder.create({
-      onStartShouldSetPanResponder: () => false,
-      onMoveShouldSetPanResponder: (_, gs) => {
-        if (contextMenuOpenRef.current) return false;
-        const absX = Math.abs(gs.dx);
-        const absY = Math.abs(gs.dy);
-        return absX > 10 && absX > absY * 1.4;
-      },
-      onPanResponderMove: (_, gs) => {
-        const slot = slotsRef.current[slotIdx];
-        if (!slot) return;
-        getSwipeX(slot.id).setValue(Math.min(0, gs.dx));
-      },
-      onPanResponderRelease: (_, gs) => {
-        const slot = slotsRef.current[slotIdx];
-        if (!slot) return;
-        const swipeX = getSwipeX(slot.id);
-        const shouldDelete = gs.dx < -80 || (gs.vx < -0.5 && gs.dx < -40);
-        if (shouldDelete) {
-          Animated.timing(swipeX, {
-            toValue: -500,
-            duration: 200,
-            easing: Easing.in(Easing.ease),
-            useNativeDriver: true,
-          }).start(() => {
-            const anim = slotAnims[slotIdx];
-            anim.stopAnimation();
-            Animated.timing(anim, {
-              toValue: 0,
-              duration: 150,
-              easing: Easing.in(Easing.ease),
-              useNativeDriver: true,
-            }).start(() => {
-              onRemoveLayer(slot.id);
-            });
-          });
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-        } else {
-          Animated.spring(swipeX, {
-            toValue: 0,
-            friction: 10,
-            tension: 200,
-            useNativeDriver: true,
-          }).start();
-        }
-      },
-      onPanResponderTerminate: () => {
-        const slot = slotsRef.current[slotIdx];
-        if (slot) {
-          Animated.spring(getSwipeX(slot.id), {
-            toValue: 0,
-            friction: 10,
-            tension: 200,
-            useNativeDriver: true,
-          }).start();
-        }
-      },
-    });
-
-    rowPanResponderMapRef.current.set(slotIdx, responder);
-    return responder;
-  };
-
   const emptySlotCount = slots.filter((s) => s === null).length;
+  const dragHandleColor = isDark ? "#4b5563" : "#c4c4c6";
 
-  const renderFilledRowContent = (
-    layer: LayerConfig,
-    slotIdx: number,
-    swipeX: Animated.Value,
-    panHandlers: PanResponderInstance["panHandlers"],
-  ) => (
-    <>
-      <View
-        style={[styles.deleteBackground, { backgroundColor: "#ff3b30", borderRadius: ROW_RADIUS }]}
-      >
-        <View style={styles.deleteIconWrap}>
-          <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-            <Path
-              d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"
-              stroke="white"
-              strokeWidth={2}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </Svg>
-        </View>
+  // ── Drag handle icon (shared between slot and floating panel) ──
+  const dragHandleIcon = (
+    <Svg width={14} height={18} viewBox="0 0 14 18" fill="none">
+      <Path
+        d="M2 4h10M2 9h10M2 14h10"
+        stroke={dragHandleColor}
+        strokeWidth={1.8}
+        strokeLinecap="round"
+      />
+    </Svg>
+  );
+
+  // ── Layer type label ───────────────────────────────────────────
+  const getTypeLabel = (layer: LayerConfig) =>
+    layer.type === "scale"
+      ? t("layers.scale")
+      : layer.type === "caged"
+        ? t("layers.caged")
+        : layer.type === "custom"
+          ? t("layers.custom")
+          : layer.type === "progression"
+            ? t("layers.progression")
+            : t("layers.chord");
+
+  // ── Invisible spacer to maintain row height in empty/placeholder slots ──
+  const heightSpacer = (
+    <View style={styles.summaryArea} pointerEvents="none">
+      <View style={[styles.typeBadge, { borderColor: "transparent" }]}>
+        <Text style={[styles.layerType, { opacity: 0 }]}> </Text>
       </View>
-
-      <Animated.View
-        style={[
-          styles.layerRow,
-          {
-            borderColor: isDark ? "#374151" : "#e7e5e4",
-            backgroundColor: isDark ? "#000000" : "#ffffff",
-            ...(swipeX ? { transform: [{ translateX: swipeX }] } : null),
-          },
-        ]}
-        {...(panHandlers ?? {})}
-      >
-        <LayerCheckbox
-          enabled={layer.enabled}
-          color={layer.color}
-          isDark={isDark}
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            onToggleLayer(layer.id);
-          }}
-        />
-
-        <TouchableOpacity
-          style={styles.summaryTouchable}
-          onPress={() => handleEdit(layer)}
-          onLongPress={() => {
-            contextMenuOpenRef.current = true;
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-            setContextMenuTarget({ layer, slotIdx });
-          }}
-          delayLongPress={500}
-          activeOpacity={0.7}
-        >
-          <View style={styles.summaryArea}>
-            <View style={[styles.typeBadge, { borderColor: isDark ? "#374151" : "#d6d3d1" }]}>
-              <Text style={[styles.layerType, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-                {layer.type === "scale"
-                  ? t("layers.scale")
-                  : layer.type === "caged"
-                    ? t("layers.caged")
-                    : layer.type === "custom"
-                      ? t("layers.custom")
-                      : layer.type === "progression"
-                        ? t("layers.progression")
-                        : t("layers.chord")}
-              </Text>
-            </View>
-            <Text
-              style={[styles.layerSummary, { color: isDark ? "#e5e7eb" : "#1c1917" }]}
-              numberOfLines={1}
-            >
-              {getSummary(layer)}
-              {layer.type === "custom" && layer.hiddenCells.size > 0 && (
-                <Text
-                  style={{
-                    fontSize: 12,
-                    fontWeight: "500",
-                    color: isDark ? "#9ca3af" : "#78716c",
-                  }}
-                >
-                  ({t("layers.displayEdited")})
-                </Text>
-              )}
-            </Text>
-            <Animated.Text
-              style={[
-                styles.layerNoteLabels,
-                {
-                  color: isDark ? "#9ca3af" : "#78716c",
-                  transform: [{ scale: getLabelScale(layer.id) }],
-                },
-              ]}
-              numberOfLines={1}
-            >
-              {layerNoteLabels.get(layer.id)?.join("  ") || " "}
-            </Animated.Text>
-          </View>
-        </TouchableOpacity>
-
-        {layer.type === "progression" &&
-          (() => {
-            const template = PROGRESSION_TEMPLATES.find(
-              (tp) => tp.id === layer.progressionTemplateId,
-            );
-            const totalSteps = template?.degrees.length ?? 1;
-            const currentStep = layer.progressionCurrentStep ?? 0;
-            const iconColor = isDark ? "#6b7280" : "#a8a29e";
-            return (
-              <>
-                <TouchableOpacity
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    onUpdateLayer(layer.id, {
-                      ...layer,
-                      progressionCurrentStep: Math.max(0, currentStep - 1),
-                    });
-                  }}
-                  disabled={currentStep === 0}
-                  style={[styles.actionBtn, { opacity: currentStep === 0 ? 0.3 : 1 }]}
-                  activeOpacity={0.7}
-                >
-                  <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
-                    <Path
-                      d="M15 18l-6-6 6-6"
-                      stroke={iconColor}
-                      strokeWidth={2.2}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </Svg>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    onUpdateLayer(layer.id, {
-                      ...layer,
-                      progressionCurrentStep: Math.min(totalSteps - 1, currentStep + 1),
-                    });
-                  }}
-                  disabled={currentStep >= totalSteps - 1}
-                  style={[styles.actionBtn, { opacity: currentStep >= totalSteps - 1 ? 0.3 : 1 }]}
-                  activeOpacity={0.7}
-                >
-                  <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
-                    <Path
-                      d="M9 18l6-6-6-6"
-                      stroke={iconColor}
-                      strokeWidth={2.2}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </Svg>
-                </TouchableOpacity>
-              </>
-            );
-          })()}
-      </Animated.View>
-    </>
+      <Text style={[styles.layerSummary, { opacity: 0 }]}> </Text>
+      <Text style={[styles.layerNoteLabels, { opacity: 0 }]}> </Text>
+    </View>
   );
 
   return (
     <View style={styles.container}>
-      {slots.map((slot, slotIdx) => {
-        if (!slot) {
-          // ── Empty slot: iOS 26-style add button ──────────────────
-          return (
-            <Animated.View
-              key={`slot-${slotIdx}`}
-              style={{
-                transform: [{ scale: slotAnims[slotIdx] }],
-                opacity: slotAnims[slotIdx],
-              }}
-            >
-              <TouchableOpacity
-                onPress={() => handleAdd(slotIdx)}
-                style={[
-                  styles.layerRow,
-                  {
-                    backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)",
-                    borderColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.07)",
-                    justifyContent: "center",
-                  },
-                ]}
-                activeOpacity={0.6}
-              >
-                {/* Invisible spacer — keeps height identical to filled rows */}
-                <View style={styles.summaryArea} pointerEvents="none">
-                  <View style={[styles.typeBadge, { borderColor: "transparent" }]}>
-                    <Text style={[styles.layerType, { opacity: 0 }]}> </Text>
-                  </View>
-                  <Text style={[styles.layerSummary, { opacity: 0 }]}> </Text>
-                  <Text style={[styles.layerNoteLabels, { opacity: 0 }]}> </Text>
-                </View>
-                <View style={StyleSheet.absoluteFill}>
-                  <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-                    <Svg width={26} height={26} viewBox="0 0 26 26">
-                      <Path
-                        d="M9 13h8M13 9v8"
-                        stroke={isDark ? "#9ca3af" : "#8e8e93"}
-                        strokeWidth={2}
-                        strokeLinecap="round"
-                      />
-                    </Svg>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            </Animated.View>
+      {/* List container — slots at fixed positions, floating panel absolutely positioned */}
+      <View
+        ref={listContainerRef}
+        onLayout={() => {
+          // Keep absolute page Y up to date for coordinate conversion during drag
+          listContainerRef.current?.measure(
+            (_x: number, _y: number, _w: number, _h: number, _px: number, pageY: number) => {
+              listContainerPageY.current = pageY;
+            },
           );
-        }
+        }}
+      >
+        {slots.map((slot, slotIdx) => {
+          const isDraggingFrom = draggingFromSlotIdx === slotIdx;
+          const isHoverTarget =
+            hoveredSlotIdx === slotIdx && !isDraggingFrom && draggingFromSlotIdx !== null;
+          const dragColor =
+            draggingFromSlotIdx !== null ? slots[draggingFromSlotIdx]?.color : undefined;
 
-        // ── Filled slot ──────────────────────────────────────────────
-        const layer = slot;
-        const panResponder = getRowPanResponder(slotIdx);
-        const slotScale = slotAnims[slotIdx];
-        const swipeX = getSwipeX(layer.id);
+          return (
+            <View
+              key={`slot-${slotIdx}`}
+              ref={(ref) => {
+                slotViewRefs.current[slotIdx] = ref;
+              }}
+              onLayout={(e) => {
+                slotLayouts.current[slotIdx] = {
+                  y: e.nativeEvent.layout.y,
+                  height: e.nativeEvent.layout.height,
+                };
+              }}
+              style={{ paddingBottom: ROW_GAP }}
+            >
+              {!slot ? (
+                // ── Empty slot: show add button ────────────────────────────
+                <TouchableOpacity
+                  onPress={() => draggingFromSlotIdx === null && handleAdd(slotIdx)}
+                  style={[
+                    styles.layerRow,
+                    {
+                      backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)",
+                      borderColor:
+                        isHoverTarget && dragColor
+                          ? dragColor
+                          : isDark
+                            ? "rgba(255,255,255,0.06)"
+                            : "rgba(0,0,0,0.07)",
+                      shadowColor: isHoverTarget && dragColor ? dragColor : "transparent",
+                      shadowOpacity: isHoverTarget ? 0.45 : 0,
+                      shadowRadius: isHoverTarget ? 6 : 0,
+                      elevation: isHoverTarget ? 4 : 0,
+                      justifyContent: "center",
+                    },
+                  ]}
+                  activeOpacity={0.6}
+                  disabled={draggingFromSlotIdx !== null}
+                >
+                  {/* Invisible spacer keeps height identical to filled rows */}
+                  {heightSpacer}
+                  <View style={StyleSheet.absoluteFill}>
+                    <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+                      <Animated.View style={{ transform: [{ scale: plusScales[slotIdx] }] }}>
+                        <Svg width={26} height={26} viewBox="0 0 26 26">
+                          <Path
+                            d="M9 13h8M13 9v8"
+                            stroke={isDark ? "#9ca3af" : "#8e8e93"}
+                            strokeWidth={2}
+                            strokeLinecap="round"
+                          />
+                        </Svg>
+                      </Animated.View>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              ) : (
+                // ── Filled slot: always rendered so drag handle stays mounted ──
+                // When isDraggingFrom: content is opacity:0 (invisible but keeps
+                // the drag handle PanResponder alive), placeholder border on top.
+                <View>
+                  <Animated.View
+                    style={{
+                      opacity: isDraggingFrom ? 0 : slot.enabled ? 1 : 0.5,
+                      transform: [{ scale: panelScales[slotIdx] }],
+                    }}
+                  >
+                    {/* Red delete background revealed on left-swipe */}
+                    <View
+                      style={[
+                        styles.deleteBackground,
+                        { backgroundColor: "#ff3b30", borderRadius: ROW_RADIUS },
+                      ]}
+                    >
+                      <View style={styles.deleteIconWrap}>
+                        <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+                          <Path
+                            d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"
+                            stroke="white"
+                            strokeWidth={2}
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </Svg>
+                      </View>
+                    </View>
 
-        return (
-          <Animated.View
-            key={`slot-${slotIdx}`}
-            style={{
-              transform: [{ scale: slotScale }],
-              opacity: layer.enabled
-                ? slotScale
-                : slotScale.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0, 0.5],
-                  }),
-            }}
-          >
-            {renderFilledRowContent(layer, slotIdx, swipeX, panResponder.panHandlers)}
-          </Animated.View>
-        );
-      })}
+                    <Animated.View
+                      style={[
+                        styles.layerRow,
+                        {
+                          borderColor:
+                            isHoverTarget && dragColor ? dragColor : isDark ? "#374151" : "#e7e5e4",
+                          shadowColor: isHoverTarget && dragColor ? dragColor : "transparent",
+                          shadowOpacity: isHoverTarget ? 0.45 : 0,
+                          shadowRadius: isHoverTarget ? 6 : 0,
+                          elevation: isHoverTarget ? 4 : 0,
+                          backgroundColor: isDark ? "#000000" : "#ffffff",
+                          transform: [{ translateX: getSwipeX(slot.id) }],
+                        },
+                      ]}
+                      {...getRowPanResponder(slot.id).panHandlers}
+                    >
+                      <LayerCheckbox
+                        enabled={slot.enabled}
+                        color={slot.color}
+                        isDark={isDark}
+                        onPress={() => {
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                          onToggleLayer(slot.id);
+                        }}
+                      />
+
+                      {/* Tap = edit, long press = context menu */}
+                      <TouchableOpacity
+                        style={styles.summaryTouchable}
+                        onPress={() => handleEdit(slot)}
+                        onLongPress={() => {
+                          contextMenuOpenRef.current = true;
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+                          setContextMenuTarget({ layer: slot, slotIdx });
+                        }}
+                        delayLongPress={500}
+                        activeOpacity={0.7}
+                      >
+                        <View style={styles.summaryArea}>
+                          <View
+                            style={[
+                              styles.typeBadge,
+                              { borderColor: isDark ? "#374151" : "#d6d3d1" },
+                            ]}
+                          >
+                            <Text
+                              style={[styles.layerType, { color: isDark ? "#9ca3af" : "#78716c" }]}
+                            >
+                              {getTypeLabel(slot)}
+                            </Text>
+                          </View>
+                          <Text
+                            style={[styles.layerSummary, { color: isDark ? "#e5e7eb" : "#1c1917" }]}
+                            numberOfLines={1}
+                          >
+                            {getSummary(slot)}
+                            {slot.type === "custom" && slot.hiddenCells.size > 0 && (
+                              <Text
+                                style={{
+                                  fontSize: 12,
+                                  fontWeight: "500",
+                                  color: isDark ? "#9ca3af" : "#78716c",
+                                }}
+                              >
+                                ({t("layers.displayEdited")})
+                              </Text>
+                            )}
+                          </Text>
+                          <Animated.Text
+                            style={[
+                              styles.layerNoteLabels,
+                              {
+                                color: isDark ? "#9ca3af" : "#78716c",
+                                transform: [{ scale: getLabelScale(slot.id) }],
+                              },
+                            ]}
+                            numberOfLines={1}
+                          >
+                            {layerNoteLabels.get(slot.id)?.join("  ") || " "}
+                          </Animated.Text>
+                        </View>
+                      </TouchableOpacity>
+
+                      {slot.type === "progression" &&
+                        (() => {
+                          const template = PROGRESSION_TEMPLATES.find(
+                            (tp) => tp.id === slot.progressionTemplateId,
+                          );
+                          const totalSteps = template?.degrees.length ?? 1;
+                          const currentStep = slot.progressionCurrentStep ?? 0;
+                          const iconColor = isDark ? "#6b7280" : "#a8a29e";
+                          return (
+                            <>
+                              <TouchableOpacity
+                                onPress={() => {
+                                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                  onUpdateLayer(slot.id, {
+                                    ...slot,
+                                    progressionCurrentStep: Math.max(0, currentStep - 1),
+                                  });
+                                }}
+                                disabled={currentStep === 0}
+                                style={[styles.actionBtn, { opacity: currentStep === 0 ? 0.3 : 1 }]}
+                                activeOpacity={0.7}
+                              >
+                                <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+                                  <Path
+                                    d="M15 18l-6-6 6-6"
+                                    stroke={iconColor}
+                                    strokeWidth={2.2}
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  />
+                                </Svg>
+                              </TouchableOpacity>
+                              <TouchableOpacity
+                                onPress={() => {
+                                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                  onUpdateLayer(slot.id, {
+                                    ...slot,
+                                    progressionCurrentStep: Math.min(
+                                      totalSteps - 1,
+                                      currentStep + 1,
+                                    ),
+                                  });
+                                }}
+                                disabled={currentStep >= totalSteps - 1}
+                                style={[
+                                  styles.actionBtn,
+                                  { opacity: currentStep >= totalSteps - 1 ? 0.3 : 1 },
+                                ]}
+                                activeOpacity={0.7}
+                              >
+                                <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+                                  <Path
+                                    d="M9 18l6-6-6-6"
+                                    stroke={iconColor}
+                                    strokeWidth={2.2}
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  />
+                                </Svg>
+                              </TouchableOpacity>
+                            </>
+                          );
+                        })()}
+
+                      {/* Drag handle — long press 200ms to activate drag */}
+                      <View
+                        style={styles.dragHandle}
+                        {...getDragHandlePanResponder(slot.id).panHandlers}
+                      >
+                        {dragHandleIcon}
+                      </View>
+                    </Animated.View>
+                  </Animated.View>
+                  {/* Placeholder border overlay — shown when this slot is the drag source.
+                      absoluteFill covers the row area; pointerEvents="none" so touches
+                      pass through to the invisible (opacity:0) drag handle below. */}
+                  {isDraggingFrom && (
+                    <View
+                      style={[
+                        StyleSheet.absoluteFill,
+                        {
+                          borderWidth: 1,
+                          borderRadius: ROW_RADIUS,
+                          borderColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.07)",
+                          backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)",
+                        },
+                      ]}
+                      pointerEvents="none"
+                    />
+                  )}
+                </View>
+              )}
+            </View>
+          );
+        })}
+
+        {/* ── Floating panel: follows the finger during drag ─────────────
+            Absolutely positioned within list container, pointerEvents="none"
+            so it doesn't consume touches needed for hover detection. */}
+        {draggingFromSlotIdx !== null &&
+          (() => {
+            const floatingLayer = slots[draggingFromSlotIdx];
+            if (!floatingLayer) return null;
+
+            return (
+              <Animated.View
+                pointerEvents="none"
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  transform: [{ translateY: floatY }],
+                  zIndex: 100,
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 8 },
+                  shadowOpacity: isDark ? 0.5 : 0.22,
+                  shadowRadius: 16,
+                  elevation: 12,
+                }}
+              >
+                <View style={{ paddingBottom: ROW_GAP }}>
+                  <View style={{ opacity: floatingLayer.enabled ? 1 : 0.5 }}>
+                    <View
+                      style={[
+                        styles.layerRow,
+                        {
+                          borderColor: floatingLayer.color,
+                          backgroundColor: isDark ? "#000000" : "#ffffff",
+                        },
+                      ]}
+                    >
+                      <LayerCheckbox
+                        enabled={floatingLayer.enabled}
+                        color={floatingLayer.color}
+                        isDark={isDark}
+                        onPress={() => {}}
+                      />
+                      <View style={styles.summaryTouchable}>
+                        <View style={styles.summaryArea}>
+                          <View
+                            style={[
+                              styles.typeBadge,
+                              { borderColor: isDark ? "#374151" : "#d6d3d1" },
+                            ]}
+                          >
+                            <Text
+                              style={[styles.layerType, { color: isDark ? "#9ca3af" : "#78716c" }]}
+                            >
+                              {getTypeLabel(floatingLayer)}
+                            </Text>
+                          </View>
+                          <Text
+                            style={[styles.layerSummary, { color: isDark ? "#e5e7eb" : "#1c1917" }]}
+                            numberOfLines={1}
+                          >
+                            {getSummary(floatingLayer)}
+                          </Text>
+                          <Text
+                            style={[
+                              styles.layerNoteLabels,
+                              { color: isDark ? "#9ca3af" : "#78716c" },
+                            ]}
+                            numberOfLines={1}
+                          >
+                            {layerNoteLabels.get(floatingLayer.id)?.join("  ") || " "}
+                          </Text>
+                        </View>
+                      </View>
+                      <View style={styles.dragHandle}>{dragHandleIcon}</View>
+                    </View>
+                  </View>
+                </View>
+              </Animated.View>
+            );
+          })()}
+      </View>
 
       {/* iOS 26 Context Menu */}
       <ContextMenu
@@ -864,7 +1183,7 @@ export default function LayerList({
         }}
         onDelete={() => {
           if (contextMenuTarget) {
-            handleDeleteLayer(contextMenuTarget.layer.id, contextMenuTarget.slotIdx);
+            handleDeleteLayer(contextMenuTarget.layer.id);
           }
         }}
         onClose={() => {
@@ -907,15 +1226,10 @@ export default function LayerList({
   );
 }
 
-const ROW_GAP = 8;
-const ROW_RADIUS = 14;
-
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 12,
     paddingVertical: 8,
-    gap: ROW_GAP,
-    position: "relative",
   },
   layerRow: {
     flexDirection: "row",
@@ -923,12 +1237,6 @@ const styles = StyleSheet.create({
     gap: 8,
     borderWidth: 1,
     borderRadius: ROW_RADIUS,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-  },
-  addButton: {
-    borderRadius: ROW_RADIUS,
-    borderWidth: 1,
     paddingVertical: 10,
     paddingHorizontal: 12,
   },
@@ -962,6 +1270,12 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     paddingHorizontal: 5,
     paddingVertical: 1,
+  },
+  dragHandle: {
+    paddingHorizontal: 6,
+    paddingVertical: 8,
+    alignItems: "center",
+    justifyContent: "center",
   },
   deleteBackground: {
     ...StyleSheet.absoluteFillObject,

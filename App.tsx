@@ -103,6 +103,7 @@ function AppContent() {
     handleRemoveLayer,
     handleToggleLayer,
     handleLoadPreset,
+    handleReorderLayer,
   } = useLayers();
 
   // Forwarding refs to break the circular dependency between
@@ -327,6 +328,7 @@ function AppContent() {
     onRemoveLayer: handleRemoveLayer,
     onToggleLayer: handleToggleLayer,
     onPreviewLayer: setPreviewLayer,
+    onReorderLayer: handleReorderLayer,
     onLoadPreset: handleLoadPreset,
     onRootNoteChange: handleNoteClick,
     onBaseLabelModeChange: setBaseLabelMode,

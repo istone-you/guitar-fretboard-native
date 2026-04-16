@@ -28,6 +28,7 @@ export interface LayerPaneProps {
   onRemoveLayer: (id: string) => void;
   onToggleLayer: (id: string) => void;
   onPreviewLayer: (layer: LayerConfig | null) => void;
+  onReorderLayer: (orderedIds: string[]) => void;
   onLoadPreset: (layers: LayerConfig[]) => void;
   onRootNoteChange: (note: string) => void;
   onBaseLabelModeChange: (mode: BaseLabelMode) => void;
@@ -54,6 +55,7 @@ export default function LayerPane({
   onRemoveLayer,
   onToggleLayer,
   onPreviewLayer,
+  onReorderLayer,
   onLoadPreset,
   onRootNoteChange,
   onBaseLabelModeChange,
@@ -101,6 +103,7 @@ export default function LayerPane({
           onRemoveLayer={onRemoveLayer}
           onToggleLayer={onToggleLayer}
           onPreviewLayer={onPreviewLayer}
+          onReorderLayer={onReorderLayer}
           previewLayer={previewLayer}
           overlayNotes={overlayNotes}
           overlaySemitones={overlaySemitones}

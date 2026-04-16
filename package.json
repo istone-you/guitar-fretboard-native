@@ -23,7 +23,7 @@
     "transformIgnorePatterns": [
       "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|native-base|react-native-svg|i18next|react-i18next|react-native-bottom-tabs|react-freeze|use-latest-callback)"
     ],
-    "setupFilesAfterSetup": [],
+    "setupFilesAfterEnv": ["react-native-gesture-handler/jestSetup", "<rootDir>/jest.setup.reanimated.js"],
     "coverageProvider": "v8",
     "collectCoverageFrom": [
       "src/**/*.{ts,tsx}",

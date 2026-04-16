@@ -41,6 +41,18 @@ export function useLayers() {
     setSlots(next);
   };
 
+  const handleReorderLayer = (orderedIds: string[]) =>
+    setSlots((prev) => {
+      const layerMap = new Map(
+        prev.filter((s): s is LayerConfig => s !== null).map((s) => [s.id, s]),
+      );
+      const next: (LayerConfig | null)[] = orderedIds.map((id) =>
+        id.startsWith("empty-slot-") ? null : (layerMap.get(id) ?? null),
+      );
+      while (next.length < MAX_LAYERS) next.push(null);
+      return next.slice(0, MAX_LAYERS) as (LayerConfig | null)[];
+    });
+
   return {
     slots,
     layers,
@@ -51,5 +63,6 @@ export function useLayers() {
     handleRemoveLayer,
     handleToggleLayer,
     handleLoadPreset,
+    handleReorderLayer,
   };
 }
