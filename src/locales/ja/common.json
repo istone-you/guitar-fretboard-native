@@ -1,9 +1,8 @@
 {
   "tabs": {
-    "home": "レイヤー",
-    "finder": "検索",
-    "quiz": "クイズ",
-    "stats": "苦手分析"
+    "layer": "レイヤー",
+    "finder": "Finder",
+    "quiz": "クイズ"
   },
   "mode": {
     "normal": "通常",
@@ -251,7 +250,9 @@
     "addToLayerConfirm": "{{name}} をレイヤーに追加しますか？",
     "addToLayerFull": "レイヤーは3つまでです。追加するには既存のレイヤーを削除してください。",
     "addToLayerAdd": "追加する",
-    "addToLayerClose": "閉じる"
+    "addToLayerClose": "閉じる",
+    "setNotes": "構成音をセット",
+    "setNotesAlreadySet": "この構成音はすでにセット済みです。"
   },
   "stats": {
     "title": "苦手傾向",
@@ -282,6 +283,7 @@
     "resetCancel": "キャンセル"
   },
   "quiz": {
+    "stats": "苦手分析",
     "questionNote": "{{string}}弦 {{fret}}フレットの音は？",
     "questionDegree": "{{string}}弦 {{fret}}フレットの度数は？（ルート: {{root}}）",
     "questionDegreeFretboard": "{{string}}弦の {{degree}} はどこ？（ルート: {{root}}）",
@@ -338,7 +340,16 @@
       "degree": "指板上の指定ポジションの度数を答えるクイズ",
       "chord": "指板上のコードフォームからコード名を答えるクイズ",
       "scale": "スケールの構成音をすべて選ぶクイズ",
-      "diatonic": "キー内のダイアトニックコードをすべて答えるクイズ"
+      "diatonic": "キー内のダイアトニックコードをすべて答えるクイズ",
+      "noteChoice": "12個の選択肢から音名を選ぶ",
+      "noteFretboard": "指板上の該当フレットをタップする",
+      "degreeChoice": "12個の選択肢から度数を選ぶ",
+      "degreeFretboard": "指板上の該当フレットをタップする",
+      "chordIdentify": "コードフォームを見てコード名を識別する",
+      "chordFretboard": "指板上でコードの構成音をタップする",
+      "scaleNoteSelect": "スケールの構成音を選択肢から選ぶ",
+      "scaleFretboard": "指板上でスケールの構成音をすべてタップする",
+      "diatonicAll": "キー内のダイアトニックコードをすべて答える"
     },
     "quizNoteNames": {
       "label": "出題音"

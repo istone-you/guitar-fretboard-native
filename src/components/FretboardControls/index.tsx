@@ -15,6 +15,7 @@ import { SegmentedToggle } from "../ui/SegmentedToggle";
 import GlassIconButton from "../ui/GlassIconButton";
 import BottomSheetModal, { SHEET_HANDLE_CLEARANCE } from "../ui/BottomSheetModal";
 import SheetProgressiveHeader from "../ui/SheetProgressiveHeader";
+import Svg, { Path } from "react-native-svg";
 import { getNotesByAccidental } from "../../lib/fretboard";
 
 interface FretboardControlsProps {
@@ -95,6 +96,9 @@ export default function FretboardControls({
               },
             ]}
           >
+            <Text style={[styles.pillLabel, { color: isDark ? "#9ca3af" : "#8e8e93" }]}>
+              {t("header.root")}
+            </Text>
             <Text style={[styles.pillText, { color: isDark ? "#f2f2f7" : "#1c1917" }]}>
               {rootNote}
             </Text>
@@ -111,9 +115,15 @@ export default function FretboardControls({
             style={[styles.pill, { backgroundColor: isDark ? "#2c2c2e" : "#ffffff" }]}
             activeOpacity={0.7}
           >
-            <Text style={[styles.pillText, { color: isDark ? "#f2f2f7" : "#1c1917" }]}>
-              {t("layers.presets")}
-            </Text>
+            <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+              <Path
+                d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"
+                stroke={isDark ? "#9ca3af" : "#8e8e93"}
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </Svg>
           </TouchableOpacity>
         )}
       </View>
@@ -237,9 +247,13 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
+  pillLabel: {
+    fontSize: 11,
+    fontWeight: "500",
+  },
   pillText: {
     fontSize: 14,
-    fontWeight: "500",
+    fontWeight: "600",
   },
   sheet: {
     borderTopLeftRadius: 28,

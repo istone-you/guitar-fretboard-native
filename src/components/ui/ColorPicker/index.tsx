@@ -28,6 +28,7 @@ export default function ColorPicker({ value, onChange, isDark, style }: ColorPic
             },
           ]}
           activeOpacity={0.7}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         />
       ))}
     </View>

@@ -21,9 +21,11 @@ function scaleI18nKey(scaleType: string): string {
 interface LayerDescriptionProps {
   theme: Theme;
   layer: LayerConfig;
+  /** Show only the item-specific description (scale/chord), omitting the layer-type description */
+  itemOnly?: boolean;
 }
 
-export default function LayerDescription({ theme, layer }: LayerDescriptionProps) {
+export default function LayerDescription({ theme, layer, itemOnly }: LayerDescriptionProps) {
   const { t } = useTranslation();
   const isDark = theme === "dark";
   const textColor = isDark ? "#d1d5db" : "#44403c";
@@ -66,10 +68,10 @@ export default function LayerDescription({ theme, layer }: LayerDescriptionProps
 
   return (
     <View style={styles.container}>
-      <Text style={[styles.text, { color: textColor }]}>{layerDesc}</Text>
+      {!itemOnly && <Text style={[styles.text, { color: textColor }]}>{layerDesc}</Text>}
       {itemDesc !== "" && (
         <>
-          <View style={[styles.divider, { backgroundColor: dividerColor }]} />
+          {!itemOnly && <View style={[styles.divider, { backgroundColor: dividerColor }]} />}
           <Text style={[styles.heading, { color: headingColor }]}>
             {layer.type === "scale"
               ? t(`options.scale.${scaleI18nKey(layer.scaleType)}`)

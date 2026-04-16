@@ -335,14 +335,14 @@ function AppContent() {
   };
 
   // ── Tab navigation ─────────────────────────────────────────────
-  // Derive tab index from existing state (0=home, 1=finder, 2=quiz)
+  // Derive tab index from existing state (0=layer, 1=finder, 2=quiz)
   const tabIndex = showFinder ? 1 : showQuiz ? 2 : 0;
 
   const routes = useMemo(
     () => [
       {
-        key: "home",
-        title: t("tabs.home"),
+        key: "layer",
+        title: t("tabs.layer"),
         focusedIcon: require("./public/guiter.png"),
         unfocusedIcon: require("./public/guiter.png"),
       },
@@ -394,7 +394,7 @@ function AppContent() {
   );
 
   const renderScene = ({ route }: { route: { key: string } }) => {
-    if (route.key === "home") {
+    if (route.key === "layer") {
       return (
         <LayerPane
           {...sharedMainPaneProps}
@@ -422,6 +422,7 @@ function AppContent() {
           onBaseLabelModeChange={setBaseLabelMode}
           onAddLayerAndNavigate={(layer) => {
             setShowFinder(false);
+            setCurrentTabIndex(0);
             setTimeout(() => handleAddLayer(layer), 0);
           }}
         />
@@ -570,7 +571,7 @@ function AppContent() {
                 ? t("tabs.finder")
                 : currentTabIndex === 2
                   ? t("tabs.quiz")
-                  : t("tabs.home")
+                  : t("tabs.layer")
           }
           accidental={accidental}
           onBack={

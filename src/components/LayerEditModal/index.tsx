@@ -98,11 +98,12 @@ function BounceChip({
           },
         ]}
         activeOpacity={0.7}
+        hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
       >
         <Text
           style={{
-            fontSize: 12,
-            fontWeight: "500",
+            fontSize: 13,
+            fontWeight: "600",
             color: active ? "#fff" : isDark ? "#e5e7eb" : "#44403c",
           }}
         >
@@ -887,19 +888,17 @@ export default function LayerEditModal({
                       onContentSizeChange={flashSheetScrollIndicator}
                     >
                       <View style={[styles.settingsBody, { paddingTop: 8 }]}>
-                        {renderSection(
-                          <View style={[styles.iosRow, { paddingVertical: 12 }]}>
-                            <ColorPicker
-                              value={layer.color}
-                              onChange={(color) => {
-                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                update({ color });
-                              }}
-                              isDark={isDark}
-                              style={{ flex: 1 }}
-                            />
-                          </View>,
-                        )}
+                        <View style={[styles.iosRow, { paddingVertical: 12 }]}>
+                          <ColorPicker
+                            value={layer.color}
+                            onChange={(color) => {
+                              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                              update({ color });
+                            }}
+                            isDark={isDark}
+                            style={{ flex: 1 }}
+                          />
+                        </View>
                       </View>
                     </ScrollView>
                     {renderSubPageHeader(t("layerColors"), navigateBack, dragHandlers)}
@@ -1074,75 +1073,56 @@ export default function LayerEditModal({
                       indicatorStyle={isDark ? "white" : "black"}
                     >
                       <View style={[styles.settingsBody, { paddingTop: 8 }]}>
-                        {renderSection(
-                          <View style={[styles.iosRow, { justifyContent: "center", gap: 10 }]}>
-                            {CHORD_CAGED_ORDER.map((key) => {
-                              const active = layer.cagedForms.has(key);
-                              return (
-                                <TouchableOpacity
-                                  key={key}
-                                  onPress={() => {
-                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                    const next = new Set(layer.cagedForms);
-                                    if (next.has(key)) next.delete(key);
-                                    else next.add(key);
-                                    update({ cagedForms: next });
+                        <View style={[styles.iosRow, { justifyContent: "center", gap: 10 }]}>
+                          {CHORD_CAGED_ORDER.map((key) => {
+                            const active = layer.cagedForms.has(key);
+                            return (
+                              <TouchableOpacity
+                                key={key}
+                                onPress={() => {
+                                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                  const next = new Set(layer.cagedForms);
+                                  if (next.has(key)) next.delete(key);
+                                  else next.add(key);
+                                  update({ cagedForms: next });
+                                }}
+                                style={[
+                                  styles.cagedBtn,
+                                  {
+                                    backgroundColor: active
+                                      ? labelColor
+                                      : isDark
+                                        ? "#374151"
+                                        : "#f5f5f4",
+                                    borderColor: active
+                                      ? "transparent"
+                                      : isDark
+                                        ? "#4b5563"
+                                        : "#d6d3d1",
+                                  },
+                                ]}
+                                activeOpacity={0.7}
+                                hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                              >
+                                <Text
+                                  style={{
+                                    fontSize: 14,
+                                    fontWeight: "bold",
+                                    color: active
+                                      ? isDark
+                                        ? "#000"
+                                        : "#fff"
+                                      : isDark
+                                        ? "#f3f4f6"
+                                        : "#44403c",
                                   }}
-                                  style={[
-                                    styles.cagedBtn,
-                                    {
-                                      backgroundColor: active
-                                        ? labelColor
-                                        : isDark
-                                          ? "#374151"
-                                          : "#f5f5f4",
-                                      borderColor: active
-                                        ? "transparent"
-                                        : isDark
-                                          ? "#4b5563"
-                                          : "#d6d3d1",
-                                    },
-                                  ]}
-                                  activeOpacity={0.7}
                                 >
-                                  <Text
-                                    style={{
-                                      fontSize: 14,
-                                      fontWeight: "bold",
-                                      color: active
-                                        ? isDark
-                                          ? "#000"
-                                          : "#fff"
-                                        : isDark
-                                          ? "#f3f4f6"
-                                          : "#44403c",
-                                    }}
-                                  >
-                                    {key}
-                                  </Text>
-                                </TouchableOpacity>
-                              );
-                            })}
-                          </View>,
-                        )}
-                        <TouchableOpacity
-                          onPress={navigateBack}
-                          style={[
-                            styles.saveBtn,
-                            { backgroundColor: isDark ? "#e5e7eb" : "#1c1917" },
-                          ]}
-                          activeOpacity={0.8}
-                        >
-                          <Text
-                            style={{
-                              fontSize: 15,
-                              fontWeight: "600",
-                              color: isDark ? "#1c1917" : "#fff",
-                            }}
-                          >
-                            {t("layers.confirm")}
-                          </Text>
-                        </TouchableOpacity>
+                                  {key}
+                                </Text>
+                              </TouchableOpacity>
+                            );
+                          })}
+                        </View>
                       </View>
                     </ScrollView>
                     {renderSubPageHeader(
@@ -1361,6 +1341,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     minHeight: 44,
+    paddingVertical: 8,
   },
   iosRowLabel: {
     fontSize: 15,
@@ -1423,20 +1404,23 @@ const styles = StyleSheet.create({
   customChipsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 6,
+    gap: 8,
     justifyContent: "center",
     paddingHorizontal: 16,
   },
   customChip: {
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
   },
   customActionRow: {
     flexDirection: "row",
     gap: 8,
     paddingHorizontal: 16,
+    marginTop: 12,
   },
   customActionBtn: {
     flex: 1,

@@ -20,6 +20,40 @@ jest.mock("../../../ui/ChevronIcon", () => {
   return { __esModule: true, default: () => <View testID="chevron-icon" /> };
 });
 
+jest.mock("../../../ui/GlassIconButton", () => {
+  const { TouchableOpacity, Text } = require("react-native");
+  return {
+    __esModule: true,
+    default: ({
+      onPress,
+      label,
+      testID,
+    }: {
+      onPress: () => void;
+      label: string;
+      testID?: string;
+    }) => (
+      <TouchableOpacity onPress={onPress} testID={testID}>
+        <Text>{label}</Text>
+      </TouchableOpacity>
+    ),
+  };
+});
+
+jest.mock("../../../ui/SheetProgressiveHeader", () => {
+  const { View } = require("react-native");
+  return {
+    __esModule: true,
+    default: ({
+      children,
+      onLayout,
+    }: {
+      children: React.ReactNode;
+      onLayout?: (h: number) => void;
+    }) => <View onLayout={onLayout ? () => onLayout(96) : undefined}>{children}</View>,
+  };
+});
+
 const toggle = jest.fn();
 
 const defaultProps = {
@@ -115,23 +149,15 @@ describe("QuizPanel SettingsModal", () => {
     expect(screen.getByText("settings")).toBeTruthy();
   });
 
-  it("calls onClose when confirm button is pressed on main page", () => {
-    jest.spyOn(Animated, "timing").mockReturnValue({
+  it("calls onClose when ✕ button is pressed on main page", () => {
+    jest.spyOn(Animated, "parallel").mockReturnValue({
       start: (cb?: (result: { finished: boolean }) => void) => cb?.({ finished: true }),
     } as Animated.CompositeAnimation);
 
     const onClose = jest.fn();
     render(<SettingsModal {...defaultProps} onClose={onClose} />);
-    fireEvent.press(screen.getByText("layers.confirm"));
+    fireEvent.press(screen.getByText("✕"));
     expect(onClose).toHaveBeenCalled();
-  });
-
-  it("returns to main page when confirm button is pressed on sub-page", () => {
-    render(<SettingsModal {...defaultProps} />);
-    fireEvent.press(screen.getByText("Keys"));
-    expect(screen.getByText("Select Keys")).toBeTruthy();
-    fireEvent.press(screen.getByText("layers.confirm"));
-    expect(screen.getByText("settings")).toBeTruthy();
   });
 
   it("renders in dark theme without crashing", () => {

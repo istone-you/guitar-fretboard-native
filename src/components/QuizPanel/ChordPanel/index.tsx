@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
   choiceBtn: {
     borderRadius: 999,
     paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingVertical: 12,
     minWidth: 48,
     alignItems: "center",
   },

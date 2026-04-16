@@ -1,4 +1,5 @@
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Path } from "react-native-svg";
 import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
@@ -17,178 +18,142 @@ interface QuizSelectionScreenProps {
   onShowStats: () => void;
 }
 
+// iOS system accent colors per quiz mode
 const QUIZ_GROUPS: {
   modeKey: string;
-  descKey: string;
   icon: string;
-  options: { value: string; typeKey: string }[];
+  accent: string;
+  options: { value: string; descKey: string }[];
 }[] = [
   {
     modeKey: "quiz.mode.note",
-    descKey: "quiz.desc.note",
     icon: "♩",
+    accent: "#007AFF",
     options: [
-      { value: "note-choice", typeKey: "quiz.type.choice" },
-      { value: "note-fretboard", typeKey: "quiz.type.fretboard" },
+      { value: "note-choice", descKey: "quiz.desc.noteChoice" },
+      { value: "note-fretboard", descKey: "quiz.desc.noteFretboard" },
     ],
   },
   {
     modeKey: "quiz.mode.degree",
-    descKey: "quiz.desc.degree",
     icon: "°",
+    accent: "#5856D6",
     options: [
-      { value: "degree-choice", typeKey: "quiz.type.choice" },
-      { value: "degree-fretboard", typeKey: "quiz.type.fretboard" },
+      { value: "degree-choice", descKey: "quiz.desc.degreeChoice" },
+      { value: "degree-fretboard", descKey: "quiz.desc.degreeFretboard" },
     ],
   },
   {
     modeKey: "quiz.mode.chord",
-    descKey: "quiz.desc.chord",
     icon: "♯",
+    accent: "#FF9500",
     options: [
-      { value: "chord-choice", typeKey: "quiz.type.identify" },
-      { value: "chord-fretboard", typeKey: "quiz.type.fretboard" },
+      { value: "chord-choice", descKey: "quiz.desc.chordIdentify" },
+      { value: "chord-fretboard", descKey: "quiz.desc.chordFretboard" },
     ],
   },
   {
     modeKey: "quiz.mode.scale",
-    descKey: "quiz.desc.scale",
     icon: "≈",
+    accent: "#34C759",
     options: [
-      { value: "scale-choice", typeKey: "quiz.type.noteSelect" },
-      { value: "scale-fretboard", typeKey: "quiz.type.fretboard" },
+      { value: "scale-choice", descKey: "quiz.desc.scaleNoteSelect" },
+      { value: "scale-fretboard", descKey: "quiz.desc.scaleFretboard" },
     ],
   },
   {
     modeKey: "quiz.mode.diatonic",
-    descKey: "quiz.desc.diatonic",
     icon: "Ⅶ",
-    options: [{ value: "diatonic-all", typeKey: "quiz.type.all" }],
+    accent: "#FF3B30",
+    options: [{ value: "diatonic-all", descKey: "quiz.desc.diatonicAll" }],
   },
 ];
 
 function QuizSelectionScreen({ theme, onSelect, onShowStats }: QuizSelectionScreenProps) {
   const { t } = useTranslation();
   const isDark = theme === "dark";
+  const insets = useSafeAreaInsets();
+
+  const cardBg = isDark ? "#1c1c1e" : "#ffffff";
+  const cardBorder = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)";
+  const titleColor = isDark ? "#f9fafb" : "#1c1917";
+  const descColor = isDark ? "#8e8e93" : "#78716c";
+  const statsBg = isDark ? "#2c2c2e" : "#ffffff";
+  const statsIcon = isDark ? "#8e8e93" : "#78716c";
 
   return (
     <ScrollView
-      style={[selectionStyles.container, { backgroundColor: isDark ? "#000000" : "#ffffff" }]}
-      contentContainerStyle={selectionStyles.content}
+      style={[styles.container, { backgroundColor: isDark ? "#000000" : "#ffffff" }]}
+      contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 80 }]}
       showsVerticalScrollIndicator={false}
     >
-      <View style={selectionStyles.titleRow}>
-        <Text style={[selectionStyles.title, { color: isDark ? "#f9fafb" : "#1c1917" }]}>
-          {t("quiz.selectTitle")}
-        </Text>
+      {/* Header row */}
+      <View style={styles.titleRow}>
+        {/* Stats pill button */}
         <TouchableOpacity
           onPress={onShowStats}
-          style={selectionStyles.statsBtn}
+          style={[styles.statsBtn, { backgroundColor: statsBg }]}
           activeOpacity={0.7}
           testID="quiz-stats-btn"
         >
-          <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-            <Path
-              d="M18 20V10"
-              stroke={isDark ? "#6b7280" : "#a8a29e"}
-              strokeWidth={2}
-              strokeLinecap="round"
-            />
-            <Path
-              d="M12 20V4"
-              stroke={isDark ? "#6b7280" : "#a8a29e"}
-              strokeWidth={2}
-              strokeLinecap="round"
-            />
-            <Path
-              d="M6 20v-6"
-              stroke={isDark ? "#6b7280" : "#a8a29e"}
-              strokeWidth={2}
-              strokeLinecap="round"
-            />
+          <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+            <Path d="M18 20V10" stroke={statsIcon} strokeWidth={2} strokeLinecap="round" />
+            <Path d="M12 20V4" stroke={statsIcon} strokeWidth={2} strokeLinecap="round" />
+            <Path d="M6 20v-6" stroke={statsIcon} strokeWidth={2} strokeLinecap="round" />
           </Svg>
-          <Text style={[selectionStyles.statsBtnText, { color: isDark ? "#6b7280" : "#a8a29e" }]}>
-            {t("tabs.stats")}
-          </Text>
+          <Text style={[styles.statsBtnText, { color: statsIcon }]}>{t("quiz.stats")}</Text>
         </TouchableOpacity>
       </View>
-      {QUIZ_GROUPS.map((group) => {
-        const accentColor = isDark ? "#e5e7eb" : "#1c1917";
-        const iconBg = isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.06)";
-        const cardBg = isDark ? "#111827" : "#ffffff";
-        const btnBg = isDark ? "#374151" : "#1c1917";
-        return (
-          <View
-            key={group.modeKey}
-            style={[
-              selectionStyles.card,
-              {
-                backgroundColor: cardBg,
-                borderColor: isDark ? "#1f2937" : "#e5e7eb",
-              },
-            ]}
-          >
-            <View style={selectionStyles.cardInner}>
-              <View style={selectionStyles.cardTop}>
-                <View style={[selectionStyles.iconCircle, { backgroundColor: iconBg }]}>
-                  <Text style={[selectionStyles.iconText, { color: accentColor }]}>
-                    {group.icon}
-                  </Text>
+
+      {/* Quiz cards — one per mode×type combination (9 total) */}
+      {QUIZ_GROUPS.flatMap((group) =>
+        group.options.map((opt) => {
+          const iconCircleBg = isDark ? `${group.accent}26` : `${group.accent}1A`;
+          return (
+            <TouchableOpacity
+              key={opt.value}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                onSelect(opt.value);
+              }}
+              activeOpacity={0.7}
+              style={[styles.card, { backgroundColor: cardBg, borderColor: cardBorder }]}
+            >
+              <View style={styles.cardInner}>
+                <View style={[styles.iconCircle, { backgroundColor: iconCircleBg }]}>
+                  <Text style={[styles.iconText, { color: group.accent }]}>{group.icon}</Text>
                 </View>
-                <View style={selectionStyles.textBlock}>
-                  <Text
-                    style={[selectionStyles.modeLabel, { color: isDark ? "#f9fafb" : "#1c1917" }]}
-                  >
-                    {t(group.modeKey)}
-                  </Text>
-                  <Text
-                    style={[selectionStyles.modeDesc, { color: isDark ? "#9ca3af" : "#78716c" }]}
-                  >
-                    {t(group.descKey)}
-                  </Text>
+                <View style={styles.textBlock}>
+                  <Text style={[styles.modeLabel, { color: titleColor }]}>{t(group.modeKey)}</Text>
+                  <Text style={[styles.modeDesc, { color: descColor }]}>{t(opt.descKey)}</Text>
                 </View>
               </View>
-              <View style={selectionStyles.typeButtons}>
-                {group.options.map((opt) => (
-                  <TouchableOpacity
-                    key={opt.value}
-                    onPress={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      onSelect(opt.value);
-                    }}
-                    style={[selectionStyles.typeBtn, { backgroundColor: btnBg }]}
-                    activeOpacity={0.75}
-                  >
-                    <Text style={selectionStyles.typeBtnText}>{t(opt.typeKey)}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          </View>
-        );
-      })}
+            </TouchableOpacity>
+          );
+        }),
+      )}
     </ScrollView>
   );
 }
 
-const selectionStyles = StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
   content: {
     paddingHorizontal: 16,
     paddingTop: 20,
-    paddingBottom: 32,
-    gap: 12,
+    paddingBottom: 0,
+    gap: 10,
   },
   titleRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 4,
+    justifyContent: "flex-end",
+    marginBottom: 6,
   },
   title: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: "700",
     letterSpacing: 0.2,
   },
@@ -196,8 +161,14 @@ const selectionStyles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 1,
   },
   statsBtnText: {
     fontSize: 13,
@@ -207,61 +178,42 @@ const selectionStyles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     overflow: "hidden",
-    flexDirection: "row",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
   },
   cardInner: {
-    flex: 1,
-    paddingHorizontal: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
     paddingVertical: 14,
     gap: 12,
   },
-  cardTop: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
   iconCircle: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
   },
   iconText: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "700",
   },
   textBlock: {
     flex: 1,
-    gap: 2,
+    gap: 3,
   },
   modeLabel: {
     fontSize: 16,
-    fontWeight: "700",
+    fontWeight: "600",
     letterSpacing: 0.1,
   },
   modeDesc: {
-    fontSize: 12,
-    lineHeight: 16,
-  },
-  typeButtons: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  typeBtn: {
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 7,
-  },
-  typeBtnText: {
     fontSize: 13,
-    fontWeight: "600",
-    color: "#ffffff",
+    lineHeight: 17,
   },
 });
 

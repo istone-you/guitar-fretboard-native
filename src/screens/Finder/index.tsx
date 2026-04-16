@@ -6,10 +6,15 @@ import {
   TouchableOpacity,
   StyleSheet,
   Animated,
-  Pressable,
+  Switch,
+  useWindowDimensions,
 } from "react-native";
-import AnimatedModal from "../../components/ui/AnimatedModal";
+import { ContextMenu } from "../../components/ui/ContextMenu";
+import BottomSheetModal, { SHEET_HANDLE_CLEARANCE } from "../../components/ui/BottomSheetModal";
+import SheetProgressiveHeader from "../../components/ui/SheetProgressiveHeader";
+import GlassIconButton from "../../components/ui/GlassIconButton";
 import { useTranslation } from "react-i18next";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Circle, Path } from "react-native-svg";
 import NormalFretboard from "../../components/NormalFretboard";
 import { identifyChords, type ChordMatch } from "../../lib/chordFinder";
@@ -24,11 +29,11 @@ import type {
   ScaleType,
 } from "../../types";
 import { usePersistedSetting } from "../../hooks/usePersistedSetting";
-
-type FinderItem = { kind: "chord"; match: ChordMatch } | { kind: "scale"; match: ScaleMatch };
-import SlideToggle from "../../components/ui/SlideToggle";
+import LayerDescription from "../../components/LayerEditModal/LayerDescription";
 import ColorPicker from "../../components/ui/ColorPicker";
 import { SegmentedToggle } from "../../components/ui/SegmentedToggle";
+
+type FinderItem = { kind: "chord"; match: ChordMatch } | { kind: "scale"; match: ScaleMatch };
 
 export interface FinderPaneProps {
   theme: Theme;
@@ -92,6 +97,10 @@ export default function FinderPane({
   );
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [pendingItem, setPendingItem] = useState<FinderItem | null>(null);
+  const [settingsHeaderHeight, setSettingsHeaderHeight] = useState(96);
+  const insets = useSafeAreaInsets();
+  const { height: winHeight } = useWindowDimensions();
+  const sheetHeight = Math.max(360, Math.min(520, Math.round(winHeight * 0.62)));
 
   // Lifted to parent — persists across navigation
   const rootNote = finderRoot;
@@ -111,7 +120,6 @@ export default function FinderPane({
   const cardBg = isDark ? "#1a1a2e" : "#ffffff";
   const textColor = isDark ? "#e5e7eb" : "#1c1917";
   const subTextColor = isDark ? "#9ca3af" : "#6b7280";
-  const sectionHeaderBg = isDark ? "#111827" : "#f9fafb";
   const borderColor = isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb";
 
   // Effective selected notes = root + user additions (only when root is set)
@@ -209,6 +217,16 @@ export default function FinderPane({
     return [layer];
   }, [effectiveNotes, accentColor]);
 
+  const handleSetNotes = () => {
+    if (!pendingItem) return;
+    const allNotes =
+      pendingItem.kind === "chord" ? pendingItem.match.chordNotes : pendingItem.match.scaleNotes;
+    const root = pendingItem.match.root;
+    onFinderRootChange(root);
+    onFinderNotesChange(new Set(allNotes.filter((n) => n !== root)));
+    setPendingItem(null);
+  };
+
   const handleConfirmAdd = () => {
     if (!pendingItem) return;
     let newLayer: LayerConfig;
@@ -266,13 +284,7 @@ export default function FinderPane({
 
   const renderSection = (label: string, items: FinderItem[], topSpacing: boolean) => (
     <>
-      <View
-        style={[
-          styles.sectionHeader,
-          { backgroundColor: sectionHeaderBg },
-          topSpacing && { marginTop: 8 },
-        ]}
-      >
+      <View style={[styles.sectionHeader, topSpacing && { marginTop: 8 }]}>
         <Text style={[styles.sectionTitle, { color: textColor }]}>{label}</Text>
         <Text style={[styles.sectionBadge, { color: subTextColor }]}>{items.length}</Text>
       </View>
@@ -416,146 +428,212 @@ export default function FinderPane({
         </TouchableOpacity>
       </View>
 
-      {/* Settings modal */}
-      <AnimatedModal visible={settingsVisible} onClose={() => setSettingsVisible(false)}>
-        {({ close }) => (
-          <Pressable
-            onPress={() => {}}
-            style={[styles.modalCard, { backgroundColor: cardBg, borderColor }]}
-          >
-            <Text style={[styles.modalTitle, { color: textColor }]}>{t("finder.settings")}</Text>
-            <View style={[styles.modalRow, { borderBottomColor: borderColor }]}>
-              <Text style={[styles.modalRowLabel, { color: textColor }]}>{t("finder.color")}</Text>
-            </View>
-            <View style={[styles.colorPickerRow, { borderBottomColor: borderColor }]}>
-              <ColorPicker value={dotColor} onChange={onDotColorChange} isDark={isDark} />
-            </View>
-            <View style={[styles.modalRow, { borderBottomColor: borderColor }]}>
-              <Text style={[styles.modalRowLabel, { color: textColor }]}>
-                {t("finder.showChords")}
-              </Text>
-              <SlideToggle
-                value={showChords}
-                onValueChange={setShowChords}
-                isDark={isDark}
-                activeColor="#34c759"
-              />
-            </View>
-            <View style={[styles.modalRow, { borderBottomColor: borderColor }]}>
-              <Text style={[styles.modalRowLabel, { color: textColor }]}>
-                {t("finder.showScales")}
-              </Text>
-              <SlideToggle
-                value={showScales}
-                onValueChange={setShowScales}
-                isDark={isDark}
-                activeColor="#34c759"
-              />
-            </View>
-            <View style={[styles.modalRow, { borderBottomColor: borderColor }]}>
-              <Text style={[styles.modalRowLabel, { color: textColor }]}>
-                {t("finder.showContained")}
-              </Text>
-              <SlideToggle
-                value={showContained}
-                onValueChange={setShowContained}
-                isDark={isDark}
-                activeColor="#34c759"
-              />
-            </View>
-            <View style={[styles.modalRow, { borderBottomColor: borderColor }]}>
-              <Text style={[styles.modalRowLabel, { color: textColor }]}>
-                {t("finder.showContaining")}
-              </Text>
-              <SlideToggle
-                value={showContaining}
-                onValueChange={setShowContaining}
-                isDark={isDark}
-                activeColor="#34c759"
-              />
-            </View>
-            <View style={styles.modalConfirmRow}>
-              <TouchableOpacity
-                onPress={close}
-                style={[styles.confirmBtn, { backgroundColor: isDark ? "#e5e7eb" : "#1c1917" }]}
-                activeOpacity={0.8}
-              >
-                <Text style={[styles.confirmBtnText, { color: isDark ? "#1c1917" : "#fff" }]}>
-                  {t("layers.confirm")}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </Pressable>
-        )}
-      </AnimatedModal>
-
-      {/* Add-to-layer confirmation modal */}
-      <AnimatedModal visible={pendingItem !== null} onClose={() => setPendingItem(null)}>
-        {({ close }) => {
-          const isFull = layers.length >= MAX_LAYERS;
-          const itemName = pendingItem
-            ? pendingItem.kind === "chord"
-              ? pendingItem.match.chordName
-              : `${pendingItem.match.root} ${t(`options.scale.${scaleI18nKey(pendingItem.match.scaleType)}`)}`
-            : "";
+      {/* Settings bottom sheet */}
+      <BottomSheetModal visible={settingsVisible} onClose={() => setSettingsVisible(false)}>
+        {({ close, dragHandlers }) => {
+          const sheetBg = isDark ? "#111827" : "#fafaf9";
+          const sheetBorder = isDark ? "rgba(255,255,255,0.08)" : "#e7e5e4";
+          const labelColor = isDark ? "#e5e7eb" : "#1c1917";
           return (
-            <Pressable
-              onPress={() => {}}
-              style={[styles.modalCard, { backgroundColor: cardBg, borderColor }]}
+            <View
+              style={[
+                styles.bottomSheetModal,
+                { height: sheetHeight, backgroundColor: sheetBg, borderColor: sheetBorder },
+              ]}
             >
-              <Text style={[styles.modalTitle, { color: textColor }]}>
-                {t("finder.addToLayerTitle")}
-              </Text>
-              <Text style={[styles.addToLayerBody, { color: subTextColor }]}>
-                {isFull
-                  ? t("finder.addToLayerFull")
-                  : t("finder.addToLayerConfirm", { name: itemName })}
-              </Text>
-              <View style={styles.modalConfirmRow}>
-                {!isFull && (
-                  <TouchableOpacity
-                    onPress={() => {
-                      handleConfirmAdd();
-                      close();
-                    }}
-                    style={[
-                      styles.confirmBtn,
-                      { backgroundColor: isDark ? "#e5e7eb" : "#1c1917", marginBottom: 8 },
-                    ]}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={[styles.confirmBtnText, { color: isDark ? "#1c1917" : "#fff" }]}>
-                      {t("finder.addToLayerAdd")}
-                    </Text>
-                  </TouchableOpacity>
-                )}
-                <TouchableOpacity
-                  onPress={close}
-                  style={[
-                    styles.confirmBtn,
-                    {
-                      backgroundColor: "transparent",
-                      borderWidth: 1,
-                      borderColor: isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.12)",
-                    },
+              <View style={{ flex: 1, overflow: "hidden" }}>
+                <ScrollView
+                  style={styles.sheetScroll}
+                  contentContainerStyle={[
+                    styles.sheetScrollContent,
+                    { paddingTop: settingsHeaderHeight },
                   ]}
-                  activeOpacity={0.8}
+                  showsVerticalScrollIndicator
+                  indicatorStyle={isDark ? "white" : "black"}
                 >
-                  <Text style={[styles.confirmBtnText, { color: subTextColor }]}>
-                    {t("finder.addToLayerClose")}
-                  </Text>
-                </TouchableOpacity>
+                  <View style={styles.settingsBody}>
+                    {/* Color */}
+                    <View style={[styles.iosSection, { borderColor: sheetBorder }]}>
+                      <View
+                        style={[
+                          styles.iosRow,
+                          {
+                            borderBottomWidth: StyleSheet.hairlineWidth,
+                            borderBottomColor: sheetBorder,
+                          },
+                        ]}
+                      >
+                        <Text style={[styles.iosRowLabel, { color: labelColor }]}>
+                          {t("finder.color")}
+                        </Text>
+                      </View>
+                      <View style={[styles.colorPickerRow]}>
+                        <ColorPicker value={dotColor} onChange={onDotColorChange} isDark={isDark} />
+                      </View>
+                    </View>
+                    {/* Toggles */}
+                    <View style={[styles.iosSection, { borderColor: sheetBorder }]}>
+                      {(
+                        [
+                          [t("finder.showChords"), showChords, setShowChords],
+                          [t("finder.showScales"), showScales, setShowScales],
+                          [t("finder.showContained"), showContained, setShowContained],
+                          [t("finder.showContaining"), showContaining, setShowContaining],
+                        ] as [string, boolean, (v: boolean) => void][]
+                      ).map(([label, value, setter], i, arr) => (
+                        <View
+                          key={label}
+                          style={[
+                            styles.iosRow,
+                            i < arr.length - 1 && {
+                              borderBottomWidth: StyleSheet.hairlineWidth,
+                              borderBottomColor: sheetBorder,
+                            },
+                          ]}
+                        >
+                          <Text style={[styles.iosRowLabel, { color: labelColor }]}>{label}</Text>
+                          <Switch
+                            value={value}
+                            onValueChange={setter}
+                            trackColor={{ false: isDark ? "#4b5563" : "#d6d3d1", true: "#34c759" }}
+                            ios_backgroundColor={isDark ? "#4b5563" : "#d6d3d1"}
+                          />
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                </ScrollView>
+                {/* Absolute glass header */}
+                <SheetProgressiveHeader
+                  isDark={isDark}
+                  bgColor={sheetBg}
+                  dragHandlers={dragHandlers}
+                  contentPaddingHorizontal={14}
+                  onLayout={setSettingsHeaderHeight}
+                  style={styles.absoluteHeader}
+                >
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <GlassIconButton
+                      isDark={isDark}
+                      onPress={close}
+                      label="✕"
+                      style={styles.headerLeft}
+                    />
+                    <View style={styles.headerCenter}>
+                      <Text style={[styles.headerTitle, { color: labelColor }]}>
+                        {t("finder.settings")}
+                      </Text>
+                    </View>
+                    <View style={styles.headerRight} />
+                  </View>
+                </SheetProgressiveHeader>
               </View>
-            </Pressable>
+            </View>
           );
         }}
-      </AnimatedModal>
+      </BottomSheetModal>
+
+      {/* Add-to-layer confirmation — shared ContextMenu design */}
+      {(() => {
+        const isFull = layers.length >= MAX_LAYERS;
+        const itemName = pendingItem
+          ? pendingItem.kind === "chord"
+            ? pendingItem.match.chordName
+            : `${pendingItem.match.root} ${t(`options.scale.${scaleI18nKey(pendingItem.match.scaleType)}`)}`
+          : "";
+        const isAlreadySet = (() => {
+          if (!pendingItem) return false;
+          const itemRoot = pendingItem.match.root;
+          const allNotes =
+            pendingItem.kind === "chord"
+              ? pendingItem.match.chordNotes
+              : pendingItem.match.scaleNotes;
+          const itemExtra = new Set(allNotes.filter((n) => n !== itemRoot));
+          if (rootNote !== itemRoot) return false;
+          if (extraNotes.size !== itemExtra.size) return false;
+          for (const n of itemExtra) if (!extraNotes.has(n)) return false;
+          return true;
+        })();
+        const descLayer: LayerConfig | null = (() => {
+          if (!pendingItem) return null;
+          if (pendingItem.kind === "chord") {
+            const layer = createDefaultLayer("chord", "finder-desc", "#000");
+            layer.chordDisplayMode = "form";
+            layer.chordType = pendingItem.match.chordType as ChordType;
+            return layer;
+          } else {
+            const layer = createDefaultLayer("scale", "finder-desc", "#000");
+            layer.scaleType = pendingItem.match.scaleType as ScaleType;
+            return layer;
+          }
+        })();
+        return (
+          <ContextMenu
+            visible={pendingItem !== null}
+            isDark={isDark}
+            title={itemName}
+            footer={
+              descLayer ? <LayerDescription theme={theme} layer={descLayer} itemOnly /> : undefined
+            }
+            items={[
+              {
+                label: t("finder.addToLayerTitle"),
+                subtitle: isFull ? t("finder.addToLayerFull") : undefined,
+                icon: (
+                  <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+                    <Path
+                      d="M12 5v14M5 12h14"
+                      stroke={isDark ? "#ebebf599" : "#3c3c4399"}
+                      strokeWidth={2}
+                      strokeLinecap="round"
+                    />
+                  </Svg>
+                ),
+                onPress: handleConfirmAdd,
+                disabled: isFull,
+              },
+              {
+                label: t("finder.setNotes"),
+                subtitle: isAlreadySet ? t("finder.setNotesAlreadySet") : undefined,
+                disabled: isAlreadySet,
+                icon: (
+                  <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+                    <Path
+                      d="M9 18V5l12-2v13"
+                      stroke={isDark ? "#ebebf599" : "#3c3c4399"}
+                      strokeWidth={2}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <Circle
+                      cx={6}
+                      cy={18}
+                      r={3}
+                      stroke={isDark ? "#ebebf599" : "#3c3c4399"}
+                      strokeWidth={2}
+                    />
+                    <Circle
+                      cx={18}
+                      cy={16}
+                      r={3}
+                      stroke={isDark ? "#ebebf599" : "#3c3c4399"}
+                      strokeWidth={2}
+                    />
+                  </Svg>
+                ),
+                onPress: handleSetNotes,
+              },
+            ]}
+            onClose={() => setPendingItem(null)}
+          />
+        );
+      })()}
 
       {/* Results */}
       {hasResult && (
         <ScrollView
           style={styles.resultScroll}
-          contentContainerStyle={styles.resultContent}
+          contentContainerStyle={[styles.resultContent, { paddingBottom: insets.bottom + 80 }]}
           showsVerticalScrollIndicator={false}
         >
           {renderSection(t("finder.exactMatch"), exactItems, false)}
@@ -578,7 +656,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     paddingHorizontal: 12,
     paddingBottom: 6,
-    marginBottom: 10,
+    marginBottom: 12,
   },
   selectedRow: {
     flexDirection: "row",
@@ -633,63 +711,80 @@ const styles = StyleSheet.create({
     padding: 6,
     marginLeft: 2,
   },
-  modalCard: {
-    width: 280,
-    borderRadius: 14,
+  // Bottom sheet styles (same as LayerEditModal)
+  bottomSheetModal: {
+    width: "100%",
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
     borderWidth: 1,
-    paddingTop: 16,
-    paddingBottom: 8,
-    paddingHorizontal: 0,
+    overflow: "hidden",
   },
-  modalTitle: {
+  absoluteHeader: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1,
+    paddingTop: SHEET_HANDLE_CLEARANCE,
+  },
+  headerLeft: {
+    width: 40,
+    alignItems: "flex-start",
+    justifyContent: "center",
+  },
+  headerRight: {
+    width: 40,
+    alignItems: "flex-end",
+    justifyContent: "center",
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: "center",
+  },
+  headerTitle: {
     fontSize: 15,
-    fontWeight: "700",
-    paddingHorizontal: 16,
-    paddingBottom: 12,
+    fontWeight: "600",
+    textAlign: "center",
   },
-  addToLayerBody: {
-    fontSize: 14,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-    lineHeight: 20,
+  sheetScroll: {
+    flex: 1,
+    width: "100%",
   },
-  modalRow: {
+  sheetScrollContent: {
+    paddingBottom: 24,
+  },
+  settingsBody: {
+    paddingHorizontal: 16,
+    gap: 6,
+    paddingTop: 6,
+    paddingBottom: 8,
+  },
+  iosSection: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  iosRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    minHeight: 44,
+    paddingVertical: 8,
   },
-  modalRowLabel: {
-    fontSize: 14,
+  iosRowLabel: {
+    fontSize: 15,
+    fontWeight: "400",
     flex: 1,
   },
   colorPickerRow: {
-    paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  modalConfirmRow: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 8,
-  },
-  confirmBtn: {
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-  confirmBtnText: {
-    fontSize: 15,
-    fontWeight: "600",
   },
   resultScroll: {
     flex: 1,
   },
   resultContent: {
     paddingBottom: 16,
-  },
+  }, // Note: dynamic bottom padding added inline via insets
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",

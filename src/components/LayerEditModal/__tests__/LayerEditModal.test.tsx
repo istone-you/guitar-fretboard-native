@@ -14,19 +14,7 @@ jest.mock("expo-haptics", () => ({
   impactAsync: jest.fn(),
   ImpactFeedbackStyle: { Light: "light", Medium: "medium" },
 }));
-jest.mock("../../ui/DropdownSelect", () => {
-  const { Text, TouchableOpacity } = require("react-native");
-  return {
-    DropdownSelect: (props: any) => (
-      <TouchableOpacity
-        testID={`dropdown-${props.testID || "default"}`}
-        onPress={() => props.onChange?.(props.options?.[0]?.value)}
-      >
-        <Text>{props.value}</Text>
-      </TouchableOpacity>
-    ),
-  };
-});
+
 jest.mock("../../ui/scaleOptions", () => ({
   buildScaleOptions: () => ({
     options: [

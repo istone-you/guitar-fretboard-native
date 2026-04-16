@@ -60,6 +60,7 @@ export default function HeaderBar({
         onPress={() => settingsModalRef.current?.open()}
         style={styles.headerBtn}
         activeOpacity={0.7}
+        hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
       >
         <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
           <Path

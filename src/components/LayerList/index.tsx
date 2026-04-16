@@ -95,7 +95,7 @@ function LayerCheckbox({
 }
 
 // ─────────────────────────────────────────────────────────────────
-// iOS 26-style Context Menu
+// iOS 26-style Context Menu (centered popup — local to LayerList)
 // ─────────────────────────────────────────────────────────────────
 function ContextMenu({
   visible,
@@ -127,12 +127,7 @@ function ContextMenu({
       scale.setValue(0.85);
       Animated.parallel([
         Animated.timing(opacity, { toValue: 1, duration: 160, useNativeDriver: true }),
-        Animated.spring(scale, {
-          toValue: 1,
-          friction: 7,
-          tension: 220,
-          useNativeDriver: true,
-        }),
+        Animated.spring(scale, { toValue: 1, friction: 7, tension: 220, useNativeDriver: true }),
       ]).start();
     }
   }
@@ -177,7 +172,6 @@ function ContextMenu({
             },
           ]}
         >
-          {/* Edit */}
           <TouchableOpacity
             onPress={() => dismiss(onEdit)}
             style={menuStyles.item}
@@ -201,10 +195,7 @@ function ContextMenu({
               />
             </Svg>
           </TouchableOpacity>
-
           <View style={[menuStyles.divider, { backgroundColor: dividerColor }]} />
-
-          {/* Duplicate */}
           <TouchableOpacity
             onPress={canDuplicate ? () => dismiss(onDuplicate) : undefined}
             style={[menuStyles.item, !canDuplicate && { opacity: 0.35 }]}
@@ -229,10 +220,7 @@ function ContextMenu({
               />
             </Svg>
           </TouchableOpacity>
-
           <View style={[menuStyles.divider, { backgroundColor: dividerColor }]} />
-
-          {/* Delete */}
           <TouchableOpacity
             onPress={() => dismiss(onDelete)}
             style={menuStyles.item}
@@ -256,16 +244,8 @@ function ContextMenu({
 }
 
 const menuStyles = StyleSheet.create({
-  positioner: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  card: {
-    width: 240,
-    borderRadius: 14,
-    overflow: "hidden",
-  },
+  positioner: { flex: 1, justifyContent: "center", alignItems: "center" },
+  card: { width: 240, borderRadius: 14, overflow: "hidden" },
   item: {
     flexDirection: "row",
     alignItems: "center",
@@ -273,14 +253,8 @@ const menuStyles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
-  label: {
-    fontSize: 16,
-    fontWeight: "400",
-  },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    marginHorizontal: 0,
-  },
+  label: { fontSize: 16, fontWeight: "400" },
+  divider: { height: StyleSheet.hairlineWidth, marginHorizontal: 0 },
 });
 
 // ─────────────────────────────────────────────────────────────────
@@ -1168,11 +1142,10 @@ export default function LayerList({
         onDuplicate={() => {
           if (!contextMenuTarget) return;
           const { layer } = contextMenuTarget;
-          const dupeColor = pickNextLayerColor(layers);
           const clone: LayerConfig = {
             ...layer,
             id: `layer-${Date.now()}`,
-            color: dupeColor,
+            color: pickNextLayerColor(layers),
             cagedForms: new Set(layer.cagedForms),
             selectedNotes: new Set(layer.selectedNotes),
             selectedDegrees: new Set(layer.selectedDegrees),
@@ -1182,9 +1155,7 @@ export default function LayerList({
           onAddLayer(clone);
         }}
         onDelete={() => {
-          if (contextMenuTarget) {
-            handleDeleteLayer(contextMenuTarget.layer.id);
-          }
+          if (contextMenuTarget) handleDeleteLayer(contextMenuTarget.layer.id);
         }}
         onClose={() => {
           contextMenuOpenRef.current = false;

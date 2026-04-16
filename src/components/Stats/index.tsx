@@ -9,6 +9,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Svg, { Path } from "react-native-svg";
 import { useTranslation } from "react-i18next";
 import { DEGREE_BY_SEMITONE, getNotesByAccidental } from "../../lib/fretboard";
 import { CHORD_QUIZ_TYPES_ALL } from "../../hooks/useQuiz";
@@ -42,7 +44,6 @@ const ALL_SCALE_TYPES: ScaleType[] = [
 // ── Color helpers ─────────────────────────────────────────────────
 
 function rateToColor(rate: number): string {
-  // 0% = #ef4444 (red), 100% = #22c55e (green)
   const r = Math.round(239 + (34 - 239) * rate);
   const g = Math.round(68 + (197 - 68) * rate);
   const b = Math.round(68 + (94 - 68) * rate);
@@ -68,7 +69,6 @@ function buildStats(
   allKeys?: string[],
 ): StatEntry[] {
   const map = new Map<string, { correct: number; total: number }>();
-  // Pre-populate with all keys so every entry shows even with no data
   for (const key of allKeys ?? []) {
     map.set(key, { correct: 0, total: 0 });
   }
@@ -93,28 +93,7 @@ function buildStats(
     });
 }
 
-// ── Sub-components ────────────────────────────────────────────────
-
-function SectionCard({
-  title,
-  children,
-  isDark,
-}: {
-  title: string;
-  children: React.ReactNode;
-  isDark: boolean;
-}) {
-  return (
-    <View style={[styles.sectionCard, { backgroundColor: isDark ? "#1f2937" : "#ffffff" }]}>
-      <View style={styles.sectionCardInner}>
-        <Text style={[styles.sectionTitle, { color: isDark ? "#e5e7eb" : "#1c1917" }]}>
-          {title}
-        </Text>
-        {children}
-      </View>
-    </View>
-  );
-}
+// ── CollapsibleSection ────────────────────────────────────────────
 
 function CollapsibleSection({
   title,
@@ -127,9 +106,10 @@ function CollapsibleSection({
 }) {
   const [open, setOpen] = useState(false);
   const anim = useRef(new Animated.Value(0)).current;
-  const cardBg = isDark ? "#1f2937" : "#ffffff";
-  const titleColor = isDark ? "#e5e7eb" : "#1c1917";
-  const chevronColor = isDark ? "#9ca3af" : "#6b7280";
+  const cardBg = isDark ? "#1c1c1e" : "#ffffff";
+  const cardBorder = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)";
+  const titleColor = isDark ? "#f2f2f7" : "#1c1917";
+  const chevronColor = isDark ? "#8e8e93" : "#78716c";
 
   const toggle = () => {
     const next = !open;
@@ -153,10 +133,18 @@ function CollapsibleSection({
   };
 
   return (
-    <View style={[styles.sectionCard, { backgroundColor: cardBg }]}>
+    <View style={[styles.card, { backgroundColor: cardBg, borderColor: cardBorder }]}>
       <TouchableOpacity style={styles.collapsibleHeader} onPress={toggle} activeOpacity={0.7}>
         <Text style={[styles.sectionTitle, { color: titleColor }]}>{title}</Text>
-        <Text style={{ fontSize: 12, color: chevronColor }}>{open ? "▲" : "▼"}</Text>
+        <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+          <Path
+            d={open ? "M18 15l-6-6-6 6" : "M6 9l6 6 6-6"}
+            stroke={chevronColor}
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </Svg>
       </TouchableOpacity>
       <Animated.View
         style={{
@@ -171,6 +159,8 @@ function CollapsibleSection({
   );
 }
 
+// ── RankRow ───────────────────────────────────────────────────────
+
 function RankRow({
   label,
   correct,
@@ -184,10 +174,10 @@ function RankRow({
 }) {
   const hasData = total >= MIN_SAMPLES;
   const rate = hasData ? correct / total : 0;
-  const fillColor = hasData ? rateToColor(rate) : isDark ? "#374151" : "#d1d5db";
-  const trackColor = isDark ? "#374151" : "#e5e7eb";
-  const textColor = isDark ? "#e5e7eb" : "#1c1917";
-  const subColor = isDark ? "#9ca3af" : "#6b7280";
+  const fillColor = hasData ? rateToColor(rate) : isDark ? "#3a3a3c" : "#d1d5db";
+  const trackColor = isDark ? "#3a3a3c" : "#e5e7eb";
+  const textColor = isDark ? "#f2f2f7" : "#1c1917";
+  const subColor = isDark ? "#8e8e93" : "#78716c";
 
   return (
     <View style={[styles.rankRow, !hasData && styles.rankRowDim]}>
@@ -214,6 +204,8 @@ function RankRow({
   );
 }
 
+// ── HeatmapGrid ───────────────────────────────────────────────────
+
 function HeatmapGrid({
   data,
   isDark,
@@ -223,8 +215,8 @@ function HeatmapGrid({
 }) {
   const CELL = 20;
   const LABEL_W = 32;
-  const textColor = isDark ? "#9ca3af" : "#6b7280";
-  const emptyBorder = isDark ? "#374151" : "#e5e7eb";
+  const textColor = isDark ? "#8e8e93" : "#78716c";
+  const emptyBorder = isDark ? "#3a3a3c" : "#e5e7eb";
   const noDataBg = isDark ? "rgba(107,114,128,0.3)" : "rgba(156,163,175,0.3)";
 
   return (
@@ -239,7 +231,6 @@ function HeatmapGrid({
           ))}
         </View>
 
-        {/* String rows: 1弦(idx 5) at top → 6弦(idx 0) at bottom */}
         {[5, 4, 3, 2, 1, 0].map((stringIdx) => (
           <View key={stringIdx} style={[styles.heatmapRow, { marginBottom: 2 }]}>
             <View style={[styles.heatmapStringLabel, { width: LABEL_W }]}>
@@ -320,9 +311,11 @@ export default function StatsPanel({
 }: StatsPanelProps) {
   const isDark = theme === "dark";
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
 
-  const bgColor = isDark ? "#030712" : "#f3f4f6";
-  const subColor = isDark ? "#9ca3af" : "#6b7280";
+  const cardBg = isDark ? "#1c1c1e" : "#ffffff";
+  const cardBorder = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)";
+  const subColor = isDark ? "#8e8e93" : "#78716c";
 
   const allNotes = useMemo(() => [...getNotesByAccidental(accidental)], [accidental]);
   const allDegrees = useMemo(() => [...DEGREE_BY_SEMITONE], []);
@@ -331,7 +324,6 @@ export default function StatsPanel({
   const allChordKeys = CHORD_QUIZ_TYPES_ALL.map(String);
   const allScaleKeys = ALL_SCALE_TYPES.map(String);
 
-  // Mode stats (always show all 5 modes)
   const modeStats = useMemo(() => {
     const modes: QuizMode[] = ["note", "degree", "chord", "scale", "diatonic"];
     return modes.map((mode) => {
@@ -446,8 +438,9 @@ export default function StatsPanel({
 
   return (
     <ScrollView
-      style={[styles.container, { backgroundColor: bgColor }]}
-      contentContainerStyle={styles.content}
+      style={[styles.container, { backgroundColor: isDark ? "#000000" : "#ffffff" }]}
+      contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 80 }]}
+      showsVerticalScrollIndicator={false}
     >
       {/* Total count */}
       <Text style={[styles.totalText, { color: subColor }]}>
@@ -456,14 +449,13 @@ export default function StatsPanel({
           : t("stats.noRecords")}
       </Text>
 
-      {/* Heatmap (always expanded, top) */}
-      <View style={[styles.sectionCard, { backgroundColor: isDark ? "#1f2937" : "#ffffff" }]}>
-        <View style={styles.sectionCardInner}>
+      {/* Heatmap */}
+      <View style={[styles.card, { backgroundColor: cardBg, borderColor: cardBorder }]}>
+        <View style={styles.cardInner}>
           <HeatmapGrid data={heatmapData} isDark={isDark} />
         </View>
       </View>
 
-      {/* Mode stats */}
       <CollapsibleSection title={t("stats.sections.byMode")} isDark={isDark}>
         {modeStats.map((entry) => (
           <RankRow
@@ -476,7 +468,6 @@ export default function StatsPanel({
         ))}
       </CollapsibleSection>
 
-      {/* Note stats */}
       <CollapsibleSection title={t("stats.sections.byNote")} isDark={isDark}>
         {noteStats.map((entry) => (
           <RankRow
@@ -489,7 +480,6 @@ export default function StatsPanel({
         ))}
       </CollapsibleSection>
 
-      {/* Degree stats */}
       <CollapsibleSection title={t("stats.sections.byDegree")} isDark={isDark}>
         {degreeStats.map((entry) => (
           <RankRow
@@ -502,7 +492,6 @@ export default function StatsPanel({
         ))}
       </CollapsibleSection>
 
-      {/* String stats */}
       <CollapsibleSection title={t("stats.sections.byString")} isDark={isDark}>
         {stringStats.map((entry) => (
           <RankRow
@@ -515,7 +504,6 @@ export default function StatsPanel({
         ))}
       </CollapsibleSection>
 
-      {/* Fret stats */}
       <CollapsibleSection title={t("stats.sections.byFret")} isDark={isDark}>
         {fretStats.map((entry) => (
           <RankRow
@@ -528,7 +516,6 @@ export default function StatsPanel({
         ))}
       </CollapsibleSection>
 
-      {/* Chord type stats */}
       <CollapsibleSection title={t("stats.sections.byChordType")} isDark={isDark}>
         {chordTypeStats.map((entry) => (
           <RankRow
@@ -541,7 +528,6 @@ export default function StatsPanel({
         ))}
       </CollapsibleSection>
 
-      {/* Scale stats */}
       <CollapsibleSection title={t("stats.sections.byScale")} isDark={isDark}>
         {scaleStats.map((entry) => (
           <RankRow
@@ -582,26 +568,31 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
-    gap: 12,
-    paddingBottom: 32,
+    gap: 10,
+    paddingBottom: 0,
   },
   totalText: {
     fontSize: 13,
     textAlign: "center",
     paddingVertical: 4,
   },
-  sectionCard: {
-    borderRadius: 12,
+  card: {
+    borderRadius: 16,
+    borderWidth: 1,
     overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  sectionCardInner: {
+  cardInner: {
     padding: 14,
     gap: 6,
   },
   sectionTitle: {
-    fontSize: 13,
-    fontWeight: "700",
-    marginBottom: 4,
+    fontSize: 14,
+    fontWeight: "600",
   },
   rankRow: {
     flexDirection: "row",
@@ -686,14 +677,14 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   resetButton: {
-    marginTop: 8,
-    paddingVertical: 8,
-    borderRadius: 10,
+    marginTop: 4,
+    paddingVertical: 10,
+    borderRadius: 14,
     borderWidth: 1,
     alignItems: "center",
   },
   resetText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "500",
   },
 });

@@ -1,9 +1,8 @@
 {
   "tabs": {
-    "home": "Layer",
+    "layer": "Layer",
     "finder": "Finder",
-    "quiz": "Quiz",
-    "stats": "Analysis"
+    "quiz": "Quiz"
   },
   "mode": {
     "normal": "Normal",
@@ -251,7 +250,9 @@
     "addToLayerConfirm": "Add {{name}} as a layer?",
     "addToLayerFull": "You can have up to 3 layers. Remove an existing layer to add a new one.",
     "addToLayerAdd": "Add",
-    "addToLayerClose": "Close"
+    "addToLayerClose": "Close",
+    "setNotes": "Set Notes",
+    "setNotesAlreadySet": "These notes are already set on the fretboard."
   },
   "stats": {
     "title": "Weak Points",
@@ -282,6 +283,7 @@
     "resetCancel": "Cancel"
   },
   "quiz": {
+    "stats": "Analysis",
     "questionNote": "String {{string}}, Fret {{fret}} — what note?",
     "questionDegree": "String {{string}}, Fret {{fret}} — what degree? (Root: {{root}})",
     "questionDegreeFretboard": "Where is {{degree}} on string {{string}}? (Root: {{root}})",
@@ -338,7 +340,16 @@
       "degree": "Identify the scale degree at a given fret position",
       "chord": "Identify chord types from fretboard voicings",
       "scale": "Select all notes that belong to a scale",
-      "diatonic": "Name every diatonic chord in a key"
+      "diatonic": "Name every diatonic chord in a key",
+      "noteChoice": "Choose the note name from 12 options",
+      "noteFretboard": "Tap the correct fret on the fretboard",
+      "degreeChoice": "Choose the scale degree from 12 options",
+      "degreeFretboard": "Tap the correct fret on the fretboard",
+      "chordIdentify": "Identify the chord name from a fretboard voicing",
+      "chordFretboard": "Tap all chord tones on the fretboard",
+      "scaleNoteSelect": "Select all notes that belong to the scale",
+      "scaleFretboard": "Tap all scale tones on the fretboard",
+      "diatonicAll": "Name every diatonic chord in the key"
     },
     "quizNoteNames": {
       "label": "Notes"

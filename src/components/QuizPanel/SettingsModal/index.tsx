@@ -1,11 +1,21 @@
-import { useRef, useState } from "react";
-import { Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useLayoutEffect, useRef, useState } from "react";
+import {
+  Animated,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  useWindowDimensions,
+} from "react-native";
 import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 import "../../../i18n";
 import type { Theme } from "../../../types";
 import ChevronIcon from "../../ui/ChevronIcon";
-import AnimatedModal, { type AnimatedModalControls } from "../../ui/AnimatedModal";
+import BottomSheetModal, { SHEET_HANDLE_CLEARANCE } from "../../ui/BottomSheetModal";
+import SheetProgressiveHeader from "../../ui/SheetProgressiveHeader";
+import GlassIconButton from "../../ui/GlassIconButton";
 
 interface SettingsRow {
   key: string;
@@ -38,239 +48,295 @@ export default function SettingsModal({
 }: SettingsModalProps) {
   const { t } = useTranslation();
   const isDark = theme === "dark";
+  const { height: winHeight } = useWindowDimensions();
 
   const [settingsPage, setSettingsPage] = useState<string | null>(null);
-  const controlsRef = useRef<AnimatedModalControls | null>(null);
+  const [headerHeight, setHeaderHeight] = useState(96);
+  const slideAnim = useRef(new Animated.Value(0)).current;
+  const pendingEnterDir = useRef(0);
+
+  const sheetHeight = Math.max(360, Math.min(520, Math.round(winHeight * 0.62)));
+  const bgColor = isDark ? "#111827" : "#fafaf9";
+  const borderColor = isDark ? "rgba(255,255,255,0.08)" : "#e7e5e4";
+  const labelColor = isDark ? "#e5e7eb" : "#1c1917";
+  const valueColor = isDark ? "#9ca3af" : "#78716c";
+
+  // LayerEditModal と同じページ遷移アニメーション
+  useLayoutEffect(() => {
+    const dir = pendingEnterDir.current;
+    if (dir !== 0) {
+      pendingEnterDir.current = 0;
+      slideAnim.stopAnimation();
+      slideAnim.setValue(dir * 400);
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        tension: 120,
+        friction: 20,
+        useNativeDriver: false,
+      }).start();
+    }
+  }, [settingsPage]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const navigateToPage = (page: string | null) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    controlsRef.current?.bounce();
+    // サブページへ進む: 右からスライドイン / メインへ戻る: 左からスライドイン
+    pendingEnterDir.current = page !== null ? 1 : -1;
     setSettingsPage(page);
   };
 
   return (
-    <AnimatedModal visible={visible} onClose={onClose} onShow={() => setSettingsPage(null)}>
-      {(controls) => {
-        controlsRef.current = controls;
-        return (
-          <Pressable
-            onPress={() => {}}
-            style={[
-              styles.popup,
-              {
-                backgroundColor: isDark ? "rgba(17,24,39,0.97)" : "rgba(250,250,249,0.97)",
-                borderColor: isDark ? "rgba(255,255,255,0.08)" : "#e7e5e4",
-              },
-            ]}
-          >
-            <View style={styles.content}>
-              {settingsPage == null ? (
-                <View>
-                  <Text
-                    style={[
-                      styles.title,
-                      {
-                        color: isDark ? "#e5e7eb" : "#1c1917",
-                        marginBottom: 8,
-                        textAlign: "center",
-                      },
-                    ]}
-                  >
-                    {t("settings")}
-                  </Text>
-                  {settingsRows.map(({ key, label, summary }, i) => (
-                    <TouchableOpacity
-                      key={key}
-                      style={[
-                        styles.row,
-                        i < settingsRows.length - 1 && {
-                          borderBottomWidth: StyleSheet.hairlineWidth,
-                          borderBottomColor: isDark ? "rgba(255,255,255,0.08)" : "#e7e5e4",
-                        },
-                      ]}
-                      onPress={() => navigateToPage(key)}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={[styles.rowLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-                        {label}
-                      </Text>
-                      <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                        <Text style={{ fontSize: 15, color: isDark ? "#e5e7eb" : "#44403c" }}>
-                          {summary}
-                        </Text>
-                        <ChevronIcon size={14} color={isDark ? "#6b7280" : "#a8a29e"} />
-                      </View>
-                    </TouchableOpacity>
-                  ))}
-                  <TouchableOpacity
-                    onPress={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                      controls.close();
-                    }}
-                    style={[styles.confirmBtn, { backgroundColor: isDark ? "#e5e7eb" : "#1c1917" }]}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={[styles.confirmBtnText, { color: isDark ? "#1c1917" : "#fff" }]}>
-                      {t("layers.confirm")}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                (() => {
-                  const subPage = settingsSubPages[settingsPage!];
-                  if (!subPage) return null;
-                  return (
-                    <View>
-                      <View style={styles.subHeader}>
-                        <TouchableOpacity
-                          onPress={() => navigateToPage(null)}
-                          style={styles.backBtn}
-                        >
-                          <Text
-                            style={[styles.backText, { color: isDark ? "#e5e7eb" : "#1c1917" }]}
+    <BottomSheetModal visible={visible} onClose={onClose}>
+      {({ close, dragHandlers }) => (
+        <View
+          style={[
+            styles.bottomSheetModal,
+            { height: sheetHeight, backgroundColor: bgColor, borderColor },
+          ]}
+        >
+          <View style={{ flex: 1, overflow: "hidden" }}>
+            <Animated.View style={{ flex: 1, transform: [{ translateX: slideAnim }] }}>
+              <ScrollView
+                style={styles.sheetScroll}
+                contentContainerStyle={[styles.sheetScrollContent, { paddingTop: headerHeight }]}
+                showsVerticalScrollIndicator
+                indicatorStyle={isDark ? "white" : "black"}
+              >
+                <View style={styles.settingsBody}>
+                  {settingsPage == null ? (
+                    <>
+                      <View style={[styles.iosSection, { borderColor }]}>
+                        {settingsRows.map(({ key, label, summary }, i) => (
+                          <TouchableOpacity
+                            key={key}
+                            style={[
+                              styles.iosRow,
+                              i < settingsRows.length - 1 && {
+                                borderBottomWidth: StyleSheet.hairlineWidth,
+                                borderBottomColor: borderColor,
+                              },
+                            ]}
+                            onPress={() => navigateToPage(key)}
+                            activeOpacity={0.6}
                           >
-                            ‹
-                          </Text>
-                        </TouchableOpacity>
-                        <Text
-                          pointerEvents="none"
-                          style={[
-                            styles.title,
-                            {
-                              color: isDark ? "#e5e7eb" : "#1c1917",
-                              position: "absolute",
-                              left: 0,
-                              right: 0,
-                              textAlign: "center",
-                            },
-                          ]}
-                        >
-                          {subPage.title}
-                        </Text>
-                      </View>
-                      <View style={[styles.chipGrid, { paddingTop: 12, paddingBottom: 4 }]}>
-                        {subPage.items.map((item) => {
-                          const active = subPage.selected.includes(item);
-                          const chipLabel = subPage.labels?.[item] ?? item;
-                          return (
-                            <TouchableOpacity
-                              key={item}
-                              onPress={() => {
-                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                subPage.toggle(item);
-                              }}
-                              style={[
-                                styles.chip,
-                                {
-                                  backgroundColor: active
-                                    ? isDark
-                                      ? "#e5e7eb"
-                                      : "#1c1917"
-                                    : isDark
-                                      ? "#374151"
-                                      : "#fff",
-                                  borderColor: active
-                                    ? "transparent"
-                                    : isDark
-                                      ? "#4b5563"
-                                      : "#d6d3d1",
-                                },
-                              ]}
-                              activeOpacity={0.7}
-                            >
-                              <Text
-                                style={{
-                                  fontSize: 14,
-                                  color: active
-                                    ? isDark
-                                      ? "#1c1917"
-                                      : "#fff"
-                                    : isDark
-                                      ? "#e5e7eb"
-                                      : "#44403c",
-                                }}
-                              >
-                                {chipLabel}
+                            <Text style={[styles.iosRowLabel, { color: labelColor }]}>{label}</Text>
+                            <View style={styles.iosRowRight}>
+                              <Text style={[styles.iosRowValue, { color: valueColor }]}>
+                                {summary}
                               </Text>
-                            </TouchableOpacity>
-                          );
-                        })}
+                              <ChevronIcon
+                                size={12}
+                                color={isDark ? "#6b7280" : "#a8a29e"}
+                                direction="right"
+                              />
+                            </View>
+                          </TouchableOpacity>
+                        ))}
                       </View>
-                      <TouchableOpacity
-                        onPress={() => {
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                          navigateToPage(null);
-                        }}
-                        style={[
-                          styles.confirmBtn,
-                          { backgroundColor: isDark ? "#e5e7eb" : "#1c1917" },
-                        ]}
-                        activeOpacity={0.7}
-                      >
-                        <Text
-                          style={[styles.confirmBtnText, { color: isDark ? "#1c1917" : "#fff" }]}
-                        >
-                          {t("layers.confirm")}
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                  );
-                })()
-              )}
-            </View>
-          </Pressable>
-        );
-      }}
-    </AnimatedModal>
+                    </>
+                  ) : (
+                    (() => {
+                      const subPage = settingsSubPages[settingsPage!];
+                      if (!subPage) return null;
+                      return (
+                        <>
+                          <View style={[styles.chipGrid, { paddingTop: 8, paddingBottom: 4 }]}>
+                            {subPage.items.map((item) => {
+                              const active = subPage.selected.includes(item);
+                              const chipLabel = subPage.labels?.[item] ?? item;
+                              return (
+                                <TouchableOpacity
+                                  key={item}
+                                  onPress={() => {
+                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                    subPage.toggle(item);
+                                  }}
+                                  style={[
+                                    styles.chip,
+                                    {
+                                      backgroundColor: active
+                                        ? isDark
+                                          ? "#e5e7eb"
+                                          : "#1c1917"
+                                        : isDark
+                                          ? "#374151"
+                                          : "#fff",
+                                      borderColor: active
+                                        ? "transparent"
+                                        : isDark
+                                          ? "#4b5563"
+                                          : "#d6d3d1",
+                                    },
+                                  ]}
+                                  activeOpacity={0.7}
+                                >
+                                  <Text
+                                    style={{
+                                      fontSize: 14,
+                                      color: active
+                                        ? isDark
+                                          ? "#1c1917"
+                                          : "#fff"
+                                        : isDark
+                                          ? "#e5e7eb"
+                                          : "#44403c",
+                                    }}
+                                  >
+                                    {chipLabel}
+                                  </Text>
+                                </TouchableOpacity>
+                              );
+                            })}
+                          </View>
+                        </>
+                      );
+                    })()
+                  )}
+                </View>
+              </ScrollView>
+            </Animated.View>
+
+            {/* Absolute glass header */}
+            {settingsPage == null ? (
+              <SheetProgressiveHeader
+                isDark={isDark}
+                bgColor={bgColor}
+                dragHandlers={dragHandlers}
+                contentPaddingHorizontal={14}
+                onLayout={setHeaderHeight}
+                style={styles.absoluteHeader}
+              >
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <GlassIconButton
+                    isDark={isDark}
+                    onPress={close}
+                    label="✕"
+                    style={styles.headerLeft}
+                  />
+                  <View style={styles.headerCenter}>
+                    <Text style={[styles.headerTitle, { color: labelColor }]}>{t("settings")}</Text>
+                  </View>
+                  <View style={styles.headerRight} />
+                </View>
+              </SheetProgressiveHeader>
+            ) : (
+              <SheetProgressiveHeader
+                isDark={isDark}
+                bgColor={bgColor}
+                dragHandlers={dragHandlers}
+                contentPaddingHorizontal={14}
+                onLayout={setHeaderHeight}
+                style={styles.absoluteHeader}
+              >
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <GlassIconButton
+                    isDark={isDark}
+                    onPress={() => navigateToPage(null)}
+                    label="‹"
+                    fontSize={22}
+                    style={styles.headerLeft}
+                  />
+                  <View style={styles.headerCenter}>
+                    <Text style={[styles.headerTitle, { color: labelColor }]}>
+                      {settingsSubPages[settingsPage!]?.title ?? ""}
+                    </Text>
+                  </View>
+                  <View style={styles.headerRight} />
+                </View>
+              </SheetProgressiveHeader>
+            )}
+          </View>
+        </View>
+      )}
+    </BottomSheetModal>
   );
 }
 
 const styles = StyleSheet.create({
-  popup: {
+  // Bottom sheet container (same as LayerEditModal)
+  bottomSheetModal: {
+    width: "100%",
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
     borderWidth: 1,
-    borderRadius: 20,
-    width: 340,
+    overflow: "hidden",
   },
-  content: {
-    padding: 20,
-    gap: 0,
+  absoluteHeader: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1,
+    paddingTop: SHEET_HANDLE_CLEARANCE,
   },
-  title: {
-    fontSize: 16,
-    fontWeight: "700",
+  headerLeft: {
+    width: 40,
+    alignItems: "flex-start",
+    justifyContent: "center",
   },
-  row: {
+  headerRight: {
+    width: 40,
+    alignItems: "flex-end",
+    justifyContent: "center",
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: "center",
+  },
+  headerTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  sheetScroll: {
+    flex: 1,
+    width: "100%",
+  },
+  sheetScrollContent: {
+    paddingBottom: 24,
+  },
+  settingsBody: {
+    paddingHorizontal: 16,
+    gap: 6,
+    paddingTop: 6,
+    paddingBottom: 8,
+  },
+  // iOS-style rows (same as LayerEditModal)
+  iosSection: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  iosRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 14,
-    minHeight: 48,
+    minHeight: 44,
+    paddingVertical: 8,
   },
-  rowLabel: {
-    fontSize: 14,
-    fontWeight: "600",
+  iosRowLabel: {
+    fontSize: 15,
+    fontWeight: "400",
+    flex: 1,
   },
-  subHeader: {
+  iosRowRight: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 8,
+    gap: 4,
+    flexShrink: 0,
+    maxWidth: "55%",
   },
-  backBtn: {
-    width: 56,
-    height: 56,
-    justifyContent: "center",
-    alignItems: "center",
-    marginLeft: -8,
+  iosRowValue: {
+    fontSize: 14,
+    textAlign: "right",
+    flexShrink: 1,
   },
-  backText: {
-    fontSize: 32,
-    lineHeight: 36,
-  },
+  // Chip grid for sub-pages
   chipGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "center",
     gap: 8,
+    paddingHorizontal: 16,
   },
   chip: {
     borderWidth: 1,
@@ -279,17 +345,5 @@ const styles = StyleSheet.create({
     paddingVertical: 9,
     minWidth: 52,
     alignItems: "center",
-  },
-  confirmBtn: {
-    borderRadius: 999,
-    paddingVertical: 10,
-    paddingHorizontal: 24,
-    alignItems: "center",
-    alignSelf: "center",
-    marginTop: 16,
-  },
-  confirmBtnText: {
-    fontWeight: "600",
-    fontSize: 14,
   },
 });
