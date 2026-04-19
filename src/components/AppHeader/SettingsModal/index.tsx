@@ -1,12 +1,15 @@
-import { forwardRef, useImperativeHandle, useRef, useState } from "react";
-import { View, Text, TouchableOpacity, Modal, StyleSheet, Pressable, Animated } from "react-native";
+import { forwardRef, useImperativeHandle, useState } from "react";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useTranslation } from "react-i18next";
 import { changeLocale } from "../../../i18n";
 import type { Accidental, Theme } from "../../../types";
 import { SegmentedToggle } from "../../ui/SegmentedToggle";
 import SlideToggle from "../../ui/SlideToggle";
+import GlassIconButton from "../../ui/GlassIconButton";
 import SheetProgressiveHeader from "../../ui/SheetProgressiveHeader";
 import RangeSlider from "./RangeSlider";
+import { getColors, radius } from "../../../themes/tokens";
+import BottomSheetModal, { SHEET_HANDLE_CLEARANCE } from "../../ui/BottomSheetModal";
 
 export interface SettingsModalRef {
   open: () => void;
@@ -39,153 +42,112 @@ const SettingsModal = forwardRef<SettingsModalRef, SettingsModalProps>(function 
   const { t, i18n } = useTranslation();
   const [visible, setVisible] = useState(false);
   const [headerHeight, setHeaderHeight] = useState(72);
-  const overlayAnim = useRef(new Animated.Value(0)).current;
-  const panelAnim = useRef(new Animated.Value(700)).current;
   const isDark = theme === "dark";
-  const bgColor = isDark ? "#1a1a1a" : "#fff";
+  const colors = getColors(isDark);
+  const bgColor = colors.surface;
 
-  const open = () => {
-    setVisible(true);
-    Animated.parallel([
-      Animated.timing(overlayAnim, { toValue: 1, duration: 220, useNativeDriver: true }),
-      Animated.timing(panelAnim, { toValue: 0, duration: 280, useNativeDriver: true }),
-    ]).start();
-  };
-
-  const close = () => {
-    Animated.parallel([
-      Animated.timing(overlayAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
-      Animated.timing(panelAnim, { toValue: 700, duration: 240, useNativeDriver: true }),
-    ]).start(() => setVisible(false));
-  };
-
-  useImperativeHandle(ref, () => ({ open }));
+  useImperativeHandle(ref, () => ({ open: () => setVisible(true) }));
 
   return (
-    <Modal visible={visible} transparent animationType="none" onRequestClose={close}>
-      <Animated.View style={[styles.overlay, { opacity: overlayAnim }]}>
-        <Pressable style={{ flex: 1 }} onPress={close} />
-      </Animated.View>
-
-      <Animated.View
-        style={[
-          styles.panel,
-          {
-            backgroundColor: bgColor,
-            borderColor: isDark ? "#374151" : "#e7e5e4",
-            transform: [{ translateY: panelAnim }],
-          },
-        ]}
-      >
-        {/* Rows content — paddingTop reserves space for the absolute glass header */}
-        <View style={{ paddingHorizontal: 20, paddingTop: headerHeight }}>
-          <View style={styles.row}>
-            <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-              {t("theme")}
-            </Text>
-            <SegmentedToggle
-              theme={theme}
-              value={theme}
-              onChange={onThemeChange}
-              options={[
-                { value: "dark" as Theme, label: t("dark") },
-                { value: "light" as Theme, label: t("light") },
-              ]}
-              size="compact"
-            />
-          </View>
-
-          <View style={styles.row}>
-            <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-              {t("accidental")}
-            </Text>
-            <SegmentedToggle
-              theme={theme}
-              value={accidental}
-              onChange={onAccidentalChange}
-              options={[
-                { value: "sharp" as Accidental, label: "♯" },
-                { value: "flat" as Accidental, label: "♭" },
-              ]}
-              size="compact"
-            />
-          </View>
-
-          <View style={styles.row}>
-            <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-              {t("language")}
-            </Text>
-            <SegmentedToggle
-              theme={theme}
-              value={(i18n.language === "en" ? "en" : "ja") as "ja" | "en"}
-              onChange={(locale) => void changeLocale(locale)}
-              options={[
-                { value: "ja" as const, label: "JA" },
-                { value: "en" as const, label: "EN" },
-              ]}
-              size="compact"
-            />
-          </View>
-
-          {onLeftHandedChange && (
+    <BottomSheetModal visible={visible} onClose={() => setVisible(false)}>
+      {({ close, dragHandlers }) => (
+        <View style={[styles.panel, { backgroundColor: bgColor, borderColor: colors.border }]}>
+          {/* Rows content — paddingTop reserves space for the absolute glass header */}
+          <View style={{ paddingHorizontal: 20, paddingTop: headerHeight }}>
             <View style={styles.row}>
-              <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-                {t("leftHanded")}
-              </Text>
-              <SlideToggle value={leftHanded} onValueChange={onLeftHandedChange} isDark={isDark} />
+              <Text style={[styles.label, { color: colors.textSubtle }]}>{t("theme")}</Text>
+              <SegmentedToggle
+                theme={theme}
+                value={theme}
+                onChange={onThemeChange}
+                options={[
+                  { value: "dark" as Theme, label: t("dark") },
+                  { value: "light" as Theme, label: t("light") },
+                ]}
+                size="compact"
+              />
             </View>
-          )}
 
-          <View style={[styles.row, { borderBottomWidth: 0, paddingBottom: 4 }]}>
-            <Text style={[styles.label, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-              {t("settingsPanel.fretRange")}
-            </Text>
+            <View style={styles.row}>
+              <Text style={[styles.label, { color: colors.textSubtle }]}>{t("accidental")}</Text>
+              <SegmentedToggle
+                theme={theme}
+                value={accidental}
+                onChange={onAccidentalChange}
+                options={[
+                  { value: "sharp" as Accidental, label: "♯" },
+                  { value: "flat" as Accidental, label: "♭" },
+                ]}
+                size="compact"
+              />
+            </View>
+
+            <View style={styles.row}>
+              <Text style={[styles.label, { color: colors.textSubtle }]}>{t("language")}</Text>
+              <SegmentedToggle
+                theme={theme}
+                value={(i18n.language === "en" ? "en" : "ja") as "ja" | "en"}
+                onChange={(locale) => void changeLocale(locale)}
+                options={[
+                  { value: "ja" as const, label: "JA" },
+                  { value: "en" as const, label: "EN" },
+                ]}
+                size="compact"
+              />
+            </View>
+
+            {onLeftHandedChange && (
+              <View style={styles.row}>
+                <Text style={[styles.label, { color: colors.textSubtle }]}>{t("leftHanded")}</Text>
+                <SlideToggle
+                  value={leftHanded}
+                  onValueChange={onLeftHandedChange}
+                  isDark={isDark}
+                />
+              </View>
+            )}
+
+            <View style={[styles.row, { borderBottomWidth: 0, paddingBottom: 4 }]}>
+              <Text style={[styles.label, { color: colors.textSubtle }]}>
+                {t("settingsPanel.fretRange")}
+              </Text>
+            </View>
+            <View style={{ paddingTop: 4, paddingBottom: 16, paddingHorizontal: 4 }}>
+              <RangeSlider
+                value={fretRange}
+                min={0}
+                max={14}
+                onChange={onFretRangeChange}
+                isDark={isDark}
+              />
+            </View>
           </View>
-          <View style={{ paddingTop: 4, paddingBottom: 16, paddingHorizontal: 4 }}>
-            <RangeSlider
-              value={fretRange}
-              min={0}
-              max={14}
-              onChange={onFretRangeChange}
-              isDark={isDark}
-            />
-          </View>
+
+          {/* Absolute glass header — rows appear behind it */}
+          <SheetProgressiveHeader
+            isDark={isDark}
+            bgColor={bgColor}
+            onLayout={setHeaderHeight}
+            dragHandlers={dragHandlers}
+            style={styles.glassHeader}
+          >
+            <View style={styles.headerRow}>
+              <Text style={[styles.title, { color: colors.text }]}>{t("settings")}</Text>
+              <GlassIconButton isDark={isDark} onPress={close} label="✕" size={36} />
+            </View>
+          </SheetProgressiveHeader>
         </View>
-        {/* Absolute glass header — rows appear behind it */}
-        <SheetProgressiveHeader
-          isDark={isDark}
-          bgColor={bgColor}
-          onLayout={setHeaderHeight}
-          style={styles.glassHeader}
-        >
-          <View style={styles.headerRow}>
-            <Text style={[styles.title, { color: isDark ? "#fff" : "#1c1917" }]}>
-              {t("settings")}
-            </Text>
-            <TouchableOpacity onPress={close} activeOpacity={0.7}>
-              <Text style={{ fontSize: 20, color: isDark ? "#9ca3af" : "#78716c" }}>✕</Text>
-            </TouchableOpacity>
-          </View>
-        </SheetProgressiveHeader>
-      </Animated.View>
-    </Modal>
+      )}
+    </BottomSheetModal>
   );
 });
 
 export default SettingsModal;
 
 const styles = StyleSheet.create({
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.5)",
-  },
   panel: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderTopLeftRadius: radius.lg,
+    borderTopRightRadius: radius.lg,
     borderWidth: 1,
     overflow: "hidden",
     paddingBottom: 40,
@@ -196,7 +158,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 1,
-    paddingTop: 20,
+    paddingTop: SHEET_HANDLE_CLEARANCE,
   },
   headerRow: {
     flexDirection: "row",

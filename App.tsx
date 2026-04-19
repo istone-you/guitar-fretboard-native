@@ -94,8 +94,7 @@ function AppContent() {
   const { records, addRecord, clearRecords } = useQuizRecords();
 
   // Presets & progression templates (managed at app level, shared with ManagePane)
-  const { presets, savePreset, loadPreset, deletePreset, updatePreset, reorderPresets } =
-    useLayerPresets();
+  const { presets, savePreset, loadPreset, deletePreset } = useLayerPresets();
   const { customTemplates, saveTemplate, updateTemplate, deleteTemplate, reorderTemplates } =
     useProgressionTemplates();
   const allProgressionTemplates = useMemo(
@@ -353,6 +352,7 @@ function AppContent() {
     presets,
     onSavePreset: savePreset,
     loadPreset,
+    onDeletePreset: deletePreset,
     progressionTemplates: allProgressionTemplates,
   };
 
@@ -591,12 +591,6 @@ function AppContent() {
           accidental={accidental}
           fretRange={fretRange}
           leftHanded={leftHanded}
-          presets={presets}
-          onSavePreset={savePreset}
-          onUpdatePreset={updatePreset}
-          loadPreset={loadPreset}
-          onDeletePreset={deletePreset}
-          onReorderPresets={reorderPresets}
           customTemplates={customTemplates}
           onSaveTemplate={saveTemplate}
           onUpdateTemplate={updateTemplate}

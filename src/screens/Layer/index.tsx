@@ -37,6 +37,7 @@ export interface LayerPaneProps {
   presets: LayerPreset[];
   onSavePreset: (name: string, layers: LayerConfig[]) => void;
   loadPreset: (id: string) => LayerConfig[] | null;
+  onDeletePreset?: (id: string) => void;
   progressionTemplates?: ProgressionTemplate[];
   hidePresetButton?: boolean;
 }
@@ -69,6 +70,7 @@ export default function LayerPane({
   presets,
   onSavePreset,
   loadPreset,
+  onDeletePreset,
   progressionTemplates,
   hidePresetButton,
 }: LayerPaneProps) {
@@ -127,6 +129,7 @@ export default function LayerPane({
           presets={presets}
           onSavePreset={onSavePreset}
           loadPreset={loadPreset}
+          onDeletePreset={onDeletePreset}
           progressionTemplates={progressionTemplates}
         />
       </View>

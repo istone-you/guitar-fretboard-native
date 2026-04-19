@@ -1,7 +1,9 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import {
   Animated,
+  Easing,
   Keyboard,
+  PanResponder,
   View,
   Text,
   TextInput,
@@ -9,6 +11,7 @@ import {
   FlatList,
   StyleSheet,
   useWindowDimensions,
+  type PanResponderInstance,
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import Svg, { Path } from "react-native-svg";
@@ -30,6 +33,7 @@ interface LayerPresetModalProps {
   presets: LayerPreset[];
   onSave: (name: string, layers: LayerConfig[]) => void;
   onLoad: (id: string) => void;
+  onDelete: (id: string) => void;
   onClose: () => void;
   t: (key: string) => string;
 }
@@ -87,6 +91,46 @@ function getLayerSummary(layer: LayerConfig, t: (k: string) => string): string {
   }
 }
 
+function getRawLayerSummary(raw: Record<string, unknown>, t: (k: string) => string): string {
+  const type = raw.type as string;
+  switch (type) {
+    case "scale": {
+      const key = scaleTypeToKey((raw.scaleType as string) ?? "major");
+      try {
+        return t(`options.scale.${key}`);
+      } catch {
+        return (raw.scaleType as string) ?? "-";
+      }
+    }
+    case "chord": {
+      try {
+        const mode = t(`options.chordDisplayMode.${raw.chordDisplayMode}`);
+        if (raw.chordDisplayMode === "on-chord") return `${mode}: ${raw.onChordName ?? "-"}`;
+        if (raw.chordDisplayMode === "diatonic") return `${mode}: ${raw.diatonicDegree ?? "-"}`;
+        return `${mode}: ${raw.chordType ?? "-"}`;
+      } catch {
+        return (raw.chordType as string) ?? "-";
+      }
+    }
+    case "caged":
+      return (raw.cagedForms as string[] | undefined)?.join(", ") || "-";
+    case "custom": {
+      const notes =
+        raw.customMode === "note"
+          ? ((raw.selectedNotes as string[] | undefined) ?? [])
+          : ((raw.selectedDegrees as string[] | undefined) ?? []);
+      return notes.slice(0, 6).join(", ") || "-";
+    }
+    case "progression": {
+      const id = (raw.progressionTemplateId as string | undefined) ?? "251";
+      const tpl = PROGRESSION_TEMPLATES.find((tp) => tp.id === id);
+      return tpl ? templateDisplayName(tpl) : id;
+    }
+    default:
+      return "-";
+  }
+}
+
 function getTypeLabel(type: string, t: (k: string) => string): string {
   switch (type) {
     case "scale":
@@ -111,6 +155,7 @@ export default function LayerPresetModal({
   presets,
   onSave,
   onLoad,
+  onDelete,
   onClose,
   t,
 }: LayerPresetModalProps) {
@@ -118,8 +163,72 @@ export default function LayerPresetModal({
   const { width: winWidth, height: winHeight } = useWindowDimensions();
   const sheetHeight = Math.max(360, Math.min(520, Math.round(winHeight * 0.62)));
 
-  const [page, setPage] = useState<"list" | "save">("list");
+  const [page, setPage] = useState<"list" | "detail" | "save">("list");
   const [saveName, setSaveName] = useState("");
+  const [detailPresetId, setDetailPresetId] = useState<string | null>(null);
+
+  const flatListRef = useRef<FlatList>(null);
+  const swipeXRef = useRef(new Map<string, Animated.Value>());
+  const panResponderMapRef = useRef(new Map<string, PanResponderInstance>());
+
+  const getSwipeX = (id: string) => {
+    if (!swipeXRef.current.has(id)) {
+      swipeXRef.current.set(id, new Animated.Value(0));
+    }
+    return swipeXRef.current.get(id)!;
+  };
+
+  const getRowPanResponder = (presetId: string): PanResponderInstance => {
+    const existing = panResponderMapRef.current.get(presetId);
+    if (existing) return existing;
+    const responder = PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onPanResponderTerminationRequest: () => false,
+      onMoveShouldSetPanResponder: (_, gs) => {
+        const absX = Math.abs(gs.dx);
+        const absY = Math.abs(gs.dy);
+        if (absX > 5 && absX >= absY) {
+          flatListRef.current?.setNativeProps({ scrollEnabled: false });
+        }
+        return absX > 10 && absX > absY * 1.4;
+      },
+      onPanResponderMove: (_, gs) => {
+        getSwipeX(presetId).setValue(Math.min(0, gs.dx));
+      },
+      onPanResponderRelease: (_, gs) => {
+        flatListRef.current?.setNativeProps({ scrollEnabled: true });
+        const swipeX = getSwipeX(presetId);
+        const shouldDelete = gs.dx < -80 || (gs.vx < -0.5 && gs.dx < -40);
+        if (shouldDelete) {
+          Animated.timing(swipeX, {
+            toValue: -500,
+            duration: 200,
+            easing: Easing.in(Easing.ease),
+            useNativeDriver: true,
+          }).start(() => onDelete(presetId));
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        } else {
+          Animated.spring(swipeX, {
+            toValue: 0,
+            friction: 10,
+            tension: 200,
+            useNativeDriver: true,
+          }).start();
+        }
+      },
+      onPanResponderTerminate: () => {
+        flatListRef.current?.setNativeProps({ scrollEnabled: true });
+        Animated.spring(getSwipeX(presetId), {
+          toValue: 0,
+          friction: 10,
+          tension: 200,
+          useNativeDriver: true,
+        }).start();
+      },
+    });
+    panResponderMapRef.current.set(presetId, responder);
+    return responder;
+  };
 
   // Same slide animation pattern as LayerEditModal
   const slideAnim = useRef(new Animated.Value(0)).current;
@@ -131,6 +240,7 @@ export default function LayerPresetModal({
     prevVisible.current = true;
     setPage("list");
     setSaveName("");
+    setDetailPresetId(null);
     slideAnim.setValue(0);
   }
   if (!visible && prevVisible.current) {
@@ -152,6 +262,19 @@ export default function LayerPresetModal({
       }).start();
     }
   }, [page]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const goToDetail = (presetId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setDetailPresetId(presetId);
+    pendingEnterDir.current = 1;
+    setPage("detail");
+  };
+
+  const goBack = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    pendingEnterDir.current = -1;
+    setPage("list");
+  };
 
   const goToSave = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -206,15 +329,53 @@ export default function LayerPresetModal({
                   </Svg>
                 </GlassIconButton>
               </View>
+            ) : page === "detail" ? (
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <GlassIconButton
+                  isDark={isDark}
+                  onPress={goBack}
+                  label="‹"
+                  fontSize={22}
+                  size={36}
+                  style={styles.headerSide}
+                />
+                <View style={styles.headerCenter}>
+                  <Text style={[styles.title, { color: textPrimary }]} numberOfLines={1}>
+                    {presets.find((p) => p.id === detailPresetId)?.name ?? ""}
+                  </Text>
+                </View>
+                <GlassIconButton
+                  isDark={isDark}
+                  onPress={() => {
+                    if (!detailPresetId) return;
+                    const id = detailPresetId;
+                    close();
+                    requestAnimationFrame(() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                      onLoad(id);
+                    });
+                  }}
+                  size={36}
+                  style={styles.headerSide}
+                >
+                  <Svg width={14} height={14} viewBox="0 0 14 14" fill="none">
+                    <Path
+                      d="M7 13V3M3 7l4-4 4 4"
+                      stroke={iconColor}
+                      strokeWidth={1.8}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </Svg>
+                </GlassIconButton>
+              </View>
             ) : (
               <View style={{ flexDirection: "row", alignItems: "center" }}>
                 <GlassIconButton
                   isDark={isDark}
                   onPress={() => {
                     Keyboard.dismiss();
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    pendingEnterDir.current = -1;
-                    setPage("list");
+                    goBack();
                   }}
                   label="‹"
                   fontSize={22}
@@ -264,31 +425,91 @@ export default function LayerPresetModal({
                 </View>
               ) : (
                 <FlatList
+                  ref={flatListRef}
                   data={presets}
                   keyExtractor={(item) => item.id}
                   style={styles.list}
                   renderItem={({ item }) => (
-                    <View style={[styles.presetRow, { borderColor: border }]}>
-                      <TouchableOpacity
-                        style={styles.presetInfo}
-                        onPress={() => {
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                          close();
-                          requestAnimationFrame(() => onLoad(item.id));
-                        }}
-                        activeOpacity={0.6}
+                    <View style={styles.presetRowOuter}>
+                      <View style={styles.deleteBackground}>
+                        <View style={{ paddingRight: 20 }}>
+                          <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+                            <Path
+                              d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"
+                              stroke="white"
+                              strokeWidth={2}
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </Svg>
+                        </View>
+                      </View>
+                      <Animated.View
+                        style={[
+                          styles.presetRow,
+                          {
+                            backgroundColor: bg,
+                            borderColor: border,
+                            transform: [{ translateX: getSwipeX(item.id) }],
+                          },
+                        ]}
+                        {...getRowPanResponder(item.id).panHandlers}
                       >
-                        <Text style={[styles.presetName, { color: textPrimary }]} numberOfLines={1}>
-                          {item.name}
-                        </Text>
-                        <Text style={[styles.presetMeta, { color: textSecondary }]}>
-                          {item.layers.length} {t("layers.layerCount")}
-                        </Text>
-                      </TouchableOpacity>
+                        <TouchableOpacity
+                          style={styles.presetInfo}
+                          onPress={() => goToDetail(item.id)}
+                          activeOpacity={0.6}
+                        >
+                          <Text
+                            style={[styles.presetName, { color: textPrimary }]}
+                            numberOfLines={1}
+                          >
+                            {item.name}
+                          </Text>
+                          <Text style={[styles.presetMeta, { color: textSecondary }]}>
+                            {item.layers.length} {t("layers.layerCount")}
+                          </Text>
+                        </TouchableOpacity>
+                      </Animated.View>
                     </View>
                   )}
                 />
               )
+            ) : page === "detail" ? (
+              /* Detail page: layers in this preset */
+              <FlatList
+                data={presets.find((p) => p.id === detailPresetId)?.layers ?? []}
+                keyExtractor={(_, i) => String(i)}
+                style={styles.list}
+                contentContainerStyle={{ paddingVertical: 8 }}
+                renderItem={({ item: rawLayer }) => (
+                  <View
+                    style={[
+                      styles.layerRow,
+                      {
+                        borderColor: border,
+                        backgroundColor: isDark ? "#111827" : "#fafaf9",
+                      },
+                    ]}
+                  >
+                    <View
+                      style={[styles.colorDot, { backgroundColor: rawLayer.color as string }]}
+                    />
+                    <View style={{ flex: 1, gap: 2 }}>
+                      <View
+                        style={[styles.typeBadge, { borderColor: isDark ? "#374151" : "#d6d3d1" }]}
+                      >
+                        <Text style={[styles.typeLabel, { color: textSecondary }]}>
+                          {getTypeLabel(rawLayer.type as string, t)}
+                        </Text>
+                      </View>
+                      <Text style={[styles.layerSummary, { color: textPrimary }]} numberOfLines={1}>
+                        {getRawLayerSummary(rawLayer, t)}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+              />
             ) : (
               /* Save page: layer summary list */
               <FlatList
@@ -369,6 +590,15 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 14,
+  },
+  presetRowOuter: {
+    overflow: "hidden",
+  },
+  deleteBackground: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: "center",
+    alignItems: "flex-end",
+    backgroundColor: "#ff3b30",
   },
   presetRow: {
     flexDirection: "row",

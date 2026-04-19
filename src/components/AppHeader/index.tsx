@@ -5,6 +5,7 @@ import type { Theme } from "../../types";
 import SettingsModal, { type SettingsModalRef } from "./SettingsModal";
 import type { Accidental } from "../../types";
 import GlassIconButton from "../ui/GlassIconButton";
+import { getColors } from "../../themes/tokens";
 
 interface HeaderBarProps {
   theme: Theme;
@@ -32,10 +33,11 @@ export default function HeaderBar({
   onLeftHandedChange,
 }: HeaderBarProps) {
   const isDark = theme === "dark";
+  const colors = getColors(isDark);
   const settingsModalRef = useRef<SettingsModalRef>(null);
 
   return (
-    <View style={[styles.header, { backgroundColor: isDark ? "#000000" : "#ffffff" }]}>
+    <View style={[styles.header, { backgroundColor: colors.surface }]}>
       {onBack ? (
         <GlassIconButton
           isDark={isDark}
@@ -46,10 +48,7 @@ export default function HeaderBar({
         />
       ) : (
         title && (
-          <Text
-            style={[styles.pageTitle, { color: isDark ? "#f9fafb" : "#1c1917" }]}
-            numberOfLines={1}
-          >
+          <Text style={[styles.pageTitle, { color: colors.text }]} numberOfLines={1}>
             {title}
           </Text>
         )
@@ -65,7 +64,7 @@ export default function HeaderBar({
         <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
           <Path
             d="M12 15.5A3.5 3.5 0 1 0 12 8.5a3.5 3.5 0 0 0 0 7ZM19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"
-            stroke={isDark ? "#e5e7eb" : "#1c1917"}
+            stroke={colors.text}
             strokeWidth={1.5}
             strokeLinecap="round"
             strokeLinejoin="round"

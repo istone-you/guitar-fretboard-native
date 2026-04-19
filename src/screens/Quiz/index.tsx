@@ -5,6 +5,7 @@ import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 import "../../i18n";
 import type { Theme } from "../../types";
+import PillButton from "../../components/ui/PillButton";
 
 interface QuizKindOption {
   value: string;
@@ -78,7 +79,6 @@ function QuizSelectionScreen({ theme, onSelect, onShowStats }: QuizSelectionScre
   const cardBorder = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)";
   const titleColor = isDark ? "#f9fafb" : "#1c1917";
   const descColor = isDark ? "#8e8e93" : "#78716c";
-  const statsBg = isDark ? "#2c2c2e" : "#ffffff";
   const statsIcon = isDark ? "#8e8e93" : "#78716c";
 
   return (
@@ -90,19 +90,14 @@ function QuizSelectionScreen({ theme, onSelect, onShowStats }: QuizSelectionScre
       {/* Header row */}
       <View style={styles.titleRow}>
         {/* Stats pill button */}
-        <TouchableOpacity
-          onPress={onShowStats}
-          style={[styles.statsBtn, { backgroundColor: statsBg }]}
-          activeOpacity={0.7}
-          testID="quiz-stats-btn"
-        >
+        <PillButton isDark={isDark} onPress={onShowStats} testID="quiz-stats-btn">
           <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
             <Path d="M18 20V10" stroke={statsIcon} strokeWidth={2} strokeLinecap="round" />
             <Path d="M12 20V4" stroke={statsIcon} strokeWidth={2} strokeLinecap="round" />
             <Path d="M6 20v-6" stroke={statsIcon} strokeWidth={2} strokeLinecap="round" />
           </Svg>
           <Text style={[styles.statsBtnText, { color: statsIcon }]}>{t("quiz.stats")}</Text>
-        </TouchableOpacity>
+        </PillButton>
       </View>
 
       {/* Quiz cards — one per mode×type combination (9 total) */}
@@ -156,19 +151,6 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "700",
     letterSpacing: 0.2,
-  },
-  statsBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    paddingVertical: 7,
-    paddingHorizontal: 12,
-    borderRadius: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 3,
-    elevation: 1,
   },
   statsBtnText: {
     fontSize: 13,

@@ -17,6 +17,7 @@ import "../../i18n";
 import Svg, { Circle, Path } from "react-native-svg";
 import type { Theme, LayerConfig } from "../../types";
 import { MAX_LAYERS, pickNextLayerColor } from "../../types";
+import { getColors, radius } from "../../themes/tokens";
 import {
   PROGRESSION_TEMPLATES,
   resolveProgressionDegree,
@@ -33,7 +34,7 @@ import type { ProgressionTemplate } from "../../lib/fretboard";
 
 // Layout constants
 const ROW_GAP = 8;
-const ROW_RADIUS = 14;
+const ROW_RADIUS = radius.md;
 // Estimated slot height used as initial value for layout measurement
 const ROW_ESTIMATED_HEIGHT = 84;
 
@@ -285,6 +286,7 @@ interface LayerListProps {
   presets: LayerPreset[];
   onSavePreset: (name: string, layers: LayerConfig[]) => void;
   loadPreset: (id: string) => LayerConfig[] | null;
+  onDeletePreset?: (id: string) => void;
   progressionTemplates?: ProgressionTemplate[];
 }
 
@@ -313,10 +315,12 @@ export default function LayerList({
   presets,
   onSavePreset,
   loadPreset,
+  onDeletePreset,
   progressionTemplates,
 }: LayerListProps) {
   const { t } = useTranslation();
   const isDark = theme === "dark";
+  const colors = getColors(isDark);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editingLayer, setEditingLayer] = useState<LayerConfig | null>(null);
   const [contextMenuTarget, setContextMenuTarget] = useState<{
@@ -736,7 +740,7 @@ export default function LayerList({
   };
 
   const emptySlotCount = slots.filter((s) => s === null).length;
-  const dragHandleColor = isDark ? "#4b5563" : "#c4c4c6";
+  const dragHandleColor = colors.textSubtle;
 
   // ── Drag handle icon (shared between slot and floating panel) ──
   const dragHandleIcon = (
@@ -815,13 +819,8 @@ export default function LayerList({
                   style={[
                     styles.layerRow,
                     {
-                      backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)",
-                      borderColor:
-                        isHoverTarget && dragColor
-                          ? dragColor
-                          : isDark
-                            ? "rgba(255,255,255,0.06)"
-                            : "rgba(0,0,0,0.07)",
+                      backgroundColor: colors.surface2,
+                      borderColor: isHoverTarget && dragColor ? dragColor : colors.border,
                       shadowColor: isHoverTarget && dragColor ? dragColor : "transparent",
                       shadowOpacity: isHoverTarget ? 0.45 : 0,
                       shadowRadius: isHoverTarget ? 6 : 0,
@@ -840,7 +839,7 @@ export default function LayerList({
                         <Svg width={26} height={26} viewBox="0 0 26 26">
                           <Path
                             d="M9 13h8M13 9v8"
-                            stroke={isDark ? "#9ca3af" : "#8e8e93"}
+                            stroke={colors.textSubtle}
                             strokeWidth={2}
                             strokeLinecap="round"
                           />
@@ -884,13 +883,12 @@ export default function LayerList({
                       style={[
                         styles.layerRow,
                         {
-                          borderColor:
-                            isHoverTarget && dragColor ? dragColor : isDark ? "#374151" : "#e7e5e4",
+                          borderColor: isHoverTarget && dragColor ? dragColor : colors.border,
                           shadowColor: isHoverTarget && dragColor ? dragColor : "transparent",
                           shadowOpacity: isHoverTarget ? 0.45 : 0,
                           shadowRadius: isHoverTarget ? 6 : 0,
                           elevation: isHoverTarget ? 4 : 0,
-                          backgroundColor: isDark ? "#000000" : "#ffffff",
+                          backgroundColor: colors.surface,
                           transform: [{ translateX: getSwipeX(slot.id) }],
                         },
                       ]}
@@ -919,20 +917,13 @@ export default function LayerList({
                         activeOpacity={0.7}
                       >
                         <View style={styles.summaryArea}>
-                          <View
-                            style={[
-                              styles.typeBadge,
-                              { borderColor: isDark ? "#374151" : "#d6d3d1" },
-                            ]}
-                          >
-                            <Text
-                              style={[styles.layerType, { color: isDark ? "#9ca3af" : "#78716c" }]}
-                            >
+                          <View style={[styles.typeBadge, { borderColor: colors.border }]}>
+                            <Text style={[styles.layerType, { color: colors.textSubtle }]}>
                               {getTypeLabel(slot)}
                             </Text>
                           </View>
                           <Text
-                            style={[styles.layerSummary, { color: isDark ? "#e5e7eb" : "#1c1917" }]}
+                            style={[styles.layerSummary, { color: colors.text }]}
                             numberOfLines={1}
                           >
                             {getSummary(slot)}
@@ -941,7 +932,7 @@ export default function LayerList({
                                 style={{
                                   fontSize: 12,
                                   fontWeight: "500",
-                                  color: isDark ? "#9ca3af" : "#78716c",
+                                  color: colors.textSubtle,
                                 }}
                               >
                                 ({t("layers.displayEdited")})
@@ -952,7 +943,7 @@ export default function LayerList({
                             style={[
                               styles.layerNoteLabels,
                               {
-                                color: isDark ? "#9ca3af" : "#78716c",
+                                color: colors.textSubtle,
                                 transform: [{ scale: getLabelScale(slot.id) }],
                               },
                             ]}
@@ -1103,29 +1094,19 @@ export default function LayerList({
                       />
                       <View style={styles.summaryTouchable}>
                         <View style={styles.summaryArea}>
-                          <View
-                            style={[
-                              styles.typeBadge,
-                              { borderColor: isDark ? "#374151" : "#d6d3d1" },
-                            ]}
-                          >
-                            <Text
-                              style={[styles.layerType, { color: isDark ? "#9ca3af" : "#78716c" }]}
-                            >
+                          <View style={[styles.typeBadge, { borderColor: colors.border }]}>
+                            <Text style={[styles.layerType, { color: colors.textSubtle }]}>
                               {getTypeLabel(floatingLayer)}
                             </Text>
                           </View>
                           <Text
-                            style={[styles.layerSummary, { color: isDark ? "#e5e7eb" : "#1c1917" }]}
+                            style={[styles.layerSummary, { color: colors.text }]}
                             numberOfLines={1}
                           >
                             {getSummary(floatingLayer)}
                           </Text>
                           <Text
-                            style={[
-                              styles.layerNoteLabels,
-                              { color: isDark ? "#9ca3af" : "#78716c" },
-                            ]}
+                            style={[styles.layerNoteLabels, { color: colors.textSubtle }]}
                             numberOfLines={1}
                           >
                             {layerNoteLabels.get(floatingLayer.id)?.join("  ") || " "}
@@ -1200,6 +1181,7 @@ export default function LayerList({
           const loaded = loadPreset(id);
           if (loaded) onLoadPreset?.(loaded);
         }}
+        onDelete={(id) => onDeletePreset?.(id)}
         onClose={onPresetModalClose}
         t={t}
       />

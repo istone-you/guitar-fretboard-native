@@ -17,6 +17,8 @@ import BottomSheetModal, { SHEET_HANDLE_CLEARANCE } from "../ui/BottomSheetModal
 import SheetProgressiveHeader from "../ui/SheetProgressiveHeader";
 import Svg, { Path } from "react-native-svg";
 import { getNotesByAccidental } from "../../lib/fretboard";
+import { getColors, radius } from "../../themes/tokens";
+import PillButton, { getPillStyle } from "../ui/PillButton";
 
 interface FretboardControlsProps {
   theme: Theme;
@@ -58,7 +60,8 @@ export default function FretboardControls({
     }).start();
   }
 
-  const bgColor = isDark ? "#1a1a1a" : "#ffffff";
+  const colors = getColors(isDark);
+  const bgColor = colors.surface;
   const notes = getNotesByAccidental(accidental);
 
   return (
@@ -79,7 +82,7 @@ export default function FretboardControls({
 
       {/* Root note + Preset — right */}
       <View style={styles.right}>
-        {/* Root note pill — tap to open picker */}
+        {/* Root note pill — tap to open picker (Animated.View for bounce) */}
         <TouchableOpacity
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -87,44 +90,31 @@ export default function FretboardControls({
           }}
           activeOpacity={0.7}
         >
-          <Animated.View
-            style={[
-              styles.pill,
-              {
-                transform: [{ scale: rootScale }],
-                backgroundColor: isDark ? "#2c2c2e" : "#ffffff",
-              },
-            ]}
-          >
-            <Text style={[styles.pillLabel, { color: isDark ? "#9ca3af" : "#8e8e93" }]}>
-              {t("header.root")}
-            </Text>
-            <Text style={[styles.pillText, { color: isDark ? "#f2f2f7" : "#1c1917" }]}>
-              {rootNote}
-            </Text>
+          <Animated.View style={[getPillStyle(colors), { transform: [{ scale: rootScale }] }]}>
+            <Text style={[styles.pillLabel, { color: colors.textSubtle }]}>{t("header.root")}</Text>
+            <Text style={[styles.pillText, { color: colors.text }]}>{rootNote}</Text>
           </Animated.View>
         </TouchableOpacity>
 
         {/* Preset button */}
         {onPresetPress && (
-          <TouchableOpacity
+          <PillButton
+            isDark={isDark}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               onPresetPress();
             }}
-            style={[styles.pill, { backgroundColor: isDark ? "#2c2c2e" : "#ffffff" }]}
-            activeOpacity={0.7}
           >
             <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
               <Path
                 d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"
-                stroke={isDark ? "#9ca3af" : "#8e8e93"}
+                stroke={colors.textSubtle}
                 strokeWidth={2}
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
             </Svg>
-          </TouchableOpacity>
+          </PillButton>
         )}
       </View>
 
@@ -137,7 +127,7 @@ export default function FretboardControls({
               {
                 height: sheetHeight,
                 backgroundColor: bgColor,
-                borderColor: isDark ? "#374151" : "#e7e5e4",
+                borderColor: colors.border,
               },
             ]}
           >
@@ -156,7 +146,7 @@ export default function FretboardControls({
                   style={styles.headerLeft}
                 />
                 <View style={styles.headerCenter}>
-                  <Text style={[styles.sheetTitle, { color: isDark ? "#f9fafb" : "#1c1917" }]}>
+                  <Text style={[styles.sheetTitle, { color: colors.text }]}>
                     {t("header.root")}
                   </Text>
                 </View>
@@ -192,13 +182,7 @@ export default function FretboardControls({
                         style={[
                           styles.noteText,
                           {
-                            color: isSelected
-                              ? isDark
-                                ? "#1c1917"
-                                : "#ffffff"
-                              : isDark
-                                ? "#f9fafb"
-                                : "#1c1917",
+                            color: isSelected ? (isDark ? "#1c1917" : "#ffffff") : colors.text,
                             fontWeight: isSelected ? "700" : "500",
                           },
                         ]}
@@ -234,19 +218,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
   },
-  pill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    borderRadius: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
-  },
   pillLabel: {
     fontSize: 11,
     fontWeight: "500",
@@ -256,8 +227,8 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   sheet: {
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
     borderWidth: 1,
     paddingBottom: 32,
     overflow: "hidden",
@@ -293,7 +264,7 @@ const styles = StyleSheet.create({
     width: "22%",
   },
   notePill: {
-    borderRadius: 14,
+    borderRadius: radius.md,
     paddingVertical: 14,
     alignItems: "center",
     justifyContent: "center",
