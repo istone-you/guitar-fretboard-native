@@ -44,6 +44,8 @@ jest.mock("../../../lib/fretboard", () => ({
   getOnChordListForRoot: () => ["C/E", "C/G"],
   getRootIndex: () => 0,
   resolveProgressionDegree: () => ({ rootIndex: 0, chordType: "Major" }),
+  diatonicDegreeLabel: (d: string) => d,
+  templateDisplayName: (t: { name: string }) => t.name,
 }));
 
 const defaultProps = {

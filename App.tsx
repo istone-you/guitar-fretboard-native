@@ -15,7 +15,7 @@ import { useQuizViewModel } from "./src/hooks/useQuizViewModel";
 import { useLayers } from "./src/hooks/useLayers";
 import { useOrientation } from "./src/hooks/useOrientation";
 import { useQuizNavigation } from "./src/hooks/useQuizNavigation";
-import { getNotesByAccidental, getRootIndex } from "./src/lib/fretboard";
+import { getNotesByAccidental, getRootIndex, PROGRESSION_TEMPLATES } from "./src/lib/fretboard";
 import type { Theme, Accidental, BaseLabelMode, ScaleType } from "./src/types";
 import { createDefaultLayer } from "./src/types";
 import LayerPane from "./src/screens/Layer";
@@ -23,7 +23,10 @@ import QuizPane from "./src/screens/Quiz";
 import QuizActivePracticePane from "./src/screens/Quiz/Active";
 import StatsPane from "./src/screens/Quiz/Stats";
 import FinderPane from "./src/screens/Finder";
+import ManagePane from "./src/screens/Manage";
 import { useQuizRecords } from "./src/hooks/useQuizRecords";
+import { useLayerPresets } from "./src/hooks/useLayerPresets";
+import { useProgressionTemplates } from "./src/hooks/useProgressionTemplates";
 
 const STORAGE_KEYS = {
   theme: "guiter:theme",
@@ -75,6 +78,7 @@ function AppContent() {
     (v) => v === "true",
   );
   const [showFinder, setShowFinder] = useState(false);
+  const [showManage, setShowManage] = useState(false);
   const [showStats, setShowStats] = useState(false);
   const [currentTabIndex, setCurrentTabIndex] = useState(0);
   const statsSlideAnim = useRef(new Animated.Value(0)).current;
@@ -88,6 +92,19 @@ function AppContent() {
   );
   const [scaleType, setScaleType] = useState<ScaleType>("major");
   const { records, addRecord, clearRecords } = useQuizRecords();
+
+  // Presets & progression templates (managed at app level, shared with ManagePane)
+  const { presets, savePreset, loadPreset, deletePreset, updatePreset, reorderPresets } =
+    useLayerPresets();
+  const { customTemplates, saveTemplate, updateTemplate, deleteTemplate, reorderTemplates } =
+    useProgressionTemplates();
+  const allProgressionTemplates = useMemo(
+    () => [
+      ...PROGRESSION_TEMPLATES,
+      ...customTemplates.map((ct) => ({ id: ct.id, name: ct.name, degrees: ct.degrees })),
+    ],
+    [customTemplates],
+  );
 
   // Layout
   const { isLandscape, toggleLayout, animDisabled, winWidth, winHeight } = useOrientation();
@@ -190,6 +207,7 @@ function AppContent() {
       accidental,
       rootNote,
       baseLabelMode,
+      progressionTemplates: allProgressionTemplates,
     });
 
   const { quizKindOptions, handleQuizKindDropdownChange } = useQuizViewModel({
@@ -332,11 +350,15 @@ function AppContent() {
     onLoadPreset: handleLoadPreset,
     onRootNoteChange: handleNoteClick,
     onBaseLabelModeChange: setBaseLabelMode,
+    presets,
+    onSavePreset: savePreset,
+    loadPreset,
+    progressionTemplates: allProgressionTemplates,
   };
 
   // ── Tab navigation ─────────────────────────────────────────────
-  // Derive tab index from existing state (0=layer, 1=finder, 2=quiz)
-  const tabIndex = showFinder ? 1 : showQuiz ? 2 : 0;
+  // Derive tab index from existing state (0=layer, 1=finder, 2=quiz, 3=manage)
+  const tabIndex = showFinder ? 1 : showQuiz ? 2 : showManage ? 3 : 0;
 
   const routes = useMemo(
     () => [
@@ -358,6 +380,12 @@ function AppContent() {
         focusedIcon: { sfSymbol: "questionmark.circle.fill" } as const,
         unfocusedIcon: { sfSymbol: "questionmark.circle" } as const,
       },
+      {
+        key: "manage",
+        title: t("tabs.manage"),
+        focusedIcon: { sfSymbol: "tray.full.fill" } as const,
+        unfocusedIcon: { sfSymbol: "tray.full" } as const,
+      },
     ],
     [t],
   );
@@ -367,25 +395,35 @@ function AppContent() {
       setCurrentTabIndex(index);
       if (index === 0) {
         setShowFinder(false);
+        setShowManage(false);
         setShowStats(false);
         handleShowQuizChange(false);
         setShowQuiz(false);
       } else if (index === 1) {
         setShowFinder(true);
+        setShowManage(false);
         setShowStats(false);
         handleShowQuizChange(false);
         setShowQuiz(false);
       } else if (index === 2) {
         if (showQuiz) return;
         setShowFinder(false);
+        setShowManage(false);
         setShowStats(false);
         setShowQuiz(true);
         setQuizModeSelected(false);
+      } else if (index === 3) {
+        setShowFinder(false);
+        setShowManage(true);
+        setShowStats(false);
+        handleShowQuizChange(false);
+        setShowQuiz(false);
       }
     },
     [
       showQuiz,
       setShowFinder,
+      setShowManage,
       setShowQuiz,
       setQuizModeSelected,
       handleShowQuizChange,
@@ -545,6 +583,28 @@ function AppContent() {
         </View>
       );
     }
+    if (route.key === "manage") {
+      return (
+        <ManagePane
+          theme={theme}
+          rootNote={rootNote}
+          accidental={accidental}
+          fretRange={fretRange}
+          leftHanded={leftHanded}
+          presets={presets}
+          onSavePreset={savePreset}
+          onUpdatePreset={updatePreset}
+          loadPreset={loadPreset}
+          onDeletePreset={deletePreset}
+          onReorderPresets={reorderPresets}
+          customTemplates={customTemplates}
+          onSaveTemplate={saveTemplate}
+          onUpdateTemplate={updateTemplate}
+          onDeleteTemplate={deleteTemplate}
+          onReorderTemplates={reorderTemplates}
+        />
+      );
+    }
     return null;
   };
 
@@ -571,7 +631,9 @@ function AppContent() {
                 ? t("tabs.finder")
                 : currentTabIndex === 2
                   ? t("tabs.quiz")
-                  : t("tabs.layer")
+                  : currentTabIndex === 3
+                    ? t("tabs.manage")
+                    : t("tabs.layer")
           }
           accidental={accidental}
           onBack={

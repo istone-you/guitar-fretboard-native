@@ -2427,15 +2427,75 @@ export interface ProgressionTemplate {
   degrees: string[];
 }
 
+/**
+ * ダイアトニック度数の内部値 → 表示ラベル変換。
+ * chordSize を渡すと 4和音ラベル（maj7, m7, V7 等）になる。
+ */
+export function diatonicDegreeLabel(
+  degree: string,
+  context?: { chordSize?: "triad" | "seventh"; keyType?: "major" | "minor" },
+): string {
+  const size = context?.chordSize ?? "triad";
+  const key = context?.keyType ?? (degree === degree.toLowerCase() ? "minor" : "major");
+  const scaleKey = `${key === "minor" ? "natural-minor" : "major"}-${size}`;
+
+  const MAPS: Record<string, Record<string, string>> = {
+    "major-triad": {
+      I: "I",
+      ii: "IIm",
+      iii: "IIIm",
+      IV: "IV",
+      V: "V",
+      vi: "VIm",
+      vii: "VIIm(-5)",
+    },
+    "major-seventh": {
+      I: "Imaj7",
+      ii: "IIm7",
+      iii: "IIIm7",
+      IV: "IVmaj7",
+      V: "V7",
+      vi: "VIm7",
+      vii: "VIIm7(-5)",
+    },
+    "natural-minor-triad": {
+      i: "Im",
+      ii: "IIm(-5)",
+      III: "♭III",
+      iv: "IVm",
+      v: "Vm",
+      VI: "♭VI",
+      VII: "♭VII",
+    },
+    "natural-minor-seventh": {
+      i: "Im7",
+      ii: "IIm7(-5)",
+      III: "♭IIImaj7",
+      iv: "IVm7",
+      v: "Vm7",
+      VI: "♭VImaj7",
+      VII: "♭VII7",
+    },
+  };
+  return MAPS[scaleKey]?.[degree] ?? degree;
+}
+
+/**
+ * ProgressionTemplate の表示名を返す。
+ * - ビルトイン: 度数から自動生成（例: ["ii","V","I"] → "IIm-V-I"）
+ * - "blues" のみ例外で name をそのまま使用
+ * - "tpl-" 始まりのカスタムテンプレートは name をそのまま使用
+ */
+export function templateDisplayName(template: ProgressionTemplate): string {
+  if (template.id.startsWith("tpl-") || template.id === "blues") return template.name;
+  return template.degrees.map((d) => diatonicDegreeLabel(d)).join("-");
+}
+
 export const PROGRESSION_TEMPLATES: ProgressionTemplate[] = [
   { id: "145", name: "I-IV-V", degrees: ["I", "IV", "V"] },
   { id: "251", name: "ii-V-I", degrees: ["ii", "V", "I"] },
   { id: "1625", name: "I-vi-ii-V", degrees: ["I", "vi", "ii", "V"] },
-  { id: "1645", name: "I-VI-IV-V", degrees: ["I", "VI", "IV", "V"] },
   { id: "pop", name: "I-V-vi-IV", degrees: ["I", "V", "vi", "IV"] },
-  { id: "3625", name: "iii-VI-ii-V", degrees: ["iii", "VI", "ii", "V"] },
-  { id: "1341m", name: "I-III-IV-iv", degrees: ["I", "III", "IV", "iv"] },
-  { id: "minor251", name: "minor ii-V-i", degrees: ["ii", "V", "i"] },
   { id: "andalusian", name: "i-VII-VI-VII", degrees: ["i", "VII", "VI", "VII"] },
   {
     id: "blues",

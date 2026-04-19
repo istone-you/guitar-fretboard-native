@@ -24,6 +24,7 @@ import {
   PROGRESSION_TEMPLATES,
   resolveProgressionDegree,
   type FretCell,
+  type ProgressionTemplate,
 } from "../../../lib/fretboard";
 
 function hexToRgba(hex: string, alpha: number): string {
@@ -302,6 +303,7 @@ export interface FretboardProps {
   disableAnimation?: boolean;
   leftHanded?: boolean;
   onNoteLongPress?: (noteName: string) => void;
+  progressionTemplates?: ProgressionTemplate[];
 }
 
 export default function Fretboard({
@@ -327,7 +329,9 @@ export default function Fretboard({
   disableAnimation = false,
   leftHanded = false,
   onNoteLongPress,
+  progressionTemplates,
 }: FretboardProps) {
+  const allProgressionTemplates = progressionTemplates ?? PROGRESSION_TEMPLATES;
   const [fretMin, fretMax] = fretRange;
   const quizActive = quizModeActive && quizCell !== undefined;
 
@@ -422,7 +426,7 @@ export default function Fretboard({
           }
         }
       } else if (layer.type === "progression") {
-        const template = PROGRESSION_TEMPLATES.find(
+        const template = allProgressionTemplates.find(
           (t) => t.id === (layer.progressionTemplateId ?? "251"),
         );
         if (!template) return;
@@ -567,7 +571,7 @@ export default function Fretboard({
       let effRootIndex = ri;
       let effChordType = layer.chordType;
       if (layer.type === "progression") {
-        const template = PROGRESSION_TEMPLATES.find(
+        const template = allProgressionTemplates.find(
           (t) => t.id === (layer.progressionTemplateId ?? "251"),
         );
         if (!template) continue;

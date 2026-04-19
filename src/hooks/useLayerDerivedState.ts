@@ -13,6 +13,7 @@ import {
   getRootIndex,
   parseOnChord,
   resolveProgressionDegree,
+  type ProgressionTemplate,
 } from "../lib/fretboard";
 
 const normalizeDegreeLabel = (label: string) => label.replace("♭", "b").replace("♯", "#");
@@ -23,6 +24,7 @@ interface Params {
   accidental: Accidental;
   rootNote: string;
   baseLabelMode: BaseLabelMode;
+  progressionTemplates?: ProgressionTemplate[];
 }
 
 export function useLayerDerivedState({
@@ -31,7 +33,9 @@ export function useLayerDerivedState({
   accidental,
   rootNote,
   baseLabelMode,
+  progressionTemplates,
 }: Params) {
+  const allProgressionTemplates = progressionTemplates ?? PROGRESSION_TEMPLATES;
   const effectiveLayers = useMemo(() => {
     if (!previewLayer) return layers;
     const existing = layers.find((l) => l.id === previewLayer.id);
@@ -60,7 +64,7 @@ export function useLayerDerivedState({
         continue;
       }
       if (layer.type === "progression") {
-        const template = PROGRESSION_TEMPLATES.find(
+        const template = allProgressionTemplates.find(
           (tp) => tp.id === (layer.progressionTemplateId ?? "251"),
         );
         if (!template) continue;
@@ -153,7 +157,7 @@ export function useLayerDerivedState({
           }
         }
       } else if (l.type === "progression") {
-        const template = PROGRESSION_TEMPLATES.find(
+        const template = allProgressionTemplates.find(
           (tp) => tp.id === (l.progressionTemplateId ?? "251"),
         );
         if (template) {

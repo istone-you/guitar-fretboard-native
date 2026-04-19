@@ -80,5 +80,24 @@ export function useLayerPresets() {
     persist(presets.map((p) => (p.id === id ? { ...p, name } : p)));
   };
 
-  return { presets, savePreset, loadPreset, deletePreset, renamePreset };
+  const updatePreset = (id: string, name: string, layers: LayerConfig[]) => {
+    persist(
+      presets.map((p) => (p.id === id ? { ...p, name, layers: layers.map(serializeLayer) } : p)),
+    );
+  };
+
+  const reorderPresets = (orderedIds: string[]) => {
+    const map = new Map(presets.map((p) => [p.id, p]));
+    persist(orderedIds.map((id) => map.get(id)!).filter(Boolean));
+  };
+
+  return {
+    presets,
+    savePreset,
+    loadPreset,
+    deletePreset,
+    renamePreset,
+    updatePreset,
+    reorderPresets,
+  };
 }

@@ -1,10 +1,12 @@
+import type { ReactNode } from "react";
 import { Text, TouchableOpacity, type StyleProp, type ViewStyle } from "react-native";
 import { GlassView } from "expo-glass-effect";
 
 interface GlassIconButtonProps {
   isDark: boolean;
   onPress: () => void;
-  label: string;
+  label?: string;
+  children?: ReactNode;
   fontSize?: number;
   /** Visual diameter of the glass circle. Default: 44 */
   size?: number;
@@ -18,6 +20,7 @@ export default function GlassIconButton({
   isDark,
   onPress,
   label,
+  children,
   fontSize,
   size = 44,
   testID,
@@ -47,16 +50,18 @@ export default function GlassIconButton({
         glassEffectStyle="regular"
         colorScheme={isDark ? "dark" : "light"}
       >
-        <Text
-          style={{
-            fontSize: resolvedFontSize,
-            fontWeight: "700",
-            color: isDark ? "rgba(255,255,255,0.85)" : "rgba(0,0,0,0.5)",
-            lineHeight: resolvedFontSize + 2,
-          }}
-        >
-          {label}
-        </Text>
+        {children ?? (
+          <Text
+            style={{
+              fontSize: resolvedFontSize,
+              fontWeight: "700",
+              color: isDark ? "rgba(255,255,255,0.85)" : "rgba(0,0,0,0.5)",
+              lineHeight: resolvedFontSize + 2,
+            }}
+          >
+            {label}
+          </Text>
+        )}
       </GlassView>
     </TouchableOpacity>
   );

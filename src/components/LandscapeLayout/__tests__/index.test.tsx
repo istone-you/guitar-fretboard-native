@@ -69,6 +69,9 @@ const defaultProps = {
   onLoadPreset: jest.fn(),
   onRootNoteChange: jest.fn(),
   onBaseLabelModeChange: jest.fn(),
+  presets: [],
+  onSavePreset: jest.fn(),
+  loadPreset: jest.fn(),
 };
 
 describe("LandscapeLayout", () => {

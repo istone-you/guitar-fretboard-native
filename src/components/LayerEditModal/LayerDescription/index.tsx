@@ -2,7 +2,11 @@ import { View, Text, StyleSheet } from "react-native";
 import { useTranslation } from "react-i18next";
 import "../../../i18n";
 import type { Theme, LayerConfig } from "../../../types";
-import { PROGRESSION_TEMPLATES } from "../../../lib/fretboard";
+import {
+  PROGRESSION_TEMPLATES,
+  templateDisplayName,
+  type ProgressionTemplate,
+} from "../../../lib/fretboard";
 
 /** Map ChordType values that contain special characters to safe i18n keys */
 const CHORD_KEY_MAP: Record<string, string> = {
@@ -23,9 +27,15 @@ interface LayerDescriptionProps {
   layer: LayerConfig;
   /** Show only the item-specific description (scale/chord), omitting the layer-type description */
   itemOnly?: boolean;
+  progressionTemplates?: ProgressionTemplate[];
 }
 
-export default function LayerDescription({ theme, layer, itemOnly }: LayerDescriptionProps) {
+export default function LayerDescription({
+  theme,
+  layer,
+  itemOnly,
+  progressionTemplates,
+}: LayerDescriptionProps) {
   const { t } = useTranslation();
   const isDark = theme === "dark";
   const textColor = isDark ? "#d1d5db" : "#44403c";
@@ -76,9 +86,12 @@ export default function LayerDescription({ theme, layer, itemOnly }: LayerDescri
             {layer.type === "scale"
               ? t(`options.scale.${scaleI18nKey(layer.scaleType)}`)
               : layer.type === "progression"
-                ? (PROGRESSION_TEMPLATES.find(
-                    (tp) => tp.id === (layer.progressionTemplateId ?? "251"),
-                  )?.name ?? "")
+                ? (() => {
+                    const tp = (progressionTemplates ?? PROGRESSION_TEMPLATES).find(
+                      (t_) => t_.id === (layer.progressionTemplateId ?? "251"),
+                    );
+                    return tp ? templateDisplayName(tp) : "";
+                  })()
                 : layer.chordType}
           </Text>
           <Text style={[styles.text, { color: textColor }]}>{itemDesc}</Text>

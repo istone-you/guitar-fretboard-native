@@ -45,13 +45,22 @@ import {
   getNotesByAccidental,
   getOnChordListForRoot,
   getRootIndex,
+  diatonicDegreeLabel,
+  templateDisplayName,
+  type ProgressionTemplate,
 } from "../../lib/fretboard";
 
 const CHORD_TYPES = CHORD_TYPES_CORE;
 
+interface SelectOption {
+  value: string;
+  label: string;
+  isSection?: boolean; // non-selectable section header
+}
+
 interface SelectContext {
   title: string;
-  options: { value: string; label: string }[];
+  options: SelectOption[];
   currentValue: string;
   onSelect: (v: string) => void;
   hideBack?: boolean; // type selection: no back button (type is topmost page)
@@ -124,6 +133,7 @@ interface LayerEditModalProps {
   onClose: () => void;
   onSave: (layer: LayerConfig) => void;
   onPreview?: (layer: LayerConfig) => void;
+  progressionTemplates?: ProgressionTemplate[];
 }
 
 export default function LayerEditModal({
@@ -136,6 +146,7 @@ export default function LayerEditModal({
   onClose,
   onSave,
   onPreview,
+  progressionTemplates,
 }: LayerEditModalProps) {
   const { t } = useTranslation();
   const isDark = theme === "dark";
@@ -276,11 +287,22 @@ export default function LayerEditModal({
   }));
   const sheetHeight = Math.max(360, Math.min(520, Math.round(winHeight * 0.62)));
 
-  // Progression options
-  const progressionTemplateOptions = PROGRESSION_TEMPLATES.map((t_) => ({
-    value: t_.id,
-    label: t_.name,
-  }));
+  // Progression options — ビルトインとカスタムをセクション分けして表示
+  const progressionTemplateOptions: SelectOption[] = (() => {
+    const builtins = PROGRESSION_TEMPLATES.map((t_) => ({
+      value: t_.id,
+      label: templateDisplayName(t_),
+    }));
+    const customs = (progressionTemplates ?? [])
+      .filter((t_) => t_.id.startsWith("tpl-"))
+      .map((t_) => ({ value: t_.id, label: t_.name }));
+    const result: SelectOption[] = [];
+    if (customs.length > 0) {
+      result.push({ value: "__custom__", label: t("manage.custom"), isSection: true }, ...customs);
+    }
+    result.push({ value: "__builtin__", label: t("manage.builtIn"), isSection: true }, ...builtins);
+    return result;
+  })();
   const progressionKeyTypeOptions = [
     { value: "major", label: t("options.diatonicKey.major") },
     { value: "minor", label: t("options.diatonicKey.naturalMinor") },
@@ -296,7 +318,7 @@ export default function LayerEditModal({
     const chord = getDiatonicChord(rootIndex, diatonicScaleType, value);
     return {
       value,
-      label: `${value} (${notes[chord.rootIndex]}${chordSuffix(chord.chordType)})`,
+      label: `${diatonicDegreeLabel(value, { chordSize: layer.diatonicChordSize as "triad" | "seventh", keyType: layer.diatonicKeyType === "natural-minor" ? "minor" : "major" })} (${notes[chord.rootIndex]}${chordSuffix(chord.chordType)})`,
     };
   });
 
@@ -305,6 +327,7 @@ export default function LayerEditModal({
   const labelColor = isDark ? "#e5e7eb" : "#1c1917";
   const valueColor = isDark ? "#9ca3af" : "#78716c";
   const chevronColor = isDark ? "#6b7280" : "#a8a29e";
+  const secondaryLabelColor = isDark ? "#6b7280" : "#a8a29e";
 
   // iOS-style nav row (label + value + chevron)
   const renderNavRow = (label: string, value: string, onPress: () => void, isLast = false) => (
@@ -462,8 +485,24 @@ export default function LayerEditModal({
                                       title: t("controls.displayMode"),
                                       options: chordDisplayOptions,
                                       currentValue: layer.chordDisplayMode,
-                                      onSelect: (v) =>
-                                        update({ chordDisplayMode: v as ChordDisplayMode }),
+                                      onSelect: (v) => {
+                                        const newMode = v as ChordDisplayMode;
+                                        const patch: Partial<LayerConfig> = {
+                                          chordDisplayMode: newMode,
+                                        };
+                                        if (newMode === "triad") {
+                                          const triadTypes = [
+                                            "Major",
+                                            "Minor",
+                                            "Diminished",
+                                            "Augmented",
+                                          ];
+                                          if (!triadTypes.includes(layer.chordType)) {
+                                            patch.chordType = "Major";
+                                          }
+                                        }
+                                        update(patch);
+                                      },
                                     }),
                                 )}
                                 {layer.chordDisplayMode !== "on-chord" &&
@@ -472,7 +511,13 @@ export default function LayerEditModal({
                                       ? t("controls.degree")
                                       : t("controls.chord"),
                                     layer.chordDisplayMode === "diatonic"
-                                      ? layer.diatonicDegree
+                                      ? diatonicDegreeLabel(layer.diatonicDegree, {
+                                          chordSize: layer.diatonicChordSize as "triad" | "seventh",
+                                          keyType:
+                                            layer.diatonicKeyType === "natural-minor"
+                                              ? "minor"
+                                              : "major",
+                                        })
                                       : layer.chordType,
                                     () => {
                                       const opts =
@@ -541,10 +586,23 @@ export default function LayerEditModal({
                                         currentValue: isDiatonic
                                           ? layer.diatonicKeyType
                                           : layer.triadInversion,
-                                        onSelect: (v) =>
-                                          isDiatonic
-                                            ? update({ diatonicKeyType: v })
-                                            : update({ triadInversion: v }),
+                                        onSelect: (v) => {
+                                          if (!isDiatonic) {
+                                            update({ triadInversion: v });
+                                            return;
+                                          }
+                                          const patch: Partial<LayerConfig> = {
+                                            diatonicKeyType: v,
+                                          };
+                                          const scaleKey = `${v}-${layer.diatonicChordSize}`;
+                                          const validDegrees = (
+                                            DIATONIC_CHORDS[scaleKey] ?? []
+                                          ).map((item) => item.value);
+                                          if (!validDegrees.includes(layer.diatonicDegree)) {
+                                            patch.diatonicDegree = validDegrees[0] ?? "I";
+                                          }
+                                          update(patch);
+                                        },
                                       });
                                     },
                                     layer.chordDisplayMode !== "diatonic",
@@ -558,7 +616,19 @@ export default function LayerEditModal({
                                         title: t("controls.chordType"),
                                         options: diatonicChordSizeOptions,
                                         currentValue: layer.diatonicChordSize,
-                                        onSelect: (v) => update({ diatonicChordSize: v }),
+                                        onSelect: (v) => {
+                                          const patch: Partial<LayerConfig> = {
+                                            diatonicChordSize: v,
+                                          };
+                                          const scaleKey = `${layer.diatonicKeyType}-${v}`;
+                                          const validDegrees = (
+                                            DIATONIC_CHORDS[scaleKey] ?? []
+                                          ).map((item) => item.value);
+                                          if (!validDegrees.includes(layer.diatonicDegree)) {
+                                            patch.diatonicDegree = validDegrees[0] ?? "I";
+                                          }
+                                          update(patch);
+                                        },
                                       }),
                                     true,
                                   )}
@@ -770,7 +840,11 @@ export default function LayerEditModal({
 
                         {/* Description — always visible at bottom */}
                         <View style={{ paddingTop: 8, paddingBottom: 4 }}>
-                          <LayerDescription theme={theme} layer={layer} />
+                          <LayerDescription
+                            theme={theme}
+                            layer={layer}
+                            progressionTemplates={progressionTemplates}
+                          />
                         </View>
                       </View>
                     </ScrollView>
@@ -1148,15 +1222,32 @@ export default function LayerEditModal({
                       indicatorStyle={isDark ? "white" : "black"}
                       renderItem={({ item, index }) => {
                         const ctx = selectContextRef.current!;
+                        if (item.isSection) {
+                          return (
+                            <Text
+                              style={{
+                                fontSize: 11,
+                                fontWeight: "700",
+                                letterSpacing: 0.7,
+                                textTransform: "uppercase",
+                                color: secondaryLabelColor,
+                                paddingTop: index === 0 ? 0 : 16,
+                                paddingBottom: 6,
+                              }}
+                            >
+                              {item.label}
+                            </Text>
+                          );
+                        }
                         const isSelected = item.value === ctx.currentValue;
-                        const isLast = index === ctx.options.length - 1;
+                        const nextItem = ctx.options[index + 1];
+                        const isLast = !nextItem || nextItem.isSection;
                         return (
                           <TouchableOpacity
                             onPress={() => {
                               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                               ctx.onSelect(item.value);
                               ctx.currentValue = item.value;
-                              // type select is parent → going to settings is forward
                               if (ctx.hideBack) {
                                 navigate("settings");
                               } else if (ctx.backStep) {
@@ -1180,7 +1271,7 @@ export default function LayerEditModal({
                               style={[
                                 styles.selectRowLabel,
                                 {
-                                  color: isSelected ? labelColor : labelColor,
+                                  color: labelColor,
                                   fontWeight: isSelected ? "600" : "400",
                                 },
                               ]}

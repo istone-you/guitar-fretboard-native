@@ -2,7 +2,8 @@
   "tabs": {
     "layer": "レイヤー",
     "finder": "Finder",
-    "quiz": "クイズ"
+    "quiz": "クイズ",
+    "manage": "管理"
   },
   "mode": {
     "normal": "通常",
@@ -227,6 +228,24 @@
       "Augmented": "長3度を2つ重ねた緊張感のあるトライアド。\n構成: R, M3, #5",
       "5": "ルートと5度の2音だけで構成されるシンプルなコード。パワーコードとも呼ばれ、ロックやパンクで多用される力強い響きです。\n構成: R, P5"
     }
+  },
+  "manage": {
+    "builtIn": "ビルトイン",
+    "custom": "カスタム",
+    "presets": "レイヤープリセット",
+    "progressionTemplates": "コード進行テンプレート",
+    "noPresets": "プリセットなし",
+    "noTemplates": "テンプレートなし",
+    "templateName": "テンプレート名を入力",
+    "presetNameInput": "プリセット名を入力",
+    "save": "保存",
+    "update": "更新",
+    "addTemplate": "テンプレートを追加",
+    "editTemplate": "テンプレートを編集",
+    "presetDetail": "プリセット詳細",
+    "layers": "レイヤー",
+    "degrees": "度数",
+    "progression": "進行"
   },
   "finder": {
     "longPressInstruction": "指板を長押ししてルート音を選択",

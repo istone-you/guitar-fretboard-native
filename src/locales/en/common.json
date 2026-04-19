@@ -2,7 +2,8 @@
   "tabs": {
     "layer": "Layer",
     "finder": "Finder",
-    "quiz": "Quiz"
+    "quiz": "Quiz",
+    "manage": "Manage"
   },
   "mode": {
     "normal": "Normal",
@@ -227,6 +228,24 @@
       "Augmented": "A triad built from two stacked major 3rds. Tense.\nFormula: R, M3, #5",
       "5": "A two-note chord using only the root and 5th. Also known as a power chord, it's widely used in rock and punk for its simple, powerful sound.\nFormula: R, P5"
     }
+  },
+  "manage": {
+    "builtIn": "Built-in",
+    "custom": "Custom",
+    "presets": "Layer Presets",
+    "progressionTemplates": "Progression Templates",
+    "noPresets": "No presets",
+    "noTemplates": "No templates",
+    "templateName": "Enter template name",
+    "presetNameInput": "Enter preset name",
+    "save": "Save",
+    "update": "Update",
+    "addTemplate": "Add Template",
+    "editTemplate": "Edit Template",
+    "presetDetail": "Preset Detail",
+    "layers": "layers",
+    "degrees": "Degrees",
+    "progression": "Progression"
   },
   "finder": {
     "longPressInstruction": "Long press the fretboard to set root note",

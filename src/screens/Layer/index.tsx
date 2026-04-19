@@ -5,6 +5,8 @@ import NormalFretboard from "../../components/NormalFretboard";
 import PracticePane from "../../components/ui/PracticePane";
 import FretboardControls from "../../components/FretboardControls";
 import type { Accidental, BaseLabelMode, LayerConfig, Theme } from "../../types";
+import type { LayerPreset } from "../../hooks/useLayerPresets";
+import type { ProgressionTemplate } from "../../lib/fretboard";
 
 export interface LayerPaneProps {
   isLandscape: boolean;
@@ -32,6 +34,11 @@ export interface LayerPaneProps {
   onLoadPreset: (layers: LayerConfig[]) => void;
   onRootNoteChange: (note: string) => void;
   onBaseLabelModeChange: (mode: BaseLabelMode) => void;
+  presets: LayerPreset[];
+  onSavePreset: (name: string, layers: LayerConfig[]) => void;
+  loadPreset: (id: string) => LayerConfig[] | null;
+  progressionTemplates?: ProgressionTemplate[];
+  hidePresetButton?: boolean;
 }
 
 export default function LayerPane({
@@ -59,6 +66,11 @@ export default function LayerPane({
   onLoadPreset,
   onRootNoteChange,
   onBaseLabelModeChange,
+  presets,
+  onSavePreset,
+  loadPreset,
+  progressionTemplates,
+  hidePresetButton,
 }: LayerPaneProps) {
   const [presetModalVisible, setPresetModalVisible] = useState(false);
 
@@ -77,6 +89,7 @@ export default function LayerPane({
           disableAnimation={disableAnimation}
           leftHanded={leftHanded}
           onNoteClick={() => {}}
+          progressionTemplates={progressionTemplates}
         />
       }
       controls={
@@ -87,7 +100,7 @@ export default function LayerPane({
           baseLabelMode={baseLabelMode}
           onRootNoteChange={onRootNoteChange}
           onBaseLabelModeChange={onBaseLabelModeChange}
-          onPresetPress={() => setPresetModalVisible(true)}
+          onPresetPress={hidePresetButton ? undefined : () => setPresetModalVisible(true)}
         />
       }
     >
@@ -111,6 +124,10 @@ export default function LayerPane({
           onLoadPreset={onLoadPreset}
           presetModalVisible={presetModalVisible}
           onPresetModalClose={() => setPresetModalVisible(false)}
+          presets={presets}
+          onSavePreset={onSavePreset}
+          loadPreset={loadPreset}
+          progressionTemplates={progressionTemplates}
         />
       </View>
     </PracticePane>

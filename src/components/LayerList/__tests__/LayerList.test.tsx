@@ -59,6 +59,9 @@ const defaultProps = {
   layerNoteLabels: new Map<string, string[]>(),
   presetModalVisible: false,
   onPresetModalClose: jest.fn(),
+  presets: [],
+  onSavePreset: jest.fn(),
+  loadPreset: jest.fn(),
 };
 
 function makeLayer(

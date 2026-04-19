@@ -23,10 +23,13 @@ import {
   getNotesByAccidental,
   getRootIndex,
   chordSuffix,
+  diatonicDegreeLabel,
+  templateDisplayName,
 } from "../../lib/fretboard";
 import LayerEditModal from "../LayerEditModal";
 import LayerPresetModal from "./LayerPresetModal";
-import { useLayerPresets } from "../../hooks/useLayerPresets";
+import type { LayerPreset } from "../../hooks/useLayerPresets";
+import type { ProgressionTemplate } from "../../lib/fretboard";
 
 // Layout constants
 const ROW_GAP = 8;
@@ -279,6 +282,10 @@ interface LayerListProps {
   onLoadPreset?: (layers: LayerConfig[]) => void;
   presetModalVisible: boolean;
   onPresetModalClose: () => void;
+  presets: LayerPreset[];
+  onSavePreset: (name: string, layers: LayerConfig[]) => void;
+  loadPreset: (id: string) => LayerConfig[] | null;
+  progressionTemplates?: ProgressionTemplate[];
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -303,12 +310,15 @@ export default function LayerList({
   onLoadPreset,
   presetModalVisible,
   onPresetModalClose,
+  presets,
+  onSavePreset,
+  loadPreset,
+  progressionTemplates,
 }: LayerListProps) {
   const { t } = useTranslation();
   const isDark = theme === "dark";
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editingLayer, setEditingLayer] = useState<LayerConfig | null>(null);
-  const { presets, savePreset, loadPreset, deletePreset } = useLayerPresets();
   const [contextMenuTarget, setContextMenuTarget] = useState<{
     layer: LayerConfig;
     slotIdx: number;
@@ -686,7 +696,7 @@ export default function LayerList({
       return `${chordLabel}: ${[...layer.cagedForms].join(", ") || "-"}`;
     }
     if (layer.type === "progression") {
-      const template = PROGRESSION_TEMPLATES.find(
+      const template = (progressionTemplates ?? PROGRESSION_TEMPLATES).find(
         (tp) => tp.id === (layer.progressionTemplateId ?? "251"),
       );
       if (!template) return "-";
@@ -705,7 +715,7 @@ export default function LayerList({
         degree,
       );
       const chordName = `${notes[chord.rootIndex]}${chordSuffix(chord.chordType)}`;
-      return `${template.name}  ${chordName}`;
+      return `${templateDisplayName(template)}  ${chordName}`;
     }
     const mode = t(`options.chordDisplayMode.${layer.chordDisplayMode}`);
     if (layer.chordDisplayMode === "diatonic") {
@@ -713,7 +723,7 @@ export default function LayerList({
         `options.diatonicKey.${layer.diatonicKeyType === "natural-minor" ? "naturalMinor" : "major"}`,
       );
       const size = t(`options.diatonicChordSize.${layer.diatonicChordSize}`);
-      return `${mode}: ${layer.diatonicDegree} (${key} ${size})`;
+      return `${mode}: ${diatonicDegreeLabel(layer.diatonicDegree, { chordSize: layer.diatonicChordSize as "triad" | "seventh", keyType: layer.diatonicKeyType === "natural-minor" ? "minor" : "major" })} (${key} ${size})`;
     }
     if (layer.chordDisplayMode === "triad") {
       const inv = t(`options.triadInversions.${layer.triadInversion}`);
@@ -955,7 +965,7 @@ export default function LayerList({
 
                       {slot.type === "progression" &&
                         (() => {
-                          const template = PROGRESSION_TEMPLATES.find(
+                          const template = (progressionTemplates ?? PROGRESSION_TEMPLATES).find(
                             (tp) => tp.id === slot.progressionTemplateId,
                           );
                           const totalSteps = template?.degrees.length ?? 1;
@@ -1177,6 +1187,7 @@ export default function LayerList({
         }}
         onSave={handleSave}
         onPreview={onPreviewLayer}
+        progressionTemplates={progressionTemplates}
       />
 
       <LayerPresetModal
@@ -1184,12 +1195,11 @@ export default function LayerList({
         visible={presetModalVisible}
         layers={layers}
         presets={presets}
-        onSave={savePreset}
+        onSave={onSavePreset}
         onLoad={(id) => {
           const loaded = loadPreset(id);
           if (loaded) onLoadPreset?.(loaded);
         }}
-        onDelete={deletePreset}
         onClose={onPresetModalClose}
         t={t}
       />
