@@ -1,9 +1,17 @@
 import { useRef, useState } from "react";
-import { View, Text, PanResponder, StyleSheet } from "react-native";
+import { View, Text, Animated, PanResponder, StyleSheet } from "react-native";
 import * as Haptics from "expo-haptics";
 import { GlassView } from "expo-glass-effect";
 
-const THUMB = 28;
+const THUMB_W = 46;
+const THUMB_H = 28;
+const SCALE_ACTIVE = 52 / 46; // ~1.13x when pressed
+const TOUCH_H = 44;
+const TRACK_H = 6;
+const LABEL_H = 22;
+
+const SPRING_IN = { useNativeDriver: true, damping: 18, mass: 0.9, stiffness: 220 } as const;
+const SPRING_OUT = { useNativeDriver: true, damping: 20, mass: 1, stiffness: 200 } as const;
 
 interface RangeSliderProps {
   value: [number, number];
@@ -19,28 +27,60 @@ export default function RangeSlider({ value, min, max, onChange, isDark }: Range
   const valRef = useRef(value);
   valRef.current = value;
 
+  const [localMin, setLocalMin] = useState<number>(value[0]);
+  const [localMax, setLocalMax] = useState<number>(value[1]);
+  const localMinRef = useRef<number>(value[0]);
+  const localMaxRef = useRef<number>(value[1]);
+
+  // 0 = resting, 1 = active (pressed/dragging)
+  const minActivation = useRef(new Animated.Value(0)).current;
+  const maxActivation = useRef(new Animated.Value(0)).current;
+
+  const total = max - min;
+  const trackUsable = tw > THUMB_W ? tw - THUMB_W : 0;
+  const valToLeft = (v: number) => ((v - min) / total) * trackUsable;
+
+  const minLeft = valToLeft(localMin);
+  const maxLeft = valToLeft(localMax);
+  const displayMin = Math.round(localMin);
+  const displayMax = Math.round(localMax);
+
   const minStart = useRef({ x: 0, v: 0 });
   const minPan = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
       onPanResponderGrant: (e) => {
-        minStart.current = { x: e.nativeEvent.pageX, v: valRef.current[0] };
+        Animated.spring(minActivation, { toValue: 1, ...SPRING_IN }).start();
+        minStart.current = { x: e.nativeEvent.pageX, v: localMinRef.current };
       },
       onPanResponderMove: (e) => {
         const w = twRef.current;
-        if (w <= THUMB) return;
+        if (w <= THUMB_W) return;
         const dx = e.nativeEvent.pageX - minStart.current.x;
-        const newV = Math.round(
-          Math.max(
-            min,
-            Math.min(valRef.current[1] - 1, minStart.current.v + (dx / (w - THUMB)) * (max - min)),
-          ),
+        const raw = Math.max(
+          min,
+          Math.min(valRef.current[1] - 1, minStart.current.v + (dx / (w - THUMB_W)) * (max - min)),
         );
-        if (newV !== valRef.current[0]) {
+        localMinRef.current = raw;
+        setLocalMin(raw);
+        const intV = Math.round(raw);
+        if (intV !== valRef.current[0]) {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          onChange([intV, valRef.current[1]]);
         }
-        onChange([newV, valRef.current[1]]);
+      },
+      onPanResponderRelease: () => {
+        Animated.spring(minActivation, { toValue: 0, ...SPRING_OUT }).start();
+        const snapped = Math.round(localMinRef.current);
+        localMinRef.current = snapped;
+        setLocalMin(snapped);
+      },
+      onPanResponderTerminate: () => {
+        Animated.spring(minActivation, { toValue: 0, ...SPRING_OUT }).start();
+        const snapped = Math.round(localMinRef.current);
+        localMinRef.current = snapped;
+        setLocalMin(snapped);
       },
     }),
   ).current;
@@ -51,35 +91,67 @@ export default function RangeSlider({ value, min, max, onChange, isDark }: Range
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
       onPanResponderGrant: (e) => {
-        maxStart.current = { x: e.nativeEvent.pageX, v: valRef.current[1] };
+        Animated.spring(maxActivation, { toValue: 1, ...SPRING_IN }).start();
+        maxStart.current = { x: e.nativeEvent.pageX, v: localMaxRef.current };
       },
       onPanResponderMove: (e) => {
         const w = twRef.current;
-        if (w <= THUMB) return;
+        if (w <= THUMB_W) return;
         const dx = e.nativeEvent.pageX - maxStart.current.x;
-        const newV = Math.round(
-          Math.max(
-            valRef.current[0] + 1,
-            Math.min(max, maxStart.current.v + (dx / (w - THUMB)) * (max - min)),
-          ),
+        const raw = Math.max(
+          valRef.current[0] + 1,
+          Math.min(max, maxStart.current.v + (dx / (w - THUMB_W)) * (max - min)),
         );
-        if (newV !== valRef.current[1]) {
+        localMaxRef.current = raw;
+        setLocalMax(raw);
+        const intV = Math.round(raw);
+        if (intV !== valRef.current[1]) {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          onChange([valRef.current[0], intV]);
         }
-        onChange([valRef.current[0], newV]);
+      },
+      onPanResponderRelease: () => {
+        Animated.spring(maxActivation, { toValue: 0, ...SPRING_OUT }).start();
+        const snapped = Math.round(localMaxRef.current);
+        localMaxRef.current = snapped;
+        setLocalMax(snapped);
+      },
+      onPanResponderTerminate: () => {
+        Animated.spring(maxActivation, { toValue: 0, ...SPRING_OUT }).start();
+        const snapped = Math.round(localMaxRef.current);
+        localMaxRef.current = snapped;
+        setLocalMax(snapped);
       },
     }),
   ).current;
 
-  const total = max - min;
-  const minFrac = tw > THUMB ? (value[0] - min) / total : 0;
-  const maxFrac = tw > THUMB ? (value[1] - min) / total : 1;
-  // positions relative to the outer container
-  const minLeft = minFrac * (tw - THUMB);
-  const maxLeft = maxFrac * (tw - THUMB);
-  // fill position relative to the track container (which has THUMB/2 inset on each side)
-  const fillLeft = minLeft;
-  const fillWidth = Math.max(0, maxLeft - minLeft);
+  const trackTop = LABEL_H + (TOUCH_H - TRACK_H) / 2;
+  const labelColor = isDark ? "#ffffff" : "#111111";
+  const trackFilled = isDark ? "rgba(255,255,255,0.55)" : "rgba(0,0,0,0.42)";
+  const trackEmpty = isDark ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.13)";
+
+  const makeThumb = (activation: Animated.Value) => {
+    const scale = activation.interpolate({ inputRange: [0, 1], outputRange: [1, SCALE_ACTIVE] });
+    // White overlay: opacity 1 (resting) → 0 (active = glass visible)
+    const whiteOpacity = activation.interpolate({ inputRange: [0, 1], outputRange: [1, 0] });
+    return (
+      // Shadow wrapper — scales with the pill, no overflow clip so shadow is visible
+      <Animated.View style={[styles.thumbShadow, { transform: [{ scale }] }]}>
+        {/* Clip wrapper for overflow:hidden */}
+        <View style={styles.thumbClip}>
+          <GlassView
+            style={StyleSheet.absoluteFillObject}
+            glassEffectStyle="regular"
+            colorScheme={isDark ? "dark" : "light"}
+          />
+          {/* White overlay fades out as glass activates */}
+          <Animated.View
+            style={[StyleSheet.absoluteFillObject, styles.thumbWhite, { opacity: whiteOpacity }]}
+          />
+        </View>
+      </Animated.View>
+    );
+  };
 
   return (
     <View
@@ -89,24 +161,33 @@ export default function RangeSlider({ value, min, max, onChange, isDark }: Range
         setTw(e.nativeEvent.layout.width);
       }}
     >
-      {/* Track: Liquid Glass background + blue fill */}
-      <View style={styles.trackContainer}>
-        <GlassView
-          style={StyleSheet.absoluteFillObject}
-          glassEffectStyle="regular"
-          colorScheme={isDark ? "dark" : "light"}
+      {/* Track */}
+      <View style={[styles.trackContainer, { top: trackTop }]}>
+        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: trackEmpty }]} />
+        <View
+          style={[
+            styles.fill,
+            { left: minLeft, width: Math.max(0, maxLeft - minLeft), backgroundColor: trackFilled },
+          ]}
         />
-        <View style={[styles.fill, { left: fillLeft, width: fillWidth }]} />
+      </View>
+
+      {/* Value labels above thumbs */}
+      <View style={[styles.labelContainer, { left: minLeft }]}>
+        <Text style={[styles.labelText, { color: labelColor }]}>{displayMin}</Text>
+      </View>
+      <View style={[styles.labelContainer, { left: maxLeft }]}>
+        <Text style={[styles.labelText, { color: labelColor }]}>{displayMax}</Text>
       </View>
 
       {/* Min thumb */}
-      <View style={[styles.thumb, { left: minLeft }]} {...minPan.panHandlers}>
-        <Text style={styles.thumbLabel}>{value[0]}</Text>
+      <View style={[styles.thumbTouch, { left: minLeft }]} {...minPan.panHandlers}>
+        {makeThumb(minActivation)}
       </View>
 
       {/* Max thumb */}
-      <View style={[styles.thumb, { left: maxLeft, zIndex: 2 }]} {...maxPan.panHandlers}>
-        <Text style={styles.thumbLabel}>{value[1]}</Text>
+      <View style={[styles.thumbTouch, { left: maxLeft, zIndex: 2 }]} {...maxPan.panHandlers}>
+        {makeThumb(maxActivation)}
       </View>
     </View>
   );
@@ -114,43 +195,59 @@ export default function RangeSlider({ value, min, max, onChange, isDark }: Range
 
 const styles = StyleSheet.create({
   outer: {
-    paddingVertical: 20,
+    height: LABEL_H + TOUCH_H,
     position: "relative",
   },
   trackContainer: {
-    height: 6,
-    marginHorizontal: THUMB / 2,
-    borderRadius: 3,
+    position: "absolute",
+    left: THUMB_W / 2,
+    right: THUMB_W / 2,
+    height: TRACK_H,
+    borderRadius: TRACK_H / 2,
     overflow: "hidden",
   },
   fill: {
     position: "absolute",
     top: 0,
     bottom: 0,
-    backgroundColor: "#007AFF",
-    borderRadius: 3,
+    borderRadius: TRACK_H / 2,
   },
-  thumb: {
+  labelContainer: {
     position: "absolute",
-    top: 20 - THUMB / 2 + 3,
-    width: THUMB,
-    height: THUMB,
-    borderRadius: THUMB / 2,
-    backgroundColor: "#ffffff",
+    top: 0,
+    width: THUMB_W,
+    alignItems: "center",
+  },
+  labelText: {
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  thumbTouch: {
+    position: "absolute",
+    top: LABEL_H,
+    width: THUMB_W,
+    height: TOUCH_H,
     alignItems: "center",
     justifyContent: "center",
     zIndex: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 4,
-    borderWidth: 0.5,
-    borderColor: "rgba(0,0,0,0.08)",
   },
-  thumbLabel: {
-    fontSize: 9,
-    color: "#374151",
-    fontWeight: "700",
+  thumbShadow: {
+    width: THUMB_W,
+    height: THUMB_H,
+    borderRadius: THUMB_H / 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.22,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  thumbClip: {
+    width: THUMB_W,
+    height: THUMB_H,
+    borderRadius: THUMB_H / 2,
+    overflow: "hidden",
+  },
+  thumbWhite: {
+    backgroundColor: "#ffffff",
   },
 });

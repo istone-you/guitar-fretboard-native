@@ -15,7 +15,7 @@ import { SegmentedToggle } from "../ui/SegmentedToggle";
 import GlassIconButton from "../ui/GlassIconButton";
 import BottomSheetModal, { SHEET_HANDLE_CLEARANCE } from "../ui/BottomSheetModal";
 import SheetProgressiveHeader from "../ui/SheetProgressiveHeader";
-import Svg, { Path } from "react-native-svg";
+import Icon from "../ui/Icon";
 import { getNotesByAccidental } from "../../lib/fretboard";
 import { getColors, radius } from "../../themes/tokens";
 import PillButton, { getPillStyle } from "../ui/PillButton";
@@ -39,7 +39,7 @@ export default function FretboardControls({
   onBaseLabelModeChange,
   onPresetPress,
 }: FretboardControlsProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const isDark = theme === "dark";
   const { height: winHeight } = useWindowDimensions();
   const sheetHeight = Math.max(360, Math.min(520, Math.round(winHeight * 0.62)));
@@ -77,6 +77,7 @@ export default function FretboardControls({
             { value: "degree" as BaseLabelMode, label: t("header.degree") },
           ]}
           size="compact"
+          segmentWidth={i18n.language === "en" ? 72 : 56}
         />
       </View>
 
@@ -105,15 +106,7 @@ export default function FretboardControls({
               onPresetPress();
             }}
           >
-            <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
-              <Path
-                d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"
-                stroke={colors.textSubtle}
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </Svg>
+            <Icon name="bookmark" size={16} color={colors.textSubtle} />
           </PillButton>
         )}
       </View>
@@ -141,8 +134,7 @@ export default function FretboardControls({
                 <GlassIconButton
                   isDark={isDark}
                   onPress={close}
-                  label="✕"
-                  size={36}
+                  icon="close"
                   style={styles.headerLeft}
                 />
                 <View style={styles.headerCenter}>
@@ -208,6 +200,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 12,
     paddingVertical: 6,
+    marginBottom: 12,
   },
   left: {
     flexDirection: "row",

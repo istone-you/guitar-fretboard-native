@@ -10,11 +10,12 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Svg, { Path } from "react-native-svg";
 import { useTranslation } from "react-i18next";
+import Icon from "../ui/Icon";
 import { DEGREE_BY_SEMITONE, getNotesByAccidental } from "../../lib/fretboard";
 import { CHORD_QUIZ_TYPES_ALL } from "../../hooks/useQuiz";
 import type { Accidental, QuizMode, QuizRecord, ScaleType, Theme } from "../../types";
+import PillButton from "../ui/PillButton";
 
 const MIN_SAMPLES = 5;
 const FRET_COUNT = 15;
@@ -136,15 +137,7 @@ function CollapsibleSection({
     <View style={[styles.card, { backgroundColor: cardBg, borderColor: cardBorder }]}>
       <TouchableOpacity style={styles.collapsibleHeader} onPress={toggle} activeOpacity={0.7}>
         <Text style={[styles.sectionTitle, { color: titleColor }]}>{title}</Text>
-        <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
-          <Path
-            d={open ? "M18 15l-6-6-6 6" : "M6 9l6 6 6-6"}
-            stroke={chevronColor}
-            strokeWidth={2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </Svg>
+        <Icon name={open ? "chevron-up" : "chevron-down"} size={16} color={chevronColor} />
       </TouchableOpacity>
       <Animated.View
         style={{
@@ -542,21 +535,16 @@ export default function StatsPanel({
 
       {/* Reset button */}
       {records.length > 0 && (
-        <TouchableOpacity
-          style={[
-            styles.resetButton,
-            {
-              borderColor: isDark ? "rgba(239,68,68,0.3)" : "rgba(239,68,68,0.25)",
-              backgroundColor: isDark ? "rgba(239,68,68,0.08)" : "rgba(254,226,226,0.7)",
-            },
-          ]}
+        <PillButton
+          isDark={isDark}
           onPress={handleReset}
-          activeOpacity={0.7}
+          variant="danger"
+          style={{ marginTop: 4, alignSelf: "stretch", justifyContent: "center" }}
         >
           <Text style={[styles.resetText, { color: isDark ? "#f87171" : "#ef4444" }]}>
             {t("stats.reset")}
           </Text>
-        </TouchableOpacity>
+        </PillButton>
       )}
     </ScrollView>
   );

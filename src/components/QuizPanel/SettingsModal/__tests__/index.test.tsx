@@ -145,7 +145,7 @@ describe("QuizPanel SettingsModal", () => {
     render(<SettingsModal {...defaultProps} />);
     fireEvent.press(screen.getByText("Keys"));
     expect(screen.getByText("Select Keys")).toBeTruthy();
-    fireEvent.press(screen.getByText("‹"));
+    fireEvent.press(screen.getByTestId("settings-back-btn"));
     expect(screen.getByText("settings")).toBeTruthy();
   });
 
@@ -156,7 +156,7 @@ describe("QuizPanel SettingsModal", () => {
 
     const onClose = jest.fn();
     render(<SettingsModal {...defaultProps} onClose={onClose} />);
-    fireEvent.press(screen.getByText("✕"));
+    fireEvent.press(screen.getByTestId("settings-close-btn"));
     expect(onClose).toHaveBeenCalled();
   });
 

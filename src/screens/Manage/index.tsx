@@ -17,6 +17,7 @@ import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 import "../../i18n";
 import Svg, { Path } from "react-native-svg";
+import Icon from "../../components/ui/Icon";
 import type { Theme, Accidental } from "../../types";
 import type { CustomProgressionTemplate } from "../../hooks/useProgressionTemplates";
 import BottomSheetModal, { SHEET_HANDLE_CLEARANCE } from "../../components/ui/BottomSheetModal";
@@ -379,16 +380,7 @@ export default function ManagePane({
   };
 
   // ── Shared drag handle icon ──────────────────────────────────
-  const dragHandleIcon = (
-    <Svg width={14} height={18} viewBox="0 0 14 18" fill="none">
-      <Path
-        d="M2 4h10M2 9h10M2 14h10"
-        stroke={dragHandleColor}
-        strokeWidth={1.8}
-        strokeLinecap="round"
-      />
-    </Svg>
-  );
+  const dragHandleIcon = <Icon name="drag-handle" size={18} color={dragHandleColor} />;
 
   // ─────────────────────────────────────────────────────────────
   // Render helpers
@@ -406,15 +398,7 @@ export default function ManagePane({
       ]}
     >
       <View style={{ paddingRight: 20 }}>
-        <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-          <Path
-            d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"
-            stroke="white"
-            strokeWidth={2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </Svg>
+        <Icon name="trash" size={18} color="white" />
       </View>
     </View>
   );
@@ -437,18 +421,11 @@ export default function ManagePane({
           </Text>
           <TouchableOpacity
             onPress={() => openTemplateForm(null)}
-            style={styles.addButton}
-            activeOpacity={0.7}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={[styles.addButton, { borderColor: isDark ? "#9ca3af" : "#6b7280" }]}
+            activeOpacity={0.6}
+            hitSlop={{ top: 11, bottom: 11, left: 11, right: 11 }}
           >
-            <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-              <Path
-                d="M12 5v14M5 12h14"
-                stroke={isDark ? "#9ca3af" : "#78716c"}
-                strokeWidth={2.2}
-                strokeLinecap="round"
-              />
-            </Svg>
+            <Icon name="plus" size={14} color={isDark ? "#9ca3af" : "#6b7280"} strokeWidth={3.5} />
           </TouchableOpacity>
         </View>
 
@@ -605,8 +582,7 @@ export default function ManagePane({
                 <GlassIconButton
                   isDark={isDark}
                   onPress={close}
-                  label="✕"
-                  size={36}
+                  icon="close"
                   style={{ width: 36 }}
                 />
                 <TextInput
@@ -631,8 +607,7 @@ export default function ManagePane({
                     handleSaveTemplate();
                     close();
                   }}
-                  label="✓"
-                  size={36}
+                  icon="check"
                   style={{
                     width: 36,
                     opacity: !formName.trim() || formDegrees.length === 0 ? 0.35 : 1,
@@ -723,7 +698,12 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
   },
   addButton: {
-    padding: 4,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 1.5,
+    alignItems: "center",
+    justifyContent: "center",
   },
   sectionContainer: {
     paddingHorizontal: 12,

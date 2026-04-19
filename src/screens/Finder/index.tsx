@@ -15,7 +15,7 @@ import SheetProgressiveHeader from "../../components/ui/SheetProgressiveHeader";
 import GlassIconButton from "../../components/ui/GlassIconButton";
 import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Svg, { Circle, Path } from "react-native-svg";
+import Icon from "../../components/ui/Icon";
 import NormalFretboard from "../../components/NormalFretboard";
 import { identifyChords, type ChordMatch } from "../../lib/chordFinder";
 import { identifyScales, scaleI18nKey, type ScaleMatch } from "../../lib/scaleFinder";
@@ -32,6 +32,8 @@ import { usePersistedSetting } from "../../hooks/usePersistedSetting";
 import LayerDescription from "../../components/LayerEditModal/LayerDescription";
 import ColorPicker from "../../components/ui/ColorPicker";
 import { SegmentedToggle } from "../../components/ui/SegmentedToggle";
+import PillButton from "../../components/ui/PillButton";
+import { getColors } from "../../themes/tokens";
 
 type FinderItem = { kind: "chord"; match: ChordMatch } | { kind: "scale"; match: ScaleMatch };
 
@@ -115,6 +117,7 @@ export default function FinderPane({
   if (rootNote !== null) lastRootNoteRef.current = rootNote;
 
   const isDark = theme === "dark";
+  const colors = getColors(isDark);
   const accentColor = dotColor;
   const bgColor = isDark ? "#000000" : "#ffffff";
   const cardBg = isDark ? "#1a1a2e" : "#ffffff";
@@ -298,20 +301,30 @@ export default function FinderPane({
 
   return (
     <View style={[styles.container, { backgroundColor: bgColor }]}>
+      {/* Controls row */}
+      <View style={styles.labelToggleRow}>
+        <SegmentedToggle
+          theme={theme}
+          value={baseLabelMode}
+          onChange={onBaseLabelModeChange}
+          options={[
+            { value: "note" as BaseLabelMode, label: t("header.note") },
+            { value: "degree" as BaseLabelMode, label: t("header.degree") },
+          ]}
+          size="compact"
+        />
+        <PillButton
+          isDark={isDark}
+          onPress={() => setSettingsVisible(true)}
+          testID="finder-settings-btn"
+          style={{ paddingHorizontal: 8 }}
+        >
+          <Icon name="ellipsis" size={16} color={colors.textSubtle} />
+        </PillButton>
+      </View>
+
       {/* Fretboard */}
       <View style={styles.fretboardWrapper}>
-        <View style={styles.labelToggleRow}>
-          <SegmentedToggle
-            theme={theme}
-            value={baseLabelMode}
-            onChange={onBaseLabelModeChange}
-            options={[
-              { value: "note" as BaseLabelMode, label: t("header.note") },
-              { value: "degree" as BaseLabelMode, label: t("header.degree") },
-            ]}
-            size="compact"
-          />
-        </View>
         <NormalFretboard
           key={fretboardKey}
           theme={theme}
@@ -368,64 +381,12 @@ export default function FinderPane({
         </ScrollView>
 
         {rootNote && (
-          <TouchableOpacity
-            onPress={handleReset}
-            style={[
-              styles.resetBtn,
-              {
-                borderColor: isDark ? "rgba(239,68,68,0.3)" : "rgba(239,68,68,0.25)",
-                backgroundColor: isDark ? "rgba(239,68,68,0.08)" : "rgba(254,226,226,0.7)",
-              },
-            ]}
-            activeOpacity={0.7}
-          >
+          <PillButton isDark={isDark} onPress={handleReset} variant="danger">
             <Text style={[styles.resetBtnText, { color: isDark ? "#f87171" : "#ef4444" }]}>
               {t("finder.reset")}
             </Text>
-          </TouchableOpacity>
+          </PillButton>
         )}
-
-        {/* Settings button */}
-        <TouchableOpacity
-          onPress={() => setSettingsVisible(true)}
-          style={styles.settingsBtn}
-          activeOpacity={0.7}
-          testID="finder-settings-btn"
-        >
-          <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-            <Path
-              d="M4 6h16M4 12h16M4 18h16"
-              stroke={isDark ? "#6b7280" : "#a8a29e"}
-              strokeWidth={2}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <Circle
-              cx={9}
-              cy={6}
-              r={2}
-              fill={isDark ? "#111827" : "#f9fafb"}
-              stroke={isDark ? "#6b7280" : "#a8a29e"}
-              strokeWidth={2}
-            />
-            <Circle
-              cx={15}
-              cy={12}
-              r={2}
-              fill={isDark ? "#111827" : "#f9fafb"}
-              stroke={isDark ? "#6b7280" : "#a8a29e"}
-              strokeWidth={2}
-            />
-            <Circle
-              cx={11}
-              cy={18}
-              r={2}
-              fill={isDark ? "#111827" : "#f9fafb"}
-              stroke={isDark ? "#6b7280" : "#a8a29e"}
-              strokeWidth={2}
-            />
-          </Svg>
-        </TouchableOpacity>
       </View>
 
       {/* Settings bottom sheet */}
@@ -516,7 +477,7 @@ export default function FinderPane({
                     <GlassIconButton
                       isDark={isDark}
                       onPress={close}
-                      label="✕"
+                      icon="close"
                       style={styles.headerLeft}
                     />
                     <View style={styles.headerCenter}>
@@ -579,16 +540,7 @@ export default function FinderPane({
               {
                 label: t("finder.addToLayerTitle"),
                 subtitle: isFull ? t("finder.addToLayerFull") : undefined,
-                icon: (
-                  <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-                    <Path
-                      d="M12 5v14M5 12h14"
-                      stroke={isDark ? "#ebebf599" : "#3c3c4399"}
-                      strokeWidth={2}
-                      strokeLinecap="round"
-                    />
-                  </Svg>
-                ),
+                icon: <Icon name="plus" size={18} color={isDark ? "#ebebf599" : "#3c3c4399"} />,
                 onPress: handleConfirmAdd,
                 disabled: isFull,
               },
@@ -597,29 +549,7 @@ export default function FinderPane({
                 subtitle: isAlreadySet ? t("finder.setNotesAlreadySet") : undefined,
                 disabled: isAlreadySet,
                 icon: (
-                  <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-                    <Path
-                      d="M9 18V5l12-2v13"
-                      stroke={isDark ? "#ebebf599" : "#3c3c4399"}
-                      strokeWidth={2}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <Circle
-                      cx={6}
-                      cy={18}
-                      r={3}
-                      stroke={isDark ? "#ebebf599" : "#3c3c4399"}
-                      strokeWidth={2}
-                    />
-                    <Circle
-                      cx={18}
-                      cy={16}
-                      r={3}
-                      stroke={isDark ? "#ebebf599" : "#3c3c4399"}
-                      strokeWidth={2}
-                    />
-                  </Svg>
+                  <Icon name="music-note" size={18} color={isDark ? "#ebebf599" : "#3c3c4399"} />
                 ),
                 onPress: handleSetNotes,
               },
@@ -653,17 +583,19 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   labelToggleRow: {
-    alignItems: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 12,
-    paddingBottom: 6,
+    paddingVertical: 6,
     marginBottom: 12,
   },
   selectedRow: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    minHeight: 48,
+    paddingVertical: 6,
+    minHeight: 44,
     borderBottomWidth: 1,
   },
   chipsScroll: {
@@ -706,10 +638,6 @@ const styles = StyleSheet.create({
   resetBtnText: {
     fontSize: 13,
     fontWeight: "500",
-  },
-  settingsBtn: {
-    padding: 6,
-    marginLeft: 2,
   },
   // Bottom sheet styles (same as LayerEditModal)
   bottomSheetModal: {

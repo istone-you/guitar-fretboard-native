@@ -13,11 +13,13 @@ export function getPillStyle(colors: ThemeColors): ViewStyle {
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+  };
+}
+
+function getDangerStyle(isDark: boolean): ViewStyle {
+  return {
+    borderColor: isDark ? "rgba(239,68,68,0.3)" : "rgba(239,68,68,0.25)",
+    backgroundColor: isDark ? "rgba(239,68,68,0.08)" : "rgba(254,226,226,0.7)",
   };
 }
 
@@ -25,6 +27,8 @@ interface PillButtonProps {
   isDark: boolean;
   onPress: () => void;
   children: ReactNode;
+  variant?: "default" | "danger";
+  disabled?: boolean;
   style?: StyleProp<ViewStyle>;
   activeOpacity?: number;
   testID?: string;
@@ -34,6 +38,8 @@ export default function PillButton({
   isDark,
   onPress,
   children,
+  variant = "default",
+  disabled = false,
   style,
   activeOpacity = 0.7,
   testID,
@@ -42,7 +48,13 @@ export default function PillButton({
   return (
     <TouchableOpacity
       onPress={onPress}
-      style={[getPillStyle(colors), style]}
+      disabled={disabled}
+      style={[
+        getPillStyle(colors),
+        variant === "danger" && getDangerStyle(isDark),
+        disabled && { opacity: 0.35 },
+        style,
+      ]}
       activeOpacity={activeOpacity}
       testID={testID}
     >

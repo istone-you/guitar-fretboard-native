@@ -14,7 +14,7 @@ import {
   type PanResponderInstance,
 } from "react-native";
 import * as Haptics from "expo-haptics";
-import Svg, { Path } from "react-native-svg";
+import Icon from "../../ui/Icon";
 import type { Theme, LayerConfig } from "../../../types";
 import type { LayerPreset } from "../../../hooks/useLayerPresets";
 import {
@@ -306,8 +306,7 @@ export default function LayerPresetModal({
                 <GlassIconButton
                   isDark={isDark}
                   onPress={close}
-                  label="✕"
-                  size={36}
+                  icon="close"
                   style={styles.headerSide}
                 />
                 <View style={styles.headerCenter}>
@@ -316,27 +315,16 @@ export default function LayerPresetModal({
                 <GlassIconButton
                   isDark={isDark}
                   onPress={goToSave}
-                  size={36}
+                  icon="plus"
                   style={styles.headerSide}
-                >
-                  <Svg width={14} height={14} viewBox="0 0 14 14" fill="none">
-                    <Path
-                      d="M7 1v12M1 7h12"
-                      stroke={iconColor}
-                      strokeWidth={1.8}
-                      strokeLinecap="round"
-                    />
-                  </Svg>
-                </GlassIconButton>
+                />
               </View>
             ) : page === "detail" ? (
               <View style={{ flexDirection: "row", alignItems: "center" }}>
                 <GlassIconButton
                   isDark={isDark}
                   onPress={goBack}
-                  label="‹"
-                  fontSize={22}
-                  size={36}
+                  icon="back"
                   style={styles.headerSide}
                 />
                 <View style={styles.headerCenter}>
@@ -355,19 +343,9 @@ export default function LayerPresetModal({
                       onLoad(id);
                     });
                   }}
-                  size={36}
+                  icon="upload"
                   style={styles.headerSide}
-                >
-                  <Svg width={14} height={14} viewBox="0 0 14 14" fill="none">
-                    <Path
-                      d="M7 13V3M3 7l4-4 4 4"
-                      stroke={iconColor}
-                      strokeWidth={1.8}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </Svg>
-                </GlassIconButton>
+                />
               </View>
             ) : (
               <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -377,9 +355,7 @@ export default function LayerPresetModal({
                     Keyboard.dismiss();
                     goBack();
                   }}
-                  label="‹"
-                  fontSize={22}
-                  size={36}
+                  icon="back"
                   style={styles.headerSide}
                 />
                 <TextInput
@@ -403,8 +379,7 @@ export default function LayerPresetModal({
                       onClose();
                     });
                   }}
-                  label="✓"
-                  size={36}
+                  icon="check"
                   style={[
                     styles.headerSide,
                     { opacity: !saveName.trim() || layers.length === 0 ? 0.35 : 1 },
@@ -433,15 +408,7 @@ export default function LayerPresetModal({
                     <View style={styles.presetRowOuter}>
                       <View style={styles.deleteBackground}>
                         <View style={{ paddingRight: 20 }}>
-                          <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-                            <Path
-                              d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"
-                              stroke="white"
-                              strokeWidth={2}
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </Svg>
+                          <Icon name="trash" size={18} color="white" />
                         </View>
                       </View>
                       <Animated.View

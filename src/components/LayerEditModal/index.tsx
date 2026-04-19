@@ -31,6 +31,7 @@ import LayerDescription from "./LayerDescription";
 import BottomSheetModal, { SHEET_HANDLE_CLEARANCE } from "../ui/BottomSheetModal";
 import GlassIconButton from "../ui/GlassIconButton";
 import SheetProgressiveHeader from "../ui/SheetProgressiveHeader";
+import PillButton from "../ui/PillButton";
 import {
   CHORD_CAGED_ORDER,
   CHORD_SEMITONES,
@@ -400,8 +401,7 @@ export default function LayerEditModal({
         <GlassIconButton
           isDark={isDark}
           onPress={onBack}
-          label="‹"
-          fontSize={22}
+          icon="back"
           style={styles.headerLeft}
           testID="sub-page-back"
         />
@@ -885,8 +885,7 @@ export default function LayerEditModal({
                               hideBack: true,
                             })
                           }
-                          label="‹"
-                          fontSize={22}
+                          icon="back"
                           style={styles.headerLeft}
                         />
 
@@ -935,7 +934,7 @@ export default function LayerEditModal({
                                 onClose();
                               });
                             }}
-                            label="✓"
+                            icon="check"
                             testID="settings-confirm-btn"
                             style={styles.helpBtn}
                           />
@@ -1045,7 +1044,8 @@ export default function LayerEditModal({
                           )}
                         </View>
                         <View style={styles.customActionRow}>
-                          <TouchableOpacity
+                          <PillButton
+                            isDark={isDark}
                             onPress={() =>
                               navigate("select", {
                                 title: t("layers.extractFromChord"),
@@ -1073,44 +1073,23 @@ export default function LayerEditModal({
                                 },
                               })
                             }
-                            style={[
-                              styles.customActionBtn,
-                              {
-                                flex: 1,
-                                borderColor: isDark ? "#374151" : "#d6d3d1",
-                                backgroundColor: isDark ? "#1f2937" : "#fafaf9",
-                              },
-                            ]}
-                            activeOpacity={0.7}
+                            style={{ flex: 1, justifyContent: "center" }}
                           >
                             <Text style={{ fontSize: 13, fontWeight: "500", color: labelColor }}>
                               {t("layers.extractFromChord")}
                             </Text>
-                          </TouchableOpacity>
-                          <TouchableOpacity
-                            disabled={
-                              layer.selectedNotes.size === 0 && layer.selectedDegrees.size === 0
-                            }
+                          </PillButton>
+                          <PillButton
+                            isDark={isDark}
                             onPress={() => {
                               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                               update({ selectedNotes: new Set(), selectedDegrees: new Set() });
                             }}
-                            style={[
-                              styles.customActionBtn,
-                              {
-                                borderColor: isDark
-                                  ? "rgba(239,68,68,0.3)"
-                                  : "rgba(239,68,68,0.25)",
-                                backgroundColor: isDark
-                                  ? "rgba(239,68,68,0.08)"
-                                  : "rgba(254,226,226,0.7)",
-                                opacity:
-                                  layer.selectedNotes.size === 0 && layer.selectedDegrees.size === 0
-                                    ? 0.35
-                                    : 1,
-                              },
-                            ]}
-                            activeOpacity={0.7}
+                            variant="danger"
+                            disabled={
+                              layer.selectedNotes.size === 0 && layer.selectedDegrees.size === 0
+                            }
+                            style={{ flex: 1, justifyContent: "center" }}
                           >
                             <Text
                               style={{
@@ -1121,7 +1100,7 @@ export default function LayerEditModal({
                             >
                               {t("layers.reset")}
                             </Text>
-                          </TouchableOpacity>
+                          </PillButton>
                         </View>
                       </View>
                     </ScrollView>
@@ -1298,7 +1277,7 @@ export default function LayerEditModal({
                           <GlassIconButton
                             isDark={isDark}
                             onPress={() => close()}
-                            label="✕"
+                            icon="close"
                             style={styles.headerLeft}
                             testID="sub-page-back"
                           />

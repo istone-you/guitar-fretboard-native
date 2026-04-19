@@ -15,6 +15,7 @@ import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 import "../../i18n";
 import Svg, { Circle, Path } from "react-native-svg";
+import Icon from "../ui/Icon";
 import type { Theme, LayerConfig } from "../../types";
 import { MAX_LAYERS, pickNextLayerColor } from "../../types";
 import { getColors, radius } from "../../themes/tokens";
@@ -182,22 +183,7 @@ function ContextMenu({
             activeOpacity={0.7}
           >
             <Text style={[menuStyles.label, { color: labelColor }]}>{t("layers.edit")}</Text>
-            <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-              <Path
-                d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
-                stroke={iconStroke}
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <Path
-                d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
-                stroke={iconStroke}
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </Svg>
+            <Icon name="edit" size={18} color={iconStroke} />
           </TouchableOpacity>
           <View style={[menuStyles.divider, { backgroundColor: dividerColor }]} />
           <TouchableOpacity
@@ -206,23 +192,7 @@ function ContextMenu({
             activeOpacity={0.7}
           >
             <Text style={[menuStyles.label, { color: labelColor }]}>{t("layers.duplicate")}</Text>
-            <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-              <Path
-                d="M4 3h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"
-                stroke={iconStroke}
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <Path
-                d="M10 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2Z"
-                fill={menuBg}
-                stroke={iconStroke}
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </Svg>
+            <Icon name="duplicate" size={18} color={iconStroke} surfaceColor={menuBg} />
           </TouchableOpacity>
           <View style={[menuStyles.divider, { backgroundColor: dividerColor }]} />
           <TouchableOpacity
@@ -231,15 +201,7 @@ function ContextMenu({
             activeOpacity={0.7}
           >
             <Text style={[menuStyles.label, { color: "#ff3b30" }]}>{t("layers.delete")}</Text>
-            <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-              <Path
-                d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"
-                stroke="#ff3b30"
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </Svg>
+            <Icon name="trash" size={18} color="#ff3b30" />
           </TouchableOpacity>
         </Animated.View>
       </View>
@@ -743,16 +705,7 @@ export default function LayerList({
   const dragHandleColor = colors.textSubtle;
 
   // ── Drag handle icon (shared between slot and floating panel) ──
-  const dragHandleIcon = (
-    <Svg width={14} height={18} viewBox="0 0 14 18" fill="none">
-      <Path
-        d="M2 4h10M2 9h10M2 14h10"
-        stroke={dragHandleColor}
-        strokeWidth={1.8}
-        strokeLinecap="round"
-      />
-    </Svg>
-  );
+  const dragHandleIcon = <Icon name="drag-handle" size={18} color={dragHandleColor} />;
 
   // ── Layer type label ───────────────────────────────────────────
   const getTypeLabel = (layer: LayerConfig) =>
@@ -836,14 +789,7 @@ export default function LayerList({
                   <View style={StyleSheet.absoluteFill}>
                     <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
                       <Animated.View style={{ transform: [{ scale: plusScales[slotIdx] }] }}>
-                        <Svg width={26} height={26} viewBox="0 0 26 26">
-                          <Path
-                            d="M9 13h8M13 9v8"
-                            stroke={colors.textSubtle}
-                            strokeWidth={2}
-                            strokeLinecap="round"
-                          />
-                        </Svg>
+                        <Icon name="plus" size={20} color={colors.textSubtle} strokeWidth={2} />
                       </Animated.View>
                     </View>
                   </View>
@@ -867,15 +813,7 @@ export default function LayerList({
                       ]}
                     >
                       <View style={styles.deleteIconWrap}>
-                        <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-                          <Path
-                            d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"
-                            stroke="white"
-                            strokeWidth={2}
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </Svg>
+                        <Icon name="trash" size={18} color="white" />
                       </View>
                     </View>
 
@@ -975,16 +913,14 @@ export default function LayerList({
                                 disabled={currentStep === 0}
                                 style={[styles.actionBtn, { opacity: currentStep === 0 ? 0.3 : 1 }]}
                                 activeOpacity={0.7}
+                                hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                               >
-                                <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
-                                  <Path
-                                    d="M15 18l-6-6 6-6"
-                                    stroke={iconColor}
-                                    strokeWidth={2.2}
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                  />
-                                </Svg>
+                                <Icon
+                                  name="chevron-left"
+                                  size={16}
+                                  color={iconColor}
+                                  strokeWidth={2.2}
+                                />
                               </TouchableOpacity>
                               <TouchableOpacity
                                 onPress={() => {
@@ -1003,16 +939,14 @@ export default function LayerList({
                                   { opacity: currentStep >= totalSteps - 1 ? 0.3 : 1 },
                                 ]}
                                 activeOpacity={0.7}
+                                hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                               >
-                                <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
-                                  <Path
-                                    d="M9 18l6-6-6-6"
-                                    stroke={iconColor}
-                                    strokeWidth={2.2}
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                  />
-                                </Svg>
+                                <Icon
+                                  name="chevron-right"
+                                  size={16}
+                                  color={iconColor}
+                                  strokeWidth={2.2}
+                                />
                               </TouchableOpacity>
                             </>
                           );

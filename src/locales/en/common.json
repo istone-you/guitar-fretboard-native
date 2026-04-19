@@ -3,7 +3,7 @@
     "layer": "Layer",
     "finder": "Finder",
     "quiz": "Quiz",
-    "manage": "Manage"
+    "manage": "Templates"
   },
   "mode": {
     "normal": "Normal",
@@ -233,7 +233,7 @@
     "builtIn": "Built-in",
     "custom": "Custom",
     "presets": "Layer Presets",
-    "progressionTemplates": "Progression Templates",
+    "progressionTemplates": "Progressions",
     "noPresets": "No presets",
     "noTemplates": "No templates",
     "templateName": "Enter template name",

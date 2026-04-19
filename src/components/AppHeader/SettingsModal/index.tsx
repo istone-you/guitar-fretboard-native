@@ -61,8 +61,8 @@ const SettingsModal = forwardRef<SettingsModalRef, SettingsModalProps>(function 
                 value={theme}
                 onChange={onThemeChange}
                 options={[
-                  { value: "dark" as Theme, label: t("dark") },
-                  { value: "light" as Theme, label: t("light") },
+                  { value: "dark" as Theme, label: "☾" },
+                  { value: "light" as Theme, label: "☀︎" },
                 ]}
                 size="compact"
               />
@@ -89,8 +89,8 @@ const SettingsModal = forwardRef<SettingsModalRef, SettingsModalProps>(function 
                 value={(i18n.language === "en" ? "en" : "ja") as "ja" | "en"}
                 onChange={(locale) => void changeLocale(locale)}
                 options={[
-                  { value: "ja" as const, label: "JA" },
-                  { value: "en" as const, label: "EN" },
+                  { value: "ja" as const, label: "ja" },
+                  { value: "en" as const, label: "en" },
                 ]}
                 size="compact"
               />
@@ -107,12 +107,12 @@ const SettingsModal = forwardRef<SettingsModalRef, SettingsModalProps>(function 
               </View>
             )}
 
-            <View style={[styles.row, { borderBottomWidth: 0, paddingBottom: 4 }]}>
+            <View style={[styles.row, { borderBottomWidth: 0, paddingTop: 20, paddingBottom: 4 }]}>
               <Text style={[styles.label, { color: colors.textSubtle }]}>
                 {t("settingsPanel.fretRange")}
               </Text>
             </View>
-            <View style={{ paddingTop: 4, paddingBottom: 16, paddingHorizontal: 4 }}>
+            <View style={{ paddingTop: 12, paddingBottom: 16, paddingHorizontal: 4 }}>
               <RangeSlider
                 value={fretRange}
                 min={0}
@@ -132,8 +132,16 @@ const SettingsModal = forwardRef<SettingsModalRef, SettingsModalProps>(function 
             style={styles.glassHeader}
           >
             <View style={styles.headerRow}>
-              <Text style={[styles.title, { color: colors.text }]}>{t("settings")}</Text>
-              <GlassIconButton isDark={isDark} onPress={close} label="✕" size={36} />
+              <GlassIconButton
+                isDark={isDark}
+                onPress={close}
+                icon="close"
+                testID="settings-close-btn"
+              />
+              <View style={styles.headerCenter}>
+                <Text style={[styles.title, { color: colors.text }]}>{t("settings")}</Text>
+              </View>
+              <View style={styles.headerRight} />
             </View>
           </SheetProgressiveHeader>
         </View>
@@ -162,12 +170,18 @@ const styles = StyleSheet.create({
   },
   headerRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
   },
+  headerCenter: {
+    flex: 1,
+    alignItems: "center",
+  },
+  headerRight: {
+    width: 36,
+  },
   title: {
-    fontSize: 17,
-    fontWeight: "700",
+    fontSize: 15,
+    fontWeight: "600",
   },
   row: {
     flexDirection: "row",

@@ -12,6 +12,7 @@ interface SegmentedToggleProps<T extends string | boolean> {
   onChange: (value: T) => void;
   options: SegmentedToggleOption<T>[];
   size?: "default" | "compact";
+  segmentWidth?: number;
 }
 
 export function SegmentedToggle<T extends string | boolean>({
@@ -20,11 +21,12 @@ export function SegmentedToggle<T extends string | boolean>({
   onChange,
   options,
   size = "default",
+  segmentWidth,
 }: SegmentedToggleProps<T>) {
   const isDark = theme === "dark";
   const selectedIndex = options.findIndex((o) => o.value === value);
   const height = size === "compact" ? 28 : 32;
-  const segWidth = size === "compact" ? 56 : 72;
+  const segWidth = segmentWidth ?? (size === "compact" ? 56 : 72);
   const containerWidth = options.length * segWidth;
 
   return (

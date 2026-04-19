@@ -209,8 +209,9 @@ export default function SettingsModal({
                   <GlassIconButton
                     isDark={isDark}
                     onPress={close}
-                    label="✕"
+                    icon="close"
                     style={styles.headerLeft}
+                    testID="settings-close-btn"
                   />
                   <View style={styles.headerCenter}>
                     <Text style={[styles.headerTitle, { color: labelColor }]}>{t("settings")}</Text>
@@ -231,9 +232,9 @@ export default function SettingsModal({
                   <GlassIconButton
                     isDark={isDark}
                     onPress={() => navigateToPage(null)}
-                    label="‹"
-                    fontSize={22}
+                    icon="back"
                     style={styles.headerLeft}
+                    testID="settings-back-btn"
                   />
                   <View style={styles.headerCenter}>
                     <Text style={[styles.headerTitle, { color: labelColor }]}>

@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Animated } from "react-native";
 import * as Haptics from "expo-haptics";
-import Svg, { Circle, Path } from "react-native-svg";
+import Icon from "../ui/Icon";
 import { useTranslation } from "react-i18next";
 import "../../i18n";
 import type { Theme, ChordType, ScaleType, QuizMode, QuizType, QuizQuestion } from "../../types";
@@ -11,6 +11,8 @@ import ChoicePanel from "./ChoicePanel";
 import ChordPanel from "./ChordPanel";
 import DiatonicPanel from "./DiatonicPanel";
 import BounceButton from "./BounceButton";
+import PillButton from "../ui/PillButton";
+import { getColors } from "../../themes/tokens";
 
 function BounceView({ children, style }: { children: React.ReactNode; style?: any }) {
   const scale = useRef(new Animated.Value(0.8)).current;
@@ -141,6 +143,7 @@ export default function QuizPanel({
 }: QuizPanelProps) {
   const { t } = useTranslation();
   const isDark = theme === "dark";
+  const colors = getColors(isDark);
   const answered = selectedAnswer !== null;
 
   const [settingsVisible, setSettingsVisible] = useState(false);
@@ -413,49 +416,17 @@ export default function QuizPanel({
         <Text style={[styles.score, { color: isDark ? "#9ca3af" : "#78716c" }]}>
           ✓ {score.correct} / {score.total}
         </Text>
-        <TouchableOpacity
-          testID="quiz-settings-button"
+        <PillButton
+          isDark={isDark}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             setSettingsVisible(true);
           }}
-          activeOpacity={0.7}
-          style={styles.settingsBtn}
+          testID="quiz-settings-button"
+          style={{ paddingHorizontal: 8 }}
         >
-          <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-            <Path
-              d="M4 6h16M4 12h16M4 18h16"
-              stroke={isDark ? "#6b7280" : "#a8a29e"}
-              strokeWidth={2}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <Circle
-              cx={9}
-              cy={6}
-              r={2}
-              fill={isDark ? "#111827" : "#f9fafb"}
-              stroke={isDark ? "#6b7280" : "#a8a29e"}
-              strokeWidth={2}
-            />
-            <Circle
-              cx={15}
-              cy={12}
-              r={2}
-              fill={isDark ? "#111827" : "#f9fafb"}
-              stroke={isDark ? "#6b7280" : "#a8a29e"}
-              strokeWidth={2}
-            />
-            <Circle
-              cx={11}
-              cy={18}
-              r={2}
-              fill={isDark ? "#111827" : "#f9fafb"}
-              stroke={isDark ? "#6b7280" : "#a8a29e"}
-              strokeWidth={2}
-            />
-          </Svg>
-        </TouchableOpacity>
+          <Icon name="ellipsis" size={16} color={colors.textSubtle} />
+        </PillButton>
       </View>
 
       {/* Settings modal */}
@@ -600,13 +571,17 @@ const styles = StyleSheet.create({
   card: {
     gap: 12,
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingBottom: 8,
   },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     gap: 8,
+    marginHorizontal: -12,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    minHeight: 44,
   },
   score: {
     fontSize: 14,

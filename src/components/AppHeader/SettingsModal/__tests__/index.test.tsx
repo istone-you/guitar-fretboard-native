@@ -109,7 +109,7 @@ describe("SettingsModal", () => {
     const ref = createRef<SettingsModalRef>();
     render(<SettingsModal ref={ref} {...defaultProps} onThemeChange={onThemeChange} />);
     openModal(ref);
-    fireEvent.press(screen.getByText("dark"));
+    fireEvent.press(screen.getByText("☾"));
     expect(onThemeChange).toHaveBeenCalledWith("dark");
   });
 
@@ -150,7 +150,7 @@ describe("SettingsModal", () => {
     render(<SettingsModal ref={ref} {...defaultProps} />);
     openModal(ref);
     expect(screen.getByText("settings")).toBeTruthy();
-    fireEvent.press(screen.getByText("✕"));
+    fireEvent.press(screen.getByTestId("settings-close-btn"));
     expect(screen.queryByText("settings")).toBeNull();
   });
 });
