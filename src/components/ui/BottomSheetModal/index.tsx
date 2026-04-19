@@ -8,6 +8,7 @@ import {
   type PanResponderGestureState,
   Pressable,
   StyleSheet,
+  useWindowDimensions,
   View,
 } from "react-native";
 import type { ReactNode } from "react";
@@ -17,6 +18,12 @@ import type { ReactNode } from "react";
  * clears the absolute-positioned handle pill (handle bottom ≈ 15px + 13px gap = 28px).
  */
 export const SHEET_HANDLE_CLEARANCE = 28;
+
+/** Shared sheet height — use this hook in every BottomSheetModal consumer. */
+export function useSheetHeight(): number {
+  const { height } = useWindowDimensions();
+  return Math.max(360, Math.min(520, Math.round(height * 0.62)));
+}
 
 export interface BottomSheetModalControls {
   close: () => void;

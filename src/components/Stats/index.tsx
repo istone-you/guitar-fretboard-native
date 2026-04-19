@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from "react";
+import * as Haptics from "expo-haptics";
 import {
   Alert,
   Animated,
@@ -423,6 +424,7 @@ export default function StatsPanel({
   );
 
   const handleReset = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     Alert.alert(t("stats.resetTitle"), t("stats.resetMessage"), [
       { text: t("stats.resetCancel"), style: "cancel" },
       { text: t("stats.resetOk"), style: "destructive", onPress: onClearRecords },

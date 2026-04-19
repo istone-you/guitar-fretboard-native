@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef } from "react";
+import * as Haptics from "expo-haptics";
 import {
   View,
   Text,
@@ -7,10 +8,12 @@ import {
   StyleSheet,
   Animated,
   Switch,
-  useWindowDimensions,
 } from "react-native";
 import { ContextMenu } from "../../components/ui/ContextMenu";
-import BottomSheetModal, { SHEET_HANDLE_CLEARANCE } from "../../components/ui/BottomSheetModal";
+import BottomSheetModal, {
+  SHEET_HANDLE_CLEARANCE,
+  useSheetHeight,
+} from "../../components/ui/BottomSheetModal";
 import SheetProgressiveHeader from "../../components/ui/SheetProgressiveHeader";
 import GlassIconButton from "../../components/ui/GlassIconButton";
 import { useTranslation } from "react-i18next";
@@ -101,15 +104,11 @@ export default function FinderPane({
   const [pendingItem, setPendingItem] = useState<FinderItem | null>(null);
   const [settingsHeaderHeight, setSettingsHeaderHeight] = useState(96);
   const insets = useSafeAreaInsets();
-  const { height: winHeight } = useWindowDimensions();
-  const sheetHeight = Math.max(360, Math.min(520, Math.round(winHeight * 0.62)));
+  const sheetHeight = useSheetHeight();
 
   // Lifted to parent — persists across navigation
   const rootNote = finderRoot;
   const extraNotes = finderNotes;
-  // Increments on each note tap to remount NormalFretboard, eliminating
-  // concurrent bridge-style updates that conflict with native-driver animations
-  const [fretboardKey, setFretboardKey] = useState(0);
   // Tracks the last non-null rootNote so that on reset, the rootIndex passed to
   // NormalFretboard stays stable — preventing LayerOverlayDot from remounting
   // (which would reset prevVisible and prevent the ScaleAnimView fade-out)
@@ -143,10 +142,10 @@ export default function FinderPane({
       next.add(noteName);
     }
     onFinderNotesChange(next);
-    setFretboardKey((k) => k + 1);
   };
 
   const handleReset = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onFinderRootChange(null);
     onFinderNotesChange(new Set());
     // No fretboardKey bump — lets overlay dots play their fade-out animation naturally
@@ -315,7 +314,10 @@ export default function FinderPane({
         />
         <PillButton
           isDark={isDark}
-          onPress={() => setSettingsVisible(true)}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            setSettingsVisible(true);
+          }}
           testID="finder-settings-btn"
           style={{ paddingHorizontal: 8 }}
         >
@@ -326,7 +328,6 @@ export default function FinderPane({
       {/* Fretboard */}
       <View style={styles.fretboardWrapper}>
         <NormalFretboard
-          key={fretboardKey}
           theme={theme}
           accidental={accidental}
           baseLabelMode={rootNote ? baseLabelMode : "note"}
@@ -342,17 +343,20 @@ export default function FinderPane({
 
       {/* Selected notes chips + reset button + settings */}
       <View style={[styles.selectedRow, { borderBottomColor: borderColor }]}>
+        {/* 説明文: absoluteで行全体に中央寄せ（チップやボタンの後ろに表示） */}
+        {(!rootNote || extraNotes.size === 0) && (
+          <Text pointerEvents="none" style={[styles.placeholder, { color: subTextColor }]}>
+            {t(rootNote ? "finder.tapInstruction" : "finder.longPressInstruction")}
+          </Text>
+        )}
+
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.chipsContent}
           style={styles.chipsScroll}
         >
-          {!rootNote ? (
-            <Text style={[styles.placeholder, { color: subTextColor }]}>
-              {t("finder.longPressInstruction")}
-            </Text>
-          ) : (
+          {rootNote ? (
             <>
               {/* Root chip — not removable */}
               <View style={[styles.rootChip, { backgroundColor: accentColor }]}>
@@ -370,14 +374,8 @@ export default function FinderPane({
                   <Text style={styles.chipText}>{note}</Text>
                 </TouchableOpacity>
               ))}
-
-              {extraNotes.size === 0 && (
-                <Text style={[styles.placeholder, { color: subTextColor }]}>
-                  {t("finder.tapInstruction")}
-                </Text>
-              )}
             </>
-          )}
+          ) : null}
         </ScrollView>
 
         {rootNote && (
@@ -605,8 +603,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   placeholder: {
+    position: "absolute",
+    left: 0,
+    right: 0,
     fontSize: 13,
-    paddingVertical: 4,
+    textAlign: "center",
   },
   rootChip: {
     paddingHorizontal: 10,

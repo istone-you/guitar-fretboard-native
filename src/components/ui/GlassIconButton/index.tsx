@@ -16,6 +16,7 @@ interface GlassIconButtonProps {
   hitSlop?: number;
   style?: StyleProp<ViewStyle>;
   activeOpacity?: number;
+  disabled?: boolean;
 }
 
 export default function GlassIconButton({
@@ -30,6 +31,7 @@ export default function GlassIconButton({
   hitSlop,
   style,
   activeOpacity = 0.7,
+  disabled = false,
 }: GlassIconButtonProps) {
   const size = sizeProp ?? 36;
   const resolvedFontSize = fontSize ?? Math.round(size * 0.38);
@@ -40,6 +42,7 @@ export default function GlassIconButton({
   return (
     <TouchableOpacity
       onPress={onPress}
+      disabled={disabled}
       testID={testID}
       hitSlop={hitSlop}
       activeOpacity={activeOpacity}

@@ -9,7 +9,6 @@ import {
   PanResponder,
   Animated,
   Easing,
-  useWindowDimensions,
   type PanResponderInstance,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -18,9 +17,13 @@ import { useTranslation } from "react-i18next";
 import "../../i18n";
 import Svg, { Path } from "react-native-svg";
 import Icon from "../../components/ui/Icon";
+import AddCircleButton from "../../components/ui/AddCircleButton";
 import type { Theme, Accidental } from "../../types";
 import type { CustomProgressionTemplate } from "../../hooks/useProgressionTemplates";
-import BottomSheetModal, { SHEET_HANDLE_CLEARANCE } from "../../components/ui/BottomSheetModal";
+import BottomSheetModal, {
+  SHEET_HANDLE_CLEARANCE,
+  useSheetHeight,
+} from "../../components/ui/BottomSheetModal";
 import SheetProgressiveHeader from "../../components/ui/SheetProgressiveHeader";
 import GlassIconButton from "../../components/ui/GlassIconButton";
 
@@ -150,8 +153,7 @@ export default function ManagePane({
   const { t } = useTranslation();
   const isDark = theme === "dark";
   const insets = useSafeAreaInsets();
-  const { height: winHeight } = useWindowDimensions();
-  const sheetHeight = Math.max(360, Math.min(520, Math.round(winHeight * 0.62)));
+  const sheetHeight = useSheetHeight();
 
   const bg = isDark ? "#1f2937" : "#fff";
   const border = isDark ? "#374151" : "#e7e5e4";
@@ -419,14 +421,13 @@ export default function ManagePane({
           <Text style={[styles.sectionTitle, { color: sectionHeaderColor }]}>
             {t("manage.progressionTemplates").toUpperCase()}
           </Text>
-          <TouchableOpacity
-            onPress={() => openTemplateForm(null)}
-            style={[styles.addButton, { borderColor: isDark ? "#9ca3af" : "#6b7280" }]}
-            activeOpacity={0.6}
-            hitSlop={{ top: 11, bottom: 11, left: 11, right: 11 }}
-          >
-            <Icon name="plus" size={14} color={isDark ? "#9ca3af" : "#6b7280"} strokeWidth={3.5} />
-          </TouchableOpacity>
+          <AddCircleButton
+            isDark={isDark}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              openTemplateForm(null);
+            }}
+          />
         </View>
 
         <View
@@ -608,6 +609,7 @@ export default function ManagePane({
                     close();
                   }}
                   icon="check"
+                  disabled={!formName.trim() || formDegrees.length === 0}
                   style={{
                     width: 36,
                     opacity: !formName.trim() || formDegrees.length === 0 ? 0.35 : 1,
@@ -696,14 +698,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "700",
     letterSpacing: 0.8,
-  },
-  addButton: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 1.5,
-    alignItems: "center",
-    justifyContent: "center",
   },
   sectionContainer: {
     paddingHorizontal: 12,

@@ -248,8 +248,8 @@
     "progression": "進行"
   },
   "finder": {
-    "longPressInstruction": "指板を長押ししてルート音を選択",
-    "tapInstruction": "指板をタップして音を選択",
+    "longPressInstruction": "指板を長押しでルート音を選択",
+    "tapInstruction": "指板をタップで音を追加",
     "emptyHint": "音を選ぶと候補が表示されます",
     "reset": "リセット",
     "exactMatch": "完全一致",

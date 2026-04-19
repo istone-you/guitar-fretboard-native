@@ -248,8 +248,8 @@
     "progression": "Progression"
   },
   "finder": {
-    "longPressInstruction": "Long press the fretboard to set root note",
-    "tapInstruction": "Tap the fretboard to select notes",
+    "longPressInstruction": "Long press the fretboard to select root note",
+    "tapInstruction": "Tap the fretboard to add notes",
     "emptyHint": "Select notes to see matching results",
     "reset": "Reset",
     "exactMatch": "Exact Match",

@@ -1,19 +1,14 @@
 import { useLayoutEffect, useRef, useState } from "react";
-import {
-  Animated,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-  useWindowDimensions,
-} from "react-native";
+import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 import "../../../i18n";
 import type { Theme } from "../../../types";
 import ChevronIcon from "../../ui/ChevronIcon";
-import BottomSheetModal, { SHEET_HANDLE_CLEARANCE } from "../../ui/BottomSheetModal";
+import BottomSheetModal, {
+  SHEET_HANDLE_CLEARANCE,
+  useSheetHeight,
+} from "../../ui/BottomSheetModal";
 import SheetProgressiveHeader from "../../ui/SheetProgressiveHeader";
 import GlassIconButton from "../../ui/GlassIconButton";
 
@@ -48,14 +43,12 @@ export default function SettingsModal({
 }: SettingsModalProps) {
   const { t } = useTranslation();
   const isDark = theme === "dark";
-  const { height: winHeight } = useWindowDimensions();
+  const sheetHeight = useSheetHeight();
 
   const [settingsPage, setSettingsPage] = useState<string | null>(null);
   const [headerHeight, setHeaderHeight] = useState(96);
   const slideAnim = useRef(new Animated.Value(0)).current;
   const pendingEnterDir = useRef(0);
-
-  const sheetHeight = Math.max(360, Math.min(520, Math.round(winHeight * 0.62)));
   const bgColor = isDark ? "#111827" : "#fafaf9";
   const borderColor = isDark ? "rgba(255,255,255,0.08)" : "#e7e5e4";
   const labelColor = isDark ? "#e5e7eb" : "#1c1917";

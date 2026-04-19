@@ -22,7 +22,10 @@ import {
   templateDisplayName,
   diatonicDegreeLabel,
 } from "../../../lib/fretboard";
-import BottomSheetModal, { SHEET_HANDLE_CLEARANCE } from "../../ui/BottomSheetModal";
+import BottomSheetModal, {
+  SHEET_HANDLE_CLEARANCE,
+  useSheetHeight,
+} from "../../ui/BottomSheetModal";
 import SheetProgressiveHeader from "../../ui/SheetProgressiveHeader";
 import GlassIconButton from "../../ui/GlassIconButton";
 
@@ -160,8 +163,8 @@ export default function LayerPresetModal({
   t,
 }: LayerPresetModalProps) {
   const isDark = theme === "dark";
-  const { width: winWidth, height: winHeight } = useWindowDimensions();
-  const sheetHeight = Math.max(360, Math.min(520, Math.round(winHeight * 0.62)));
+  const { width: winWidth } = useWindowDimensions();
+  const sheetHeight = useSheetHeight();
 
   const [page, setPage] = useState<"list" | "detail" | "save">("list");
   const [saveName, setSaveName] = useState("");
@@ -380,6 +383,7 @@ export default function LayerPresetModal({
                     });
                   }}
                   icon="check"
+                  disabled={!saveName.trim() || layers.length === 0}
                   style={[
                     styles.headerSide,
                     { opacity: !saveName.trim() || layers.length === 0 ? 0.35 : 1 },

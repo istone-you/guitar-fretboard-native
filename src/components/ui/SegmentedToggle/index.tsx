@@ -1,4 +1,5 @@
 import SegmentedControl from "@react-native-segmented-control/segmented-control";
+import * as Haptics from "expo-haptics";
 import type { Theme } from "../../../types";
 
 interface SegmentedToggleOption<T extends string | boolean> {
@@ -34,6 +35,7 @@ export function SegmentedToggle<T extends string | boolean>({
       values={options.map((o) => o.label ?? String(o.value))}
       selectedIndex={selectedIndex}
       onChange={(e) => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         onChange(options[e.nativeEvent.selectedSegmentIndex].value);
       }}
       appearance={isDark ? "dark" : "light"}

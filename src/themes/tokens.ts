@@ -8,7 +8,7 @@ const lightPalette = {
   text: "#1c1917",
   textSubtle: "#78716c",
   border: "rgba(0,0,0,0.09)",
-  borderStrong: "rgba(0,0,0,0.16)",
+  borderStrong: "#d6d3d1",
   tabBar: "#fafafa",
   tabBorder: "#e5e5ea",
 } as const;
@@ -20,7 +20,7 @@ const darkPalette = {
   text: "#f9fafb",
   textSubtle: "#9ca3af",
   border: "rgba(255,255,255,0.08)",
-  borderStrong: "rgba(255,255,255,0.14)",
+  borderStrong: "#4b5563",
   tabBar: "#111111",
   tabBorder: "rgba(255,255,255,0.08)",
 } as const;

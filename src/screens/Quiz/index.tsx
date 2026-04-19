@@ -90,7 +90,14 @@ function QuizSelectionScreen({ theme, onSelect, onShowStats }: QuizSelectionScre
       {/* Header row */}
       <View style={styles.titleRow}>
         {/* Stats pill button */}
-        <PillButton isDark={isDark} onPress={onShowStats} testID="quiz-stats-btn">
+        <PillButton
+          isDark={isDark}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            onShowStats();
+          }}
+          testID="quiz-stats-btn"
+        >
           <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
             <Path d="M18 20V10" stroke={statsIcon} strokeWidth={2} strokeLinecap="round" />
             <Path d="M12 20V4" stroke={statsIcon} strokeWidth={2} strokeLinecap="round" />

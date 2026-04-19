@@ -28,7 +28,7 @@ import ColorPicker from "../ui/ColorPicker";
 import { SegmentedToggle } from "../ui/SegmentedToggle";
 import { buildScaleOptions } from "../ui/scaleOptions";
 import LayerDescription from "./LayerDescription";
-import BottomSheetModal, { SHEET_HANDLE_CLEARANCE } from "../ui/BottomSheetModal";
+import BottomSheetModal, { SHEET_HANDLE_CLEARANCE, useSheetHeight } from "../ui/BottomSheetModal";
 import GlassIconButton from "../ui/GlassIconButton";
 import SheetProgressiveHeader from "../ui/SheetProgressiveHeader";
 import PillButton from "../ui/PillButton";
@@ -151,7 +151,8 @@ export default function LayerEditModal({
 }: LayerEditModalProps) {
   const { t } = useTranslation();
   const isDark = theme === "dark";
-  const { height: winHeight, width: winWidth } = useWindowDimensions();
+  const { width: winWidth } = useWindowDimensions();
+  const sheetHeight = useSheetHeight();
 
   const [step, setStep] = useState<"settings" | "color" | "chips" | "select" | "caged">(
     initialLayer ? "settings" : "select",
@@ -286,8 +287,6 @@ export default function LayerEditModal({
     value,
     label: t(`options.triadInversions.${value}`),
   }));
-  const sheetHeight = Math.max(360, Math.min(520, Math.round(winHeight * 0.62)));
-
   // Progression options — ビルトインとカスタムをセクション分けして表示
   const progressionTemplateOptions: SelectOption[] = (() => {
     const builtins = PROGRESSION_TEMPLATES.map((t_) => ({

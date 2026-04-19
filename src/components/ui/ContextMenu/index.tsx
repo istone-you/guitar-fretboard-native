@@ -1,13 +1,6 @@
-import {
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-  useWindowDimensions,
-} from "react-native";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import BottomSheetModal, { SHEET_HANDLE_CLEARANCE } from "../BottomSheetModal";
+import BottomSheetModal, { SHEET_HANDLE_CLEARANCE, useSheetHeight } from "../BottomSheetModal";
 
 export interface ContextMenuItem {
   label: string;
@@ -31,8 +24,7 @@ interface ContextMenuProps {
 
 export function ContextMenu({ visible, isDark, title, items, footer, onClose }: ContextMenuProps) {
   const insets = useSafeAreaInsets();
-  const { height: winHeight } = useWindowDimensions();
-  const sheetHeight = Math.max(360, Math.min(520, Math.round(winHeight * 0.62)));
+  const sheetHeight = useSheetHeight();
 
   const sheetBg = isDark ? "#1c1c1e" : "#ffffff";
   const borderColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)";

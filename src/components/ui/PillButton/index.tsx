@@ -11,7 +11,7 @@ export function getPillStyle(colors: ThemeColors): ViewStyle {
     paddingVertical: 8,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.borderStrong,
     backgroundColor: colors.surface,
   };
 }

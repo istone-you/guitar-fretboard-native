@@ -1,19 +1,12 @@
 import { useRef, useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  Animated,
-  TouchableOpacity,
-  useWindowDimensions,
-} from "react-native";
+import { View, Text, StyleSheet, Animated, TouchableOpacity } from "react-native";
 import { useTranslation } from "react-i18next";
 import * as Haptics from "expo-haptics";
 import "../../i18n";
 import type { Accidental, BaseLabelMode, Theme } from "../../types";
 import { SegmentedToggle } from "../ui/SegmentedToggle";
 import GlassIconButton from "../ui/GlassIconButton";
-import BottomSheetModal, { SHEET_HANDLE_CLEARANCE } from "../ui/BottomSheetModal";
+import BottomSheetModal, { SHEET_HANDLE_CLEARANCE, useSheetHeight } from "../ui/BottomSheetModal";
 import SheetProgressiveHeader from "../ui/SheetProgressiveHeader";
 import Icon from "../ui/Icon";
 import { getNotesByAccidental } from "../../lib/fretboard";
@@ -41,8 +34,7 @@ export default function FretboardControls({
 }: FretboardControlsProps) {
   const { t, i18n } = useTranslation();
   const isDark = theme === "dark";
-  const { height: winHeight } = useWindowDimensions();
-  const sheetHeight = Math.max(360, Math.min(520, Math.round(winHeight * 0.62)));
+  const sheetHeight = useSheetHeight();
   const [sheetVisible, setSheetVisible] = useState(false);
 
   // Root note bounce animation
@@ -63,6 +55,9 @@ export default function FretboardControls({
   const colors = getColors(isDark);
   const bgColor = colors.surface;
   const notes = getNotesByAccidental(accidental);
+  const chipSelectedBg = isDark ? "#ffffff" : "#1c1917";
+  const chipSelectedText = isDark ? "#1c1917" : "#ffffff";
+  const chipUnselectedBg = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)";
 
   return (
     <View style={[styles.container, { position: "relative" }]}>
@@ -157,31 +152,24 @@ export default function FretboardControls({
                       onRootNoteChange(note);
                     }}
                     activeOpacity={0.75}
-                    style={styles.noteBtn}
+                    style={[
+                      styles.notePill,
+                      isSelected
+                        ? { backgroundColor: chipSelectedBg, borderColor: chipSelectedBg }
+                        : { backgroundColor: chipUnselectedBg, borderColor: "transparent" },
+                    ]}
                   >
-                    <View
+                    <Text
                       style={[
-                        styles.notePill,
-                        isSelected && {
-                          backgroundColor: isDark ? "#ffffff" : "#1c1917",
-                        },
-                        !isSelected && {
-                          backgroundColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
+                        styles.noteText,
+                        {
+                          color: isSelected ? chipSelectedText : colors.text,
+                          fontWeight: isSelected ? "700" : "500",
                         },
                       ]}
                     >
-                      <Text
-                        style={[
-                          styles.noteText,
-                          {
-                            color: isSelected ? (isDark ? "#1c1917" : "#ffffff") : colors.text,
-                            fontWeight: isSelected ? "700" : "500",
-                          },
-                        ]}
-                      >
-                        {note}
-                      </Text>
-                    </View>
+                      {note}
+                    </Text>
                   </TouchableOpacity>
                 );
               })}
@@ -253,17 +241,17 @@ const styles = StyleSheet.create({
     gap: 10,
     justifyContent: "center",
   },
-  noteBtn: {
-    width: "22%",
-  },
   notePill: {
-    borderRadius: radius.md,
-    paddingVertical: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 999,
+    borderWidth: 1,
+    minWidth: 56,
     alignItems: "center",
     justifyContent: "center",
   },
   noteText: {
-    fontSize: 16,
-    fontFamily: "monospace",
+    fontSize: 15,
+    fontWeight: "600",
   },
 });
