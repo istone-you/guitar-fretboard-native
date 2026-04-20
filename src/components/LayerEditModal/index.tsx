@@ -38,15 +38,11 @@ import {
   CHORD_TYPES_CORE,
   CUSTOM_DEGREE_CHIPS,
   DEGREE_BY_SEMITONE,
-  DIATONIC_CHORDS,
   TRIAD_INVERSION_OPTIONS,
   PROGRESSION_TEMPLATES,
-  chordSuffix,
-  getDiatonicChord,
   getNotesByAccidental,
   getOnChordListForRoot,
   getRootIndex,
-  diatonicDegreeLabel,
   templateDisplayName,
   type ProgressionTemplate,
 } from "../../lib/fretboard";
@@ -266,20 +262,10 @@ export default function LayerEditModal({
 
   const { options: scaleOptions } = buildScaleOptions(t);
   const notes = getNotesByAccidental(accidental);
-  const rootIndex = getRootIndex(rootNote);
 
-  const diatonicKeyOptions = [
-    { value: "major", label: t("options.diatonicKey.major") },
-    { value: "natural-minor", label: t("options.diatonicKey.naturalMinor") },
-  ];
-  const diatonicChordSizeOptions = [
-    { value: "triad", label: t("options.diatonicChordSize.triad") },
-    { value: "seventh", label: t("options.diatonicChordSize.seventh") },
-  ];
   const chordDisplayOptions: { value: ChordDisplayMode; label: string }[] = [
     { value: "form", label: t("options.chordDisplayMode.form") },
     { value: "triad", label: t("options.chordDisplayMode.triad") },
-    { value: "diatonic", label: t("options.chordDisplayMode.diatonic") },
     { value: "on-chord", label: t("options.chordDisplayMode.on-chord") },
   ];
   const onChordOptions = getOnChordListForRoot(rootNote).map((v) => ({ value: v, label: v }));
@@ -309,19 +295,6 @@ export default function LayerEditModal({
     );
     return result;
   })();
-  const progressionKeyTypeOptions = [
-    { value: "major", label: t("options.diatonicKey.major") },
-    { value: "minor", label: t("options.diatonicKey.naturalMinor") },
-  ];
-  const diatonicScaleType = `${layer.diatonicKeyType}-${layer.diatonicChordSize}`;
-
-  const diatonicCodeOptions = (DIATONIC_CHORDS[diatonicScaleType] ?? []).map(({ value }) => {
-    const chord = getDiatonicChord(rootIndex, diatonicScaleType, value);
-    return {
-      value,
-      label: `${diatonicDegreeLabel(value, { chordSize: layer.diatonicChordSize as "triad" | "seventh", keyType: layer.diatonicKeyType === "natural-minor" ? "minor" : "major" })} (${notes[chord.rootIndex]}${chordSuffix(chord.chordType)})`,
-    };
-  });
 
   const bgColor = isDark ? "#111827" : "#fafaf9";
   const borderColor = isDark ? "rgba(255,255,255,0.08)" : "#e7e5e4";
@@ -507,45 +480,23 @@ export default function LayerEditModal({
                                 )}
                                 {layer.chordDisplayMode !== "on-chord" &&
                                   renderNavRow(
-                                    layer.chordDisplayMode === "diatonic"
-                                      ? t("controls.degree")
-                                      : t("controls.chord"),
-                                    layer.chordDisplayMode === "diatonic"
-                                      ? diatonicDegreeLabel(layer.diatonicDegree, {
-                                          chordSize: layer.diatonicChordSize as "triad" | "seventh",
-                                          keyType:
-                                            layer.diatonicKeyType === "natural-minor"
-                                              ? "minor"
-                                              : "major",
-                                        })
-                                      : layer.chordType,
+                                    t("controls.chord"),
+                                    layer.chordType,
                                     () => {
                                       const opts =
                                         layer.chordDisplayMode === "form"
                                           ? CHORD_TYPES.map((v) => ({ value: v, label: v }))
-                                          : layer.chordDisplayMode === "triad"
-                                            ? ["Major", "Minor", "Diminished", "Augmented"].map(
-                                                (v) => ({ value: v, label: v }),
-                                              )
-                                            : diatonicCodeOptions;
+                                          : ["Major", "Minor", "Diminished", "Augmented"].map(
+                                              (v) => ({ value: v, label: v }),
+                                            );
                                       navigate("select", {
-                                        title:
-                                          layer.chordDisplayMode === "diatonic"
-                                            ? t("controls.degree")
-                                            : t("controls.chord"),
+                                        title: t("controls.chord"),
                                         options: opts,
-                                        currentValue:
-                                          layer.chordDisplayMode === "diatonic"
-                                            ? layer.diatonicDegree
-                                            : layer.chordType,
-                                        onSelect: (v) =>
-                                          layer.chordDisplayMode === "diatonic"
-                                            ? update({ diatonicDegree: v })
-                                            : update({ chordType: v as ChordType }),
+                                        currentValue: layer.chordType,
+                                        onSelect: (v) => update({ chordType: v as ChordType }),
                                       });
                                     },
-                                    layer.chordDisplayMode !== "diatonic" &&
-                                      layer.chordDisplayMode !== "triad",
+                                    layer.chordDisplayMode !== "triad",
                                   )}
                                 {layer.chordDisplayMode === "on-chord" &&
                                   renderNavRow(
@@ -560,75 +511,16 @@ export default function LayerEditModal({
                                       }),
                                     true,
                                   )}
-                                {(layer.chordDisplayMode === "diatonic" ||
-                                  layer.chordDisplayMode === "triad") &&
+                                {layer.chordDisplayMode === "triad" &&
                                   renderNavRow(
-                                    layer.chordDisplayMode === "diatonic"
-                                      ? t("controls.key")
-                                      : t("controls.inversion"),
-                                    findLabel(
-                                      layer.chordDisplayMode === "diatonic"
-                                        ? diatonicKeyOptions
-                                        : triadInversionOptions,
-                                      layer.chordDisplayMode === "diatonic"
-                                        ? layer.diatonicKeyType
-                                        : layer.triadInversion,
-                                    ),
-                                    () => {
-                                      const isDiatonic = layer.chordDisplayMode === "diatonic";
-                                      navigate("select", {
-                                        title: isDiatonic
-                                          ? t("controls.key")
-                                          : t("controls.inversion"),
-                                        options: isDiatonic
-                                          ? diatonicKeyOptions
-                                          : triadInversionOptions,
-                                        currentValue: isDiatonic
-                                          ? layer.diatonicKeyType
-                                          : layer.triadInversion,
-                                        onSelect: (v) => {
-                                          if (!isDiatonic) {
-                                            update({ triadInversion: v });
-                                            return;
-                                          }
-                                          const patch: Partial<LayerConfig> = {
-                                            diatonicKeyType: v,
-                                          };
-                                          const scaleKey = `${v}-${layer.diatonicChordSize}`;
-                                          const validDegrees = (
-                                            DIATONIC_CHORDS[scaleKey] ?? []
-                                          ).map((item) => item.value);
-                                          if (!validDegrees.includes(layer.diatonicDegree)) {
-                                            patch.diatonicDegree = validDegrees[0] ?? "I";
-                                          }
-                                          update(patch);
-                                        },
-                                      });
-                                    },
-                                    layer.chordDisplayMode !== "diatonic",
-                                  )}
-                                {layer.chordDisplayMode === "diatonic" &&
-                                  renderNavRow(
-                                    t("controls.chordType"),
-                                    findLabel(diatonicChordSizeOptions, layer.diatonicChordSize),
+                                    t("controls.inversion"),
+                                    findLabel(triadInversionOptions, layer.triadInversion),
                                     () =>
                                       navigate("select", {
-                                        title: t("controls.chordType"),
-                                        options: diatonicChordSizeOptions,
-                                        currentValue: layer.diatonicChordSize,
-                                        onSelect: (v) => {
-                                          const patch: Partial<LayerConfig> = {
-                                            diatonicChordSize: v,
-                                          };
-                                          const scaleKey = `${layer.diatonicKeyType}-${v}`;
-                                          const validDegrees = (
-                                            DIATONIC_CHORDS[scaleKey] ?? []
-                                          ).map((item) => item.value);
-                                          if (!validDegrees.includes(layer.diatonicDegree)) {
-                                            patch.diatonicDegree = validDegrees[0] ?? "I";
-                                          }
-                                          update(patch);
-                                        },
+                                        title: t("controls.inversion"),
+                                        options: triadInversionOptions,
+                                        currentValue: layer.triadInversion,
+                                        onSelect: (v) => update({ triadInversion: v }),
                                       }),
                                     true,
                                   )}
@@ -745,21 +637,6 @@ export default function LayerEditModal({
                                           progressionTemplateId: v,
                                           progressionCurrentStep: 0,
                                         }),
-                                    }),
-                                )}
-                                {renderNavRow(
-                                  t("controls.keyType"),
-                                  findLabel(
-                                    progressionKeyTypeOptions,
-                                    layer.progressionKeyType ?? "major",
-                                  ),
-                                  () =>
-                                    navigate("select", {
-                                      title: t("controls.keyType"),
-                                      options: progressionKeyTypeOptions,
-                                      currentValue: layer.progressionKeyType ?? "major",
-                                      onSelect: (v) =>
-                                        update({ progressionKeyType: v as "major" | "minor" }),
                                     }),
                                 )}
                                 {renderToggleRow(

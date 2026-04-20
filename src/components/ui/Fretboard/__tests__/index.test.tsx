@@ -805,25 +805,6 @@ describe("Fretboard - Chord display modes via layers", () => {
     const json = JSON.stringify(toJSON());
     expect(json).toContain("#ffd70099");
   });
-
-  it("renders diatonic chord mode via layer", () => {
-    const layer = createDefaultLayer("chord", "c1", "#ffd700");
-    layer.chordDisplayMode = "diatonic";
-    layer.diatonicKeyType = "major";
-    layer.diatonicChordSize = "triad";
-    layer.diatonicDegree = "I";
-    const { toJSON } = render(
-      <Fretboard
-        {...makeProps({
-          rootNote: "C",
-          fretRange: [0, 14],
-          layers: [layer],
-        })}
-      />,
-    );
-    const json = JSON.stringify(toJSON());
-    expect(json).toContain("#ffd700");
-  });
 });
 
 // ==================== 20. Scale and Chord layer interaction ====================

@@ -50,20 +50,13 @@ export default function LayerDescription({
     itemDesc = t(`description.scale.${scaleI18nKey(layer.scaleType)}`);
   } else if (layer.type === "chord") {
     const mode = layer.chordDisplayMode;
-    if (mode === "form" || mode === "triad" || mode === "diatonic") {
-      layerDesc = t(`description.layer.chord.${mode}`);
-    } else {
-      layerDesc = t("description.layer.chord.onChord");
-    }
-
     if (mode === "form" || mode === "triad") {
+      layerDesc = t(`description.layer.chord.${mode}`);
       const key = CHORD_KEY_MAP[layer.chordType] ?? layer.chordType;
       const desc = t(`description.chord.${key}`, { defaultValue: "" });
       if (desc) itemDesc = desc;
-    } else if (mode === "diatonic") {
-      // No per-degree descriptions
-    } else if (mode === "on-chord") {
-      // No per-voicing descriptions
+    } else {
+      layerDesc = t("description.layer.chord.onChord");
     }
   } else if (layer.type === "caged") {
     layerDesc = t("description.layer.caged");

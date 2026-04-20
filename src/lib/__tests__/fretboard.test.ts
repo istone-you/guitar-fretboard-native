@@ -951,8 +951,6 @@ describe("getActiveOverlaySemitones", () => {
     showCaged: false,
     showChord: false,
     chordDisplayMode: "form" as const,
-    diatonicScaleType: "major-triad",
-    diatonicDegree: "I",
     chordType: "Major" as ChordType,
   };
 
@@ -998,18 +996,6 @@ describe("getActiveOverlaySemitones", () => {
     expect(result).toEqual(new Set([0, 7]));
   });
 
-  it("returns diatonic chord semitones when diatonic mode", () => {
-    const result = getActiveOverlaySemitones({
-      ...baseParams,
-      showChord: true,
-      chordDisplayMode: "diatonic",
-      diatonicScaleType: "major-triad",
-      diatonicDegree: "I",
-    });
-    // I chord in C major = C Major = {0, 4, 7}
-    expect(result).toEqual(new Set([0, 4, 7]));
-  });
-
   it("merges semitones from multiple active overlays", () => {
     const result = getActiveOverlaySemitones({
       ...baseParams,
@@ -1019,20 +1005,6 @@ describe("getActiveOverlaySemitones", () => {
     });
     // minor penta: {0, 3, 5, 7, 10} + CAGED Major: {0, 4, 7}
     expect(result).toEqual(new Set([0, 3, 4, 5, 7, 10]));
-  });
-
-  it("works with non-C root notes", () => {
-    const result = getActiveOverlaySemitones({
-      ...baseParams,
-      rootNote: "G",
-      showChord: true,
-      chordDisplayMode: "diatonic",
-      diatonicScaleType: "major-triad",
-      diatonicDegree: "V",
-    });
-    // G major key, V = D Major. Root offset = (2 - 7 + 12) % 12 = 7
-    // D Major tones {0,4,7} shifted by 7 = {7, 11, 2}
-    expect(result).toEqual(new Set([7, 11, 2]));
   });
 });
 
@@ -1314,8 +1286,6 @@ describe("getChordLayerCells - on-chord mode", () => {
       chordDisplayMode,
       "Major" as ChordType,
       "root",
-      "major",
-      "I",
       "C/E",
     );
     expect(cells.length).toBeGreaterThan(0);
@@ -1330,8 +1300,6 @@ describe("getChordLayerCells - on-chord mode", () => {
       "on-chord" as ChordDisplayMode,
       "Major" as ChordType,
       "root",
-      "major",
-      "I",
     );
     // Default is "C/E"
     const directCells = getOnChordCells("C/E", 0);

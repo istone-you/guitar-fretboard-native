@@ -1677,8 +1677,6 @@ interface ActiveOverlaySemitoneParams {
   showCaged: boolean;
   showChord: boolean;
   chordDisplayMode: ChordDisplayMode;
-  diatonicScaleType: string;
-  diatonicDegree: string;
   chordType: ChordType;
 }
 
@@ -1689,12 +1687,9 @@ export function getActiveOverlaySemitones({
   showCaged,
   showChord,
   chordDisplayMode,
-  diatonicScaleType,
-  diatonicDegree,
   chordType,
 }: ActiveOverlaySemitoneParams): Set<number> {
   const active = new Set<number>();
-  const keyRootIndex = getRootIndex(rootNote);
 
   if (showScale) {
     for (const semitone of SCALE_DEGREES[scaleType] ?? []) active.add(semitone);
@@ -1705,13 +1700,7 @@ export function getActiveOverlaySemitones({
   }
 
   if (showChord) {
-    let semitones: Set<number> | undefined;
-    if (chordDisplayMode === "diatonic") {
-      semitones = getDiatonicChordSemitones(keyRootIndex, diatonicScaleType, diatonicDegree);
-    } else {
-      semitones = CHORD_SEMITONES[chordType];
-    }
-
+    const semitones = CHORD_SEMITONES[chordType];
     for (const semitone of semitones ?? []) active.add(semitone);
   }
 
@@ -2325,8 +2314,6 @@ export function getChordLayerCells(
   chordDisplayMode: ChordDisplayMode,
   chordType: ChordType,
   triadInversion: string,
-  diatonicScaleType: string,
-  diatonicDegree: string,
   onChordName: string = "C/E",
 ): FretCell[] {
   const dedupeCells = (input: FretCell[]): FretCell[] => {
@@ -2342,14 +2329,9 @@ export function getChordLayerCells(
     return getOnChordCells(onChordName, rootIndex);
   }
 
-  const effectiveDisplayMode = chordDisplayMode === "diatonic" ? "form" : chordDisplayMode;
-  let effectiveRootIndex = rootIndex;
-  let effectiveChordType = chordType;
-  if (chordDisplayMode === "diatonic") {
-    const chord = getDiatonicChord(rootIndex, diatonicScaleType, diatonicDegree);
-    effectiveRootIndex = chord.rootIndex;
-    effectiveChordType = chord.chordType;
-  }
+  const effectiveDisplayMode = chordDisplayMode;
+  const effectiveRootIndex = rootIndex;
+  const effectiveChordType = chordType;
 
   if (chordDisplayMode === "triad") {
     const cells: FretCell[] = [];
@@ -2489,8 +2471,9 @@ export function diatonicDegreeLabel(
  * - "tpl-" 始まりのカスタムテンプレートは name をそのまま使用
  */
 export function templateDisplayName(template: ProgressionTemplate): string {
-  if (template.id.startsWith("tpl-") || template.id === "blues") return template.name;
-  return (template.degrees ?? []).map((d) => diatonicDegreeLabel(d)).join("-");
+  if (template.id.startsWith("tpl-") || template.id === "blues" || !template.degrees)
+    return template.name;
+  return template.degrees.map((d) => diatonicDegreeLabel(d)).join("-");
 }
 
 export const CHROMATIC_DEGREE_OFFSETS: Record<string, number> = {
@@ -2521,7 +2504,6 @@ export function getTemplateLength(template: ProgressionTemplate): number {
 
 export function resolveProgressionStep(
   keyRootIndex: number,
-  keyType: "major" | "minor",
   template: ProgressionTemplate,
   stepIdx: number,
 ): { rootIndex: number; chordType: ChordType } {
@@ -2532,7 +2514,7 @@ export function resolveProgressionStep(
     return { rootIndex: (keyRootIndex + offset) % 12, chordType: chord.chordType };
   }
   const degree = (template.degrees ?? [])[stepIdx] ?? "I";
-  return resolveProgressionDegree(keyRootIndex, keyType, "triad", degree);
+  return resolveProgressionDegree(keyRootIndex, degree);
 }
 
 export const PROGRESSION_TEMPLATES: ProgressionTemplate[] = [
@@ -2546,45 +2528,82 @@ export const PROGRESSION_TEMPLATES: ProgressionTemplate[] = [
     name: "12bar blues",
     degrees: ["I", "IV", "I", "I", "IV", "IV", "I", "I", "V", "IV", "I", "V"],
   },
+  {
+    id: "diatonicMajorTriad",
+    name: "Diatonic / Maj Triads",
+    chords: [
+      { degree: "I", chordType: "Major" },
+      { degree: "II", chordType: "Minor" },
+      { degree: "III", chordType: "Minor" },
+      { degree: "IV", chordType: "Major" },
+      { degree: "V", chordType: "Major" },
+      { degree: "VI", chordType: "Minor" },
+      { degree: "VII", chordType: "dim" },
+    ],
+  },
+  {
+    id: "diatonicMajorSeventh",
+    name: "Diatonic / Maj 7ths",
+    chords: [
+      { degree: "I", chordType: "maj7" },
+      { degree: "II", chordType: "m7" },
+      { degree: "III", chordType: "m7" },
+      { degree: "IV", chordType: "maj7" },
+      { degree: "V", chordType: "7th" },
+      { degree: "VI", chordType: "m7" },
+      { degree: "VII", chordType: "m7(b5)" },
+    ],
+  },
+  {
+    id: "diatonicMinorTriad",
+    name: "Diatonic / Min Triads",
+    chords: [
+      { degree: "i", chordType: "Minor" },
+      { degree: "ii", chordType: "dim" },
+      { degree: "bIII", chordType: "Major" },
+      { degree: "iv", chordType: "Minor" },
+      { degree: "v", chordType: "Minor" },
+      { degree: "bVI", chordType: "Major" },
+      { degree: "bVII", chordType: "Major" },
+    ],
+  },
+  {
+    id: "diatonicMinorSeventh",
+    name: "Diatonic / Min 7ths",
+    chords: [
+      { degree: "i", chordType: "m7" },
+      { degree: "ii", chordType: "m7(b5)" },
+      { degree: "bIII", chordType: "maj7" },
+      { degree: "iv", chordType: "m7" },
+      { degree: "v", chordType: "m7" },
+      { degree: "bVI", chordType: "maj7" },
+      { degree: "bVII", chordType: "7th" },
+    ],
+  },
 ];
 
 /**
- * Resolves a progression degree string (e.g. "ii", "V", "I") to an absolute
- * rootIndex and chordType, given a key root and key type.
- *
- * - Uses DIATONIC_CHORDS for standard lookup.
- * - Special-cases "V" in minor context as the harmonic-minor dominant chord.
- * - Falls back to case-insensitive match, then to root Major.
+ * Resolves a progression degree string (e.g. "ii", "V", "bVII") to an absolute
+ * rootIndex and chordType. Searches major-triad then natural-minor-triad tables.
+ * Falls back to case-insensitive match, then to root Major.
  */
 export function resolveProgressionDegree(
   keyRootIndex: number,
-  keyType: "major" | "minor",
-  chordSize: "triad" | "seventh",
   degree: string,
 ): { rootIndex: number; chordType: ChordType } {
-  const scaleKey = `${keyType === "minor" ? "natural-minor" : "major"}-${chordSize}`;
-  const progression = DIATONIC_CHORDS[scaleKey] ?? DIATONIC_CHORDS["major-triad"];
-  const found = progression.find((item) => item.value === degree);
-  if (found) {
-    return {
-      rootIndex: (keyRootIndex + found.offset) % 12,
-      chordType: found.chordType,
-    };
+  for (const scaleKey of ["major-triad", "natural-minor-triad"] as const) {
+    const progression = DIATONIC_CHORDS[scaleKey] ?? [];
+    const found = progression.find((item) => item.value === degree);
+    if (found) {
+      return { rootIndex: (keyRootIndex + found.offset) % 12, chordType: found.chordType };
+    }
   }
-  // "V" in minor → harmonic-minor dominant (offset 7, dominant 7th / major triad)
-  if (degree === "V" && keyType === "minor") {
-    return {
-      rootIndex: (keyRootIndex + 7) % 12,
-      chordType: chordSize === "seventh" ? "7th" : "Major",
-    };
-  }
-  // Case-insensitive fallback (e.g. "iv" matches "IV")
-  const fallback = progression.find((item) => item.value.toLowerCase() === degree.toLowerCase());
-  if (fallback) {
-    return {
-      rootIndex: (keyRootIndex + fallback.offset) % 12,
-      chordType: fallback.chordType,
-    };
+  for (const scaleKey of ["major-triad", "natural-minor-triad"] as const) {
+    const progression = DIATONIC_CHORDS[scaleKey] ?? [];
+    const fallback = progression.find((item) => item.value.toLowerCase() === degree.toLowerCase());
+    if (fallback) {
+      return { rootIndex: (keyRootIndex + fallback.offset) % 12, chordType: fallback.chordType };
+    }
   }
   return { rootIndex: keyRootIndex, chordType: "Major" };
 }

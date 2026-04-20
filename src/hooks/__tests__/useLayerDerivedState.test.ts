@@ -76,17 +76,6 @@ describe("useLayerDerivedState – overlaySemitones", () => {
     expect(result.current.overlaySemitones).toEqual(new Set([0, 7]));
   });
 
-  it("returns diatonic chord semitones", () => {
-    const layer = createDefaultLayer("chord", "l1", "#ff0000");
-    layer.chordDisplayMode = "diatonic";
-    layer.diatonicKeyType = "major";
-    layer.diatonicChordSize = "triad";
-    layer.diatonicDegree = "I";
-    const { result } = setup({ layers: [layer], rootNote: "C" });
-    // Diatonic I in C major triad = C Major = {0, 4, 7}
-    expect(result.current.overlaySemitones).toEqual(new Set([0, 4, 7]));
-  });
-
   it("returns Major semitones for caged layer type", () => {
     const layer = createDefaultLayer("caged", "l1", "#ff0000");
     const { result } = setup({ layers: [layer], rootNote: "C" });
@@ -211,7 +200,6 @@ describe("useLayerDerivedState – layerNoteLabelsMap", () => {
   it("returns progression chord labels for progression layer", () => {
     const layer = createDefaultLayer("progression", "l1", "#ff0000");
     layer.progressionTemplateId = "251";
-    layer.progressionKeyType = "major";
     layer.progressionCurrentStep = 0;
     const { result } = setup({
       layers: [layer],
@@ -242,7 +230,6 @@ describe("useLayerDerivedState – overlaySemitones (progression)", () => {
   it("returns semitones for the current step of a progression template", () => {
     const layer = createDefaultLayer("progression", "l1", "#ff0000");
     layer.progressionTemplateId = "251";
-    layer.progressionKeyType = "major";
     layer.progressionCurrentStep = 0;
     const { result } = setup({ layers: [layer], rootNote: "C" });
     // Progression should produce some semitones

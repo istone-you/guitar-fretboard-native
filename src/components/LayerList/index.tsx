@@ -24,7 +24,6 @@ import {
   getNotesByAccidental,
   getRootIndex,
   chordSuffix,
-  diatonicDegreeLabel,
   templateDisplayName,
   getTemplateLength,
   resolveProgressionStep,
@@ -667,23 +666,15 @@ export default function LayerList({
         (tp) => tp.id === (layer.progressionTemplateId ?? "251"),
       );
       if (!template) return "-";
-      const progKeyType = layer.progressionKeyType ?? "major";
       const notes = getNotesByAccidental(accidental);
       const keyRootIdx = getRootIndex(rootNote);
       const totalLen = getTemplateLength(template);
       const step = Math.min(Math.max(layer.progressionCurrentStep ?? 0, 0), totalLen - 1);
-      const chord = resolveProgressionStep(keyRootIdx, progKeyType, template, step);
+      const chord = resolveProgressionStep(keyRootIdx, template, step);
       const chordName = `${notes[chord.rootIndex]}${chordSuffix(chord.chordType)}`;
       return `${templateDisplayName(template)}  ${chordName}`;
     }
     const mode = t(`options.chordDisplayMode.${layer.chordDisplayMode}`);
-    if (layer.chordDisplayMode === "diatonic") {
-      const key = t(
-        `options.diatonicKey.${layer.diatonicKeyType === "natural-minor" ? "naturalMinor" : "major"}`,
-      );
-      const size = t(`options.diatonicChordSize.${layer.diatonicChordSize}`);
-      return `${mode}: ${diatonicDegreeLabel(layer.diatonicDegree, { chordSize: layer.diatonicChordSize as "triad" | "seventh", keyType: layer.diatonicKeyType === "natural-minor" ? "minor" : "major" })} (${key} ${size})`;
-    }
     if (layer.chordDisplayMode === "triad") {
       const inv = t(`options.triadInversions.${layer.triadInversion}`);
       return `${mode}: ${layer.chordType} ${inv}`;

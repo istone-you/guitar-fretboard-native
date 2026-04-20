@@ -17,11 +17,7 @@ import * as Haptics from "expo-haptics";
 import Icon from "../../ui/Icon";
 import type { Theme, LayerConfig } from "../../../types";
 import type { LayerPreset } from "../../../hooks/useLayerPresets";
-import {
-  PROGRESSION_TEMPLATES,
-  templateDisplayName,
-  diatonicDegreeLabel,
-} from "../../../lib/fretboard";
+import { PROGRESSION_TEMPLATES, templateDisplayName } from "../../../lib/fretboard";
 import BottomSheetModal, {
   SHEET_HANDLE_CLEARANCE,
   useSheetHeight,
@@ -56,13 +52,6 @@ function getLayerSummary(layer: LayerConfig, t: (k: string) => string): string {
     }
     case "chord": {
       const mode = t(`options.chordDisplayMode.${layer.chordDisplayMode}`);
-      if (layer.chordDisplayMode === "diatonic") {
-        const key = t(
-          `options.diatonicKey.${layer.diatonicKeyType === "natural-minor" ? "naturalMinor" : "major"}`,
-        );
-        const size = t(`options.diatonicChordSize.${layer.diatonicChordSize}`);
-        return `${mode}: ${diatonicDegreeLabel(layer.diatonicDegree, { chordSize: layer.diatonicChordSize as "triad" | "seventh", keyType: layer.diatonicKeyType === "natural-minor" ? "minor" : "major" })} (${key} ${size})`;
-      }
       if (layer.chordDisplayMode === "triad") {
         return `${mode}: ${layer.chordType} ${t(`options.triadInversions.${layer.triadInversion}`)}`;
       }
@@ -109,7 +98,6 @@ function getRawLayerSummary(raw: Record<string, unknown>, t: (k: string) => stri
       try {
         const mode = t(`options.chordDisplayMode.${raw.chordDisplayMode}`);
         if (raw.chordDisplayMode === "on-chord") return `${mode}: ${raw.onChordName ?? "-"}`;
-        if (raw.chordDisplayMode === "diatonic") return `${mode}: ${raw.diatonicDegree ?? "-"}`;
         return `${mode}: ${raw.chordType ?? "-"}`;
       } catch {
         return (raw.chordType as string) ?? "-";

@@ -288,23 +288,6 @@ describe("LayerList", () => {
     expect(getByText("options.diatonicKey.major: C, A")).toBeTruthy();
   });
 
-  it("getSummary for chord diatonic layer", () => {
-    const layers = [
-      makeLayer("chord", "l1", {
-        chordDisplayMode: "diatonic",
-        diatonicKeyType: "major",
-        diatonicChordSize: "triad",
-        diatonicDegree: "I",
-      }),
-    ];
-    const { getByText } = renderList({ layers });
-    expect(
-      getByText(
-        "options.chordDisplayMode.diatonic: I (options.diatonicKey.major options.diatonicChordSize.triad)",
-      ),
-    ).toBeTruthy();
-  });
-
   it("getSummary for chord triad layer", () => {
     const layers = [
       makeLayer("chord", "l1", {

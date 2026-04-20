@@ -459,21 +459,6 @@ describe("LayerEditModal", () => {
     expect(getByText("controls.inversion")).toBeTruthy();
   });
 
-  // ── Chord diatonic display mode ───────────────────────────────────
-  it("chord layer with diatonic display mode shows degree, key, and chord type", () => {
-    const existing = {
-      ...createDefaultLayer("chord", "l2", "#ffd700"),
-      chordDisplayMode: "diatonic" as const,
-    };
-    const { getByText } = renderModal({ initialLayer: existing });
-    act(() => {
-      jest.runAllTimers();
-    });
-    expect(getByText("controls.degree")).toBeTruthy();
-    expect(getByText("controls.key")).toBeTruthy();
-    expect(getByText("controls.chordType")).toBeTruthy();
-  });
-
   // ── Chord on-chord display mode ──────────────────────────────────
   it("chord layer with on-chord display mode shows chord dropdown", () => {
     const existing = {

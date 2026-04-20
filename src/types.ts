@@ -1,7 +1,7 @@
 export type Theme = "dark" | "light";
 export type Accidental = "sharp" | "flat";
 export type BaseLabelMode = "note" | "degree";
-export type ChordDisplayMode = "form" | "triad" | "diatonic" | "on-chord";
+export type ChordDisplayMode = "form" | "triad" | "on-chord";
 export type ScaleType =
   | "major"
   | "natural-minor"
@@ -94,9 +94,6 @@ export interface LayerConfig {
   chordType: ChordType;
   onChordName: string;
   triadInversion: string;
-  diatonicKeyType: string;
-  diatonicChordSize: string;
-  diatonicDegree: string;
   cagedForms: Set<string>;
   cagedChordType: "major" | "minor";
   showChordFrame?: boolean;
@@ -108,7 +105,6 @@ export interface LayerConfig {
   chordFrames: { cells: string[] }[];
   // Progression settings (optional for backwards compatibility with partial mocks/presets)
   progressionTemplateId?: string;
-  progressionKeyType?: "major" | "minor";
   progressionCurrentStep?: number;
   progressionShowPrevGhost?: boolean;
   progressionShowNextGhost?: boolean;
@@ -125,9 +121,6 @@ export function createDefaultLayer(type: LayerType, id: string, color: string): 
     chordType: "Major",
     onChordName: "C/E",
     triadInversion: "root",
-    diatonicKeyType: "major",
-    diatonicChordSize: "triad",
-    diatonicDegree: "I",
     cagedForms: new Set(["C", "A", "G", "E", "D"]),
     cagedChordType: "major",
     showChordFrame: type !== "progression",
@@ -137,7 +130,6 @@ export function createDefaultLayer(type: LayerType, id: string, color: string): 
     hiddenCells: new Set(),
     chordFrames: [],
     progressionTemplateId: "251",
-    progressionKeyType: "major",
     progressionCurrentStep: 0,
     progressionShowPrevGhost: false,
     progressionShowNextGhost: false,

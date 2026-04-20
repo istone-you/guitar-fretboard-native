@@ -8,7 +8,6 @@ import {
   PROGRESSION_TEMPLATES,
   SCALE_DEGREES,
   chordSuffix,
-  getDiatonicChordSemitones,
   getNotesByAccidental,
   getRootIndex,
   parseOnChord,
@@ -74,12 +73,7 @@ export function useLayerDerivedState({
           Math.max(layer.progressionCurrentStep ?? 0, 0),
           totalSteps - 1,
         );
-        const chord = resolveProgressionStep(
-          keyRootIndex,
-          layer.progressionKeyType ?? "major",
-          template,
-          currentStep,
-        );
+        const chord = resolveProgressionStep(keyRootIndex, template, currentStep);
         const chordSemitones = CHORD_SEMITONES[chord.chordType] ?? new Set<number>();
         for (const s of chordSemitones) {
           active.add((((chord.rootIndex + s - keyRootIndex + 12) % 12) + 12) % 12);
@@ -90,13 +84,7 @@ export function useLayerDerivedState({
       if (layer.type !== "chord") continue;
 
       let semitones: Set<number> | undefined;
-      if (layer.chordDisplayMode === "diatonic") {
-        semitones = getDiatonicChordSemitones(
-          keyRootIndex,
-          `${layer.diatonicKeyType}-${layer.diatonicChordSize}`,
-          layer.diatonicDegree,
-        );
-      } else if (layer.chordDisplayMode === "on-chord") {
+      if (layer.chordDisplayMode === "on-chord") {
         const parsed = parseOnChord(layer.onChordName);
         semitones = parsed ? CHORD_SEMITONES[parsed.chordType] : undefined;
       } else {
@@ -133,13 +121,7 @@ export function useLayerDerivedState({
         semitones = [...(cagedSemitones ?? [])];
       } else if (l.type === "chord") {
         let s: Set<number> | undefined;
-        if (l.chordDisplayMode === "diatonic") {
-          s = getDiatonicChordSemitones(
-            rootIndex,
-            `${l.diatonicKeyType}-${l.diatonicChordSize}`,
-            l.diatonicDegree,
-          );
-        } else if (l.chordDisplayMode === "on-chord") {
+        if (l.chordDisplayMode === "on-chord") {
           const parsed = parseOnChord(l.onChordName);
           s = parsed ? CHORD_SEMITONES[parsed.chordType] : undefined;
         } else {
@@ -166,12 +148,7 @@ export function useLayerDerivedState({
           const totalSteps = getTemplateLength(template);
           const currentStep = Math.min(Math.max(l.progressionCurrentStep ?? 0, 0), totalSteps - 1);
           const labels = Array.from({ length: totalSteps }, (_, idx) => {
-            const chord = resolveProgressionStep(
-              rootIndex,
-              l.progressionKeyType ?? "major",
-              template,
-              idx,
-            );
+            const chord = resolveProgressionStep(rootIndex, template, idx);
             const rootName = notes[chord.rootIndex];
             const label = `${rootName}${chordSuffix(chord.chordType)}`;
             return idx === currentStep ? `[${label}]` : label;
