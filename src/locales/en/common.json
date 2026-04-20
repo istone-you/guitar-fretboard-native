@@ -282,7 +282,11 @@
     "inputMode": "Input Method",
     "inputModeFretboard": "Fretboard",
     "inputModeChip": "Chips",
-    "chipRootInstruction": "Tap to select root note"
+    "chipRootInstruction": "Tap to select root note",
+    "homeIdentifyTitle": "Find by Notes",
+    "homeIdentifyDesc": "Find chords and scales from selected notes",
+    "homeChordListTitle": "Find by Chord Form",
+    "homeChordListDesc": "Find a chord by its shape on the fretboard"
   },
   "stats": {
     "title": "Weak Points",

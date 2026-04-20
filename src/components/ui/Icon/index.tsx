@@ -18,6 +18,7 @@ export type IconName =
   | "bar-chart"
   | "search"
   | "music-note"
+  | "chord-grid"
   | "ellipsis";
 
 interface IconProps {
@@ -187,6 +188,29 @@ export default function Icon({
           />
           <Circle cx={6} cy={18} r={3} stroke={color} strokeWidth={sw} />
           <Circle cx={18} cy={16} r={3} stroke={color} strokeWidth={sw} />
+        </>
+      )}
+      {name === "chord-grid" && (
+        <>
+          {/* 3 strings */}
+          <Path
+            d="M4 3V21M12 3V21M20 3V21"
+            stroke={color}
+            strokeWidth={sw * 0.8}
+            strokeLinecap="round"
+          />
+          {/* Nut */}
+          <Path d="M4 3H20" stroke={color} strokeWidth={sw * 1.5} strokeLinecap="round" />
+          {/* Frets */}
+          <Path
+            d="M4 9H20M4 15H20M4 21H20"
+            stroke={color}
+            strokeWidth={sw * 0.8}
+            strokeLinecap="round"
+          />
+          {/* Dots */}
+          <Circle cx={12} cy={9} r={2.5} fill={color} />
+          <Circle cx={4} cy={15} r={2.5} fill={color} />
         </>
       )}
       {name === "ellipsis" && (

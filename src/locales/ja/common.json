@@ -282,7 +282,11 @@
     "inputMode": "入力方法",
     "inputModeFretboard": "指板図",
     "inputModeChip": "チップ",
-    "chipRootInstruction": "タップでルート音を選択"
+    "chipRootInstruction": "タップでルート音を選択",
+    "homeIdentifyTitle": "音から探す",
+    "homeIdentifyDesc": "構成音からコード・スケールを見つける",
+    "homeChordListTitle": "コードフォームから探す",
+    "homeChordListDesc": "フォームからコードを見つける"
   },
   "stats": {
     "title": "苦手傾向",
