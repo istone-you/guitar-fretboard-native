@@ -34,6 +34,7 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 import type { Theme, Accidental, BaseLabelMode, LayerConfig } from "../../../types";
+import { getColors, WHITE, BLACK, SEMANTIC_COLORS } from "../../../themes/design";
 import { MAX_LAYERS } from "../../../types";
 
 const STRING_COUNT = 6;
@@ -699,7 +700,7 @@ export default function Fretboard({
               <Text
                 style={{
                   fontSize: size.headerFontSize,
-                  color: isDark ? "#6b7280" : "#78716c",
+                  color: getColors(isDark).textSubtle,
                   fontFamily: "monospace",
                 }}
               >
@@ -732,7 +733,7 @@ export default function Fretboard({
                         width: size.customSize,
                         height: size.customSize,
                         borderRadius: size.customSize / 2,
-                        backgroundColor: isDark ? "#6b7280" : "#a8a29e",
+                        backgroundColor: getColors(isDark).textMuted,
                       }}
                     />
                     <View
@@ -740,7 +741,7 @@ export default function Fretboard({
                         width: size.customSize,
                         height: size.customSize,
                         borderRadius: size.customSize / 2,
-                        backgroundColor: isDark ? "#6b7280" : "#a8a29e",
+                        backgroundColor: getColors(isDark).textMuted,
                       }}
                     />
                   </>
@@ -750,7 +751,7 @@ export default function Fretboard({
                       width: size.customSize,
                       height: size.customSize,
                       borderRadius: size.customSize / 2,
-                      backgroundColor: isDark ? "#6b7280" : "#a8a29e",
+                      backgroundColor: getColors(isDark).textMuted,
                     }}
                   />
                 ) : null}
@@ -961,16 +962,12 @@ const StringRow = memo(function StringRow({
               borderLeftWidth: fret === 0 && leftHanded ? 4 : 1,
               borderLeftColor:
                 fret === 0 && leftHanded
-                  ? isDark
-                    ? "#d1d5db"
-                    : "#78716c"
-                  : isDark
-                    ? "#4b5563"
-                    : "#d6d3d1",
+                  ? getColors(isDark).fretNut
+                  : getColors(isDark).borderStrong,
               ...(fret === 0 && !leftHanded
                 ? {
                     borderRightWidth: 4,
-                    borderRightColor: isDark ? "#d1d5db" : "#78716c",
+                    borderRightColor: getColors(isDark).fretNut,
                   }
                 : {}),
               position: "relative",
@@ -984,7 +981,7 @@ const StringRow = memo(function StringRow({
                 left: 0,
                 right: 0,
                 height: 1,
-                backgroundColor: isDark ? "#6b7280" : "#a8a29e",
+                backgroundColor: getColors(isDark).textMuted,
               }}
             />
 
@@ -992,7 +989,7 @@ const StringRow = memo(function StringRow({
             {!shouldSuppressRegularDisplay && (
               <Animated.View
                 style={{
-                  backgroundColor: isDark ? "#000000" : "#ffffff",
+                  backgroundColor: isDark ? BLACK : WHITE,
                   borderRadius:
                     (baseLabelMode === "degree" ? overlaySize - 4 : overlaySize - 8) / 2,
                   width: baseLabelMode === "degree" ? overlaySize - 4 : overlaySize - 8,
@@ -1006,7 +1003,7 @@ const StringRow = memo(function StringRow({
                 <Text
                   style={{
                     fontSize: size.baseFontSize,
-                    color: "#6b7280",
+                    color: getColors(isDark).iconSubtle,
                     fontFamily: "monospace",
                     fontWeight: "500",
                   }}
@@ -1057,7 +1054,7 @@ const StringRow = memo(function StringRow({
                   right: overlayInset,
                   bottom: overlayInset,
                   borderRadius: overlaySize / 2,
-                  backgroundColor: quizColor ?? (isDark ? "#e5e7eb" : "#1c1917"),
+                  backgroundColor: quizColor ?? getColors(isDark).textStrong,
                   borderWidth: 1.5,
                   borderColor: "rgba(0,0,0,0.15)",
                   alignItems: "center",
@@ -1068,7 +1065,7 @@ const StringRow = memo(function StringRow({
                 <Text
                   style={{
                     fontSize: size.overlayFontSize,
-                    color: quizColor ? "#fff" : isDark ? "#1c1917" : "#fff",
+                    color: quizColor ? WHITE : isDark ? BLACK : WHITE,
                     fontWeight: "bold",
                   }}
                 >
@@ -1088,7 +1085,10 @@ const StringRow = memo(function StringRow({
                   bottom: overlayInset,
                   borderRadius: overlaySize / 2,
                   borderWidth: 2,
-                  borderColor: isDark ? "rgba(229,231,235,0.5)" : "rgba(28,25,23,0.5)",
+                  borderColor: hexToRgba(
+                    isDark ? getColors(isDark).textStrong : getColors(isDark).text,
+                    0.5,
+                  ),
                   zIndex: 15,
                 }}
               />
@@ -1099,7 +1099,7 @@ const StringRow = memo(function StringRow({
               <ScaleAnimView
                 skipAnimation={disableAnimation}
                 visible={isSelectedCell}
-                color={quizColor ?? (isDark ? "#e5e7eb" : "#1c1917")}
+                color={quizColor ?? getColors(isDark).textStrong}
                 style={{
                   position: "absolute",
                   top: overlayInset,
@@ -1123,7 +1123,7 @@ const StringRow = memo(function StringRow({
                   right: overlayInset,
                   bottom: overlayInset,
                   borderRadius: overlaySize / 2,
-                  backgroundColor: "#16a34a",
+                  backgroundColor: SEMANTIC_COLORS.success,
                   alignItems: "center",
                   justifyContent: "center",
                   zIndex: 29,
@@ -1133,7 +1133,7 @@ const StringRow = memo(function StringRow({
                 <Text
                   style={{
                     fontSize: size.overlayFontSize,
-                    color: "#fff",
+                    color: WHITE,
                     fontWeight: "bold",
                   }}
                 >
@@ -1152,7 +1152,7 @@ const StringRow = memo(function StringRow({
                   right: overlayInset,
                   bottom: overlayInset,
                   borderRadius: overlaySize / 2,
-                  backgroundColor: "#16a34a",
+                  backgroundColor: SEMANTIC_COLORS.success,
                   alignItems: "center",
                   justifyContent: "center",
                   zIndex: 30,
@@ -1161,7 +1161,7 @@ const StringRow = memo(function StringRow({
                 <Text
                   style={{
                     fontSize: size.overlayFontSize,
-                    color: "#fff",
+                    color: WHITE,
                     fontWeight: "bold",
                   }}
                 >
@@ -1178,7 +1178,7 @@ const StringRow = memo(function StringRow({
                   right: overlayInset,
                   bottom: overlayInset,
                   borderRadius: overlaySize / 2,
-                  backgroundColor: "#ef4444",
+                  backgroundColor: SEMANTIC_COLORS.error,
                   alignItems: "center",
                   justifyContent: "center",
                   zIndex: 30,
@@ -1187,7 +1187,7 @@ const StringRow = memo(function StringRow({
                 <Text
                   style={{
                     fontSize: size.overlayFontSize,
-                    color: "#fff",
+                    color: WHITE,
                     fontWeight: "bold",
                   }}
                 >
@@ -1204,7 +1204,7 @@ const StringRow = memo(function StringRow({
                   right: overlayInset,
                   bottom: overlayInset,
                   borderRadius: overlaySize / 2,
-                  backgroundColor: "#16a34a",
+                  backgroundColor: SEMANTIC_COLORS.success,
                   alignItems: "center",
                   justifyContent: "center",
                   zIndex: 29,
@@ -1214,7 +1214,7 @@ const StringRow = memo(function StringRow({
                 <Text
                   style={{
                     fontSize: size.overlayFontSize,
-                    color: "#fff",
+                    color: WHITE,
                     fontWeight: "bold",
                   }}
                 >

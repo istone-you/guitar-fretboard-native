@@ -3,6 +3,7 @@ import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 import "../../../i18n";
 import type { Theme, ChordType, QuizQuestion } from "../../../types";
+import { getColors, SEMANTIC_COLORS, WHITE } from "../../../themes/design";
 import BounceButton from "../BounceButton";
 
 interface DiatonicPanelProps {
@@ -38,6 +39,7 @@ export default function DiatonicPanel({
 }: DiatonicPanelProps) {
   const { t } = useTranslation();
   const isDark = theme === "dark";
+  const colors = getColors(isDark);
 
   return (
     <View style={{ gap: 8 }}>
@@ -62,35 +64,29 @@ export default function DiatonicPanel({
                   {
                     borderColor:
                       isEditing && !answered
-                        ? isDark
-                          ? "#e5e7eb"
-                          : "#1c1917"
+                        ? colors.primaryBtn
                         : isDark
-                          ? "#374151"
-                          : "#d6d3d1",
+                          ? colors.border2
+                          : colors.borderStrong,
                     backgroundColor: answered
                       ? answer?.root === entry.root && answer?.chordType === entry.chordType
-                        ? "#16a34a"
+                        ? SEMANTIC_COLORS.success
                         : answer
-                          ? "#ef4444"
-                          : isDark
-                            ? "#374151"
-                            : "#f5f5f4"
+                          ? SEMANTIC_COLORS.error
+                          : colors.fillIdle
                       : isDark
-                        ? "#1f2937"
-                        : "#fff",
+                        ? colors.sheetBg
+                        : WHITE,
                   },
                 ]}
               >
-                <Text style={{ fontSize: 13, color: isDark ? "#9ca3af" : "#78716c" }}>
-                  {entry.degree}
-                </Text>
+                <Text style={{ fontSize: 13, color: colors.textSubtle }}>{entry.degree}</Text>
                 {answer ? (
                   <Text
                     style={{
                       fontSize: 14,
                       fontWeight: "bold",
-                      color: answered ? "#fff" : isDark ? "#e5e7eb" : "#1c1917",
+                      color: answered ? WHITE : colors.textStrong,
                     }}
                   >
                     {answer.root}
@@ -101,7 +97,7 @@ export default function DiatonicPanel({
                         : answer.chordType}
                   </Text>
                 ) : (
-                  <Text style={{ fontSize: 14, color: isDark ? "#4b5563" : "#d6d3d1" }}>--</Text>
+                  <Text style={{ fontSize: 14, color: colors.borderStrong }}>--</Text>
                 )}
                 {answered && (
                   <Text style={{ fontSize: 14, color: "rgba(255,255,255,0.8)" }}>
@@ -133,18 +129,12 @@ export default function DiatonicPanel({
                   {
                     backgroundColor:
                       note === diatonicSelectedRoot
-                        ? isDark
-                          ? "#e5e7eb"
-                          : "#1c1917"
+                        ? colors.primaryBtn
                         : isDark
-                          ? "#374151"
-                          : "#fff",
+                          ? colors.fillIdle
+                          : WHITE,
                     borderColor:
-                      note === diatonicSelectedRoot
-                        ? "transparent"
-                        : isDark
-                          ? "#4b5563"
-                          : "#d6d3d1",
+                      note === diatonicSelectedRoot ? "transparent" : colors.borderStrong,
                     borderWidth: 1,
                   },
                 ]}
@@ -153,13 +143,7 @@ export default function DiatonicPanel({
                   style={{
                     fontSize: 13,
                     color:
-                      note === diatonicSelectedRoot
-                        ? isDark
-                          ? "#1c1917"
-                          : "#fff"
-                        : isDark
-                          ? "#e5e7eb"
-                          : "#1c1917",
+                      note === diatonicSelectedRoot ? colors.primaryBtnText : colors.textStrong,
                   }}
                 >
                   {note}
@@ -179,12 +163,10 @@ export default function DiatonicPanel({
                     {
                       backgroundColor:
                         ct === diatonicSelectedChordType
-                          ? isDark
-                            ? "#e5e7eb"
-                            : "#1c1917"
+                          ? colors.primaryBtn
                           : isDark
-                            ? "#374151"
-                            : "#fff",
+                            ? colors.fillIdle
+                            : WHITE,
                       borderColor: "transparent",
                       borderWidth: 1,
                     },
@@ -195,12 +177,8 @@ export default function DiatonicPanel({
                       fontSize: 13,
                       color:
                         ct === diatonicSelectedChordType
-                          ? isDark
-                            ? "#1c1917"
-                            : "#fff"
-                          : isDark
-                            ? "#e5e7eb"
-                            : "#1c1917",
+                          ? colors.primaryBtnText
+                          : colors.textStrong,
                     }}
                   >
                     {ct}
@@ -216,10 +194,10 @@ export default function DiatonicPanel({
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                 onDiatonicSubmitAll();
               }}
-              style={[styles.submitBtn, { backgroundColor: isDark ? "#e5e7eb" : "#1c1917" }]}
+              style={[styles.submitBtn, { backgroundColor: colors.primaryBtn }]}
               activeOpacity={0.8}
             >
-              <Text style={[styles.submitBtnText, { color: isDark ? "#1c1917" : "#fff" }]}>
+              <Text style={[styles.submitBtnText, { color: colors.primaryBtnText }]}>
                 {t("quiz.submit")}
               </Text>
             </BounceButton>

@@ -16,6 +16,7 @@ import Icon from "../ui/Icon";
 import { DEGREE_BY_SEMITONE, getNotesByAccidental } from "../../lib/fretboard";
 import { CHORD_QUIZ_TYPES_ALL } from "../../hooks/useQuiz";
 import type { Accidental, QuizMode, QuizRecord, ScaleType, Theme } from "../../types";
+import { getColors, STATS_RATE_COLORS, SEMANTIC_COLORS } from "../../themes/design";
 import PillButton from "../ui/PillButton";
 
 const MIN_SAMPLES = 5;
@@ -46,9 +47,10 @@ const ALL_SCALE_TYPES: ScaleType[] = [
 // ── Color helpers ─────────────────────────────────────────────────
 
 function rateToColor(rate: number): string {
-  const r = Math.round(239 + (34 - 239) * rate);
-  const g = Math.round(68 + (197 - 68) * rate);
-  const b = Math.round(68 + (94 - 68) * rate);
+  const { worst, best } = STATS_RATE_COLORS;
+  const r = Math.round(worst.r + (best.r - worst.r) * rate);
+  const g = Math.round(worst.g + (best.g - worst.g) * rate);
+  const b = Math.round(worst.b + (best.b - worst.b) * rate);
   return `rgb(${r},${g},${b})`;
 }
 
@@ -108,10 +110,8 @@ function CollapsibleSection({
 }) {
   const [open, setOpen] = useState(false);
   const anim = useRef(new Animated.Value(0)).current;
-  const cardBg = isDark ? "#1c1c1e" : "#ffffff";
-  const cardBorder = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)";
-  const titleColor = isDark ? "#f2f2f7" : "#1c1917";
-  const chevronColor = isDark ? "#8e8e93" : "#78716c";
+  const colors = getColors(isDark);
+  const { cardBg, border: cardBorder, text: titleColor, textSubtle: chevronColor } = colors;
 
   const toggle = () => {
     const next = !open;
@@ -168,10 +168,9 @@ function RankRow({
 }) {
   const hasData = total >= MIN_SAMPLES;
   const rate = hasData ? correct / total : 0;
-  const fillColor = hasData ? rateToColor(rate) : isDark ? "#3a3a3c" : "#d1d5db";
-  const trackColor = isDark ? "#3a3a3c" : "#e5e7eb";
-  const textColor = isDark ? "#f2f2f7" : "#1c1917";
-  const subColor = isDark ? "#8e8e93" : "#78716c";
+  const { progressTrack, text: textColor, textSubtle: subColor } = getColors(isDark);
+  const fillColor = hasData ? rateToColor(rate) : progressTrack;
+  const trackColor = progressTrack;
 
   return (
     <View style={[styles.rankRow, !hasData && styles.rankRowDim]}>
@@ -209,8 +208,7 @@ function HeatmapGrid({
 }) {
   const CELL = 20;
   const LABEL_W = 32;
-  const textColor = isDark ? "#8e8e93" : "#78716c";
-  const emptyBorder = isDark ? "#3a3a3c" : "#e5e7eb";
+  const { textSubtle: textColor, progressTrack: emptyBorder } = getColors(isDark);
   const noDataBg = isDark ? "rgba(107,114,128,0.3)" : "rgba(156,163,175,0.3)";
 
   return (
@@ -307,9 +305,13 @@ export default function StatsPanel({
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
 
-  const cardBg = isDark ? "#1c1c1e" : "#ffffff";
-  const cardBorder = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)";
-  const subColor = isDark ? "#8e8e93" : "#78716c";
+  const {
+    cardBg,
+    border: cardBorder,
+    textSubtle: subColor,
+    pageBg,
+    textDanger,
+  } = getColors(isDark);
 
   const allNotes = useMemo(() => [...getNotesByAccidental(accidental)], [accidental]);
   const allDegrees = useMemo(() => [...DEGREE_BY_SEMITONE], []);
@@ -433,7 +435,7 @@ export default function StatsPanel({
 
   return (
     <ScrollView
-      style={[styles.container, { backgroundColor: isDark ? "#000000" : "#ffffff" }]}
+      style={[styles.container, { backgroundColor: pageBg }]}
       contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 80 }]}
       showsVerticalScrollIndicator={false}
     >
@@ -543,9 +545,7 @@ export default function StatsPanel({
           variant="danger"
           style={{ marginTop: 4, alignSelf: "stretch", justifyContent: "center" }}
         >
-          <Text style={[styles.resetText, { color: isDark ? "#f87171" : "#ef4444" }]}>
-            {t("stats.reset")}
-          </Text>
+          <Text style={[styles.resetText, { color: textDanger }]}>{t("stats.reset")}</Text>
         </PillButton>
       )}
     </ScrollView>

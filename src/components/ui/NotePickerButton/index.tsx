@@ -3,7 +3,7 @@ import { Animated, View, Text, TouchableOpacity, StyleSheet } from "react-native
 import * as Haptics from "expo-haptics";
 import type { Accidental, Theme } from "../../../types";
 import { getNotesByAccidental } from "../../../lib/fretboard";
-import { getColors, radius } from "../../../themes/tokens";
+import { getColors, radius, WHITE, BLACK } from "../../../themes/design";
 import { getPillStyle } from "../PillButton";
 import BottomSheetModal, { SHEET_HANDLE_CLEARANCE, useSheetHeight } from "../BottomSheetModal";
 import SheetProgressiveHeader from "../SheetProgressiveHeader";
@@ -34,8 +34,8 @@ export default function NotePickerButton({
   const colors = getColors(isDark);
   const bgColor = colors.surface;
   const notes = getNotesByAccidental(accidental);
-  const chipSelectedBg = isDark ? "#ffffff" : "#1c1917";
-  const chipSelectedText = isDark ? "#1c1917" : "#ffffff";
+  const chipSelectedBg = isDark ? WHITE : BLACK;
+  const chipSelectedText = isDark ? BLACK : WHITE;
   const chipUnselectedBg = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)";
 
   const scale = useRef(new Animated.Value(1)).current;

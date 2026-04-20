@@ -4,6 +4,7 @@ import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 import "../../../i18n";
 import type { Theme } from "../../../types";
+import { getColors, WHITE } from "../../../themes/design";
 import ChevronIcon from "../../ui/ChevronIcon";
 import BottomSheetModal, {
   SHEET_HANDLE_CLEARANCE,
@@ -43,16 +44,17 @@ export default function SettingsModal({
 }: SettingsModalProps) {
   const { t } = useTranslation();
   const isDark = theme === "dark";
+  const colors = getColors(isDark);
   const sheetHeight = useSheetHeight();
 
   const [settingsPage, setSettingsPage] = useState<string | null>(null);
   const [headerHeight, setHeaderHeight] = useState(96);
   const slideAnim = useRef(new Animated.Value(0)).current;
   const pendingEnterDir = useRef(0);
-  const bgColor = isDark ? "#111827" : "#fafaf9";
-  const borderColor = isDark ? "rgba(255,255,255,0.08)" : "#e7e5e4";
-  const labelColor = isDark ? "#e5e7eb" : "#1c1917";
-  const valueColor = isDark ? "#9ca3af" : "#78716c";
+  const bgColor = colors.deepBg;
+  const borderColor = isDark ? colors.border : colors.border2;
+  const labelColor = colors.textStrong;
+  const valueColor = colors.textSubtle;
 
   // LayerEditModal と同じページ遷移アニメーション
   useLayoutEffect(() => {
@@ -116,11 +118,7 @@ export default function SettingsModal({
                               <Text style={[styles.iosRowValue, { color: valueColor }]}>
                                 {summary}
                               </Text>
-                              <ChevronIcon
-                                size={12}
-                                color={isDark ? "#6b7280" : "#a8a29e"}
-                                direction="right"
-                              />
+                              <ChevronIcon size={12} color={colors.textMuted} direction="right" />
                             </View>
                           </TouchableOpacity>
                         ))}
@@ -147,17 +145,11 @@ export default function SettingsModal({
                                     styles.chip,
                                     {
                                       backgroundColor: active
-                                        ? isDark
-                                          ? "#e5e7eb"
-                                          : "#1c1917"
+                                        ? colors.primaryBtn
                                         : isDark
-                                          ? "#374151"
-                                          : "#fff",
-                                      borderColor: active
-                                        ? "transparent"
-                                        : isDark
-                                          ? "#4b5563"
-                                          : "#d6d3d1",
+                                          ? colors.fillIdle
+                                          : WHITE,
+                                      borderColor: active ? "transparent" : colors.borderStrong,
                                     },
                                   ]}
                                   activeOpacity={0.7}
@@ -165,13 +157,7 @@ export default function SettingsModal({
                                   <Text
                                     style={{
                                       fontSize: 14,
-                                      color: active
-                                        ? isDark
-                                          ? "#1c1917"
-                                          : "#fff"
-                                        : isDark
-                                          ? "#e5e7eb"
-                                          : "#44403c",
+                                      color: active ? colors.primaryBtnText : colors.textDim,
                                     }}
                                   >
                                     {chipLabel}

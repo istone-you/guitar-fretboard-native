@@ -2,7 +2,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Image } from "react-native";
 import Svg, { Path, Text as SvgText, Circle, Line } from "react-native-svg";
 import { useTranslation } from "react-i18next";
 import "../../i18n";
-import { getColors } from "../../themes/tokens";
+import { getColors } from "../../themes/design";
 
 interface TabBarProps {
   isDark: boolean;
@@ -25,7 +25,7 @@ export default function TabBar({
 }: TabBarProps) {
   const { t } = useTranslation();
   const colors = getColors(isDark);
-  const activeColor = isDark ? "#f9fafb" : "#1c1917";
+  const activeColor = colors.text;
   const inactiveColor = colors.textSubtle;
 
   const isHome = !showQuiz && !showFinder;

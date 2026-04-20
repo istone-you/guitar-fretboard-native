@@ -1,6 +1,6 @@
 import { View, TouchableOpacity, StyleSheet, type ViewStyle } from "react-native";
 import * as Haptics from "expo-haptics";
-import { COLOR_PRESETS } from "../../../types";
+import { COLOR_PRESETS, WHITE, BLACK } from "../../../themes/design";
 
 interface ColorPickerProps {
   value: string;
@@ -24,7 +24,7 @@ export default function ColorPicker({ value, onChange, isDark, style }: ColorPic
             {
               backgroundColor: preset,
               borderWidth: value === preset ? 3 : 0,
-              borderColor: isDark ? "#fff" : "#1c1917",
+              borderColor: isDark ? WHITE : BLACK,
             },
           ]}
           activeOpacity={0.7}

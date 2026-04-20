@@ -494,7 +494,7 @@ describe("Fretboard - Quiz mode", () => {
     );
     const json = JSON.stringify(toJSON());
     // Target hint ring
-    expect(json).toContain("rgba(229,231,235,0.5)");
+    expect(json).toContain("rgba(229, 231, 235, 0.5)");
   });
 
   it("dims non-target strings in answer mode", () => {

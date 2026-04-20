@@ -214,22 +214,6 @@ export function getDegreeName(noteIndex: number, rootIndex: number): DegreeName 
   return SEMITONE_TO_DEGREE[semitone];
 }
 
-// 度数の色マッピング
-export const DEGREE_COLORS: Partial<Record<DegreeName, { bg: string; text: string }>> = {
-  P1: { bg: "#ef4444", text: "#fff" }, // 赤: 完全1度
-  P5: { bg: "#6b7280", text: "#fff" }, // グレー: 5度
-  M3: { bg: "#22c55e", text: "#fff" }, // 緑: 長3度
-  m3: { bg: "#a855f7", text: "#fff" }, // 紫: 短3度
-  M7: { bg: "#f59e0b", text: "#fff" }, // 橙: 長7度
-  m7: { bg: "#f97316", text: "#fff" }, // オレンジ: 短7度
-  P4: { bg: "#06b6d4", text: "#fff" }, // シアン: 4度
-  M2: { bg: "#84cc16", text: "#fff" }, // 黄緑: 長2度
-  m2: { bg: "#ec4899", text: "#fff" }, // ピンク
-  m6: { bg: "#8b5cf6", text: "#fff" },
-  M6: { bg: "#10b981", text: "#fff" },
-  b5: { bg: "#6b7280", text: "#fff" },
-};
-
 // ===== コードフォーム定義 =====
 // 各コードの「フォーム」を相対フレット・弦のオフセットで定義
 // rootString: 0=6弦, 1=5弦
@@ -1749,7 +1733,6 @@ export function isInBluesScale(semitone: number): boolean {
 // anchorString: ルート音を探す基準弦（0=6弦, 1=5弦, 2=4弦）
 // positions: ルート位置からの相対フレットオフセット + 度数ラベル
 //   degree: 'R'=ルート, '3'=長3度, '5'=完全5度
-const CAGED_COLOR = "#6366f1";
 
 interface CagedFormPosition {
   string: number;
@@ -1759,21 +1742,15 @@ interface CagedFormPosition {
 
 interface CagedForm {
   label: string;
-  color: string;
   anchorString: number;
   positions: CagedFormPosition[];
-}
-
-export interface CagedPositionValue {
-  color: string;
-  degree: string;
 }
 
 export const CAGED_FORMS: Record<string, CagedForm> = {
   // オープンEコード形: 0-2-2-1-0-0
   E: {
     label: "E",
-    color: CAGED_COLOR,
+
     anchorString: 0,
     positions: [
       { string: 0, fretOffset: 0, degree: "R" },
@@ -1787,7 +1764,7 @@ export const CAGED_FORMS: Record<string, CagedForm> = {
   // オープンDコード形: x-x-0-2-3-2
   D: {
     label: "D",
-    color: CAGED_COLOR,
+
     anchorString: 2,
     positions: [
       { string: 2, fretOffset: 0, degree: "R" },
@@ -1799,7 +1776,7 @@ export const CAGED_FORMS: Record<string, CagedForm> = {
   // オープンCコード形: x-3-2-0-1-0
   C: {
     label: "C",
-    color: CAGED_COLOR,
+
     anchorString: 1,
     positions: [
       { string: 1, fretOffset: 0, degree: "R" },
@@ -1812,7 +1789,7 @@ export const CAGED_FORMS: Record<string, CagedForm> = {
   // オープンAコード形: x-0-2-2-2-0
   A: {
     label: "A",
-    color: CAGED_COLOR,
+
     anchorString: 1,
     positions: [
       { string: 1, fretOffset: 0, degree: "R" },
@@ -1825,7 +1802,7 @@ export const CAGED_FORMS: Record<string, CagedForm> = {
   // オープンGコード形: 3-2-0-0-0-3
   G: {
     label: "G",
-    color: CAGED_COLOR,
+
     anchorString: 0,
     positions: [
       { string: 0, fretOffset: 0, degree: "R" },
@@ -2404,35 +2381,6 @@ export function getChordLayerCells(
   }
 
   return dedupeCells(cells);
-}
-
-// 指定フォームの表示セルを返す: Map<"string-fret", { color, degree }>
-export function calcCagedPositions(
-  formKey: string,
-  rootIndex: number,
-): Map<string, CagedPositionValue> {
-  const form = CAGED_FORMS[formKey];
-  if (!form) return new Map();
-
-  const map = new Map<string, CagedPositionValue>();
-
-  // anchor弦でルートが出現するフレットを全探索
-  for (let f = 0; f < FRET_COUNT; f++) {
-    if (getNoteIndex(form.anchorString, f) !== rootIndex) continue;
-
-    // このルートフレットを基準にフォームの全ポジションを展開
-    for (const { string, fretOffset, degree } of form.positions) {
-      const fret = f + fretOffset;
-      if (fret < 0 || fret >= FRET_COUNT) continue;
-      const key = `${string}-${fret}`;
-      // すでに登録済みなら上書きしない（Rを優先）
-      if (!map.has(key) || degree === "R") {
-        map.set(key, { color: form.color, degree });
-      }
-    }
-  }
-
-  return map;
 }
 
 // ===== Progression Layer =====

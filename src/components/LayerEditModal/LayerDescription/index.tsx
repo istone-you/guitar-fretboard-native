@@ -2,6 +2,7 @@ import { View, Text, StyleSheet } from "react-native";
 import { useTranslation } from "react-i18next";
 import "../../../i18n";
 import type { Theme, LayerConfig } from "../../../types";
+import { getColors } from "../../../themes/design";
 import {
   PROGRESSION_TEMPLATES,
   templateDisplayName,
@@ -39,9 +40,10 @@ export default function LayerDescription({
 }: LayerDescriptionProps) {
   const { t } = useTranslation();
   const isDark = theme === "dark";
-  const textColor = isDark ? "#d1d5db" : "#44403c";
-  const headingColor = isDark ? "#e5e7eb" : "#1c1917";
-  const dividerColor = isDark ? "rgba(255,255,255,0.08)" : "#e7e5e4";
+  const colors = getColors(isDark);
+  const textColor = colors.textDim;
+  const headingColor = colors.textStrong;
+  const dividerColor = isDark ? colors.border : colors.border2;
 
   let layerDesc = "";
   let itemDesc = "";

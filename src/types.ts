@@ -138,29 +138,6 @@ export function createDefaultLayer(type: LayerType, id: string, color: string): 
   };
 }
 
-export const DEFAULT_LAYER_COLORS = ["#ff69b6", "#40e0d0", "#ffd700", "#a78bfa"];
-
-export function pickNextLayerColor(currentLayers: LayerConfig[]): string {
-  const usedColors = new Set(currentLayers.map((l) => l.color));
-  return (
-    DEFAULT_LAYER_COLORS.find((c) => !usedColors.has(c)) ??
-    DEFAULT_LAYER_COLORS[currentLayers.length % DEFAULT_LAYER_COLORS.length]
-  );
-}
-
-export const COLOR_PRESETS = [
-  "#ff4d4d",
-  "#ff8c00",
-  "#ffd700",
-  "#84cc16",
-  "#10b981",
-  "#40e0d0",
-  "#00bfff",
-  "#0ea5e9",
-  "#a78bfa",
-  "#ff69b6",
-];
-
 export type QuizMode = "note" | "degree" | "chord" | "scale" | "diatonic";
 export type QuizType = "choice" | "fretboard" | "all";
 

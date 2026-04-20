@@ -17,8 +17,15 @@ import "../../i18n";
 import Svg, { Circle, Path } from "react-native-svg";
 import Icon from "../ui/Icon";
 import type { Theme, LayerConfig } from "../../types";
-import { MAX_LAYERS, pickNextLayerColor } from "../../types";
-import { getColors, radius } from "../../themes/tokens";
+import { MAX_LAYERS } from "../../types";
+import {
+  getColors,
+  radius,
+  pickNextLayerColor,
+  SEMANTIC_COLORS,
+  WHITE,
+  BLACK,
+} from "../../themes/design";
 import {
   PROGRESSION_TEMPLATES,
   getNotesByAccidental,
@@ -150,7 +157,7 @@ function ContextMenu({
   if (!visible) return null;
 
   const menuBg = isDark ? "rgba(38,38,40,0.98)" : "rgba(255,255,255,0.98)";
-  const labelColor = isDark ? "#ffffff" : "#000000";
+  const labelColor = isDark ? WHITE : BLACK;
   const dividerColor = isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.1)";
   const iconStroke = isDark ? "#ebebf599" : "#3c3c4399";
 
@@ -200,8 +207,10 @@ function ContextMenu({
             style={menuStyles.item}
             activeOpacity={0.7}
           >
-            <Text style={[menuStyles.label, { color: "#ff3b30" }]}>{t("layers.delete")}</Text>
-            <Icon name="trash" size={18} color="#ff3b30" />
+            <Text style={[menuStyles.label, { color: SEMANTIC_COLORS.destructive }]}>
+              {t("layers.delete")}
+            </Text>
+            <Icon name="trash" size={18} color={SEMANTIC_COLORS.destructive} />
           </TouchableOpacity>
         </Animated.View>
       </View>
@@ -793,7 +802,7 @@ export default function LayerList({
                     <View
                       style={[
                         styles.deleteBackground,
-                        { backgroundColor: "#ff3b30", borderRadius: ROW_RADIUS },
+                        { backgroundColor: SEMANTIC_COLORS.destructive, borderRadius: ROW_RADIUS },
                       ]}
                     >
                       <View style={styles.deleteIconWrap}>
@@ -883,7 +892,7 @@ export default function LayerList({
                           );
                           const totalSteps = template ? getTemplateLength(template) : 1;
                           const currentStep = slot.progressionCurrentStep ?? 0;
-                          const iconColor = isDark ? "#6b7280" : "#a8a29e";
+                          const iconColor = colors.textMuted;
                           return (
                             <>
                               <TouchableOpacity
@@ -1000,7 +1009,7 @@ export default function LayerList({
                         styles.layerRow,
                         {
                           borderColor: floatingLayer.color,
-                          backgroundColor: isDark ? "#000000" : "#ffffff",
+                          backgroundColor: colors.pageBg,
                         },
                       ]}
                     >

@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import NormalFretboard from "../../components/NormalFretboard";
 import type { LayerPaneProps } from "../../screens/Layer";
 import type { Theme } from "../../types";
+import { getColors, WHITE } from "../../themes/design";
 
 type LandscapeLayoutProps = Omit<LayerPaneProps, "isLandscape" | "disableAnimation"> & {
   winHeight: number;
@@ -25,7 +26,7 @@ export default function LandscapeLayout({
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const isDark = theme === "dark";
-  const bgColor = isDark ? "#000000" : "#ffffff";
+  const colors = getColors(isDark);
 
   const availH = winHeight - insets.top;
   const fbScale = (availH * 0.85) / 200;
@@ -35,7 +36,7 @@ export default function LandscapeLayout({
       style={[
         styles.root,
         {
-          backgroundColor: bgColor,
+          backgroundColor: colors.pageBg,
           paddingTop: insets.top,
           paddingLeft: Math.max(insets.left, 16),
         },
@@ -49,9 +50,7 @@ export default function LandscapeLayout({
 
       <View style={styles.infoOverlay}>
         <View style={styles.infoBar}>
-          <Text
-            style={[styles.infoText, { color: isDark ? "#e5e7eb" : "#1c1917", marginRight: 6 }]}
-          >
+          <Text style={[styles.infoText, { color: colors.textStrong, marginRight: 6 }]}>
             {t("header.root")} {rootNote}
           </Text>
         </View>
@@ -148,7 +147,7 @@ const styles = StyleSheet.create({
   infoPillText: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#fff",
+    color: WHITE,
   },
   fretboardWrapper: {
     flex: 1,

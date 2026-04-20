@@ -8,7 +8,7 @@ import SlideToggle from "../../ui/SlideToggle";
 import GlassIconButton from "../../ui/GlassIconButton";
 import SheetProgressiveHeader from "../../ui/SheetProgressiveHeader";
 import RangeSlider from "./RangeSlider";
-import { getColors, radius } from "../../../themes/tokens";
+import { getColors, radius } from "../../../themes/design";
 import BottomSheetModal, { SHEET_HANDLE_CLEARANCE } from "../../ui/BottomSheetModal";
 
 export interface SettingsModalRef {
@@ -44,14 +44,15 @@ const SettingsModal = forwardRef<SettingsModalRef, SettingsModalProps>(function 
   const [headerHeight, setHeaderHeight] = useState(72);
   const isDark = theme === "dark";
   const colors = getColors(isDark);
-  const bgColor = colors.surface;
 
   useImperativeHandle(ref, () => ({ open: () => setVisible(true) }));
 
   return (
     <BottomSheetModal visible={visible} onClose={() => setVisible(false)}>
       {({ close, dragHandlers }) => (
-        <View style={[styles.panel, { backgroundColor: bgColor, borderColor: colors.border }]}>
+        <View
+          style={[styles.panel, { backgroundColor: colors.surface, borderColor: colors.border }]}
+        >
           {/* Rows content — paddingTop reserves space for the absolute glass header */}
           <View style={{ paddingHorizontal: 20, paddingTop: headerHeight }}>
             <View style={styles.row}>
@@ -126,7 +127,7 @@ const SettingsModal = forwardRef<SettingsModalRef, SettingsModalProps>(function 
           {/* Absolute glass header — rows appear behind it */}
           <SheetProgressiveHeader
             isDark={isDark}
-            bgColor={bgColor}
+            bgColor={colors.surface}
             onLayout={setHeaderHeight}
             dragHandlers={dragHandlers}
             style={styles.glassHeader}

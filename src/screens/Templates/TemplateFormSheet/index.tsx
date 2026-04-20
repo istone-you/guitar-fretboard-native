@@ -16,6 +16,7 @@ import "../../../i18n";
 import type { Theme, ChordType, ProgressionChord } from "../../../types";
 import type { CustomProgressionTemplate } from "../../../hooks/useProgressionTemplates";
 import { CHORD_SUFFIX_MAP } from "../../../lib/fretboard";
+import { getColors, WHITE } from "../../../themes/design";
 import BottomSheetModal, {
   SHEET_HANDLE_CLEARANCE,
   useSheetHeight,
@@ -116,12 +117,15 @@ function DegreeChip({
       onPress={onPress}
       style={[
         styles.degreeChip,
-        { backgroundColor: isDark ? "#6b7280" : "#78716c", borderColor: "transparent" },
+        {
+          backgroundColor: isDark ? getColors(isDark).textMuted : getColors(isDark).textSubtle,
+          borderColor: "transparent",
+        },
       ]}
       activeOpacity={0.7}
       hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
     >
-      <Text style={[styles.degreeChipText, { color: "#fff" }]}>{label}</Text>
+      <Text style={[styles.degreeChipText, { color: WHITE }]}>{label}</Text>
       <Svg width={8} height={8} viewBox="0 0 12 12" fill="none" style={{ marginLeft: 4 }}>
         <Path
           d="M9 3L3 9M3 3l6 6"
@@ -153,11 +157,8 @@ export default function TemplateFormSheet({
   const isDark = theme === "dark";
   const sheetHeight = useSheetHeight();
 
-  const bg = isDark ? "#1f2937" : "#fff";
-  const border = isDark ? "#374151" : "#e7e5e4";
-  const textPrimary = isDark ? "#e5e7eb" : "#1c1917";
-  const textSecondary = isDark ? "#9ca3af" : "#78716c";
-  const calloutBorder = isDark ? "#374151" : "#d6d3d1";
+  const colors = getColors(isDark);
+  const calloutBorder = isDark ? colors.border2 : colors.borderStrong;
 
   const [formName, setFormName] = useState(() => initialTemplate?.name ?? "");
   const [formChords, setFormChords] = useState<ProgressionChord[]>(() =>
@@ -237,11 +238,14 @@ export default function TemplateFormSheet({
     <BottomSheetModal visible={visible} onClose={handleClose}>
       {({ close, dragHandlers }) => (
         <View
-          style={[styles.sheet, { height: sheetHeight, backgroundColor: bg, borderColor: border }]}
+          style={[
+            styles.sheet,
+            { height: sheetHeight, backgroundColor: colors.sheetBg, borderColor: colors.border2 },
+          ]}
         >
           <SheetProgressiveHeader
             isDark={isDark}
-            bgColor={bg}
+            bgColor={colors.sheetBg}
             dragHandlers={dragHandlers}
             style={{ paddingTop: SHEET_HANDLE_CLEARANCE }}
           >
@@ -251,14 +255,14 @@ export default function TemplateFormSheet({
                 style={{
                   flex: 1,
                   textAlign: "center",
-                  color: textPrimary,
+                  color: colors.textStrong,
                   fontSize: 16,
                   fontWeight: "600",
                   marginHorizontal: 8,
                   paddingVertical: 4,
                 }}
                 placeholder={t("templates.templateName")}
-                placeholderTextColor={isDark ? "#6b7280" : "#a8a29e"}
+                placeholderTextColor={colors.textMuted}
                 value={formName}
                 onChangeText={setFormName}
                 maxLength={30}
@@ -284,7 +288,7 @@ export default function TemplateFormSheet({
             <Text
               style={[
                 styles.formLabel,
-                { color: textSecondary, marginTop: 14, textAlign: "center" },
+                { color: colors.textSubtle, marginTop: 14, textAlign: "center" },
               ]}
             >
               {t("templates.degrees")}
@@ -299,14 +303,8 @@ export default function TemplateFormSheet({
                     style={[
                       styles.degreePickerChip,
                       {
-                        backgroundColor: isActive
-                          ? isDark
-                            ? "#3b82f6"
-                            : "#2563eb"
-                          : isDark
-                            ? "#374151"
-                            : "#f5f5f4",
-                        borderColor: isActive ? "transparent" : isDark ? "#4b5563" : "#d6d3d1",
+                        backgroundColor: isActive ? colors.primaryBtn : colors.fillIdle,
+                        borderColor: isActive ? "transparent" : colors.borderStrong,
                       },
                     ]}
                     activeOpacity={0.7}
@@ -315,7 +313,13 @@ export default function TemplateFormSheet({
                     <Text
                       style={[
                         styles.degreeChipText,
-                        { color: isActive ? "#fff" : isDark ? "#e5e7eb" : "#44403c" },
+                        {
+                          color: isActive
+                            ? colors.primaryBtnText
+                            : isDark
+                              ? colors.textStrong
+                              : colors.textDim,
+                        },
                       ]}
                     >
                       {label}
@@ -339,7 +343,12 @@ export default function TemplateFormSheet({
               }}
             >
               {/* パネル本体 */}
-              <View style={[styles.callout, { backgroundColor: bg, borderColor: calloutBorder }]}>
+              <View
+                style={[
+                  styles.callout,
+                  { backgroundColor: colors.sheetBg, borderColor: calloutBorder },
+                ]}
+              >
                 <SegmentedToggle
                   theme={theme}
                   value={selectedChordGroup}
@@ -359,15 +368,18 @@ export default function TemplateFormSheet({
                       style={[
                         styles.chordTypeChip,
                         {
-                          backgroundColor: isDark ? "#1f2937" : "#fff",
-                          borderColor: isDark ? "#4b5563" : "#d6d3d1",
+                          backgroundColor: colors.sheetBg,
+                          borderColor: colors.borderStrong,
                         },
                       ]}
                       activeOpacity={0.7}
                       hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
                     >
                       <Text
-                        style={[styles.degreeChipText, { color: isDark ? "#e5e7eb" : "#44403c" }]}
+                        style={[
+                          styles.degreeChipText,
+                          { color: isDark ? colors.textStrong : colors.textDim },
+                        ]}
                       >
                         {label}
                       </Text>
@@ -381,7 +393,7 @@ export default function TemplateFormSheet({
             <Text
               style={[
                 styles.formLabel,
-                { color: textSecondary, marginTop: 14, textAlign: "center" },
+                { color: colors.textSubtle, marginTop: 14, textAlign: "center" },
               ]}
             >
               {t("templates.progression")}
@@ -394,7 +406,7 @@ export default function TemplateFormSheet({
                     style={styles.progressionItem}
                   >
                     {i > 0 && (
-                      <Text style={[styles.progressionArrow, { color: textSecondary }]}>→</Text>
+                      <Text style={[styles.progressionArrow, { color: colors.textSubtle }]}>→</Text>
                     )}
                     <DegreeChip
                       label={chordDisplayLabel(chord)}

@@ -1,4 +1,5 @@
 import { Switch } from "react-native";
+import { TOGGLE_COLORS } from "../../../themes/design";
 
 interface SlideToggleProps {
   value: boolean;
@@ -15,8 +16,8 @@ export default function SlideToggle({
 }: SlideToggleProps) {
   // iOS 26: UISwitch automatically adopts Liquid Glass design.
   // Custom activeColor is preserved; if unset, iOS green (#34C759) is used.
-  const onColor = activeColor ?? "#34C759";
-  const offColor = isDark ? "#3A3A3C" : "#E5E5EA";
+  const onColor = activeColor ?? TOGGLE_COLORS.on;
+  const offColor = isDark ? TOGGLE_COLORS.offDark : TOGGLE_COLORS.offLight;
 
   return (
     <Switch

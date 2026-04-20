@@ -5,7 +5,8 @@ import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 import "../../../i18n";
 import type { Theme, Accidental, ProgressionChord, LayerConfig } from "../../../types";
-import { createDefaultLayer, pickNextLayerColor, MAX_LAYERS } from "../../../types";
+import { createDefaultLayer, MAX_LAYERS } from "../../../types";
+import { pickNextLayerColor, getColors } from "../../../themes/design";
 import type { CustomProgressionTemplate } from "../../../hooks/useProgressionTemplates";
 import {
   CHORD_SUFFIX_MAP,
@@ -43,8 +44,7 @@ function TemplateDetailPane({
   const [keyRoot, setKeyRoot] = useState("C");
   const [formVisible, setFormVisible] = useState(false);
 
-  const textPrimary = isDark ? "#e5e7eb" : "#1c1917";
-  const textSecondary = isDark ? "#9ca3af" : "#78716c";
+  const colors = getColors(isDark);
 
   const noteNames = useMemo(() => getNotesByAccidental(accidental), [accidental]);
   const keyRootIndex = noteNames.findIndex((n) => n === keyRoot);
@@ -69,12 +69,12 @@ function TemplateDetailPane({
   return (
     <>
       <ScrollView
-        style={[styles.container, { backgroundColor: isDark ? "#000000" : "#ffffff" }]}
+        style={[styles.container, { backgroundColor: colors.pageBg }]}
         contentContainerStyle={{ paddingBottom: insets.bottom + 80 }}
       >
         {/* Template title + key selector + actions */}
         <View style={styles.titleRow}>
-          <Text style={[styles.title, { color: textPrimary }]} numberOfLines={2}>
+          <Text style={[styles.title, { color: colors.textStrong }]} numberOfLines={2}>
             {template.name}
           </Text>
           <View style={styles.titleActions}>
@@ -92,7 +92,7 @@ function TemplateDetailPane({
               disabled={isFull}
               style={{ paddingHorizontal: 8 }}
             >
-              <Icon name="upload" size={16} color={textSecondary} />
+              <Icon name="upload" size={16} color={colors.textSubtle} />
             </PillButton>
             <PillButton
               isDark={isDark}
@@ -102,7 +102,7 @@ function TemplateDetailPane({
               }}
               style={{ paddingHorizontal: 8 }}
             >
-              <Icon name="ellipsis" size={16} color={textSecondary} />
+              <Icon name="ellipsis" size={16} color={colors.textSubtle} />
             </PillButton>
           </View>
         </View>
@@ -120,7 +120,7 @@ function TemplateDetailPane({
 
           return (
             <View key={i} style={[styles.chordItem, { marginTop: i === 0 ? 16 : 28 }]}>
-              <Text style={[styles.chordLabel, { color: textPrimary }]}>{chordLabel}</Text>
+              <Text style={[styles.chordLabel, { color: colors.textStrong }]}>{chordLabel}</Text>
               <View style={styles.formsRow}>
                 {forms.map((formCells, fi) => (
                   <ChordDiagram

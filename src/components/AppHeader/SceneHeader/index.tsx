@@ -1,6 +1,7 @@
 import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { Theme, Accidental } from "@/types";
+import { getColors } from "@/themes/design";
 import HeaderBar from "@/components/AppHeader";
 
 interface SceneHeaderProps {
@@ -18,7 +19,7 @@ interface SceneHeaderProps {
 
 export default function SceneHeader(props: SceneHeaderProps) {
   const insets = useSafeAreaInsets();
-  const bgColor = props.theme === "dark" ? "#000000" : "#ffffff";
+  const { pageBg: bgColor } = getColors(props.theme === "dark");
 
   return (
     <View style={{ paddingTop: insets.top, backgroundColor: bgColor }}>

@@ -32,6 +32,7 @@ import BottomSheetModal, { SHEET_HANDLE_CLEARANCE, useSheetHeight } from "../ui/
 import GlassIconButton from "../ui/GlassIconButton";
 import SheetProgressiveHeader from "../ui/SheetProgressiveHeader";
 import PillButton from "../ui/PillButton";
+import { getColors, TOGGLE_COLORS, WHITE, BLACK } from "../../themes/design";
 import {
   CHORD_CAGED_ORDER,
   CHORD_SEMITONES,
@@ -99,8 +100,8 @@ function BounceChip({
         style={[
           styles.customChip,
           {
-            backgroundColor: active ? color : isDark ? "#1f2937" : "#fafaf9",
-            borderColor: active ? color : isDark ? "#374151" : "#d6d3d1",
+            backgroundColor: active ? color : getColors(isDark).sheetBg,
+            borderColor: active ? color : getColors(isDark).border2,
           },
         ]}
         activeOpacity={0.7}
@@ -110,7 +111,7 @@ function BounceChip({
           style={{
             fontSize: 13,
             fontWeight: "600",
-            color: active ? "#fff" : isDark ? "#e5e7eb" : "#44403c",
+            color: active ? WHITE : getColors(isDark).textDim,
           }}
         >
           {label}
@@ -296,12 +297,13 @@ export default function LayerEditModal({
     return result;
   })();
 
-  const bgColor = isDark ? "#111827" : "#fafaf9";
-  const borderColor = isDark ? "rgba(255,255,255,0.08)" : "#e7e5e4";
-  const labelColor = isDark ? "#e5e7eb" : "#1c1917";
-  const valueColor = isDark ? "#9ca3af" : "#78716c";
-  const chevronColor = isDark ? "#6b7280" : "#a8a29e";
-  const secondaryLabelColor = isDark ? "#6b7280" : "#a8a29e";
+  const colors = getColors(isDark);
+  const bgColor = colors.deepBg;
+  const borderColor = isDark ? colors.border : colors.border2;
+  const labelColor = colors.textStrong;
+  const valueColor = colors.textSubtle;
+  const chevronColor = colors.textMuted;
+  const secondaryLabelColor = colors.textMuted;
 
   // iOS-style nav row (label + value + chevron)
   const renderNavRow = (label: string, value: string, onPress: () => void, isLast = false) => (
@@ -345,8 +347,8 @@ export default function LayerEditModal({
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           onToggle();
         }}
-        trackColor={{ false: isDark ? "#4b5563" : "#d6d3d1", true: "#34c759" }}
-        ios_backgroundColor={isDark ? "#4b5563" : "#d6d3d1"}
+        trackColor={{ false: colors.borderStrong, true: TOGGLE_COLORS.on }}
+        ios_backgroundColor={colors.borderStrong}
       />
     </View>
   );
@@ -957,7 +959,7 @@ export default function LayerEditModal({
                               style={{
                                 fontSize: 13,
                                 fontWeight: "500",
-                                color: isDark ? "#f87171" : "#ef4444",
+                                color: colors.textDanger,
                               }}
                             >
                               {t("layers.reset")}
@@ -1004,16 +1006,8 @@ export default function LayerEditModal({
                                 style={[
                                   styles.cagedBtn,
                                   {
-                                    backgroundColor: active
-                                      ? labelColor
-                                      : isDark
-                                        ? "#374151"
-                                        : "#f5f5f4",
-                                    borderColor: active
-                                      ? "transparent"
-                                      : isDark
-                                        ? "#4b5563"
-                                        : "#d6d3d1",
+                                    backgroundColor: active ? labelColor : colors.fillIdle,
+                                    borderColor: active ? "transparent" : colors.borderStrong,
                                   },
                                 ]}
                                 activeOpacity={0.7}
@@ -1023,13 +1017,7 @@ export default function LayerEditModal({
                                   style={{
                                     fontSize: 14,
                                     fontWeight: "bold",
-                                    color: active
-                                      ? isDark
-                                        ? "#000"
-                                        : "#fff"
-                                      : isDark
-                                        ? "#f3f4f6"
-                                        : "#44403c",
+                                    color: active ? (isDark ? BLACK : WHITE) : colors.textDim,
                                   }}
                                 >
                                   {key}

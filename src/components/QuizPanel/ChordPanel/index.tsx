@@ -3,6 +3,7 @@ import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 import "../../../i18n";
 import type { Theme, ChordType, QuizQuestion } from "../../../types";
+import { getColors, SEMANTIC_COLORS, WHITE } from "../../../themes/design";
 import BounceButton from "../BounceButton";
 
 interface ChordPanelProps {
@@ -30,6 +31,7 @@ export default function ChordPanel({
 }: ChordPanelProps) {
   const { t } = useTranslation();
   const isDark = theme === "dark";
+  const colors = getColors(isDark);
 
   return (
     <View style={{ gap: 10 }}>
@@ -40,34 +42,22 @@ export default function ChordPanel({
           const isSelectedChoice = choice === quizSelectedChordRoot;
           let bgColor: string, borderColor: string, textColor: string;
           if (!answered) {
-            bgColor = isSelectedChoice
-              ? isDark
-                ? "#e5e7eb"
-                : "#1c1917"
-              : isDark
-                ? "#374151"
-                : "#fff";
-            borderColor = isSelectedChoice ? "transparent" : isDark ? "#4b5563" : "#d6d3d1";
-            textColor = isSelectedChoice
-              ? isDark
-                ? "#1c1917"
-                : "#fff"
-              : isDark
-                ? "#e5e7eb"
-                : "#1c1917";
+            bgColor = isSelectedChoice ? colors.primaryBtn : isDark ? colors.fillIdle : WHITE;
+            borderColor = isSelectedChoice ? "transparent" : colors.borderStrong;
+            textColor = isSelectedChoice ? colors.primaryBtnText : colors.textStrong;
           } else {
             if (isCorrectChoice) {
-              bgColor = "#16a34a";
+              bgColor = SEMANTIC_COLORS.success;
               borderColor = "transparent";
-              textColor = "#fff";
+              textColor = WHITE;
             } else if (isSelectedChoice) {
-              bgColor = "#ef4444";
+              bgColor = SEMANTIC_COLORS.error;
               borderColor = "transparent";
-              textColor = "#fff";
+              textColor = WHITE;
             } else {
-              bgColor = isDark ? "#374151" : "#f5f5f4";
-              borderColor = isDark ? "#4b5563" : "#e7e5e4";
-              textColor = isDark ? "#6b7280" : "#a8a29e";
+              bgColor = colors.fillIdle;
+              borderColor = isDark ? colors.borderStrong : colors.border2;
+              textColor = colors.textMuted;
             }
           }
           return (
@@ -98,13 +88,11 @@ export default function ChordPanel({
                     styles.choiceBtn,
                     {
                       backgroundColor: isSelected
-                        ? isDark
-                          ? "#e5e7eb"
-                          : "#1c1917"
+                        ? colors.primaryBtn
                         : isDark
-                          ? "#374151"
-                          : "#fff",
-                      borderColor: isSelected ? "transparent" : isDark ? "#4b5563" : "#d6d3d1",
+                          ? colors.fillIdle
+                          : WHITE,
+                      borderColor: isSelected ? "transparent" : colors.borderStrong,
                       borderWidth: 1,
                     },
                   ]}
@@ -113,13 +101,7 @@ export default function ChordPanel({
                     style={[
                       styles.choiceBtnText,
                       {
-                        color: isSelected
-                          ? isDark
-                            ? "#1c1917"
-                            : "#fff"
-                          : isDark
-                            ? "#e5e7eb"
-                            : "#1c1917",
+                        color: isSelected ? colors.primaryBtnText : colors.textStrong,
                       },
                     ]}
                   >
@@ -136,10 +118,10 @@ export default function ChordPanel({
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                 onSubmitChordChoice();
               }}
-              style={[styles.submitBtn, { backgroundColor: isDark ? "#e5e7eb" : "#1c1917" }]}
+              style={[styles.submitBtn, { backgroundColor: colors.primaryBtn }]}
               activeOpacity={0.8}
             >
-              <Text style={[styles.submitBtnText, { color: isDark ? "#1c1917" : "#fff" }]}>
+              <Text style={[styles.submitBtnText, { color: colors.primaryBtnText }]}>
                 {t("quiz.submit")}
               </Text>
             </BounceButton>
@@ -161,12 +143,10 @@ export default function ChordPanel({
                   styles.choiceBtn,
                   {
                     backgroundColor: isCorrect
-                      ? "#16a34a"
+                      ? SEMANTIC_COLORS.success
                       : isSelected
-                        ? "#ef4444"
-                        : isDark
-                          ? "#374151"
-                          : "#f5f5f4",
+                        ? SEMANTIC_COLORS.error
+                        : colors.fillIdle,
                     borderWidth: 1,
                     borderColor: "transparent",
                   },
@@ -175,7 +155,7 @@ export default function ChordPanel({
                 <Text
                   style={[
                     styles.choiceBtnText,
-                    { color: isCorrect || isSelected ? "#fff" : isDark ? "#6b7280" : "#a8a29e" },
+                    { color: isCorrect || isSelected ? WHITE : colors.textMuted },
                   ]}
                 >
                   {ct}

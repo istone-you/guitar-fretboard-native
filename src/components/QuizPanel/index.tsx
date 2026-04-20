@@ -12,7 +12,7 @@ import ChordPanel from "./ChordPanel";
 import DiatonicPanel from "./DiatonicPanel";
 import BounceButton from "./BounceButton";
 import PillButton from "../ui/PillButton";
-import { getColors } from "../../themes/tokens";
+import { getColors, SEMANTIC_COLORS, WHITE } from "../../themes/design";
 
 function BounceView({ children, style }: { children: React.ReactNode; style?: any }) {
   const scale = useRef(new Animated.Value(0.8)).current;
@@ -413,7 +413,7 @@ export default function QuizPanel({
     <View style={styles.card}>
       {/* Score + settings button */}
       <View style={styles.headerRow}>
-        <Text style={[styles.score, { color: isDark ? "#9ca3af" : "#78716c" }]}>
+        <Text style={[styles.score, { color: colors.textSubtle }]}>
           ✓ {score.correct} / {score.total}
         </Text>
         <PillButton
@@ -441,9 +441,7 @@ export default function QuizPanel({
       {/* Question text */}
       {questionText !== "" && (
         <BounceView key={questionText} style={{ marginTop: 8 }}>
-          <Text style={[styles.questionText, { color: isDark ? "#fff" : "#1c1917" }]}>
-            {questionText}
-          </Text>
+          <Text style={[styles.questionText, { color: colors.text }]}>{questionText}</Text>
         </BounceView>
       )}
 
@@ -497,7 +495,7 @@ export default function QuizPanel({
       {quizType === "fretboard" && mode !== "diatonic" && !answered && (
         <View style={{ alignItems: "center", gap: 10 }}>
           <BounceView>
-            <Text style={{ fontSize: 15, color: isDark ? "#9ca3af" : "#78716c" }}>
+            <Text style={{ fontSize: 15, color: colors.textSubtle }}>
               {t("quiz.tapInstruction")}
             </Text>
           </BounceView>
@@ -508,10 +506,10 @@ export default function QuizPanel({
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                 onSubmitFretboard();
               }}
-              style={[styles.submitBtn, { backgroundColor: isDark ? "#e5e7eb" : "#1c1917" }]}
+              style={[styles.submitBtn, { backgroundColor: colors.primaryBtn }]}
               activeOpacity={0.8}
             >
-              <Text style={[styles.submitBtnText, { color: isDark ? "#1c1917" : "#fff" }]}>
+              <Text style={[styles.submitBtnText, { color: colors.primaryBtnText }]}>
                 {t("quiz.submit")}
               </Text>
             </BounceButton>
@@ -523,12 +521,16 @@ export default function QuizPanel({
       {answered && (
         <ResultSection>
           <Text
-            style={{ fontSize: 17, fontWeight: "bold", color: isCorrect ? "#16a34a" : "#ef4444" }}
+            style={{
+              fontSize: 17,
+              fontWeight: "bold",
+              color: isCorrect ? SEMANTIC_COLORS.success : SEMANTIC_COLORS.error,
+            }}
           >
             {isCorrect ? t("quiz.correct") : t("quiz.incorrectOnly")}
           </Text>
           {!isCorrect && question.answerLabel != null && (
-            <Text style={[styles.answerLabel, { color: isDark ? "#9ca3af" : "#78716c" }]}>
+            <Text style={[styles.answerLabel, { color: colors.textSubtle }]}>
               {t("quiz.incorrect", { answer: question.answerLabel })}
             </Text>
           )}
@@ -538,25 +540,23 @@ export default function QuizPanel({
               style={[
                 styles.navBtn,
                 {
-                  borderColor: isDark ? "#4b5563" : "#d6d3d1",
-                  backgroundColor: isDark ? "#1f2937" : "#fff",
+                  borderColor: colors.borderStrong,
+                  backgroundColor: colors.sheetBg,
                 },
               ]}
               activeOpacity={0.7}
             >
-              <Text style={{ fontSize: 15, color: isDark ? "#d1d5db" : "#57534e" }}>
-                {t("quiz.retry")}
-              </Text>
+              <Text style={{ fontSize: 15, color: colors.textDim }}>{t("quiz.retry")}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={onNextQuestion}
               style={[
                 styles.navBtn,
-                { backgroundColor: isDark ? "#e5e7eb" : "#1c1917", borderColor: "transparent" },
+                { backgroundColor: colors.primaryBtn, borderColor: "transparent" },
               ]}
               activeOpacity={0.7}
             >
-              <Text style={{ fontSize: 15, color: isDark ? "#1c1917" : "#fff", fontWeight: "600" }}>
+              <Text style={{ fontSize: 15, color: colors.primaryBtnText, fontWeight: "600" }}>
                 {t("quiz.next")}
               </Text>
             </TouchableOpacity>

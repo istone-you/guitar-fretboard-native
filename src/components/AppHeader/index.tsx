@@ -5,7 +5,7 @@ import SettingsModal, { type SettingsModalRef } from "./SettingsModal";
 import type { Accidental } from "../../types";
 import GlassIconButton from "../ui/GlassIconButton";
 import Icon from "../ui/Icon";
-import { getColors } from "../../themes/tokens";
+import { getColors } from "../../themes/design";
 
 interface HeaderBarProps {
   theme: Theme;

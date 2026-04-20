@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { View, Text, Animated, PanResponder, StyleSheet } from "react-native";
 import * as Haptics from "expo-haptics";
 import { GlassView } from "expo-glass-effect";
+import { getColors, WHITE, BLACK } from "../../../../themes/design";
 
 const THUMB_W = 46;
 const THUMB_H = 28;
@@ -126,9 +127,8 @@ export default function RangeSlider({ value, min, max, onChange, isDark }: Range
   ).current;
 
   const trackTop = LABEL_H + (TOUCH_H - TRACK_H) / 2;
-  const labelColor = isDark ? "#ffffff" : "#111111";
-  const trackFilled = isDark ? "rgba(255,255,255,0.55)" : "rgba(0,0,0,0.42)";
-  const trackEmpty = isDark ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.13)";
+  const colors = getColors(isDark);
+  const labelColor = isDark ? WHITE : BLACK;
 
   const makeThumb = (activation: Animated.Value) => {
     const scale = activation.interpolate({ inputRange: [0, 1], outputRange: [1, SCALE_ACTIVE] });
@@ -163,11 +163,17 @@ export default function RangeSlider({ value, min, max, onChange, isDark }: Range
     >
       {/* Track */}
       <View style={[styles.trackContainer, { top: trackTop }]}>
-        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: trackEmpty }]} />
+        <View
+          style={[StyleSheet.absoluteFillObject, { backgroundColor: colors.sliderTrackEmpty }]}
+        />
         <View
           style={[
             styles.fill,
-            { left: minLeft, width: Math.max(0, maxLeft - minLeft), backgroundColor: trackFilled },
+            {
+              left: minLeft,
+              width: Math.max(0, maxLeft - minLeft),
+              backgroundColor: colors.sliderTrackFilled,
+            },
           ]}
         />
       </View>
@@ -248,6 +254,6 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   thumbWhite: {
-    backgroundColor: "#ffffff",
+    backgroundColor: WHITE,
   },
 });

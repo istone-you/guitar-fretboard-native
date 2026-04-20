@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 import "../../i18n";
+import { getColors, SEMANTIC_COLORS } from "../../themes/design";
 import Icon from "../../components/ui/Icon";
 import PillButton from "../../components/ui/PillButton";
 import SceneHeader from "../../components/AppHeader/SceneHeader";
@@ -74,13 +75,7 @@ const TemplatesPane = forwardRef<TemplatesPaneHandle, TemplatesPaneProps>(functi
   const insets = useSafeAreaInsets();
   const { width: winWidth } = useWindowDimensions();
 
-  const textPrimary = isDark ? "#e5e7eb" : "#1c1917";
-  const textSecondary = isDark ? "#9ca3af" : "#78716c";
-  const rowBg = isDark ? "#000000" : "#ffffff";
-  const rowBorderColor = isDark ? "#374151" : "#e7e5e4";
-  const dragHandleColor = isDark ? "#4b5563" : "#c4c4c6";
-  const sectionHeaderColor = isDark ? "#6b7280" : "#a8a29e";
-  const bgColor = isDark ? "#000000" : "#ffffff";
+  const colors = getColors(isDark);
 
   const [templateFormVisible, setTemplateFormVisible] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<CustomProgressionTemplate | null>(null);
@@ -339,7 +334,7 @@ const TemplatesPane = forwardRef<TemplatesPaneHandle, TemplatesPaneProps>(functi
     return responder;
   };
 
-  const dragHandleIcon = <Icon name="drag-handle" size={18} color={dragHandleColor} />;
+  const dragHandleIcon = <Icon name="drag-handle" size={18} color={colors.dragHandle} />;
 
   const renderDeleteBackground = () => (
     <View
@@ -348,7 +343,7 @@ const TemplatesPane = forwardRef<TemplatesPaneHandle, TemplatesPaneProps>(functi
         {
           justifyContent: "center",
           alignItems: "flex-end",
-          backgroundColor: "#ff3b30",
+          backgroundColor: SEMANTIC_COLORS.destructive,
           borderRadius: ROW_RADIUS,
         },
       ]}
@@ -374,7 +369,7 @@ const TemplatesPane = forwardRef<TemplatesPaneHandle, TemplatesPaneProps>(functi
         onLeftHandedChange={onLeftHandedChange}
       />
       <View style={{ flex: 1 }}>
-        <View style={{ flex: 1, backgroundColor: isDark ? "#000000" : "#ffffff" }}>
+        <View style={{ flex: 1, backgroundColor: colors.pageBg }}>
           <ScrollView
             ref={scrollViewRef}
             style={{ flex: 1 }}
@@ -383,7 +378,7 @@ const TemplatesPane = forwardRef<TemplatesPaneHandle, TemplatesPaneProps>(functi
           >
             {/* Section: Progression Templates */}
             <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: sectionHeaderColor }]}>
+              <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>
                 {t("templates.progressionTemplates").toUpperCase()}
               </Text>
               <PillButton
@@ -394,7 +389,7 @@ const TemplatesPane = forwardRef<TemplatesPaneHandle, TemplatesPaneProps>(functi
                 }}
                 style={{ paddingHorizontal: 8 }}
               >
-                <Icon name="plus" size={16} color={isDark ? "#9ca3af" : "#78716c"} />
+                <Icon name="plus" size={16} color={colors.textMuted} />
               </PillButton>
             </View>
 
@@ -411,7 +406,7 @@ const TemplatesPane = forwardRef<TemplatesPaneHandle, TemplatesPaneProps>(functi
             >
               {customTemplates.length === 0 ? (
                 <View style={styles.emptyRow}>
-                  <Text style={[styles.emptyText, { color: textSecondary }]}>
+                  <Text style={[styles.emptyText, { color: colors.textSubtle }]}>
                     {t("templates.noTemplates")}
                   </Text>
                 </View>
@@ -439,8 +434,8 @@ const TemplatesPane = forwardRef<TemplatesPaneHandle, TemplatesPaneProps>(functi
                             style={[
                               styles.row,
                               {
-                                backgroundColor: rowBg,
-                                borderColor: isHoverTarget ? "#ff69b6" : rowBorderColor,
+                                backgroundColor: colors.pageBg,
+                                borderColor: isHoverTarget ? "#ff69b6" : colors.border2,
                                 transform: [{ translateX: getTemplateSwipeX(tpl.id) }],
                               },
                             ]}
@@ -452,12 +447,12 @@ const TemplatesPane = forwardRef<TemplatesPaneHandle, TemplatesPaneProps>(functi
                               activeOpacity={0.7}
                             >
                               <Text
-                                style={[styles.rowPrimary, { color: textPrimary }]}
+                                style={[styles.rowPrimary, { color: colors.textStrong }]}
                                 numberOfLines={1}
                               >
                                 {tpl.name}
                               </Text>
-                              <Text style={[styles.rowSecondary, { color: textSecondary }]}>
+                              <Text style={[styles.rowSecondary, { color: colors.textSubtle }]}>
                                 {tpl.chords.map((c) => chordDisplayLabel(c)).join(" - ")}
                               </Text>
                             </TouchableOpacity>
@@ -517,17 +512,17 @@ const TemplatesPane = forwardRef<TemplatesPaneHandle, TemplatesPaneProps>(functi
                         <View
                           style={[
                             styles.row,
-                            { backgroundColor: rowBg, borderColor: rowBorderColor },
+                            { backgroundColor: colors.pageBg, borderColor: colors.border2 },
                           ]}
                         >
                           <View style={{ flex: 1 }}>
                             <Text
-                              style={[styles.rowPrimary, { color: textPrimary }]}
+                              style={[styles.rowPrimary, { color: colors.textStrong }]}
                               numberOfLines={1}
                             >
                               {floatingTpl.name}
                             </Text>
-                            <Text style={[styles.rowSecondary, { color: textSecondary }]}>
+                            <Text style={[styles.rowSecondary, { color: colors.textSubtle }]}>
                               {floatingTpl.chords.map((c) => chordDisplayLabel(c)).join(" - ")}
                             </Text>
                           </View>
@@ -561,7 +556,7 @@ const TemplatesPane = forwardRef<TemplatesPaneHandle, TemplatesPaneProps>(functi
           <Animated.View
             style={[
               StyleSheet.absoluteFill,
-              { backgroundColor: bgColor, transform: [{ translateX: detailSlideAnim }] },
+              { backgroundColor: colors.pageBg, transform: [{ translateX: detailSlideAnim }] },
             ]}
             {...detailSwipeResponder.panHandlers}
           >

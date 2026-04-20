@@ -1,6 +1,7 @@
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import BottomSheetModal, { SHEET_HANDLE_CLEARANCE, useSheetHeight } from "../BottomSheetModal";
+import { getColors, SEMANTIC_COLORS } from "../../../themes/design";
 
 export interface ContextMenuItem {
   label: string;
@@ -25,12 +26,13 @@ interface ContextMenuProps {
 export function ContextMenu({ visible, isDark, title, items, footer, onClose }: ContextMenuProps) {
   const insets = useSafeAreaInsets();
   const sheetHeight = useSheetHeight();
+  const colors = getColors(isDark);
 
-  const sheetBg = isDark ? "#1c1c1e" : "#ffffff";
-  const borderColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)";
-  const titleColor = isDark ? "#8e8e93" : "#78716c";
-  const labelColor = isDark ? "#f2f2f7" : "#1c1917";
-  const dividerColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)";
+  const sheetBg = colors.cardBg;
+  const borderColor = colors.border;
+  const titleColor = colors.textSubtle;
+  const labelColor = colors.text;
+  const dividerColor = colors.border;
 
   return (
     <BottomSheetModal visible={visible} onClose={onClose}>
@@ -74,7 +76,10 @@ export function ContextMenu({ visible, isDark, title, items, footer, onClose }: 
                 >
                   <View style={styles.itemContent}>
                     <Text
-                      style={[styles.label, { color: item.destructive ? "#ff3b30" : labelColor }]}
+                      style={[
+                        styles.label,
+                        { color: item.destructive ? SEMANTIC_COLORS.destructive : labelColor },
+                      ]}
                     >
                       {item.label}
                     </Text>

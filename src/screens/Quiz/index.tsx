@@ -10,6 +10,7 @@ import { useQuizViewModel } from "../../hooks/useQuizViewModel";
 import { useQuizRecords } from "../../hooks/useQuizRecords";
 import { getNotesByAccidental } from "../../lib/fretboard";
 import { createDefaultLayer } from "../../types";
+import { QUIZ_ACCENT_COLORS, getColors } from "../../themes/design";
 import type { Accidental, BaseLabelMode, ScaleType, Theme, LayerConfig } from "../../types";
 import QuizActivePracticePane from "./Active";
 import StatsPane from "./Stats";
@@ -60,7 +61,7 @@ const QuizScreen = forwardRef<QuizScreenHandle, QuizScreenProps>(function QuizSc
   const effectiveWinWidth = winWidth || screenWidth;
 
   const isDark = theme === "dark";
-  const bgColor = isDark ? "#000000" : "#ffffff";
+  const bgColor = getColors(isDark).pageBg;
 
   const [scaleType, setScaleType] = useState<ScaleType>("major");
   const [showStats, setShowStats] = useState(false);
@@ -234,7 +235,10 @@ const QuizScreen = forwardRef<QuizScreenHandle, QuizScreenProps>(function QuizSc
       ? quizQuestion.promptChordRoot
       : (quizQuestion?.promptQuizRoot ?? rootNote);
 
-  const quizAccentColor = quizMode === "chord" || quizMode === "diatonic" ? "#40E0D0" : "#ff69b6";
+  const quizAccentColor =
+    quizMode === "chord" || quizMode === "diatonic"
+      ? QUIZ_ACCENT_COLORS.chordDiatonic
+      : QUIZ_ACCENT_COLORS.other;
 
   const quizLayers = useMemo<LayerConfig[]>(() => {
     if (quizMode === "chord" && quizType === "choice") {

@@ -18,6 +18,7 @@ import Icon from "../../ui/Icon";
 import type { Theme, LayerConfig } from "../../../types";
 import type { LayerPreset } from "../../../hooks/useLayerPresets";
 import { PROGRESSION_TEMPLATES, templateDisplayName } from "../../../lib/fretboard";
+import { getColors, SEMANTIC_COLORS } from "../../../themes/design";
 import BottomSheetModal, {
   SHEET_HANDLE_CLEARANCE,
   useSheetHeight,
@@ -151,6 +152,7 @@ export default function LayerPresetModal({
   t,
 }: LayerPresetModalProps) {
   const isDark = theme === "dark";
+  const colors = getColors(isDark);
   const { width: winWidth } = useWindowDimensions();
   const sheetHeight = useSheetHeight();
 
@@ -273,10 +275,10 @@ export default function LayerPresetModal({
     setPage("save");
   };
 
-  const bg = isDark ? "#1f2937" : "#fff";
-  const border = isDark ? "#374151" : "#e7e5e4";
-  const textPrimary = isDark ? "#e5e7eb" : "#1c1917";
-  const textSecondary = isDark ? "#9ca3af" : "#78716c";
+  const bg = colors.sheetBg;
+  const border = isDark ? colors.border : colors.border2;
+  const textPrimary = colors.textStrong;
+  const textSecondary = colors.textSubtle;
   const iconColor = isDark ? "rgba(255,255,255,0.85)" : "rgba(0,0,0,0.5)";
 
   return (
@@ -352,7 +354,7 @@ export default function LayerPresetModal({
                 <TextInput
                   style={[styles.nameInput, { color: textPrimary }]}
                   placeholder={t("templates.presetNameInput")}
-                  placeholderTextColor={isDark ? "#6b7280" : "#a8a29e"}
+                  placeholderTextColor={colors.textMuted}
                   value={saveName}
                   onChangeText={setSaveName}
                   maxLength={30}
@@ -447,7 +449,7 @@ export default function LayerPresetModal({
                       styles.layerRow,
                       {
                         borderColor: border,
-                        backgroundColor: isDark ? "#111827" : "#fafaf9",
+                        backgroundColor: colors.deepBg,
                       },
                     ]}
                   >
@@ -455,9 +457,7 @@ export default function LayerPresetModal({
                       style={[styles.colorDot, { backgroundColor: rawLayer.color as string }]}
                     />
                     <View style={{ flex: 1, gap: 2 }}>
-                      <View
-                        style={[styles.typeBadge, { borderColor: isDark ? "#374151" : "#d6d3d1" }]}
-                      >
+                      <View style={[styles.typeBadge, { borderColor: colors.border2 }]}>
                         <Text style={[styles.typeLabel, { color: textSecondary }]}>
                           {getTypeLabel(rawLayer.type as string, t)}
                         </Text>
@@ -482,15 +482,13 @@ export default function LayerPresetModal({
                       styles.layerRow,
                       {
                         borderColor: border,
-                        backgroundColor: isDark ? "#111827" : "#fafaf9",
+                        backgroundColor: colors.deepBg,
                       },
                     ]}
                   >
                     <View style={[styles.colorDot, { backgroundColor: layer.color }]} />
                     <View style={{ flex: 1, gap: 2 }}>
-                      <View
-                        style={[styles.typeBadge, { borderColor: isDark ? "#374151" : "#d6d3d1" }]}
-                      >
+                      <View style={[styles.typeBadge, { borderColor: colors.border2 }]}>
                         <Text style={[styles.typeLabel, { color: textSecondary }]}>
                           {getTypeLabel(layer.type, t)}
                         </Text>
@@ -557,7 +555,7 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     justifyContent: "center",
     alignItems: "flex-end",
-    backgroundColor: "#ff3b30",
+    backgroundColor: SEMANTIC_COLORS.destructive,
   },
   presetRow: {
     flexDirection: "row",

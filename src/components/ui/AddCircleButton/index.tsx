@@ -1,5 +1,6 @@
 import { TouchableOpacity } from "react-native";
 import Icon from "../Icon";
+import { getColors } from "../../../themes/design";
 
 interface AddCircleButtonProps {
   isDark: boolean;
@@ -8,7 +9,7 @@ interface AddCircleButtonProps {
 }
 
 export default function AddCircleButton({ isDark, onPress, size = 22 }: AddCircleButtonProps) {
-  const color = isDark ? "#9ca3af" : "#6b7280";
+  const color = getColors(isDark).iconSubtle;
   return (
     <TouchableOpacity
       onPress={onPress}

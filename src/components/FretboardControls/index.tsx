@@ -4,7 +4,7 @@ import * as Haptics from "expo-haptics";
 import "../../i18n";
 import type { Accidental, BaseLabelMode, Theme } from "../../types";
 import { SegmentedToggle } from "../ui/SegmentedToggle";
-import { getColors } from "../../themes/tokens";
+import { getColors } from "../../themes/design";
 import PillButton from "../ui/PillButton";
 import Icon from "../ui/Icon";
 import NotePickerButton from "../ui/NotePickerButton";

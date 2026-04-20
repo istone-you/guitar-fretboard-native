@@ -23,7 +23,8 @@ import NormalFretboard from "../../components/NormalFretboard";
 import SceneHeader from "../../components/AppHeader/SceneHeader";
 import { identifyChords, type ChordMatch } from "../../lib/chordFinder";
 import { identifyScales, scaleI18nKey, type ScaleMatch } from "../../lib/scaleFinder";
-import { createDefaultLayer, pickNextLayerColor, MAX_LAYERS } from "../../types";
+import { createDefaultLayer, MAX_LAYERS } from "../../types";
+import { pickNextLayerColor, getColors, TOGGLE_COLORS } from "../../themes/design";
 import { getNotesByAccidental } from "../../lib/fretboard";
 import type {
   Accidental,
@@ -39,7 +40,6 @@ import ColorPicker from "../../components/ui/ColorPicker";
 import { SegmentedToggle } from "../../components/ui/SegmentedToggle";
 import PillButton from "../../components/ui/PillButton";
 import NotePill from "../../components/ui/NotePill";
-import { getColors } from "../../themes/tokens";
 
 type FinderItem = { kind: "chord"; match: ChordMatch } | { kind: "scale"; match: ScaleMatch };
 
@@ -134,11 +134,11 @@ export default function FinderPane({
   const isDark = theme === "dark";
   const colors = getColors(isDark);
   const accentColor = dotColor;
-  const bgColor = isDark ? "#000000" : "#ffffff";
-  const cardBg = isDark ? "#1a1a2e" : "#ffffff";
-  const textColor = isDark ? "#e5e7eb" : "#1c1917";
-  const subTextColor = isDark ? "#9ca3af" : "#6b7280";
-  const borderColor = isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb";
+  const bgColor = colors.pageBg;
+  const cardBg = colors.surface;
+  const textColor = colors.textStrong;
+  const subTextColor = colors.iconSubtle;
+  const borderColor = isDark ? colors.border : colors.border2;
 
   const effectiveNotes = useMemo(
     () => (rootNote ? new Set([rootNote, ...extraNotes]) : new Set<string>()),
@@ -279,10 +279,8 @@ export default function FinderPane({
       >
         <View style={styles.matchNameRow}>
           <Text style={[styles.matchName, { color: textColor }]}>{name}</Text>
-          <View style={[styles.tag, { borderColor: isDark ? "#374151" : "#d6d3d1" }]}>
-            <Text style={[styles.tagText, { color: isDark ? "#9ca3af" : "#78716c" }]}>
-              {tagLabel}
-            </Text>
+          <View style={[styles.tag, { borderColor: colors.diagramLine }]}>
+            <Text style={[styles.tagText, { color: colors.textSubtle }]}>{tagLabel}</Text>
           </View>
         </View>
         <Animated.Text
@@ -432,7 +430,7 @@ export default function FinderPane({
 
           {rootNote && (
             <PillButton isDark={isDark} onPress={handleReset} variant="danger">
-              <Text style={[styles.resetBtnText, { color: isDark ? "#f87171" : "#ef4444" }]}>
+              <Text style={[styles.resetBtnText, { color: colors.textDanger }]}>
                 {t("finder.reset")}
               </Text>
             </PillButton>
@@ -442,9 +440,9 @@ export default function FinderPane({
         {/* Settings bottom sheet */}
         <BottomSheetModal visible={settingsVisible} onClose={() => setSettingsVisible(false)}>
           {({ close, dragHandlers }) => {
-            const sheetBg = isDark ? "#111827" : "#fafaf9";
-            const sheetBorder = isDark ? "rgba(255,255,255,0.08)" : "#e7e5e4";
-            const labelColor = isDark ? "#e5e7eb" : "#1c1917";
+            const sheetBg = colors.deepBg;
+            const sheetBorder = colors.sheetBorder;
+            const labelColor = colors.textStrong;
             return (
               <View
                 style={[
@@ -529,10 +527,10 @@ export default function FinderPane({
                               value={value}
                               onValueChange={setter}
                               trackColor={{
-                                false: isDark ? "#4b5563" : "#d6d3d1",
-                                true: "#34c759",
+                                false: colors.borderStrong,
+                                true: TOGGLE_COLORS.on,
                               }}
-                              ios_backgroundColor={isDark ? "#4b5563" : "#d6d3d1"}
+                              ios_backgroundColor={colors.borderStrong}
                             />
                           </View>
                         ))}

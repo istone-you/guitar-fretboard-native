@@ -10,7 +10,6 @@ import {
   SEMITONE_TO_DEGREE,
   calcDegree,
   getDegreeName,
-  DEGREE_COLORS,
   CHORD_FORMS_6TH,
   CHORD_FORMS_5TH,
   TRIAD_STRING_SET_OPTIONS,
@@ -46,9 +45,8 @@ import {
   getActiveOverlaySemitones,
   CAGED_FORMS,
   CAGED_ORDER,
-  calcCagedPositions,
 } from "../fretboard";
-import type { ScaleType, ChordType, DegreeName, ChordDisplayMode } from "../../types";
+import type { ScaleType, ChordType, ChordDisplayMode } from "../../types";
 
 // ===== Constants =====
 
@@ -266,40 +264,6 @@ describe("getDegreeName", () => {
   it("works with wrapping", () => {
     // A(9) to E(4) = P5
     expect(getDegreeName(4, 9)).toBe("P5");
-  });
-});
-
-// ===== DEGREE_COLORS =====
-
-describe("DEGREE_COLORS", () => {
-  it("has color for P1 (root)", () => {
-    expect(DEGREE_COLORS.P1).toBeDefined();
-    expect(DEGREE_COLORS.P1!.bg).toBe("#ef4444");
-  });
-
-  it("has color for P5", () => {
-    expect(DEGREE_COLORS.P5).toBeDefined();
-    expect(DEGREE_COLORS.P5!.bg).toBe("#6b7280");
-  });
-
-  it("has color for all 12 degrees", () => {
-    const allDegrees: DegreeName[] = [
-      "P1",
-      "m2",
-      "M2",
-      "m3",
-      "M3",
-      "P4",
-      "b5",
-      "P5",
-      "m6",
-      "M6",
-      "m7",
-      "M7",
-    ];
-    for (const deg of allDegrees) {
-      expect(DEGREE_COLORS[deg]).toBeDefined();
-    }
   });
 });
 
@@ -1015,11 +979,10 @@ describe("CAGED_FORMS", () => {
     expect(Object.keys(CAGED_FORMS)).toEqual(expect.arrayContaining(["C", "A", "G", "E", "D"]));
   });
 
-  it("each form has label, color, anchorString, and positions", () => {
+  it("each form has label, anchorString, and positions", () => {
     for (const key of Object.keys(CAGED_FORMS)) {
       const form = CAGED_FORMS[key];
       expect(form.label).toBe(key);
-      expect(form.color).toBe("#6366f1");
       expect(typeof form.anchorString).toBe("number");
       expect(form.positions.length).toBeGreaterThan(0);
     }
@@ -1049,77 +1012,6 @@ describe("CAGED_FORMS", () => {
 describe("CAGED_ORDER", () => {
   it("is C-A-G-E-D", () => {
     expect(Array.from(CAGED_ORDER)).toEqual(["C", "A", "G", "E", "D"]);
-  });
-});
-
-// ===== calcCagedPositions =====
-
-describe("calcCagedPositions", () => {
-  it("returns non-empty map for valid form and root", () => {
-    // E form with root E (index 4)
-    const positions = calcCagedPositions("E", 4);
-    expect(positions.size).toBeGreaterThan(0);
-  });
-
-  it("returns empty map for unknown form key", () => {
-    const positions = calcCagedPositions("X", 0);
-    expect(positions.size).toBe(0);
-  });
-
-  it("position keys are in 'string-fret' format", () => {
-    const positions = calcCagedPositions("E", 4);
-    for (const key of positions.keys()) {
-      expect(key).toMatch(/^\d+-\d+$/);
-    }
-  });
-
-  it("all positions have color and degree", () => {
-    const positions = calcCagedPositions("A", 9);
-    for (const value of positions.values()) {
-      expect(value.color).toBe("#6366f1");
-      expect(["R", "3", "5"]).toContain(value.degree);
-    }
-  });
-
-  it("does not include frets outside [0, FRET_COUNT)", () => {
-    const positions = calcCagedPositions("G", 0);
-    for (const key of positions.keys()) {
-      const [, fretStr] = key.split("-");
-      const fret = parseInt(fretStr, 10);
-      expect(fret).toBeGreaterThanOrEqual(0);
-      expect(fret).toBeLessThan(FRET_COUNT);
-    }
-  });
-
-  it("contains multiple anchor fret occurrences across the fretboard", () => {
-    // E form with root C (index 0), anchor string 0 (6th string)
-    // C on 6th string: fret 8 (E+8 = C)
-    const positions = calcCagedPositions("E", 0);
-    expect(positions.size).toBeGreaterThan(0);
-
-    // Check that root position exists at fret 8 on string 0
-    expect(positions.has("0-8")).toBe(true);
-    const rootPos = positions.get("0-8");
-    expect(rootPos!.degree).toBe("R");
-  });
-
-  it("R degree takes priority when overlapping", () => {
-    // This tests the logic: "if (!map.has(key) || degree === 'R') then set"
-    // The E form root on string 0 at fret 0 with rootIndex=4 (E) should always be R
-    const positions = calcCagedPositions("E", 4);
-    const rootPos = positions.get("0-0");
-    expect(rootPos).toBeDefined();
-    expect(rootPos!.degree).toBe("R");
-  });
-
-  it("works for all CAGED forms with all 12 root notes", () => {
-    for (const formKey of ["C", "A", "G", "E", "D"]) {
-      for (let rootIdx = 0; rootIdx < 12; rootIdx++) {
-        const positions = calcCagedPositions(formKey, rootIdx);
-        // Should not throw, and should have positions
-        expect(positions.size).toBeGreaterThan(0);
-      }
-    }
   });
 });
 

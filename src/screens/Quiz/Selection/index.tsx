@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import "../../../i18n";
 import type { Theme } from "../../../types";
 import PillButton from "../../../components/ui/PillButton";
+import { getColors, QUIZ_MODE_COLORS } from "../../../themes/design";
 
 interface QuizKindOption {
   value: string;
@@ -28,7 +29,7 @@ const QUIZ_GROUPS: {
   {
     modeKey: "quiz.mode.note",
     icon: "♩",
-    accent: "#007AFF",
+    accent: QUIZ_MODE_COLORS.note,
     options: [
       { value: "note-choice", descKey: "quiz.desc.noteChoice" },
       { value: "note-fretboard", descKey: "quiz.desc.noteFretboard" },
@@ -37,7 +38,7 @@ const QUIZ_GROUPS: {
   {
     modeKey: "quiz.mode.degree",
     icon: "°",
-    accent: "#5856D6",
+    accent: QUIZ_MODE_COLORS.degree,
     options: [
       { value: "degree-choice", descKey: "quiz.desc.degreeChoice" },
       { value: "degree-fretboard", descKey: "quiz.desc.degreeFretboard" },
@@ -46,7 +47,7 @@ const QUIZ_GROUPS: {
   {
     modeKey: "quiz.mode.chord",
     icon: "♯",
-    accent: "#FF9500",
+    accent: QUIZ_MODE_COLORS.chord,
     options: [
       { value: "chord-choice", descKey: "quiz.desc.chordIdentify" },
       { value: "chord-fretboard", descKey: "quiz.desc.chordFretboard" },
@@ -55,7 +56,7 @@ const QUIZ_GROUPS: {
   {
     modeKey: "quiz.mode.scale",
     icon: "≈",
-    accent: "#34C759",
+    accent: QUIZ_MODE_COLORS.scale,
     options: [
       { value: "scale-choice", descKey: "quiz.desc.scaleNoteSelect" },
       { value: "scale-fretboard", descKey: "quiz.desc.scaleFretboard" },
@@ -64,7 +65,7 @@ const QUIZ_GROUPS: {
   {
     modeKey: "quiz.mode.diatonic",
     icon: "Ⅶ",
-    accent: "#FF3B30",
+    accent: QUIZ_MODE_COLORS.diatonic,
     options: [{ value: "diatonic-all", descKey: "quiz.desc.diatonicAll" }],
   },
 ];
@@ -77,16 +78,11 @@ export default function QuizSelectionScreen({
   const { t } = useTranslation();
   const isDark = theme === "dark";
   const insets = useSafeAreaInsets();
-
-  const cardBg = isDark ? "#1c1c1e" : "#ffffff";
-  const cardBorder = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)";
-  const titleColor = isDark ? "#f9fafb" : "#1c1917";
-  const descColor = isDark ? "#8e8e93" : "#78716c";
-  const statsIcon = isDark ? "#8e8e93" : "#78716c";
+  const colors = getColors(isDark);
 
   return (
     <ScrollView
-      style={[styles.container, { backgroundColor: isDark ? "#000000" : "#ffffff" }]}
+      style={[styles.container, { backgroundColor: colors.pageBg }]}
       contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 80 }]}
       showsVerticalScrollIndicator={false}
     >
@@ -101,11 +97,11 @@ export default function QuizSelectionScreen({
           testID="quiz-stats-btn"
         >
           <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
-            <Path d="M18 20V10" stroke={statsIcon} strokeWidth={2} strokeLinecap="round" />
-            <Path d="M12 20V4" stroke={statsIcon} strokeWidth={2} strokeLinecap="round" />
-            <Path d="M6 20v-6" stroke={statsIcon} strokeWidth={2} strokeLinecap="round" />
+            <Path d="M18 20V10" stroke={colors.textSubtle} strokeWidth={2} strokeLinecap="round" />
+            <Path d="M12 20V4" stroke={colors.textSubtle} strokeWidth={2} strokeLinecap="round" />
+            <Path d="M6 20v-6" stroke={colors.textSubtle} strokeWidth={2} strokeLinecap="round" />
           </Svg>
-          <Text style={[styles.statsBtnText, { color: statsIcon }]}>{t("quiz.stats")}</Text>
+          <Text style={[styles.statsBtnText, { color: colors.textSubtle }]}>{t("quiz.stats")}</Text>
         </PillButton>
       </View>
 
@@ -120,15 +116,17 @@ export default function QuizSelectionScreen({
                 onQuizModeSelect(opt.value);
               }}
               activeOpacity={0.7}
-              style={[styles.card, { backgroundColor: cardBg, borderColor: cardBorder }]}
+              style={[styles.card, { backgroundColor: colors.cardBg, borderColor: colors.border }]}
             >
               <View style={styles.cardInner}>
                 <View style={[styles.iconCircle, { backgroundColor: iconCircleBg }]}>
                   <Text style={[styles.iconText, { color: group.accent }]}>{group.icon}</Text>
                 </View>
                 <View style={styles.textBlock}>
-                  <Text style={[styles.modeLabel, { color: titleColor }]}>{t(group.modeKey)}</Text>
-                  <Text style={[styles.modeDesc, { color: descColor }]}>{t(opt.descKey)}</Text>
+                  <Text style={[styles.modeLabel, { color: colors.text }]}>{t(group.modeKey)}</Text>
+                  <Text style={[styles.modeDesc, { color: colors.textSubtle }]}>
+                    {t(opt.descKey)}
+                  </Text>
                 </View>
               </View>
             </TouchableOpacity>

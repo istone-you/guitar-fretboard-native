@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { TouchableOpacity, type StyleProp, type ViewStyle } from "react-native";
-import { getColors, radius, type ThemeColors } from "../../../themes/tokens";
+import { getColors, radius, type ThemeColors } from "../../../themes/design";
 
 export function getPillStyle(colors: ThemeColors): ViewStyle {
   return {

@@ -1,6 +1,7 @@
 import { memo, Fragment } from "react";
 import Svg, { Circle, Line, Text as SvgText } from "react-native-svg";
 import type { ChordType, Theme } from "../../../types";
+import { getColors } from "../../../themes/design";
 import {
   CHORD_FORMS_5TH,
   CHORD_FORMS_6TH,
@@ -88,10 +89,11 @@ function ChordDiagram({ cells, rootIndex, theme, width }: ChordDiagramProps) {
   const gridStart = hasOpenStr ? 1 : pressedFrets.length > 0 ? Math.min(...pressedFrets) : 1;
   const showNut = gridStart === 1;
 
-  const dotColor = isDark ? "#e5e7eb" : "#1c1917";
-  const lineColor = isDark ? "#374151" : "#d6d3d1";
-  const nutColor = isDark ? "#9ca3af" : "#44403c";
-  const labelColor = isDark ? "#9ca3af" : "#78716c";
+  const colors = getColors(isDark);
+  const dotColor = colors.textStrong;
+  const lineColor = colors.diagramLine;
+  const nutColor = colors.diagramNut;
+  const labelColor = colors.textSubtle;
   const OX_X = PAD_L - 10;
 
   return (
