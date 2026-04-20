@@ -11,11 +11,11 @@ jest.mock("react-native-safe-area-context", () => ({
   useSafeAreaInsets: () => ({ top: 44, bottom: 0, left: 0, right: 0 }),
 }));
 
-jest.mock("../../../screens/Layer", () => ({
+jest.mock("../../NormalFretboard", () => ({
   __esModule: true,
   default: () => {
     const { View } = require("react-native");
-    return <View testID="main-practice-pane" />;
+    return <View testID="normal-fretboard" />;
   },
 }));
 
@@ -84,9 +84,9 @@ describe("LandscapeLayout", () => {
     expect(() => render(<LandscapeLayout {...defaultProps} />)).not.toThrow();
   });
 
-  it("renders MainPracticePane", () => {
+  it("renders NormalFretboard", () => {
     render(<LandscapeLayout {...defaultProps} />);
-    expect(screen.getByTestId("main-practice-pane")).toBeTruthy();
+    expect(screen.getByTestId("normal-fretboard")).toBeTruthy();
   });
 
   it("displays the root note", () => {

@@ -90,17 +90,19 @@ export default function LayerPane({
 
   return (
     <View style={{ flex: 1 }}>
-      <SceneHeader
-        theme={theme}
-        title={t("tabs.layer")}
-        accidental={accidental}
-        fretRange={fretRange}
-        leftHanded={leftHanded}
-        onThemeChange={onThemeChange}
-        onFretRangeChange={onFretRangeChange}
-        onAccidentalChange={onAccidentalChange}
-        onLeftHandedChange={onLeftHandedChange}
-      />
+      {!isLandscape && (
+        <SceneHeader
+          theme={theme}
+          title={t("tabs.layer")}
+          accidental={accidental}
+          fretRange={fretRange}
+          leftHanded={leftHanded}
+          onThemeChange={onThemeChange}
+          onFretRangeChange={onFretRangeChange}
+          onAccidentalChange={onAccidentalChange}
+          onLeftHandedChange={onLeftHandedChange}
+        />
+      )}
       <PracticePane
         isLandscape={isLandscape}
         onFretboardDoubleTap={onFretboardDoubleTap}

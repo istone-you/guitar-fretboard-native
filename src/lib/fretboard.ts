@@ -1306,7 +1306,7 @@ export const OPEN_CHORD_FORMS: Partial<Record<ChordType, Record<string, FretCell
       { string: 5, fret: 0 },
     ],
     G: [
-      { string: 0, fret: 1 },
+      { string: 0, fret: 3 },
       { string: 1, fret: 2 },
       { string: 2, fret: 0 },
       { string: 3, fret: 0 },
@@ -1346,8 +1346,8 @@ export const OPEN_CHORD_FORMS: Partial<Record<ChordType, Record<string, FretCell
       { string: 5, fret: 0 },
     ],
     G: [
-      { string: 0, fret: 2 },
-      { string: 1, fret: 0 },
+      { string: 0, fret: 3 },
+      { string: 1, fret: 2 },
       { string: 2, fret: 0 },
       { string: 3, fret: 0 },
       { string: 4, fret: 0 },

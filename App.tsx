@@ -290,30 +290,28 @@ export default function App() {
     return null;
   };
 
-  if (isLandscape) {
-    return (
-      <LandscapeLayout {...sharedMainPaneProps} {...sharedHeaderProps} winHeight={winHeight} />
-    );
-  }
-
   return (
     <SafeAreaProvider>
-      <View style={[styles.safeArea, { backgroundColor: bgColor }]}>
-        <StatusBar
-          translucent
-          barStyle={isDark ? "light-content" : "dark-content"}
-          backgroundColor="transparent"
-        />
-        <View style={styles.flex1}>
-          <TabView
-            navigationState={{ index: tabIndex, routes }}
-            renderScene={renderScene}
-            onIndexChange={handleTabIndexChange}
-            hapticFeedbackEnabled
-            disablePageAnimations
+      {isLandscape ? (
+        <LandscapeLayout {...sharedMainPaneProps} {...sharedHeaderProps} winHeight={winHeight} />
+      ) : (
+        <View style={[styles.safeArea, { backgroundColor: bgColor }]}>
+          <StatusBar
+            translucent
+            barStyle={isDark ? "light-content" : "dark-content"}
+            backgroundColor="transparent"
           />
+          <View style={styles.flex1}>
+            <TabView
+              navigationState={{ index: tabIndex, routes }}
+              renderScene={renderScene}
+              onIndexChange={handleTabIndexChange}
+              hapticFeedbackEnabled
+              disablePageAnimations
+            />
+          </View>
         </View>
-      </View>
+      )}
     </SafeAreaProvider>
   );
 }

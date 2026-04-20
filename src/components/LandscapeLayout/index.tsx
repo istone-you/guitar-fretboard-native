@@ -1,7 +1,7 @@
 import { View, Text, StatusBar, StyleSheet } from "react-native";
 import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import LayerPane from "../../screens/Layer";
+import NormalFretboard from "../../components/NormalFretboard";
 import type { LayerPaneProps } from "../../screens/Layer";
 import type { Theme } from "../../types";
 
@@ -13,14 +13,21 @@ type LandscapeLayoutProps = Omit<LayerPaneProps, "isLandscape" | "disableAnimati
 export default function LandscapeLayout({
   winHeight,
   theme,
-  ...mainPaneProps
+  accidental,
+  baseLabelMode,
+  fretRange,
+  rootNote,
+  layers,
+  leftHanded,
+  progressionTemplates,
+  onFretboardDoubleTap,
 }: LandscapeLayoutProps) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const isDark = theme === "dark";
-  const bgColor = isDark ? "#030712" : "#f3f4f6";
+  const bgColor = isDark ? "#000000" : "#ffffff";
 
-  const availH = winHeight - 44;
+  const availH = winHeight - insets.top;
   const fbScale = (availH * 0.85) / 200;
 
   return (
@@ -40,18 +47,18 @@ export default function LandscapeLayout({
         backgroundColor="transparent"
       />
 
-      <View style={[styles.infoOverlay, { marginTop: Math.max(0, (availH - 200 * fbScale) / 2) }]}>
+      <View style={styles.infoOverlay}>
         <View style={styles.infoBar}>
           <Text
             style={[styles.infoText, { color: isDark ? "#e5e7eb" : "#1c1917", marginRight: 6 }]}
           >
-            {t("header.root")} {mainPaneProps.rootNote}
+            {t("header.root")} {rootNote}
           </Text>
         </View>
 
-        {mainPaneProps.layers.some((l) => l.enabled) && (
+        {layers.some((l) => l.enabled) && (
           <View style={styles.infoBar}>
-            {mainPaneProps.layers
+            {layers
               .filter((l) => l.enabled)
               .map((l) => {
                 let label: string;
@@ -90,10 +97,22 @@ export default function LandscapeLayout({
         <View
           style={{
             transform: [{ scale: fbScale }],
-            transformOrigin: "top left",
+            transformOrigin: "0% 0%",
           }}
+          onTouchEnd={onFretboardDoubleTap}
         >
-          <LayerPane {...mainPaneProps} theme={theme} isLandscape disableAnimation />
+          <NormalFretboard
+            theme={theme}
+            accidental={accidental}
+            baseLabelMode={baseLabelMode}
+            fretRange={fretRange}
+            rootNote={rootNote}
+            layers={layers}
+            leftHanded={leftHanded}
+            onNoteClick={() => {}}
+            progressionTemplates={progressionTemplates}
+            disableAnimation
+          />
         </View>
       </View>
     </View>
@@ -104,7 +123,9 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
   },
-  infoOverlay: {},
+  infoOverlay: {
+    height: 56,
+  },
   infoBar: {
     flexDirection: "row",
     alignItems: "center",
