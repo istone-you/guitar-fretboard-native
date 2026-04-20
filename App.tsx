@@ -1,36 +1,26 @@
-import { useMemo, useState, useCallback, useRef } from "react";
-import { View, Animated, PanResponder, StatusBar, StyleSheet } from "react-native";
-import { SafeAreaProvider } from "react-native-safe-area-context";
-import * as ScreenOrientation from "expo-screen-orientation";
-import * as Haptics from "expo-haptics";
 import "./src/i18n";
+import * as ScreenOrientation from "expo-screen-orientation";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { View, StatusBar, StyleSheet } from "react-native";
+import { useState, useMemo, useCallback, useRef } from "react";
+import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 import TabView from "react-native-bottom-tabs";
-import SceneHeader from "./src/components/AppHeader/SceneHeader";
-import LandscapeLayout from "./src/components/LandscapeLayout";
-import { usePersistedSetting } from "./src/hooks/usePersistedSetting";
-import { CHORD_QUIZ_TYPES_ALL, useQuiz } from "./src/hooks/useQuiz";
-import { useLayerDerivedState } from "./src/hooks/useLayerDerivedState";
-import { useQuizViewModel } from "./src/hooks/useQuizViewModel";
-import { useLayers } from "./src/hooks/useLayers";
-import { useOrientation } from "./src/hooks/useOrientation";
-import { useQuizNavigation } from "./src/hooks/useQuizNavigation";
-import { getNotesByAccidental, getRootIndex, PROGRESSION_TEMPLATES } from "./src/lib/fretboard";
-import type { Theme, Accidental, BaseLabelMode, ScaleType } from "./src/types";
-import { createDefaultLayer } from "./src/types";
-import LayerPane from "./src/screens/Layer";
-import QuizPane from "./src/screens/Quiz";
-import QuizActivePracticePane from "./src/screens/Quiz/Active";
-import StatsPane from "./src/screens/Quiz/Stats";
-import FinderPane from "./src/screens/Finder";
-import TemplatesPane, { type TemplatesPaneHandle } from "./src/screens/Templates";
-import TemplateDetailPane from "./src/screens/Templates/Detail";
-import { useQuizRecords } from "./src/hooks/useQuizRecords";
-import { useLayerPresets } from "./src/hooks/useLayerPresets";
-import {
-  useProgressionTemplates,
-  type CustomProgressionTemplate,
-} from "./src/hooks/useProgressionTemplates";
+import LandscapeLayout from "@/components/LandscapeLayout";
+import { usePersistedSetting } from "@/hooks/usePersistedSetting";
+import { useLayerDerivedState } from "@/hooks/useLayerDerivedState";
+import { useLayers } from "@/hooks/useLayers";
+import { useOrientation } from "@/hooks/useOrientation";
+import { getNotesByAccidental, getRootIndex, PROGRESSION_TEMPLATES } from "@/lib/fretboard";
+import type { Theme, Accidental, BaseLabelMode } from "@/types";
+import LayerPane from "@/screens/Layer";
+import QuizScreen, { type QuizScreenHandle } from "@/screens/Quiz";
+import FinderPane from "@/screens/Finder";
+import TemplatesPane from "@/screens/Templates";
+import { useLayerPresets } from "@/hooks/useLayerPresets";
+import { useProgressionTemplates } from "@/hooks/useProgressionTemplates";
+
+ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
 
 const STORAGE_KEYS = {
   theme: "guiter:theme",
@@ -39,10 +29,10 @@ const STORAGE_KEYS = {
   leftHanded: "guiter:left-handed",
 } as const;
 
-function AppContent() {
+export default function App() {
   const { t } = useTranslation();
 
-  // Settings
+  // Shared persisted settings
   const [rootNote, setRootNote] = useState("C");
   const [fretRange, setFretRange] = usePersistedSetting<[number, number]>(
     STORAGE_KEYS.fretRange,
@@ -80,39 +70,6 @@ function AppContent() {
     (v) => String(v),
     (v) => v === "true",
   );
-  const [showFinder, setShowFinder] = useState(false);
-  const [showTemplates, setShowManage] = useState(false);
-  const [showStats, setShowStats] = useState(false);
-
-  const statsSlideAnim = useRef(new Animated.Value(0)).current;
-  const [detailTemplateId, setDetailTemplateId] = useState<string | null>(null);
-  const detailSlideAnim = useRef(new Animated.Value(0)).current;
-  const templatesPaneRef = useRef<TemplatesPaneHandle>(null);
-  const [finderRoot, setFinderRoot] = useState<string | null>(null);
-  const [finderNotes, setFinderNotes] = useState<Set<string>>(new Set());
-  const [finderDotColor, setFinderDotColor] = usePersistedSetting(
-    "guiter:finder-dot-color",
-    "#ff69b6",
-    (v) => v,
-    (v) => v,
-  );
-  const [scaleType, setScaleType] = useState<ScaleType>("major");
-  const { records, addRecord, clearRecords } = useQuizRecords();
-
-  // Presets & progression templates (managed at app level, shared with TemplatesPane)
-  const { presets, savePreset, loadPreset, deletePreset } = useLayerPresets();
-  const { customTemplates, saveTemplate, updateTemplate, deleteTemplate, reorderTemplates } =
-    useProgressionTemplates();
-  const detailTemplate = detailTemplateId
-    ? (customTemplates.find((t) => t.id === detailTemplateId) ?? null)
-    : null;
-  const allProgressionTemplates = useMemo(
-    () => [
-      ...PROGRESSION_TEMPLATES,
-      ...customTemplates.map((ct) => ({ id: ct.id, name: ct.name, chords: ct.chords })),
-    ],
-    [customTemplates],
-  );
 
   // Layout
   const { isLandscape, toggleLayout, animDisabled, winWidth, winHeight } = useOrientation();
@@ -131,83 +88,19 @@ function AppContent() {
     handleReorderLayer,
   } = useLayers();
 
-  // Forwarding refs to break the circular dependency between
-  // useQuizNavigation (owns showQuiz) and useQuiz/useQuizViewModel
-  // (need showQuiz but provide the callbacks useQuizNavigation needs).
-  const quizNavCallbacksRef = useRef({
-    onQuizKindChange: (_: string) => {},
-    onShowQuizChange: (_: boolean) => {},
-  });
+  // Presets & progression templates
+  const { presets, savePreset, loadPreset, deletePreset } = useLayerPresets();
+  const { customTemplates, saveTemplate, updateTemplate, deleteTemplate, reorderTemplates } =
+    useProgressionTemplates();
+  const allProgressionTemplates = useMemo(
+    () => [
+      ...PROGRESSION_TEMPLATES,
+      ...customTemplates.map((ct) => ({ id: ct.id, name: ct.name, chords: ct.chords })),
+    ],
+    [customTemplates],
+  );
 
-  const {
-    showQuiz,
-    setShowQuiz,
-    quizModeSelected,
-    setQuizModeSelected,
-    quizSlideAnim,
-    handleQuizModeSelect,
-    handleChangeQuiz,
-    swipePanResponder,
-  } = useQuizNavigation({
-    winWidth,
-    onQuizKindChange: (v) => quizNavCallbacksRef.current.onQuizKindChange(v),
-    onShowQuizChange: (v) => quizNavCallbacksRef.current.onShowQuizChange(v),
-  });
-
-  const {
-    quizMode,
-    quizType,
-    quizQuestion,
-    selectedAnswer,
-    quizScore,
-    quizAnsweredCell,
-    quizCorrectCell,
-    quizSelectedCells,
-    quizSelectedChoices,
-    diatonicQuizKeyType,
-    diatonicQuizChordSize,
-    quizSelectedChordRoot,
-    quizSelectedChordType,
-    diatonicSelectedRoot,
-    diatonicSelectedChordType,
-    diatonicAllAnswers,
-    diatonicEditingDegree,
-    quizRevealNoteNames,
-    handleQuizKindChange,
-    handleQuizAnswer,
-    handleChordQuizRootSelect,
-    handleChordQuizTypeSelect,
-    handleDiatonicAnswerRootSelect,
-    handleDiatonicAnswerTypeSelect,
-    handleDiatonicDegreeCardClick,
-    handleDiatonicSubmitAll,
-    handleFretboardQuizAnswer,
-    handleNextQuestion,
-    handleRetryQuestion,
-    setDiatonicQuizKeyType,
-    setDiatonicQuizChordSize,
-    chordQuizTypes,
-    handleChordQuizTypesChange,
-    quizStrings,
-    handleQuizStringsChange,
-    quizKeys,
-    handleQuizKeysChange,
-    quizNoteNames,
-    handleQuizNoteNamesChange,
-    regenerateQuiz,
-    handleShowQuizChange,
-    handleSubmitChoice,
-    handleSubmitChordChoice,
-    handleSubmitFretboard,
-  } = useQuiz({
-    accidental,
-    fretRange,
-    rootNote,
-    scaleType,
-    showQuiz,
-    onRecord: addRecord,
-  });
-
+  // Derived layer state
   const { effectiveLayers, overlaySemitones, overlayNotes, layerNoteLabelsMap } =
     useLayerDerivedState({
       layers,
@@ -218,176 +111,94 @@ function AppContent() {
       progressionTemplates: allProgressionTemplates,
     });
 
-  const { quizKindOptions, handleQuizKindDropdownChange } = useQuizViewModel({
-    showQuiz,
-    quizMode,
-    quizType,
-    t,
-    onQuizKindChange: handleQuizKindChange,
-  });
+  // Tab navigation
+  const [tabIndex, setTabIndex] = useState(0);
+  const quizScreenRef = useRef<QuizScreenHandle>(null);
 
-  // Wire up forwarding refs now that all hooks have been called
-  quizNavCallbacksRef.current = {
-    onQuizKindChange: handleQuizKindDropdownChange,
-    onShowQuizChange: handleShowQuizChange,
-  };
-
-  const handleOpenStats = useCallback(() => {
-    statsSlideAnim.setValue(winWidth);
-    setShowStats(true);
-    setTimeout(() => {
-      Animated.timing(statsSlideAnim, {
-        toValue: 0,
-        duration: 120,
-        useNativeDriver: true,
-      }).start();
-    }, 0);
-  }, [statsSlideAnim, winWidth]);
-
-  const handleCloseStats = useCallback(() => {
-    Animated.timing(statsSlideAnim, {
-      toValue: winWidth,
-      duration: 120,
-      useNativeDriver: true,
-    }).start(() => setShowStats(false));
-  }, [statsSlideAnim, winWidth]);
-
-  const handleOpenTemplateDetail = useCallback(
-    (template: CustomProgressionTemplate) => {
-      detailSlideAnim.setValue(winWidth);
-      setDetailTemplateId(template.id);
-      setTimeout(() => {
-        Animated.timing(detailSlideAnim, {
-          toValue: 0,
-          duration: 120,
-          useNativeDriver: true,
-        }).start();
-      }, 0);
+  const handleAccidentalChange = useCallback(
+    (mode: Accidental) => {
+      const idx = getRootIndex(rootNote);
+      const notes = getNotesByAccidental(mode);
+      setRootNote(notes[idx]);
+      setAccidental(mode);
     },
-    [detailSlideAnim, winWidth],
+    [rootNote, setAccidental],
   );
-
-  const handleCloseTemplateDetail = useCallback(() => {
-    Animated.timing(detailSlideAnim, {
-      toValue: winWidth,
-      duration: 120,
-      useNativeDriver: true,
-    }).start(() => setDetailTemplateId(null));
-  }, [detailSlideAnim, winWidth]);
-
-  // Swipe-right to close stats pane
-  const showStatsRef = useRef(showStats);
-  showStatsRef.current = showStats;
-  const handleCloseStatsRef = useRef(handleCloseStats);
-  handleCloseStatsRef.current = handleCloseStats;
-  const statsSwipeResponder = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_, g) =>
-        showStatsRef.current && g.dx > 10 && Math.abs(g.dx) > Math.abs(g.dy),
-      onPanResponderMove: (_, g) => {
-        if (g.dx > 0) statsSlideAnim.setValue(g.dx);
-      },
-      onPanResponderRelease: (_, g) => {
-        if (g.dx > 80 || (g.dx > 30 && g.vx > 0.5)) {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          handleCloseStatsRef.current();
-        } else {
-          Animated.timing(statsSlideAnim, {
-            toValue: 0,
-            duration: 120,
-            useNativeDriver: true,
-          }).start();
-        }
-      },
-      onPanResponderTerminate: () => {
-        Animated.timing(statsSlideAnim, {
-          toValue: 0,
-          duration: 120,
-          useNativeDriver: true,
-        }).start();
-      },
-    }),
-  ).current;
-
-  const detailTemplateRef = useRef(detailTemplate);
-  detailTemplateRef.current = detailTemplate;
-  const handleCloseTemplateDetailRef = useRef(handleCloseTemplateDetail);
-  handleCloseTemplateDetailRef.current = handleCloseTemplateDetail;
-  const detailSwipeResponder = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_, g) =>
-        detailTemplateRef.current !== null && g.dx > 10 && Math.abs(g.dx) > Math.abs(g.dy),
-      onPanResponderMove: (_, g) => {
-        if (g.dx > 0) detailSlideAnim.setValue(g.dx);
-      },
-      onPanResponderRelease: (_, g) => {
-        if (g.dx > 80 || (g.dx > 30 && g.vx > 0.5)) {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          handleCloseTemplateDetailRef.current();
-        } else {
-          Animated.timing(detailSlideAnim, {
-            toValue: 0,
-            duration: 120,
-            useNativeDriver: true,
-          }).start();
-        }
-      },
-      onPanResponderTerminate: () => {
-        Animated.timing(detailSlideAnim, {
-          toValue: 0,
-          duration: 120,
-          useNativeDriver: true,
-        }).start();
-      },
-    }),
-  ).current;
-
-  const quizNoteOptions = [...getNotesByAccidental(accidental)];
-
-  const isDark = theme === "dark";
-  const bgColor = isDark ? "#000000" : "#ffffff";
-
-  const handleAccidentalChange = (mode: Accidental) => {
-    const idx = getRootIndex(rootNote);
-    const notes = getNotesByAccidental(mode);
-    setRootNote(notes[idx]);
-    setAccidental(mode);
-  };
-
-  const handleNoteClick = (noteName: string) => {
-    if (noteName !== rootNote && effectiveLayers.some((layer) => layer.enabled)) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    setRootNote(noteName);
-    regenerateQuiz();
-  };
-
-  const quizEffectiveRootNote =
-    quizMode === "chord" && quizType === "choice" && quizQuestion?.promptChordRoot
-      ? quizQuestion.promptChordRoot
-      : (quizQuestion?.promptQuizRoot ?? rootNote);
 
   const lastTapRef = useRef(0);
   const handleFretboardDoubleTap = useCallback(() => {
-    if (showQuiz) return;
+    if (tabIndex === 3) return;
     const now = Date.now();
     if (now - lastTapRef.current < 300) {
       toggleLayout();
     }
     lastTapRef.current = now;
-  }, [showQuiz, toggleLayout]);
+  }, [tabIndex, toggleLayout]);
 
-  const quizAccentColor = quizMode === "chord" || quizMode === "diatonic" ? "#40E0D0" : "#ff69b6";
+  const handleNoteClick = useCallback(
+    (noteName: string) => {
+      if (noteName !== rootNote && effectiveLayers.some((layer) => layer.enabled)) {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+      setRootNote(noteName);
+      quizScreenRef.current?.regenerate();
+    },
+    [rootNote, effectiveLayers],
+  );
 
-  const quizLayers = useMemo(() => {
-    if (quizMode === "chord" && quizType === "choice") {
-      const layer = createDefaultLayer("chord", "quiz-chord", quizAccentColor);
-      layer.chordDisplayMode = "form";
-      layer.chordType = quizQuestion?.promptChordType ?? "Major";
-      return [layer];
-    }
-    return [];
-  }, [quizMode, quizType, quizAccentColor, quizQuestion]);
+  const handleTabIndexChange = useCallback(
+    (index: number) => {
+      if (tabIndex === 3 && index !== 3) {
+        quizScreenRef.current?.onLeave();
+      }
+      setTabIndex(index);
+    },
+    [tabIndex],
+  );
+
+  const isDark = theme === "dark";
+  const bgColor = isDark ? "#000000" : "#ffffff";
+
+  const routes = useMemo(
+    () => [
+      {
+        key: "layer",
+        title: t("tabs.layer"),
+        focusedIcon: require("./public/guiter.png"),
+        unfocusedIcon: require("./public/guiter.png"),
+      },
+      {
+        key: "finder",
+        title: t("tabs.finder"),
+        focusedIcon: { sfSymbol: "magnifyingglass" } as const,
+        unfocusedIcon: { sfSymbol: "magnifyingglass" } as const,
+      },
+      {
+        key: "templates",
+        title: t("tabs.templates"),
+        focusedIcon: { sfSymbol: "tray.full.fill" } as const,
+        unfocusedIcon: { sfSymbol: "tray.full" } as const,
+      },
+      {
+        key: "quiz",
+        title: t("tabs.quiz"),
+        focusedIcon: { sfSymbol: "questionmark.circle.fill" } as const,
+        unfocusedIcon: { sfSymbol: "questionmark.circle" } as const,
+      },
+    ],
+    [t],
+  );
+
+  const sharedHeaderProps = {
+    theme,
+    accidental,
+    fretRange,
+    leftHanded,
+    onThemeChange: setTheme,
+    onFretRangeChange: setFretRange,
+    onAccidentalChange: handleAccidentalChange,
+    onLeftHandedChange: setLeftHanded,
+  };
 
   const sharedMainPaneProps = {
     theme,
@@ -420,352 +231,94 @@ function AppContent() {
     progressionTemplates: allProgressionTemplates,
   };
 
-  // ── Tab navigation ─────────────────────────────────────────────
-  // Derive tab index from existing state (0=layer, 1=finder, 2=templates, 3=quiz)
-  const tabIndex = showFinder ? 1 : showTemplates ? 2 : showQuiz ? 3 : 0;
-
-  const routes = useMemo(
-    () => [
-      {
-        key: "layer",
-        title: t("tabs.layer"),
-        focusedIcon: require("./public/guiter.png"),
-        unfocusedIcon: require("./public/guiter.png"),
-      },
-      {
-        key: "finder",
-        title: t("tabs.finder"),
-        focusedIcon: { sfSymbol: "magnifyingglass" } as const,
-        unfocusedIcon: { sfSymbol: "magnifyingglass" } as const,
-      },
-      {
-        key: "templates",
-        title: t("tabs.templates"),
-        focusedIcon: { sfSymbol: "tray.full.fill" } as const,
-        unfocusedIcon: { sfSymbol: "tray.full" } as const,
-      },
-      {
-        key: "quiz",
-        title: t("tabs.quiz"),
-        focusedIcon: { sfSymbol: "questionmark.circle.fill" } as const,
-        unfocusedIcon: { sfSymbol: "questionmark.circle" } as const,
-      },
-    ],
-    [t],
-  );
-
-  const handleTabIndexChange = useCallback(
-    (index: number) => {
-      const leavingQuiz = showQuiz && index !== 3;
-      if (leavingQuiz) {
-        handleShowQuizChange(false);
-        setShowQuiz(false);
-      }
-      if (index === 0) {
-        setShowFinder(false);
-        setShowManage(false);
-        setShowStats(false);
-        setDetailTemplateId(null);
-      } else if (index === 1) {
-        setShowFinder(true);
-        setShowManage(false);
-        setShowStats(false);
-        setDetailTemplateId(null);
-      } else if (index === 2) {
-        setShowFinder(false);
-        setShowManage(true);
-        setShowStats(false);
-        setDetailTemplateId(null);
-      } else if (index === 3) {
-        if (showQuiz) return;
-        setShowFinder(false);
-        setShowManage(false);
-        setShowStats(false);
-        setDetailTemplateId(null);
-        setShowQuiz(true);
-        setQuizModeSelected(false);
-      }
-    },
-    [
-      showQuiz,
-      setShowFinder,
-      setShowManage,
-      setShowQuiz,
-      setQuizModeSelected,
-      handleShowQuizChange,
-      setDetailTemplateId,
-    ],
-  );
-
-  const sharedHeaderProps = {
-    theme,
-    accidental,
-    fretRange,
-    onThemeChange: setTheme,
-    onFretRangeChange: setFretRange,
-    onAccidentalChange: handleAccidentalChange,
-    leftHanded,
-    onLeftHandedChange: setLeftHanded,
-  };
-
   const renderScene = ({ route }: { route: { key: string } }) => {
     if (route.key === "layer") {
       return (
-        <View style={styles.flex1}>
-          <SceneHeader {...sharedHeaderProps} title={t("tabs.layer")} />
-          <LayerPane
-            {...sharedMainPaneProps}
-            isLandscape={isLandscape}
-            disableAnimation={isLandscape || animDisabled}
-          />
-        </View>
+        <LayerPane
+          {...sharedMainPaneProps}
+          {...sharedHeaderProps}
+          isLandscape={isLandscape}
+          disableAnimation={isLandscape || animDisabled}
+        />
       );
     }
     if (route.key === "finder") {
       return (
-        <View style={styles.flex1}>
-          <SceneHeader {...sharedHeaderProps} title={t("tabs.finder")} />
-          <FinderPane
-            theme={theme}
-            accidental={accidental}
-            baseLabelMode={baseLabelMode}
-            fretRange={fretRange}
-            rootNote={rootNote}
-            leftHanded={leftHanded}
-            finderRoot={finderRoot}
-            finderNotes={finderNotes}
-            onFinderRootChange={setFinderRoot}
-            onFinderNotesChange={setFinderNotes}
-            dotColor={finderDotColor}
-            onDotColorChange={setFinderDotColor}
-            layers={layers}
-            onBaseLabelModeChange={setBaseLabelMode}
-            onAddLayerAndNavigate={(layer) => {
-              setShowFinder(false);
-              setTimeout(() => handleAddLayer(layer), 0);
-            }}
-          />
-        </View>
-      );
-    }
-    if (route.key === "quiz") {
-      return (
-        <View style={styles.quizScene} {...swipePanResponder.panHandlers}>
-          <SceneHeader
-            {...sharedHeaderProps}
-            title={showStats || quizModeSelected ? undefined : t("tabs.quiz")}
-            onBack={showStats ? handleCloseStats : quizModeSelected ? handleChangeQuiz : undefined}
-          />
-          <View style={styles.flex1}>
-            {/* QuizPane always rendered as background */}
-            <View style={[styles.flex1, { backgroundColor: bgColor }]}>
-              <QuizPane
-                theme={theme}
-                quizKindOptions={quizKindOptions}
-                onQuizModeSelect={handleQuizModeSelect}
-                onShowStats={handleOpenStats}
-              />
-            </View>
-
-            {/* StatsPane slides over QuizPane with solid background */}
-            {showStats && (
-              <Animated.View
-                style={[
-                  StyleSheet.absoluteFill,
-                  { backgroundColor: bgColor, transform: [{ translateX: statsSlideAnim }] },
-                ]}
-                {...statsSwipeResponder.panHandlers}
-              >
-                <StatsPane
-                  records={records}
-                  theme={theme}
-                  accidental={accidental}
-                  onClearRecords={clearRecords}
-                />
-              </Animated.View>
-            )}
-
-            {/* QuizActivePracticePane slides in with solid background; QuizPane visible from side during swipe */}
-            {quizModeSelected && (
-              <Animated.View
-                style={[
-                  StyleSheet.absoluteFill,
-                  {
-                    backgroundColor: bgColor,
-                    transform: [{ translateX: quizSlideAnim }],
-                    borderTopLeftRadius: 28,
-                    borderBottomLeftRadius: 28,
-                    overflow: "hidden",
-                  },
-                ]}
-              >
-                <QuizActivePracticePane
-                  isLandscape={isLandscape}
-                  theme={theme}
-                  accidental={accidental}
-                  baseLabelMode={baseLabelMode}
-                  fretRange={fretRange}
-                  quizEffectiveRootNote={quizEffectiveRootNote}
-                  quizLayers={quizLayers}
-                  quizAccentColor={quizAccentColor}
-                  quizQuestion={quizQuestion}
-                  quizType={quizType}
-                  quizMode={quizMode}
-                  quizAnsweredCell={quizAnsweredCell}
-                  quizCorrectCell={quizCorrectCell}
-                  quizSelectedCells={quizSelectedCells}
-                  quizRevealNoteNames={quizRevealNoteNames}
-                  quizStrings={quizStrings}
-                  leftHanded={leftHanded}
-                  onFretboardDoubleTap={handleFretboardDoubleTap}
-                  onQuizCellClick={handleFretboardQuizAnswer}
-                  quizScore={quizScore}
-                  selectedAnswer={selectedAnswer}
-                  rootNote={rootNote}
-                  quizSelectedChoices={quizSelectedChoices}
-                  noteOptions={quizNoteOptions}
-                  quizSelectedChordRoot={quizSelectedChordRoot}
-                  quizSelectedChordType={quizSelectedChordType}
-                  diatonicSelectedRoot={diatonicSelectedRoot}
-                  diatonicSelectedChordType={diatonicSelectedChordType}
-                  diatonicAllAnswers={diatonicAllAnswers}
-                  diatonicEditingDegree={diatonicEditingDegree}
-                  diatonicQuizKeyType={diatonicQuizKeyType}
-                  diatonicQuizChordSize={diatonicQuizChordSize}
-                  chordQuizTypes={chordQuizTypes}
-                  availableChordQuizTypes={CHORD_QUIZ_TYPES_ALL}
-                  scaleType={scaleType}
-                  quizKeys={quizKeys}
-                  onQuizKeysChange={handleQuizKeysChange}
-                  quizNoteNames={quizNoteNames}
-                  onQuizNoteNamesChange={handleQuizNoteNamesChange}
-                  onChordQuizTypesChange={handleChordQuizTypesChange}
-                  onScaleTypeChange={(v) => {
-                    setScaleType(v as ScaleType);
-                    regenerateQuiz();
-                  }}
-                  onDiatonicQuizKeyTypeChange={(v) => {
-                    setDiatonicQuizKeyType(v);
-                    regenerateQuiz();
-                  }}
-                  onDiatonicQuizChordSizeChange={(v) => {
-                    setDiatonicQuizChordSize(v);
-                    regenerateQuiz();
-                  }}
-                  onAnswer={handleQuizAnswer}
-                  onSubmitChoice={handleSubmitChoice}
-                  onChordQuizRootSelect={handleChordQuizRootSelect}
-                  onChordQuizTypeSelect={handleChordQuizTypeSelect}
-                  onSubmitChordChoice={handleSubmitChordChoice}
-                  onDiatonicAnswerRootSelect={handleDiatonicAnswerRootSelect}
-                  onDiatonicAnswerTypeSelect={handleDiatonicAnswerTypeSelect}
-                  onDiatonicDegreeCardClick={handleDiatonicDegreeCardClick}
-                  onDiatonicSubmitAll={handleDiatonicSubmitAll}
-                  onSubmitFretboard={handleSubmitFretboard}
-                  onNextQuestion={handleNextQuestion}
-                  onRetryQuestion={handleRetryQuestion}
-                  onQuizStringsChange={handleQuizStringsChange}
-                />
-              </Animated.View>
-            )}
-          </View>
-        </View>
+        <FinderPane
+          {...sharedHeaderProps}
+          baseLabelMode={baseLabelMode}
+          rootNote={rootNote}
+          layers={layers}
+          onBaseLabelModeChange={setBaseLabelMode}
+          onAddLayerAndNavigate={(layer) => {
+            setTabIndex(0);
+            setTimeout(() => handleAddLayer(layer), 0);
+          }}
+        />
       );
     }
     if (route.key === "templates") {
       return (
-        <View style={styles.flex1}>
-          <SceneHeader
-            {...sharedHeaderProps}
-            title={detailTemplate !== null ? undefined : t("tabs.templates")}
-            onBack={detailTemplate !== null ? handleCloseTemplateDetail : undefined}
-          />
-          <View style={styles.flex1}>
-            <TemplatesPane
-              ref={templatesPaneRef}
-              theme={theme}
-              customTemplates={customTemplates}
-              onSaveTemplate={saveTemplate}
-              onUpdateTemplate={updateTemplate}
-              onDeleteTemplate={deleteTemplate}
-              onReorderTemplates={reorderTemplates}
-              onShowTemplateDetail={handleOpenTemplateDetail}
-            />
-            {detailTemplate !== null && (
-              <Animated.View
-                style={[
-                  StyleSheet.absoluteFill,
-                  { backgroundColor: bgColor, transform: [{ translateX: detailSlideAnim }] },
-                ]}
-                {...detailSwipeResponder.panHandlers}
-              >
-                <TemplateDetailPane
-                  theme={theme}
-                  accidental={accidental}
-                  template={detailTemplate}
-                  layers={layers}
-                  onUpdateTemplate={updateTemplate}
-                  onAddLayer={(layer) => {
-                    handleCloseTemplateDetail();
-                    handleTabIndexChange(0);
-                    setTimeout(() => handleAddLayer(layer), 0);
-                  }}
-                />
-              </Animated.View>
-            )}
-          </View>
-        </View>
+        <TemplatesPane
+          {...sharedHeaderProps}
+          layers={layers}
+          customTemplates={customTemplates}
+          onSaveTemplate={saveTemplate}
+          onUpdateTemplate={updateTemplate}
+          onDeleteTemplate={deleteTemplate}
+          onReorderTemplates={reorderTemplates}
+          onAddLayerAndNavigate={(layer) => {
+            setTabIndex(0);
+            setTimeout(() => handleAddLayer(layer), 0);
+          }}
+        />
+      );
+    }
+    if (route.key === "quiz") {
+      return (
+        <QuizScreen
+          ref={quizScreenRef}
+          {...sharedHeaderProps}
+          rootNote={rootNote}
+          baseLabelMode={baseLabelMode}
+          isLandscape={isLandscape}
+          winWidth={winWidth}
+          onFretboardDoubleTap={handleFretboardDoubleTap}
+        />
       );
     }
     return null;
   };
 
-  // ── Landscape ──────────────────────────────────────────────────
   if (isLandscape) {
-    return <LandscapeLayout {...sharedMainPaneProps} winHeight={winHeight} theme={theme} />;
+    return (
+      <LandscapeLayout {...sharedMainPaneProps} {...sharedHeaderProps} winHeight={winHeight} />
+    );
   }
 
-  // ── Portrait ───────────────────────────────────────────────────
-  return (
-    <View style={[styles.safeArea, { backgroundColor: bgColor }]}>
-      <StatusBar
-        translucent
-        barStyle={isDark ? "light-content" : "dark-content"}
-        backgroundColor="transparent"
-      />
-      <View style={styles.flex1}>
-        <TabView
-          navigationState={{ index: tabIndex, routes }}
-          renderScene={renderScene}
-          onIndexChange={handleTabIndexChange}
-          hapticFeedbackEnabled
-          disablePageAnimations
-        />
-      </View>
-    </View>
-  );
-}
-
-// Lock to portrait on startup
-ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
-
-export default function App() {
   return (
     <SafeAreaProvider>
-      <AppContent />
+      <View style={[styles.safeArea, { backgroundColor: bgColor }]}>
+        <StatusBar
+          translucent
+          barStyle={isDark ? "light-content" : "dark-content"}
+          backgroundColor="transparent"
+        />
+        <View style={styles.flex1}>
+          <TabView
+            navigationState={{ index: tabIndex, routes }}
+            renderScene={renderScene}
+            onIndexChange={handleTabIndexChange}
+            hapticFeedbackEnabled
+            disablePageAnimations
+          />
+        </View>
+      </View>
     </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  flex1: {
-    flex: 1,
-  },
-  quizScene: {
-    flex: 1,
-    overflow: "hidden",
-  },
+  safeArea: { flex: 1 },
+  flex1: { flex: 1 },
 });

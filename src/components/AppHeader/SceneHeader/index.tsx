@@ -1,7 +1,7 @@
 import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import type { Theme, Accidental } from "../../types";
-import HeaderBar from "./index";
+import type { Theme, Accidental } from "@/types";
+import HeaderBar from "@/components/AppHeader";
 
 interface SceneHeaderProps {
   theme: Theme;

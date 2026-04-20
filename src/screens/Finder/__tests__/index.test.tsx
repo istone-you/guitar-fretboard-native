@@ -12,6 +12,8 @@ jest.mock("@react-native-async-storage/async-storage", () => ({
   setItem: jest.fn(() => Promise.resolve()),
 }));
 
+jest.mock("../../../components/AppHeader/SceneHeader", () => () => null);
+
 jest.mock("../../../components/NormalFretboard", () => {
   const { View, TouchableOpacity } = require("react-native");
   return {
@@ -40,32 +42,17 @@ const defaultProps = {
   baseLabelMode: "note" as BaseLabelMode,
   fretRange: [0, 12] as [number, number],
   rootNote: "C",
+  layers: [],
+  onAddLayerAndNavigate: jest.fn(),
+  onBaseLabelModeChange: jest.fn(),
+  onThemeChange: jest.fn(),
+  onFretRangeChange: jest.fn(),
+  onAccidentalChange: jest.fn(),
+  onLeftHandedChange: jest.fn(),
 };
 
-// Stateful wrapper that mirrors how App.tsx manages the lifted state
-function FinderWrapper(props: Partial<typeof defaultProps>) {
-  const [finderRoot, setFinderRoot] = React.useState<string | null>(null);
-  const [finderNotes, setFinderNotes] = React.useState<Set<string>>(new Set());
-  const [dotColor, setDotColor] = React.useState("#ff69b6");
-  return (
-    <FinderPane
-      {...defaultProps}
-      {...props}
-      finderRoot={finderRoot}
-      finderNotes={finderNotes}
-      onFinderRootChange={setFinderRoot}
-      onFinderNotesChange={setFinderNotes}
-      dotColor={dotColor}
-      onDotColorChange={setDotColor}
-      layers={[]}
-      onAddLayerAndNavigate={jest.fn()}
-      onBaseLabelModeChange={jest.fn()}
-    />
-  );
-}
-
 function renderPane(overrides: Partial<typeof defaultProps> = {}) {
-  return render(<FinderWrapper {...overrides} />);
+  return render(<FinderPane {...defaultProps} {...overrides} />);
 }
 
 describe("FinderPane", () => {

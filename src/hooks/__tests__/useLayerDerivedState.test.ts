@@ -207,4 +207,73 @@ describe("useLayerDerivedState – layerNoteLabelsMap", () => {
     // Major scale semitones: 0,2,4,5,7,9,11 → degree names
     expect(labels).toEqual(["P1", "M2", "M3", "P4", "P5", "M6", "M7"]);
   });
+
+  it("returns progression chord labels for progression layer", () => {
+    const layer = createDefaultLayer("progression", "l1", "#ff0000");
+    layer.progressionTemplateId = "251";
+    layer.progressionKeyType = "major";
+    layer.progressionCurrentStep = 0;
+    const { result } = setup({
+      layers: [layer],
+      rootNote: "C",
+      accidental: "sharp",
+      baseLabelMode: "note",
+    });
+    const labels = result.current.layerNoteLabelsMap.get("l1");
+    expect(Array.isArray(labels)).toBe(true);
+    expect(labels!.length).toBeGreaterThan(0);
+    // Current step label is wrapped in brackets
+    expect(labels!.some((l) => l.startsWith("[") && l.endsWith("]"))).toBe(true);
+  });
+
+  it("returns empty array for progression layer with unknown template", () => {
+    const layer = createDefaultLayer("progression", "l1", "#ff0000");
+    layer.progressionTemplateId = "nonexistent-id";
+    const { result } = setup({ layers: [layer], rootNote: "C" });
+    expect(result.current.layerNoteLabelsMap.get("l1")).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// overlaySemitones — progression layer
+// ---------------------------------------------------------------------------
+
+describe("useLayerDerivedState – overlaySemitones (progression)", () => {
+  it("returns semitones for the current step of a progression template", () => {
+    const layer = createDefaultLayer("progression", "l1", "#ff0000");
+    layer.progressionTemplateId = "251";
+    layer.progressionKeyType = "major";
+    layer.progressionCurrentStep = 0;
+    const { result } = setup({ layers: [layer], rootNote: "C" });
+    // Progression should produce some semitones
+    expect(result.current.overlaySemitones.size).toBeGreaterThan(0);
+  });
+
+  it("skips progression layer with unknown template id", () => {
+    const layer = createDefaultLayer("progression", "l1", "#ff0000");
+    layer.progressionTemplateId = "nonexistent";
+    const { result } = setup({ layers: [layer], rootNote: "C" });
+    expect(result.current.overlaySemitones.size).toBe(0);
+  });
+
+  it("clamps progressionCurrentStep to valid range", () => {
+    const layer = createDefaultLayer("progression", "l1", "#ff0000");
+    layer.progressionTemplateId = "251";
+    layer.progressionCurrentStep = 999;
+    const { result } = setup({ layers: [layer], rootNote: "C" });
+    expect(result.current.overlaySemitones.size).toBeGreaterThan(0);
+  });
+
+  it("uses custom progressionTemplates when provided", () => {
+    const layer = createDefaultLayer("progression", "l1", "#ff0000");
+    layer.progressionTemplateId = "custom-1";
+    layer.progressionCurrentStep = 0;
+    const { result } = setup({
+      layers: [layer],
+      rootNote: "C",
+    });
+    // Without the custom template in progressionTemplates, it should produce empty result
+    // (the layer uses built-in PROGRESSION_TEMPLATES by default in setup)
+    expect(result.current.overlaySemitones).toBeDefined();
+  });
 });

@@ -1,4 +1,4 @@
-import { useRef, useState, forwardRef, useImperativeHandle } from "react";
+import { useRef, useState, forwardRef, useImperativeHandle, useCallback } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   PanResponder,
   Animated,
   Easing,
+  useWindowDimensions,
   type PanResponderInstance,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -16,48 +17,62 @@ import { useTranslation } from "react-i18next";
 import "../../i18n";
 import Icon from "../../components/ui/Icon";
 import PillButton from "../../components/ui/PillButton";
-import type { Theme, ProgressionChord } from "../../types";
+import SceneHeader from "../../components/AppHeader/SceneHeader";
+import TemplateDetailPane from "./Detail";
+import type { Theme, Accidental, ProgressionChord, LayerConfig } from "../../types";
 import type { CustomProgressionTemplate } from "../../hooks/useProgressionTemplates";
 import TemplateFormSheet, { chordDisplayLabel } from "./TemplateFormSheet";
 
 const ROW_GAP = 8;
 const ROW_RADIUS = 14;
 
-// ─────────────────────────────────────────────────────────────────
-// Props
-// ─────────────────────────────────────────────────────────────────
 export interface TemplatesPaneHandle {
   openTemplateForm: (template: CustomProgressionTemplate | null) => void;
 }
 
 export interface TemplatesPaneProps {
   theme: Theme;
+  accidental: Accidental;
+  layers: LayerConfig[];
   customTemplates: CustomProgressionTemplate[];
   onSaveTemplate: (name: string, chords: ProgressionChord[]) => void;
   onUpdateTemplate: (id: string, name: string, chords: ProgressionChord[]) => void;
   onDeleteTemplate: (id: string) => void;
   onReorderTemplates: (orderedIds: string[]) => void;
-  onShowTemplateDetail: (template: CustomProgressionTemplate) => void;
+  onAddLayerAndNavigate: (layer: LayerConfig) => void;
+  // Header props
+  fretRange: [number, number];
+  leftHanded?: boolean;
+  onThemeChange: (theme: Theme) => void;
+  onFretRangeChange: (range: [number, number]) => void;
+  onAccidentalChange: (accidental: Accidental) => void;
+  onLeftHandedChange: (value: boolean) => void;
 }
 
-// ─────────────────────────────────────────────────────────────────
-// Main component
-// ─────────────────────────────────────────────────────────────────
 const TemplatesPane = forwardRef<TemplatesPaneHandle, TemplatesPaneProps>(function TemplatesPane(
   {
     theme,
+    accidental,
+    layers,
     customTemplates,
     onSaveTemplate,
     onUpdateTemplate,
     onDeleteTemplate,
     onReorderTemplates,
-    onShowTemplateDetail,
+    onAddLayerAndNavigate,
+    fretRange,
+    leftHanded,
+    onThemeChange,
+    onFretRangeChange,
+    onAccidentalChange,
+    onLeftHandedChange,
   }: TemplatesPaneProps,
   ref,
 ) {
   const { t } = useTranslation();
   const isDark = theme === "dark";
   const insets = useSafeAreaInsets();
+  const { width: winWidth } = useWindowDimensions();
 
   const textPrimary = isDark ? "#e5e7eb" : "#1c1917";
   const textSecondary = isDark ? "#9ca3af" : "#78716c";
@@ -65,9 +80,74 @@ const TemplatesPane = forwardRef<TemplatesPaneHandle, TemplatesPaneProps>(functi
   const rowBorderColor = isDark ? "#374151" : "#e7e5e4";
   const dragHandleColor = isDark ? "#4b5563" : "#c4c4c6";
   const sectionHeaderColor = isDark ? "#6b7280" : "#a8a29e";
+  const bgColor = isDark ? "#000000" : "#ffffff";
 
   const [templateFormVisible, setTemplateFormVisible] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<CustomProgressionTemplate | null>(null);
+
+  // Detail pane navigation
+  const [detailTemplateId, setDetailTemplateId] = useState<string | null>(null);
+  const detailTemplate = detailTemplateId
+    ? (customTemplates.find((t) => t.id === detailTemplateId) ?? null)
+    : null;
+  const detailSlideAnim = useRef(new Animated.Value(0)).current;
+
+  const handleOpenTemplateDetail = useCallback(
+    (template: CustomProgressionTemplate) => {
+      detailSlideAnim.setValue(winWidth);
+      setDetailTemplateId(template.id);
+      setTimeout(() => {
+        Animated.timing(detailSlideAnim, {
+          toValue: 0,
+          duration: 120,
+          useNativeDriver: true,
+        }).start();
+      }, 0);
+    },
+    [detailSlideAnim, winWidth],
+  );
+
+  const handleCloseTemplateDetail = useCallback(() => {
+    Animated.timing(detailSlideAnim, {
+      toValue: winWidth,
+      duration: 120,
+      useNativeDriver: true,
+    }).start(() => setDetailTemplateId(null));
+  }, [detailSlideAnim, winWidth]);
+
+  // Swipe-right to close detail pane
+  const detailTemplateRef = useRef(detailTemplate);
+  detailTemplateRef.current = detailTemplate;
+  const handleCloseTemplateDetailRef = useRef(handleCloseTemplateDetail);
+  handleCloseTemplateDetailRef.current = handleCloseTemplateDetail;
+  const detailSwipeResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, g) =>
+        detailTemplateRef.current !== null && g.dx > 10 && Math.abs(g.dx) > Math.abs(g.dy),
+      onPanResponderMove: (_, g) => {
+        if (g.dx > 0) detailSlideAnim.setValue(g.dx);
+      },
+      onPanResponderRelease: (_, g) => {
+        if (g.dx > 80 || (g.dx > 30 && g.vx > 0.5)) {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          handleCloseTemplateDetailRef.current();
+        } else {
+          Animated.timing(detailSlideAnim, {
+            toValue: 0,
+            duration: 120,
+            useNativeDriver: true,
+          }).start();
+        }
+      },
+      onPanResponderTerminate: () => {
+        Animated.timing(detailSlideAnim, {
+          toValue: 0,
+          duration: 120,
+          useNativeDriver: true,
+        }).start();
+      },
+    }),
+  ).current;
 
   const openTemplateForm = (template: CustomProgressionTemplate | null) => {
     setEditingTemplate(template);
@@ -76,13 +156,11 @@ const TemplatesPane = forwardRef<TemplatesPaneHandle, TemplatesPaneProps>(functi
 
   useImperativeHandle(ref, () => ({ openTemplateForm }));
 
-  // ── Scroll control (disable during drag) ──────────────────────
+  // Scroll control (disable during drag)
   const [scrollEnabled, setScrollEnabled] = useState(true);
   const scrollViewRef = useRef<ScrollView>(null);
 
-  // ─────────────────────────────────────────────────────────────
-  // TEMPLATE SECTION drag & swipe state
-  // ─────────────────────────────────────────────────────────────
+  // Drag & swipe state
   const [templateDraggingFrom, setTemplateDraggingFrom] = useState<number | null>(null);
   const [templateHovered, setTemplateHovered] = useState<number | null>(null);
   const templateDraggingFromRef = useRef<number | null>(null);
@@ -98,6 +176,8 @@ const TemplatesPane = forwardRef<TemplatesPaneHandle, TemplatesPaneProps>(functi
   customTemplatesRef.current = customTemplates;
   const onReorderTemplatesRef = useRef(onReorderTemplates);
   onReorderTemplatesRef.current = onReorderTemplates;
+  const onDeleteTemplateRef = useRef(onDeleteTemplate);
+  onDeleteTemplateRef.current = onDeleteTemplate;
 
   const clearTemplateDragState = () => {
     templateDragActiveRef.current = false;
@@ -146,7 +226,7 @@ const TemplatesPane = forwardRef<TemplatesPaneHandle, TemplatesPaneProps>(functi
             duration: 200,
             easing: Easing.in(Easing.ease),
             useNativeDriver: true,
-          }).start(() => onDeleteTemplate(templateId));
+          }).start(() => onDeleteTemplateRef.current(templateId));
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
         } else {
           Animated.spring(swipeX, {
@@ -261,9 +341,6 @@ const TemplatesPane = forwardRef<TemplatesPaneHandle, TemplatesPaneProps>(functi
 
   const dragHandleIcon = <Icon name="drag-handle" size={18} color={dragHandleColor} />;
 
-  // ─────────────────────────────────────────────────────────────
-  // Render helpers
-  // ─────────────────────────────────────────────────────────────
   const renderDeleteBackground = () => (
     <View
       style={[
@@ -282,182 +359,226 @@ const TemplatesPane = forwardRef<TemplatesPaneHandle, TemplatesPaneProps>(functi
     </View>
   );
 
-  // ─────────────────────────────────────────────────────────────
-  // Render
-  // ─────────────────────────────────────────────────────────────
   return (
-    <View style={{ flex: 1, backgroundColor: isDark ? "#000000" : "#ffffff" }}>
-      <ScrollView
-        ref={scrollViewRef}
-        style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 80 }}
-        scrollEnabled={scrollEnabled}
-      >
-        {/* ── Section: Progression Templates ──────────────────── */}
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: sectionHeaderColor }]}>
-            {t("templates.progressionTemplates").toUpperCase()}
-          </Text>
-          <PillButton
-            isDark={isDark}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              openTemplateForm(null);
-            }}
-            style={{ paddingHorizontal: 8 }}
-          >
-            <Icon name="plus" size={16} color={isDark ? "#9ca3af" : "#78716c"} />
-          </PillButton>
-        </View>
-
-        <View
-          style={styles.sectionContainer}
-          ref={templateContainerRef}
-          onLayout={() => {
-            templateContainerRef.current?.measure(
-              (_x: number, _y: number, _w: number, _h: number, _px: number, pageY: number) => {
-                templateContainerPageY.current = pageY;
-              },
-            );
-          }}
-        >
-          {customTemplates.length === 0 ? (
-            <View style={styles.emptyRow}>
-              <Text style={[styles.emptyText, { color: textSecondary }]}>
-                {t("templates.noTemplates")}
-              </Text>
-            </View>
-          ) : (
-            customTemplates.map((tpl, idx) => {
-              const isDraggingFrom = templateDraggingFrom === idx;
-              const isHoverTarget =
-                templateHovered === idx && !isDraggingFrom && templateDraggingFrom !== null;
-
-              return (
-                <View
-                  key={tpl.id}
-                  onLayout={(e) => {
-                    templateSlotLayouts.current[idx] = {
-                      y: e.nativeEvent.layout.y,
-                      height: e.nativeEvent.layout.height,
-                    };
-                  }}
-                  style={{ paddingBottom: ROW_GAP }}
-                >
-                  <View>
-                    <Animated.View style={{ opacity: isDraggingFrom ? 0 : 1 }}>
-                      {renderDeleteBackground()}
-                      <Animated.View
-                        style={[
-                          styles.row,
-                          {
-                            backgroundColor: rowBg,
-                            borderColor: isHoverTarget ? "#ff69b6" : rowBorderColor,
-                            transform: [{ translateX: getTemplateSwipeX(tpl.id) }],
-                          },
-                        ]}
-                        {...getTemplateRowPanResponder(tpl.id).panHandlers}
-                      >
-                        <TouchableOpacity
-                          style={{ flex: 1 }}
-                          onPress={() => onShowTemplateDetail(tpl)}
-                          activeOpacity={0.7}
-                        >
-                          <Text
-                            style={[styles.rowPrimary, { color: textPrimary }]}
-                            numberOfLines={1}
-                          >
-                            {tpl.name}
-                          </Text>
-                          <Text style={[styles.rowSecondary, { color: textSecondary }]}>
-                            {tpl.chords.map((c) => chordDisplayLabel(c)).join(" - ")}
-                          </Text>
-                        </TouchableOpacity>
-                        <View
-                          style={styles.dragHandle}
-                          {...getTemplateDragHandleResponder(tpl.id).panHandlers}
-                        >
-                          {dragHandleIcon}
-                        </View>
-                      </Animated.View>
-                    </Animated.View>
-                    {isDraggingFrom && (
-                      <View
-                        style={[
-                          StyleSheet.absoluteFill,
-                          {
-                            borderWidth: 1,
-                            borderRadius: ROW_RADIUS,
-                            borderColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.07)",
-                            backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)",
-                          },
-                        ]}
-                        pointerEvents="none"
-                      />
-                    )}
-                  </View>
-                </View>
-              );
-            })
-          )}
-
-          {/* Floating panel for template drag */}
-          {templateDraggingFrom !== null &&
-            (() => {
-              const floatingTpl = customTemplates[templateDraggingFrom];
-              if (!floatingTpl) return null;
-              return (
-                <Animated.View
-                  pointerEvents="none"
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    transform: [{ translateY: templateFloatY }],
-                    zIndex: 100,
-                    shadowColor: "#000",
-                    shadowOffset: { width: 0, height: 8 },
-                    shadowOpacity: isDark ? 0.5 : 0.22,
-                    shadowRadius: 16,
-                    elevation: 12,
-                  }}
-                >
-                  <View style={{ paddingBottom: ROW_GAP }}>
-                    <View
-                      style={[styles.row, { backgroundColor: rowBg, borderColor: rowBorderColor }]}
-                    >
-                      <View style={{ flex: 1 }}>
-                        <Text style={[styles.rowPrimary, { color: textPrimary }]} numberOfLines={1}>
-                          {floatingTpl.name}
-                        </Text>
-                        <Text style={[styles.rowSecondary, { color: textSecondary }]}>
-                          {floatingTpl.chords.map((c) => chordDisplayLabel(c)).join(" - ")}
-                        </Text>
-                      </View>
-                      <View style={styles.dragHandle}>{dragHandleIcon}</View>
-                    </View>
-                  </View>
-                </Animated.View>
-              );
-            })()}
-        </View>
-      </ScrollView>
-
-      <TemplateFormSheet
-        key={editingTemplate?.id ?? "new"}
-        visible={templateFormVisible}
-        onClose={() => setTemplateFormVisible(false)}
+    <View style={{ flex: 1 }}>
+      <SceneHeader
         theme={theme}
-        initialTemplate={editingTemplate}
-        onSave={(name, chords) => {
-          if (editingTemplate) {
-            onUpdateTemplate(editingTemplate.id, name, chords);
-          } else {
-            onSaveTemplate(name, chords);
-          }
-        }}
+        title={detailTemplate !== null ? undefined : t("tabs.templates")}
+        accidental={accidental}
+        fretRange={fretRange}
+        leftHanded={leftHanded}
+        onBack={detailTemplate !== null ? handleCloseTemplateDetail : undefined}
+        onThemeChange={onThemeChange}
+        onFretRangeChange={onFretRangeChange}
+        onAccidentalChange={onAccidentalChange}
+        onLeftHandedChange={onLeftHandedChange}
       />
+      <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, backgroundColor: isDark ? "#000000" : "#ffffff" }}>
+          <ScrollView
+            ref={scrollViewRef}
+            style={{ flex: 1 }}
+            contentContainerStyle={{ paddingBottom: insets.bottom + 80 }}
+            scrollEnabled={scrollEnabled}
+          >
+            {/* Section: Progression Templates */}
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: sectionHeaderColor }]}>
+                {t("templates.progressionTemplates").toUpperCase()}
+              </Text>
+              <PillButton
+                isDark={isDark}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  openTemplateForm(null);
+                }}
+                style={{ paddingHorizontal: 8 }}
+              >
+                <Icon name="plus" size={16} color={isDark ? "#9ca3af" : "#78716c"} />
+              </PillButton>
+            </View>
+
+            <View
+              style={styles.sectionContainer}
+              ref={templateContainerRef}
+              onLayout={() => {
+                templateContainerRef.current?.measure(
+                  (_x: number, _y: number, _w: number, _h: number, _px: number, pageY: number) => {
+                    templateContainerPageY.current = pageY;
+                  },
+                );
+              }}
+            >
+              {customTemplates.length === 0 ? (
+                <View style={styles.emptyRow}>
+                  <Text style={[styles.emptyText, { color: textSecondary }]}>
+                    {t("templates.noTemplates")}
+                  </Text>
+                </View>
+              ) : (
+                customTemplates.map((tpl, idx) => {
+                  const isDraggingFrom = templateDraggingFrom === idx;
+                  const isHoverTarget =
+                    templateHovered === idx && !isDraggingFrom && templateDraggingFrom !== null;
+
+                  return (
+                    <View
+                      key={tpl.id}
+                      onLayout={(e) => {
+                        templateSlotLayouts.current[idx] = {
+                          y: e.nativeEvent.layout.y,
+                          height: e.nativeEvent.layout.height,
+                        };
+                      }}
+                      style={{ paddingBottom: ROW_GAP }}
+                    >
+                      <View>
+                        <Animated.View style={{ opacity: isDraggingFrom ? 0 : 1 }}>
+                          {renderDeleteBackground()}
+                          <Animated.View
+                            style={[
+                              styles.row,
+                              {
+                                backgroundColor: rowBg,
+                                borderColor: isHoverTarget ? "#ff69b6" : rowBorderColor,
+                                transform: [{ translateX: getTemplateSwipeX(tpl.id) }],
+                              },
+                            ]}
+                            {...getTemplateRowPanResponder(tpl.id).panHandlers}
+                          >
+                            <TouchableOpacity
+                              style={{ flex: 1 }}
+                              onPress={() => handleOpenTemplateDetail(tpl)}
+                              activeOpacity={0.7}
+                            >
+                              <Text
+                                style={[styles.rowPrimary, { color: textPrimary }]}
+                                numberOfLines={1}
+                              >
+                                {tpl.name}
+                              </Text>
+                              <Text style={[styles.rowSecondary, { color: textSecondary }]}>
+                                {tpl.chords.map((c) => chordDisplayLabel(c)).join(" - ")}
+                              </Text>
+                            </TouchableOpacity>
+                            <View
+                              style={styles.dragHandle}
+                              {...getTemplateDragHandleResponder(tpl.id).panHandlers}
+                            >
+                              {dragHandleIcon}
+                            </View>
+                          </Animated.View>
+                        </Animated.View>
+                        {isDraggingFrom && (
+                          <View
+                            style={[
+                              StyleSheet.absoluteFill,
+                              {
+                                borderWidth: 1,
+                                borderRadius: ROW_RADIUS,
+                                borderColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.07)",
+                                backgroundColor: isDark
+                                  ? "rgba(255,255,255,0.05)"
+                                  : "rgba(0,0,0,0.03)",
+                              },
+                            ]}
+                            pointerEvents="none"
+                          />
+                        )}
+                      </View>
+                    </View>
+                  );
+                })
+              )}
+
+              {/* Floating panel for template drag */}
+              {templateDraggingFrom !== null &&
+                (() => {
+                  const floatingTpl = customTemplates[templateDraggingFrom];
+                  if (!floatingTpl) return null;
+                  return (
+                    <Animated.View
+                      pointerEvents="none"
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        transform: [{ translateY: templateFloatY }],
+                        zIndex: 100,
+                        shadowColor: "#000",
+                        shadowOffset: { width: 0, height: 8 },
+                        shadowOpacity: isDark ? 0.5 : 0.22,
+                        shadowRadius: 16,
+                        elevation: 12,
+                      }}
+                    >
+                      <View style={{ paddingBottom: ROW_GAP }}>
+                        <View
+                          style={[
+                            styles.row,
+                            { backgroundColor: rowBg, borderColor: rowBorderColor },
+                          ]}
+                        >
+                          <View style={{ flex: 1 }}>
+                            <Text
+                              style={[styles.rowPrimary, { color: textPrimary }]}
+                              numberOfLines={1}
+                            >
+                              {floatingTpl.name}
+                            </Text>
+                            <Text style={[styles.rowSecondary, { color: textSecondary }]}>
+                              {floatingTpl.chords.map((c) => chordDisplayLabel(c)).join(" - ")}
+                            </Text>
+                          </View>
+                          <View style={styles.dragHandle}>{dragHandleIcon}</View>
+                        </View>
+                      </View>
+                    </Animated.View>
+                  );
+                })()}
+            </View>
+          </ScrollView>
+
+          <TemplateFormSheet
+            key={editingTemplate?.id ?? "new"}
+            visible={templateFormVisible}
+            onClose={() => setTemplateFormVisible(false)}
+            theme={theme}
+            initialTemplate={editingTemplate}
+            onSave={(name, chords) => {
+              if (editingTemplate) {
+                onUpdateTemplate(editingTemplate.id, name, chords);
+              } else {
+                onSaveTemplate(name, chords);
+              }
+            }}
+          />
+        </View>
+
+        {/* Detail pane slides over */}
+        {detailTemplate !== null && (
+          <Animated.View
+            style={[
+              StyleSheet.absoluteFill,
+              { backgroundColor: bgColor, transform: [{ translateX: detailSlideAnim }] },
+            ]}
+            {...detailSwipeResponder.panHandlers}
+          >
+            <TemplateDetailPane
+              theme={theme}
+              accidental={accidental}
+              template={detailTemplate}
+              layers={layers}
+              onUpdateTemplate={onUpdateTemplate}
+              onAddLayer={(layer) => {
+                handleCloseTemplateDetail();
+                onAddLayerAndNavigate(layer);
+              }}
+            />
+          </Animated.View>
+        )}
+      </View>
     </View>
   );
 });

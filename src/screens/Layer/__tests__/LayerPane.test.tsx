@@ -24,6 +24,8 @@ jest.mock("../../../components/LayerList", () => {
   };
 });
 
+jest.mock("../../../components/AppHeader/SceneHeader", () => () => null);
+
 const defaultProps = {
   isLandscape: false,
   theme: "dark" as Theme,
@@ -53,6 +55,10 @@ const defaultProps = {
   presets: [],
   onSavePreset: jest.fn(),
   loadPreset: jest.fn(),
+  onThemeChange: jest.fn(),
+  onFretRangeChange: jest.fn(),
+  onAccidentalChange: jest.fn(),
+  onLeftHandedChange: jest.fn(),
 };
 
 function renderPane(overrides: Partial<typeof defaultProps> = {}) {

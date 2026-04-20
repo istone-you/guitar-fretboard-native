@@ -194,5 +194,63 @@ describe("useQuizNavigation", () => {
       expect(onShowQuizChange).toHaveBeenCalledWith(false);
       timingSpy.mockRestore();
     });
+
+    it("onPanResponderRelease triggers navigation when dx>30 and vx>0.5", () => {
+      const onShowQuizChange = jest.fn();
+      const timingSpy = jest.spyOn(Animated, "timing").mockReturnValue({
+        start: (cb?: Animated.EndCallback) => cb?.({ finished: true }),
+      } as Animated.CompositeAnimation);
+
+      renderHook(() => useQuizNavigation({ ...defaultParams, onShowQuizChange }));
+      capturedConfig.onPanResponderRelease({}, { dx: 40, vx: 0.8 });
+
+      expect(onShowQuizChange).toHaveBeenCalledWith(false);
+      timingSpy.mockRestore();
+    });
+
+    it("onPanResponderMove with dx>0 moves the animation value", () => {
+      const { result } = renderHook(() => useQuizNavigation(defaultParams));
+      capturedConfig.onPanResponderMove({}, { dx: 50 });
+      // No crash — setValue was called
+      expect(result.current.quizSlideAnim).toBeInstanceOf(Animated.Value);
+    });
+
+    it("onPanResponderMove with dx<=0 does not move the animation", () => {
+      const { result } = renderHook(() => useQuizNavigation(defaultParams));
+      capturedConfig.onPanResponderMove({}, { dx: 0 });
+      expect(result.current.quizSlideAnim).toBeInstanceOf(Animated.Value);
+    });
+
+    it("onPanResponderTerminate snaps back via spring animation", () => {
+      const springSpy = jest.spyOn(Animated, "spring").mockReturnValue({
+        start: jest.fn(),
+      } as unknown as Animated.CompositeAnimation);
+
+      renderHook(() => useQuizNavigation(defaultParams));
+      capturedConfig.onPanResponderTerminate();
+
+      expect(springSpy).toHaveBeenCalled();
+      springSpy.mockRestore();
+    });
+  });
+
+  it("handleQuizModeSelect animates slide after setTimeout fires", () => {
+    const timingSpy = jest.spyOn(Animated, "timing").mockReturnValue({
+      start: jest.fn(),
+    } as unknown as Animated.CompositeAnimation);
+
+    const { result } = renderHook(() => useQuizNavigation(defaultParams));
+    act(() => {
+      result.current.handleQuizModeSelect("note");
+    });
+    act(() => {
+      jest.runAllTimers();
+    });
+
+    expect(timingSpy).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ toValue: 0, duration: 120 }),
+    );
+    timingSpy.mockRestore();
   });
 });

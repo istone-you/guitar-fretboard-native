@@ -308,4 +308,94 @@ describe("useLayerPresets", () => {
 
     expect(result.current.presets).toHaveLength(0);
   });
+
+  it("updatePreset updates name and layers for matching preset", () => {
+    const { result } = renderHook(() => useLayerPresets());
+
+    act(() => {
+      result.current.savePreset("Original", [makeLayer()]);
+    });
+    const id = result.current.presets[0].id;
+
+    act(() => {
+      result.current.updatePreset(id, "Updated", [makeLayer({ id: "new-layer" })]);
+    });
+
+    expect(result.current.presets[0].name).toBe("Updated");
+    expect(result.current.presets[0].layers).toHaveLength(1);
+  });
+
+  it("updatePreset calls AsyncStorage.setItem", () => {
+    const { result } = renderHook(() => useLayerPresets());
+
+    act(() => {
+      result.current.savePreset("Test", [makeLayer()]);
+    });
+    (AsyncStorage.setItem as jest.Mock).mockClear();
+    const id = result.current.presets[0].id;
+
+    act(() => {
+      result.current.updatePreset(id, "Updated", [makeLayer()]);
+    });
+
+    expect(AsyncStorage.setItem).toHaveBeenCalled();
+  });
+
+  it("updatePreset does not affect other presets", () => {
+    const { result } = renderHook(() => useLayerPresets());
+
+    act(() => {
+      result.current.savePreset("A", [makeLayer()]);
+    });
+    act(() => {
+      result.current.savePreset("B", [makeLayer()]);
+    });
+    const idA = result.current.presets[1].id; // older preset (presets are prepended)
+
+    act(() => {
+      result.current.updatePreset(idA, "A Updated", []);
+    });
+
+    expect(result.current.presets[0].name).toBe("B");
+    expect(result.current.presets[1].name).toBe("A Updated");
+  });
+
+  it("reorderPresets reorders by id array", () => {
+    const { result } = renderHook(() => useLayerPresets());
+
+    act(() => {
+      result.current.savePreset("First", [makeLayer()]);
+    });
+    act(() => {
+      result.current.savePreset("Second", [makeLayer()]);
+    });
+    // savePreset prepends, so presets = [Second, First]
+    const [idSecond, idFirst] = result.current.presets.map((p) => p.id);
+
+    act(() => {
+      result.current.reorderPresets([idFirst, idSecond]);
+    });
+
+    expect(result.current.presets[0].id).toBe(idFirst);
+    expect(result.current.presets[1].id).toBe(idSecond);
+  });
+
+  it("reorderPresets calls AsyncStorage.setItem", () => {
+    const { result } = renderHook(() => useLayerPresets());
+
+    act(() => {
+      result.current.savePreset("A", [makeLayer()]);
+    });
+    act(() => {
+      result.current.savePreset("B", [makeLayer()]);
+    });
+    (AsyncStorage.setItem as jest.Mock).mockClear();
+    const ids = result.current.presets.map((p) => p.id);
+
+    act(() => {
+      result.current.reorderPresets(ids.reverse());
+    });
+
+    expect(AsyncStorage.setItem).toHaveBeenCalled();
+  });
 });

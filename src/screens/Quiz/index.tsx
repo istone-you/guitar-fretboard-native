@@ -1,230 +1,390 @@
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Svg, { Path } from "react-native-svg";
+import { forwardRef, useImperativeHandle, useRef, useState, useMemo, useCallback } from "react";
+import { View, Animated, PanResponder, StyleSheet, useWindowDimensions } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 import "../../i18n";
-import type { Theme } from "../../types";
-import PillButton from "../../components/ui/PillButton";
+import SceneHeader from "../../components/AppHeader/SceneHeader";
+import { CHORD_QUIZ_TYPES_ALL, useQuiz } from "../../hooks/useQuiz";
+import { useQuizNavigation } from "../../hooks/useQuizNavigation";
+import { useQuizViewModel } from "../../hooks/useQuizViewModel";
+import { useQuizRecords } from "../../hooks/useQuizRecords";
+import { getNotesByAccidental } from "../../lib/fretboard";
+import { createDefaultLayer } from "../../types";
+import type { Accidental, BaseLabelMode, ScaleType, Theme, LayerConfig } from "../../types";
+import QuizActivePracticePane from "./Active";
+import StatsPane from "./Stats";
+import QuizSelectionScreen from "./Selection";
 
-interface QuizKindOption {
-  value: string;
-  label: string;
+export interface QuizScreenHandle {
+  onLeave: () => void;
+  regenerate: () => void;
 }
 
-interface QuizSelectionScreenProps {
+export interface QuizScreenProps {
   theme: Theme;
-  quizKindOptions: QuizKindOption[];
-  onSelect: (value: string) => void;
-  onShowStats: () => void;
+  accidental: Accidental;
+  fretRange: [number, number];
+  leftHanded?: boolean;
+  rootNote: string;
+  baseLabelMode: BaseLabelMode;
+  isLandscape: boolean;
+  winWidth: number;
+  onFretboardDoubleTap: () => void;
+  // Header props
+  onThemeChange: (theme: Theme) => void;
+  onFretRangeChange: (range: [number, number]) => void;
+  onAccidentalChange: (accidental: Accidental) => void;
+  onLeftHandedChange: (value: boolean) => void;
 }
 
-// iOS system accent colors per quiz mode
-const QUIZ_GROUPS: {
-  modeKey: string;
-  icon: string;
-  accent: string;
-  options: { value: string; descKey: string }[];
-}[] = [
+const QuizScreen = forwardRef<QuizScreenHandle, QuizScreenProps>(function QuizScreen(
   {
-    modeKey: "quiz.mode.note",
-    icon: "♩",
-    accent: "#007AFF",
-    options: [
-      { value: "note-choice", descKey: "quiz.desc.noteChoice" },
-      { value: "note-fretboard", descKey: "quiz.desc.noteFretboard" },
-    ],
+    theme,
+    accidental,
+    fretRange,
+    leftHanded,
+    rootNote,
+    baseLabelMode,
+    isLandscape,
+    winWidth,
+    onFretboardDoubleTap,
+    onThemeChange,
+    onFretRangeChange,
+    onAccidentalChange,
+    onLeftHandedChange,
   },
-  {
-    modeKey: "quiz.mode.degree",
-    icon: "°",
-    accent: "#5856D6",
-    options: [
-      { value: "degree-choice", descKey: "quiz.desc.degreeChoice" },
-      { value: "degree-fretboard", descKey: "quiz.desc.degreeFretboard" },
-    ],
-  },
-  {
-    modeKey: "quiz.mode.chord",
-    icon: "♯",
-    accent: "#FF9500",
-    options: [
-      { value: "chord-choice", descKey: "quiz.desc.chordIdentify" },
-      { value: "chord-fretboard", descKey: "quiz.desc.chordFretboard" },
-    ],
-  },
-  {
-    modeKey: "quiz.mode.scale",
-    icon: "≈",
-    accent: "#34C759",
-    options: [
-      { value: "scale-choice", descKey: "quiz.desc.scaleNoteSelect" },
-      { value: "scale-fretboard", descKey: "quiz.desc.scaleFretboard" },
-    ],
-  },
-  {
-    modeKey: "quiz.mode.diatonic",
-    icon: "Ⅶ",
-    accent: "#FF3B30",
-    options: [{ value: "diatonic-all", descKey: "quiz.desc.diatonicAll" }],
-  },
-];
-
-function QuizSelectionScreen({ theme, onSelect, onShowStats }: QuizSelectionScreenProps) {
+  ref,
+) {
   const { t } = useTranslation();
-  const isDark = theme === "dark";
-  const insets = useSafeAreaInsets();
+  const { width: screenWidth } = useWindowDimensions();
+  const effectiveWinWidth = winWidth || screenWidth;
 
-  const cardBg = isDark ? "#1c1c1e" : "#ffffff";
-  const cardBorder = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)";
-  const titleColor = isDark ? "#f9fafb" : "#1c1917";
-  const descColor = isDark ? "#8e8e93" : "#78716c";
-  const statsIcon = isDark ? "#8e8e93" : "#78716c";
+  const isDark = theme === "dark";
+  const bgColor = isDark ? "#000000" : "#ffffff";
+
+  const [scaleType, setScaleType] = useState<ScaleType>("major");
+  const [showStats, setShowStats] = useState(false);
+
+  const statsSlideAnim = useRef(new Animated.Value(0)).current;
+  const { records, addRecord, clearRecords } = useQuizRecords();
+
+  const handleOpenStats = useCallback(() => {
+    statsSlideAnim.setValue(effectiveWinWidth);
+    setShowStats(true);
+    setTimeout(() => {
+      Animated.timing(statsSlideAnim, {
+        toValue: 0,
+        duration: 120,
+        useNativeDriver: true,
+      }).start();
+    }, 0);
+  }, [statsSlideAnim, effectiveWinWidth]);
+
+  const handleCloseStats = useCallback(() => {
+    Animated.timing(statsSlideAnim, {
+      toValue: effectiveWinWidth,
+      duration: 120,
+      useNativeDriver: true,
+    }).start(() => setShowStats(false));
+  }, [statsSlideAnim, effectiveWinWidth]);
+
+  // Swipe-right to close stats pane
+  const showStatsRef = useRef(showStats);
+  showStatsRef.current = showStats;
+  const handleCloseStatsRef = useRef(handleCloseStats);
+  handleCloseStatsRef.current = handleCloseStats;
+  const statsSwipeResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, g) =>
+        showStatsRef.current && g.dx > 10 && Math.abs(g.dx) > Math.abs(g.dy),
+      onPanResponderMove: (_, g) => {
+        if (g.dx > 0) statsSlideAnim.setValue(g.dx);
+      },
+      onPanResponderRelease: (_, g) => {
+        if (g.dx > 80 || (g.dx > 30 && g.vx > 0.5)) {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          handleCloseStatsRef.current();
+        } else {
+          Animated.timing(statsSlideAnim, {
+            toValue: 0,
+            duration: 120,
+            useNativeDriver: true,
+          }).start();
+        }
+      },
+      onPanResponderTerminate: () => {
+        Animated.timing(statsSlideAnim, {
+          toValue: 0,
+          duration: 120,
+          useNativeDriver: true,
+        }).start();
+      },
+    }),
+  ).current;
+
+  // Forwarding refs to break the circular dependency between
+  // useQuizNavigation (owns showQuiz) and useQuiz/useQuizViewModel
+  const quizNavCallbacksRef = useRef({
+    onQuizKindChange: (_: string) => {},
+    onShowQuizChange: (_: boolean) => {},
+  });
+
+  const {
+    showQuiz,
+    setShowQuiz,
+    quizModeSelected,
+    setQuizModeSelected,
+    quizSlideAnim,
+    handleQuizModeSelect,
+    handleChangeQuiz,
+    swipePanResponder,
+  } = useQuizNavigation({
+    winWidth: effectiveWinWidth,
+    initialShowQuiz: true,
+    onQuizKindChange: (v) => quizNavCallbacksRef.current.onQuizKindChange(v),
+    onShowQuizChange: (v) => quizNavCallbacksRef.current.onShowQuizChange(v),
+  });
+
+  const {
+    quizMode,
+    quizType,
+    quizQuestion,
+    selectedAnswer,
+    quizScore,
+    quizAnsweredCell,
+    quizCorrectCell,
+    quizSelectedCells,
+    quizSelectedChoices,
+    diatonicQuizKeyType,
+    diatonicQuizChordSize,
+    quizSelectedChordRoot,
+    quizSelectedChordType,
+    diatonicSelectedRoot,
+    diatonicSelectedChordType,
+    diatonicAllAnswers,
+    diatonicEditingDegree,
+    quizRevealNoteNames,
+    handleQuizKindChange,
+    handleQuizAnswer,
+    handleChordQuizRootSelect,
+    handleChordQuizTypeSelect,
+    handleDiatonicAnswerRootSelect,
+    handleDiatonicAnswerTypeSelect,
+    handleDiatonicDegreeCardClick,
+    handleDiatonicSubmitAll,
+    handleFretboardQuizAnswer,
+    handleNextQuestion,
+    handleRetryQuestion,
+    setDiatonicQuizKeyType,
+    setDiatonicQuizChordSize,
+    chordQuizTypes,
+    handleChordQuizTypesChange,
+    quizStrings,
+    handleQuizStringsChange,
+    quizKeys,
+    handleQuizKeysChange,
+    quizNoteNames,
+    handleQuizNoteNamesChange,
+    regenerateQuiz,
+    handleShowQuizChange,
+    handleSubmitChoice,
+    handleSubmitChordChoice,
+    handleSubmitFretboard,
+  } = useQuiz({
+    accidental,
+    fretRange,
+    rootNote,
+    scaleType,
+    showQuiz,
+    onRecord: addRecord,
+  });
+
+  const { quizKindOptions, handleQuizKindDropdownChange } = useQuizViewModel({
+    showQuiz,
+    quizMode,
+    quizType,
+    t,
+    onQuizKindChange: handleQuizKindChange,
+  });
+
+  // Wire up forwarding refs now that all hooks have been called
+  quizNavCallbacksRef.current = {
+    onQuizKindChange: handleQuizKindDropdownChange,
+    onShowQuizChange: handleShowQuizChange,
+  };
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      onLeave: () => {
+        handleShowQuizChange(false);
+        setQuizModeSelected(false);
+        setShowStats(false);
+        setShowQuiz(false);
+      },
+      regenerate: regenerateQuiz,
+    }),
+    [handleShowQuizChange, setQuizModeSelected, setShowQuiz, regenerateQuiz],
+  );
+
+  const quizNoteOptions = [...getNotesByAccidental(accidental)];
+
+  const quizEffectiveRootNote =
+    quizMode === "chord" && quizType === "choice" && quizQuestion?.promptChordRoot
+      ? quizQuestion.promptChordRoot
+      : (quizQuestion?.promptQuizRoot ?? rootNote);
+
+  const quizAccentColor = quizMode === "chord" || quizMode === "diatonic" ? "#40E0D0" : "#ff69b6";
+
+  const quizLayers = useMemo<LayerConfig[]>(() => {
+    if (quizMode === "chord" && quizType === "choice") {
+      const layer = createDefaultLayer("chord", "quiz-chord", quizAccentColor);
+      layer.chordDisplayMode = "form";
+      layer.chordType = quizQuestion?.promptChordType ?? "Major";
+      return [layer];
+    }
+    return [];
+  }, [quizMode, quizType, quizAccentColor, quizQuestion]);
 
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: isDark ? "#000000" : "#ffffff" }]}
-      contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 80 }]}
-      showsVerticalScrollIndicator={false}
-    >
-      {/* Header row */}
-      <View style={styles.titleRow}>
-        {/* Stats pill button */}
-        <PillButton
-          isDark={isDark}
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            onShowStats();
-          }}
-          testID="quiz-stats-btn"
-        >
-          <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
-            <Path d="M18 20V10" stroke={statsIcon} strokeWidth={2} strokeLinecap="round" />
-            <Path d="M12 20V4" stroke={statsIcon} strokeWidth={2} strokeLinecap="round" />
-            <Path d="M6 20v-6" stroke={statsIcon} strokeWidth={2} strokeLinecap="round" />
-          </Svg>
-          <Text style={[styles.statsBtnText, { color: statsIcon }]}>{t("quiz.stats")}</Text>
-        </PillButton>
-      </View>
+    <View style={styles.quizScene} {...swipePanResponder.panHandlers}>
+      <SceneHeader
+        theme={theme}
+        title={showStats || quizModeSelected ? undefined : t("tabs.quiz")}
+        accidental={accidental}
+        fretRange={fretRange}
+        leftHanded={leftHanded}
+        onBack={showStats ? handleCloseStats : quizModeSelected ? handleChangeQuiz : undefined}
+        onThemeChange={onThemeChange}
+        onFretRangeChange={onFretRangeChange}
+        onAccidentalChange={onAccidentalChange}
+        onLeftHandedChange={onLeftHandedChange}
+      />
+      <View style={styles.flex1}>
+        {/* QuizPane (mode selection) always rendered as background */}
+        <View style={[styles.flex1, { backgroundColor: bgColor }]}>
+          <QuizSelectionScreen
+            theme={theme}
+            quizKindOptions={quizKindOptions}
+            onQuizModeSelect={handleQuizModeSelect}
+            onShowStats={handleOpenStats}
+          />
+        </View>
 
-      {/* Quiz cards — one per mode×type combination (9 total) */}
-      {QUIZ_GROUPS.flatMap((group) =>
-        group.options.map((opt) => {
-          const iconCircleBg = isDark ? `${group.accent}26` : `${group.accent}1A`;
-          return (
-            <TouchableOpacity
-              key={opt.value}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                onSelect(opt.value);
+        {/* StatsPane slides over QuizPane with solid background */}
+        {showStats && (
+          <Animated.View
+            style={[
+              StyleSheet.absoluteFill,
+              { backgroundColor: bgColor, transform: [{ translateX: statsSlideAnim }] },
+            ]}
+            {...statsSwipeResponder.panHandlers}
+          >
+            <StatsPane
+              records={records}
+              theme={theme}
+              accidental={accidental}
+              onClearRecords={clearRecords}
+            />
+          </Animated.View>
+        )}
+
+        {/* QuizActivePracticePane slides in with solid background */}
+        {quizModeSelected && (
+          <Animated.View
+            style={[
+              StyleSheet.absoluteFill,
+              {
+                backgroundColor: bgColor,
+                transform: [{ translateX: quizSlideAnim }],
+                borderTopLeftRadius: 28,
+                borderBottomLeftRadius: 28,
+                overflow: "hidden",
+              },
+            ]}
+          >
+            <QuizActivePracticePane
+              isLandscape={isLandscape}
+              theme={theme}
+              accidental={accidental}
+              baseLabelMode={baseLabelMode}
+              fretRange={fretRange}
+              quizEffectiveRootNote={quizEffectiveRootNote}
+              quizLayers={quizLayers}
+              quizAccentColor={quizAccentColor}
+              quizQuestion={quizQuestion}
+              quizType={quizType}
+              quizMode={quizMode}
+              quizAnsweredCell={quizAnsweredCell}
+              quizCorrectCell={quizCorrectCell}
+              quizSelectedCells={quizSelectedCells}
+              quizRevealNoteNames={quizRevealNoteNames}
+              quizStrings={quizStrings}
+              leftHanded={leftHanded}
+              onFretboardDoubleTap={onFretboardDoubleTap}
+              onQuizCellClick={handleFretboardQuizAnswer}
+              quizScore={quizScore}
+              selectedAnswer={selectedAnswer}
+              rootNote={rootNote}
+              quizSelectedChoices={quizSelectedChoices}
+              noteOptions={quizNoteOptions}
+              quizSelectedChordRoot={quizSelectedChordRoot}
+              quizSelectedChordType={quizSelectedChordType}
+              diatonicSelectedRoot={diatonicSelectedRoot}
+              diatonicSelectedChordType={diatonicSelectedChordType}
+              diatonicAllAnswers={diatonicAllAnswers}
+              diatonicEditingDegree={diatonicEditingDegree}
+              diatonicQuizKeyType={diatonicQuizKeyType}
+              diatonicQuizChordSize={diatonicQuizChordSize}
+              chordQuizTypes={chordQuizTypes}
+              availableChordQuizTypes={CHORD_QUIZ_TYPES_ALL}
+              scaleType={scaleType}
+              quizKeys={quizKeys}
+              onQuizKeysChange={handleQuizKeysChange}
+              quizNoteNames={quizNoteNames}
+              onQuizNoteNamesChange={handleQuizNoteNamesChange}
+              onChordQuizTypesChange={handleChordQuizTypesChange}
+              onScaleTypeChange={(v) => {
+                setScaleType(v as ScaleType);
+                regenerateQuiz();
               }}
-              activeOpacity={0.7}
-              style={[styles.card, { backgroundColor: cardBg, borderColor: cardBorder }]}
-            >
-              <View style={styles.cardInner}>
-                <View style={[styles.iconCircle, { backgroundColor: iconCircleBg }]}>
-                  <Text style={[styles.iconText, { color: group.accent }]}>{group.icon}</Text>
-                </View>
-                <View style={styles.textBlock}>
-                  <Text style={[styles.modeLabel, { color: titleColor }]}>{t(group.modeKey)}</Text>
-                  <Text style={[styles.modeDesc, { color: descColor }]}>{t(opt.descKey)}</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-          );
-        }),
-      )}
-    </ScrollView>
+              onDiatonicQuizKeyTypeChange={(v) => {
+                setDiatonicQuizKeyType(v);
+                regenerateQuiz();
+              }}
+              onDiatonicQuizChordSizeChange={(v) => {
+                setDiatonicQuizChordSize(v);
+                regenerateQuiz();
+              }}
+              onAnswer={handleQuizAnswer}
+              onSubmitChoice={handleSubmitChoice}
+              onChordQuizRootSelect={handleChordQuizRootSelect}
+              onChordQuizTypeSelect={handleChordQuizTypeSelect}
+              onSubmitChordChoice={handleSubmitChordChoice}
+              onDiatonicAnswerRootSelect={handleDiatonicAnswerRootSelect}
+              onDiatonicAnswerTypeSelect={handleDiatonicAnswerTypeSelect}
+              onDiatonicDegreeCardClick={handleDiatonicDegreeCardClick}
+              onDiatonicSubmitAll={handleDiatonicSubmitAll}
+              onSubmitFretboard={handleSubmitFretboard}
+              onNextQuestion={handleNextQuestion}
+              onRetryQuestion={handleRetryQuestion}
+              onQuizStringsChange={handleQuizStringsChange}
+            />
+          </Animated.View>
+        )}
+      </View>
+    </View>
   );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  content: {
-    paddingHorizontal: 16,
-    paddingTop: 20,
-    paddingBottom: 0,
-    gap: 10,
-  },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "flex-end",
-    marginBottom: 6,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: "700",
-    letterSpacing: 0.2,
-  },
-  statsBtnText: {
-    fontSize: 13,
-    fontWeight: "500",
-  },
-  card: {
-    borderRadius: 16,
-    borderWidth: 1,
-    overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  cardInner: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    gap: 12,
-  },
-  iconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  iconText: {
-    fontSize: 20,
-    fontWeight: "700",
-  },
-  textBlock: {
-    flex: 1,
-    gap: 3,
-  },
-  modeLabel: {
-    fontSize: 16,
-    fontWeight: "600",
-    letterSpacing: 0.1,
-  },
-  modeDesc: {
-    fontSize: 13,
-    lineHeight: 17,
-  },
 });
 
-interface QuizPaneProps {
-  theme: Theme;
-  quizKindOptions: QuizKindOption[];
-  onQuizModeSelect: (value: string) => void;
-  onShowStats: () => void;
-}
+export default QuizScreen;
 
-export default function QuizPane({
-  theme,
-  quizKindOptions,
-  onQuizModeSelect,
-  onShowStats,
-}: QuizPaneProps) {
-  return (
-    <QuizSelectionScreen
-      theme={theme}
-      quizKindOptions={quizKindOptions}
-      onSelect={onQuizModeSelect}
-      onShowStats={onShowStats}
-    />
-  );
-}
+const styles = StyleSheet.create({
+  quizScene: {
+    flex: 1,
+    overflow: "hidden",
+  },
+  flex1: {
+    flex: 1,
+  },
+});

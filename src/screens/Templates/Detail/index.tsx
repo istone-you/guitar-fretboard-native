@@ -114,7 +114,7 @@ function TemplateDetailPane({
           const chordRootNote = noteNames[chordRootIndex] ?? noteNames[0]!;
           const degLabel = chord.degree.replace("b", "♭");
           const suffix = CHORD_SUFFIX_MAP[chord.chordType] ?? chord.chordType;
-          const chordLabel = `${degLabel} — ${chordRootNote}${suffix}`;
+          const chordLabel = `${degLabel}${suffix} — ${chordRootNote}${suffix}`;
 
           const forms = getAllChordForms(chordRootIndex, chord.chordType);
 

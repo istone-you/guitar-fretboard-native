@@ -177,4 +177,46 @@ describe("useLayers", () => {
     expect(result.current.layers).toHaveLength(2);
     expect(result.current.layers.map((l) => l.id)).toEqual(["x", "y"]);
   });
+
+  it("handleReorderLayer reorders slots by id array", () => {
+    const { result } = renderHook(() => useLayers());
+    act(() => {
+      result.current.handleAddLayer(makeLayer({ id: "a" }), 0);
+      result.current.handleAddLayer(makeLayer({ id: "b" }), 1);
+      result.current.handleAddLayer(makeLayer({ id: "c" }), 2);
+    });
+    act(() => {
+      result.current.handleReorderLayer(["c", "a", "b"]);
+    });
+    expect(result.current.slots[0]?.id).toBe("c");
+    expect(result.current.slots[1]?.id).toBe("a");
+    expect(result.current.slots[2]?.id).toBe("b");
+  });
+
+  it("handleReorderLayer treats empty-slot- ids as null", () => {
+    const { result } = renderHook(() => useLayers());
+    act(() => {
+      result.current.handleAddLayer(makeLayer({ id: "a" }), 0);
+      result.current.handleAddLayer(makeLayer({ id: "b" }), 2);
+    });
+    act(() => {
+      result.current.handleReorderLayer(["a", "empty-slot-1", "b"]);
+    });
+    expect(result.current.slots[0]?.id).toBe("a");
+    expect(result.current.slots[1]).toBeNull();
+    expect(result.current.slots[2]?.id).toBe("b");
+  });
+
+  it("handleReorderLayer pads with null when orderedIds is shorter than MAX_LAYERS", () => {
+    const { result } = renderHook(() => useLayers());
+    act(() => {
+      result.current.handleAddLayer(makeLayer({ id: "a" }), 0);
+      result.current.handleAddLayer(makeLayer({ id: "b" }), 1);
+    });
+    act(() => {
+      result.current.handleReorderLayer(["b", "a"]);
+    });
+    expect(result.current.slots).toHaveLength(3);
+    expect(result.current.slots[2]).toBeNull();
+  });
 });

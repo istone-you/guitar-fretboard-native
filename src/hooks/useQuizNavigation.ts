@@ -4,16 +4,18 @@ import * as Haptics from "expo-haptics";
 
 interface UseQuizNavigationParams {
   winWidth: number;
+  initialShowQuiz?: boolean;
   onQuizKindChange: (value: string) => void;
   onShowQuizChange: (show: boolean) => void;
 }
 
 export function useQuizNavigation({
   winWidth,
+  initialShowQuiz = false,
   onQuizKindChange,
   onShowQuizChange,
 }: UseQuizNavigationParams) {
-  const [showQuiz, setShowQuiz] = useState(false);
+  const [showQuiz, setShowQuiz] = useState(initialShowQuiz);
   const [quizModeSelected, setQuizModeSelected] = useState(false);
   const quizSlideAnim = useRef(new Animated.Value(0)).current;
 

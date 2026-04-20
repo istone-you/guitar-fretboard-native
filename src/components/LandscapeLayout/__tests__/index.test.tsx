@@ -72,6 +72,10 @@ const defaultProps = {
   presets: [],
   onSavePreset: jest.fn(),
   loadPreset: jest.fn(),
+  onThemeChange: jest.fn(),
+  onFretRangeChange: jest.fn(),
+  onAccidentalChange: jest.fn(),
+  onLeftHandedChange: jest.fn(),
 };
 
 describe("LandscapeLayout", () => {

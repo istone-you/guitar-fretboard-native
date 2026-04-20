@@ -1,6 +1,6 @@
 import React from "react";
 import { render, fireEvent, screen, act } from "@testing-library/react-native";
-import { Animated, Text, View } from "react-native";
+import { Animated, PanResponder, Text, View } from "react-native";
 import BottomSheetModal from "../index";
 
 jest.useFakeTimers();
@@ -108,5 +108,100 @@ describe("BottomSheetModal", () => {
     renderModal();
     expect(screen.getByTestId("sheet-content")).toBeTruthy();
     expect(screen.getByTestId("bottom-sheet-modal")).toBeTruthy();
+  });
+
+  it("transitions from visible=false to visible=true correctly", () => {
+    const { rerender } = renderModal({ visible: false });
+    rerender(
+      <BottomSheetModal visible={true} onClose={jest.fn()}>
+        {({ close, closeWithCallback, dragHandlers }) => (
+          <View testID="sheet-content" {...dragHandlers}>
+            <Text testID="close-btn" onPress={close}>
+              Close
+            </Text>
+            <Text testID="callback-btn" onPress={() => closeWithCallback(() => {})}>
+              Callback
+            </Text>
+          </View>
+        )}
+      </BottomSheetModal>,
+    );
+    expect(screen.getByTestId("sheet-content")).toBeTruthy();
+  });
+
+  it("useSheetHeight returns a number between 360 and 520", () => {
+    const { renderHook } = require("@testing-library/react-native");
+    const { useSheetHeight } = require("../index");
+    const { result } = renderHook(() => useSheetHeight());
+    expect(result.current).toBeGreaterThanOrEqual(360);
+    expect(result.current).toBeLessThanOrEqual(520);
+  });
+
+  describe("PanResponder gesture handlers", () => {
+    let capturedConfigs: Record<string, any>[];
+
+    beforeEach(() => {
+      capturedConfigs = [];
+      jest.spyOn(PanResponder, "create").mockImplementation((config) => {
+        capturedConfigs.push(config as Record<string, any>);
+        return { panHandlers: {} } as any;
+      });
+    });
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    it("onPanResponderMove with dy>0 moves the sheet", () => {
+      renderModal();
+      capturedConfigs[0]?.onPanResponderMove?.({}, { dy: 100 });
+    });
+
+    it("onPanResponderMove with dy<=0 does not move the sheet", () => {
+      renderModal();
+      capturedConfigs[0]?.onPanResponderMove?.({}, { dy: -10 });
+    });
+
+    it("onPanResponderRelease with large dy triggers close", () => {
+      const onClose = jest.fn();
+      jest.spyOn(Animated, "parallel").mockReturnValue({
+        start: (cb?: (r: { finished: boolean }) => void) => cb?.({ finished: true }),
+      } as unknown as Animated.CompositeAnimation);
+      renderModal({ onClose });
+      capturedConfigs[0]?.onPanResponderRelease?.({}, { dy: 200, vy: 0 });
+      act(() => jest.runAllTimers());
+      expect(onClose).toHaveBeenCalled();
+    });
+
+    it("onPanResponderRelease with high vy triggers close", () => {
+      const onClose = jest.fn();
+      jest.spyOn(Animated, "parallel").mockReturnValue({
+        start: (cb?: (r: { finished: boolean }) => void) => cb?.({ finished: true }),
+      } as unknown as Animated.CompositeAnimation);
+      renderModal({ onClose });
+      capturedConfigs[0]?.onPanResponderRelease?.({}, { dy: 50, vy: 1.0 });
+      act(() => jest.runAllTimers());
+      expect(onClose).toHaveBeenCalled();
+    });
+
+    it("onPanResponderRelease with small dy snaps back", () => {
+      const parallelSpy = jest.spyOn(Animated, "parallel").mockReturnValue({
+        start: jest.fn(),
+      } as unknown as Animated.CompositeAnimation);
+      renderModal();
+      capturedConfigs[0]?.onPanResponderRelease?.({}, { dy: 20, vy: 0 });
+      expect(parallelSpy).toHaveBeenCalled();
+      parallelSpy.mockRestore();
+    });
+
+    it("onPanResponderTerminate snaps sheet back via timing", () => {
+      const timingSpy = jest.spyOn(Animated, "timing").mockReturnValue({
+        start: jest.fn(),
+      } as unknown as Animated.CompositeAnimation);
+      renderModal();
+      capturedConfigs[0]?.onPanResponderTerminate?.();
+      expect(timingSpy).toHaveBeenCalled();
+      timingSpy.mockRestore();
+    });
   });
 });

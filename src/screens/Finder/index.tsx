@@ -20,6 +20,7 @@ import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Icon from "../../components/ui/Icon";
 import NormalFretboard from "../../components/NormalFretboard";
+import SceneHeader from "../../components/AppHeader/SceneHeader";
 import { identifyChords, type ChordMatch } from "../../lib/chordFinder";
 import { identifyScales, scaleI18nKey, type ScaleMatch } from "../../lib/scaleFinder";
 import { createDefaultLayer, pickNextLayerColor, MAX_LAYERS } from "../../types";
@@ -49,15 +50,14 @@ export interface FinderPaneProps {
   fretRange: [number, number];
   rootNote: string;
   leftHanded?: boolean;
-  finderRoot: string | null;
-  finderNotes: Set<string>;
-  onFinderRootChange: (note: string | null) => void;
-  onFinderNotesChange: (notes: Set<string>) => void;
-  dotColor: string;
-  onDotColorChange: (color: string) => void;
   layers: LayerConfig[];
   onAddLayerAndNavigate: (layer: LayerConfig) => void;
   onBaseLabelModeChange: (mode: BaseLabelMode) => void;
+  // Header props
+  onThemeChange: (theme: Theme) => void;
+  onFretRangeChange: (range: [number, number]) => void;
+  onAccidentalChange: (accidental: Accidental) => void;
+  onLeftHandedChange: (value: boolean) => void;
 }
 
 export default function FinderPane({
@@ -67,15 +67,13 @@ export default function FinderPane({
   fretRange,
   rootNote: initialRootNote,
   leftHanded,
-  finderRoot,
-  finderNotes,
-  onFinderRootChange,
-  onFinderNotesChange,
-  dotColor,
-  onDotColorChange,
   layers,
   onAddLayerAndNavigate,
   onBaseLabelModeChange,
+  onThemeChange,
+  onFretRangeChange,
+  onAccidentalChange,
+  onLeftHandedChange,
 }: FinderPaneProps) {
   const { t } = useTranslation();
   const [showChords, setShowChords] = usePersistedSetting(
@@ -108,13 +106,23 @@ export default function FinderPane({
     (v) => v,
     (v) => (v === "chip" ? "chip" : "fretboard"),
   );
+  const [dotColor, setDotColor] = usePersistedSetting(
+    "guiter:finder-dot-color",
+    "#ff69b6",
+    (v) => v,
+    (v) => v,
+  );
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [pendingItem, setPendingItem] = useState<FinderItem | null>(null);
   const [settingsHeaderHeight, setSettingsHeaderHeight] = useState(96);
+
+  // Local state for finder selection (persists across tab switches since screen stays mounted)
+  const [finderRoot, setFinderRoot] = useState<string | null>(null);
+  const [finderNotes, setFinderNotes] = useState<Set<string>>(new Set());
+
   const insets = useSafeAreaInsets();
   const sheetHeight = useSheetHeight();
 
-  // Lifted to parent — persists across navigation
   const rootNote = finderRoot;
   const extraNotes = finderNotes;
   // Tracks the last non-null rootNote so that on reset, the rootIndex passed to
@@ -132,16 +140,13 @@ export default function FinderPane({
   const subTextColor = isDark ? "#9ca3af" : "#6b7280";
   const borderColor = isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb";
 
-  // Effective selected notes = root + user additions (only when root is set)
   const effectiveNotes = useMemo(
     () => (rootNote ? new Set([rootNote, ...extraNotes]) : new Set<string>()),
     [rootNote, extraNotes],
   );
 
   const handleNoteToggle = (noteName: string) => {
-    // No root selected yet — ignore taps
     if (!rootNote) return;
-    // Root note is fixed — cannot be removed
     if (noteName === rootNote) return;
     const next = new Set(extraNotes);
     if (next.has(noteName)) {
@@ -149,25 +154,21 @@ export default function FinderPane({
     } else {
       next.add(noteName);
     }
-    onFinderNotesChange(next);
+    setFinderNotes(next);
   };
 
   const handleReset = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onFinderRootChange(null);
-    onFinderNotesChange(new Set());
-    // No fretboardKey bump — lets overlay dots play their fade-out animation naturally
+    setFinderRoot(null);
+    setFinderNotes(new Set());
   };
 
   const handleRootSet = (noteName: string) => {
     if (noteName === rootNote) return;
-    onFinderRootChange(noteName);
-    onFinderNotesChange(new Set());
-    // No fretboardKey bump — lets NormalFretboard detect the baseLabelMode change
-    // ("note" → "degree") and play the existing labelScale animation in Fretboard
+    setFinderRoot(noteName);
+    setFinderNotes(new Set());
   };
 
-  // Animate notes label when baseLabelMode changes (same as fretboard)
   const labelScale = useRef(new Animated.Value(1)).current;
   const prevBaseLabelMode = useRef(baseLabelMode);
   if (prevBaseLabelMode.current !== baseLabelMode) {
@@ -220,7 +221,6 @@ export default function FinderPane({
 
   const hasResult = chordResult !== null || scaleResult !== null;
 
-  // Highlight all effective notes on the fretboard
   const finderLayers = useMemo(() => {
     const layer = createDefaultLayer("custom", "finder", accentColor);
     layer.selectedNotes = new Set(effectiveNotes);
@@ -232,8 +232,8 @@ export default function FinderPane({
     const allNotes =
       pendingItem.kind === "chord" ? pendingItem.match.chordNotes : pendingItem.match.scaleNotes;
     const root = pendingItem.match.root;
-    onFinderRootChange(root);
-    onFinderNotesChange(new Set(allNotes.filter((n) => n !== root)));
+    setFinderRoot(root);
+    setFinderNotes(new Set(allNotes.filter((n) => n !== root)));
     setPendingItem(null);
   };
 
@@ -309,329 +309,346 @@ export default function FinderPane({
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: bgColor }]}>
-      {/* Controls row */}
-      <View style={styles.labelToggleRow}>
-        <SegmentedToggle
-          theme={theme}
-          value={baseLabelMode}
-          onChange={onBaseLabelModeChange}
-          options={[
-            { value: "note" as BaseLabelMode, label: t("header.note") },
-            { value: "degree" as BaseLabelMode, label: t("header.degree") },
-          ]}
-          size="compact"
-        />
-        <PillButton
-          isDark={isDark}
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            setSettingsVisible(true);
-          }}
-          testID="finder-settings-btn"
-          style={{ paddingHorizontal: 8 }}
-        >
-          <Icon name="ellipsis" size={16} color={colors.textSubtle} />
-        </PillButton>
-      </View>
-
-      {/* Fretboard or Chip Input */}
-      {inputMode === "fretboard" ? (
-        <View style={styles.fretboardWrapper}>
-          <NormalFretboard
+    <View style={{ flex: 1 }}>
+      <SceneHeader
+        theme={theme}
+        title={t("tabs.finder")}
+        accidental={accidental}
+        fretRange={fretRange}
+        leftHanded={leftHanded}
+        onThemeChange={onThemeChange}
+        onFretRangeChange={onFretRangeChange}
+        onAccidentalChange={onAccidentalChange}
+        onLeftHandedChange={onLeftHandedChange}
+      />
+      <View style={[styles.container, { backgroundColor: bgColor }]}>
+        {/* Controls row */}
+        <View style={styles.labelToggleRow}>
+          <SegmentedToggle
             theme={theme}
-            accidental={accidental}
-            baseLabelMode={rootNote ? baseLabelMode : "note"}
-            fretRange={fretRange}
-            rootNote={rootNote ?? lastRootNoteRef.current}
-            layers={finderLayers}
-            leftHanded={leftHanded}
-            disableAnimation={false}
-            onNoteClick={handleNoteToggle}
-            onNoteLongPress={handleRootSet}
+            value={baseLabelMode}
+            onChange={onBaseLabelModeChange}
+            options={[
+              { value: "note" as BaseLabelMode, label: t("header.note") },
+              { value: "degree" as BaseLabelMode, label: t("header.degree") },
+            ]}
+            size="compact"
           />
-        </View>
-      ) : (
-        <View style={styles.chipInputWrapper}>
-          <View style={styles.chipNoteGrid}>
-            {getNotesByAccidental(accidental).map((note) => {
-              const isSelected = note === rootNote || extraNotes.has(note);
-              return (
-                <NotePill
-                  key={note}
-                  label={note}
-                  selected={isSelected}
-                  activeBg={accentColor}
-                  activeText="#fff"
-                  inactiveBg={isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"}
-                  inactiveText={textColor}
-                  onPress={() => {
-                    if (!rootNote) {
-                      handleRootSet(note);
-                    } else if (note !== rootNote) {
-                      handleNoteToggle(note);
-                    }
-                  }}
-                />
-              );
-            })}
-          </View>
-        </View>
-      )}
-
-      {/* Selected notes chips + reset button + settings */}
-      <View style={[styles.selectedRow, { borderBottomColor: borderColor }]}>
-        {/* 説明文: absoluteで行全体に中央寄せ（チップやボタンの後ろに表示） */}
-        {(!rootNote || extraNotes.size === 0) && (
-          <Text pointerEvents="none" style={[styles.placeholder, { color: subTextColor }]}>
-            {t(
-              rootNote
-                ? "finder.tapInstruction"
-                : inputMode === "chip"
-                  ? "finder.chipRootInstruction"
-                  : "finder.longPressInstruction",
-            )}
-          </Text>
-        )}
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.chipsContent}
-          style={styles.chipsScroll}
-        >
-          {rootNote ? (
-            <>
-              {/* Root chip — not removable */}
-              <View style={[styles.rootChip, { backgroundColor: accentColor }]}>
-                <Text style={styles.chipText}>{rootNote}</Text>
-              </View>
-
-              {/* User-added note chips */}
-              {[...extraNotes].map((note) => (
-                <TouchableOpacity
-                  key={note}
-                  onPress={() => handleNoteToggle(note)}
-                  style={[styles.chip, { backgroundColor: accentColor }]}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.chipText}>{note}</Text>
-                </TouchableOpacity>
-              ))}
-            </>
-          ) : null}
-        </ScrollView>
-
-        {rootNote && (
-          <PillButton isDark={isDark} onPress={handleReset} variant="danger">
-            <Text style={[styles.resetBtnText, { color: isDark ? "#f87171" : "#ef4444" }]}>
-              {t("finder.reset")}
-            </Text>
+          <PillButton
+            isDark={isDark}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setSettingsVisible(true);
+            }}
+            testID="finder-settings-btn"
+            style={{ paddingHorizontal: 8 }}
+          >
+            <Icon name="ellipsis" size={16} color={colors.textSubtle} />
           </PillButton>
-        )}
-      </View>
+        </View>
 
-      {/* Settings bottom sheet */}
-      <BottomSheetModal visible={settingsVisible} onClose={() => setSettingsVisible(false)}>
-        {({ close, dragHandlers }) => {
-          const sheetBg = isDark ? "#111827" : "#fafaf9";
-          const sheetBorder = isDark ? "rgba(255,255,255,0.08)" : "#e7e5e4";
-          const labelColor = isDark ? "#e5e7eb" : "#1c1917";
-          return (
-            <View
-              style={[
-                styles.bottomSheetModal,
-                { height: sheetHeight, backgroundColor: sheetBg, borderColor: sheetBorder },
-              ]}
-            >
-              <View style={{ flex: 1, overflow: "hidden" }}>
-                <ScrollView
-                  style={styles.sheetScroll}
-                  contentContainerStyle={[
-                    styles.sheetScrollContent,
-                    { paddingTop: settingsHeaderHeight },
-                  ]}
-                  showsVerticalScrollIndicator
-                  indicatorStyle={isDark ? "white" : "black"}
-                >
-                  <View style={styles.settingsBody}>
-                    {/* Input Mode */}
-                    <View style={[styles.iosSection, { borderColor: sheetBorder }]}>
-                      <View style={[styles.iosRow]}>
-                        <Text style={[styles.iosRowLabel, { color: labelColor }]}>
-                          {t("finder.inputMode")}
-                        </Text>
-                        <SegmentedToggle
-                          theme={theme}
-                          value={inputMode}
-                          onChange={setInputMode}
-                          options={[
-                            { value: "fretboard" as const, label: t("finder.inputModeFretboard") },
-                            { value: "chip" as const, label: t("finder.inputModeChip") },
-                          ]}
-                          size="compact"
-                          segmentWidth={72}
-                        />
+        {/* Fretboard or Chip Input */}
+        {inputMode === "fretboard" ? (
+          <View style={styles.fretboardWrapper}>
+            <NormalFretboard
+              theme={theme}
+              accidental={accidental}
+              baseLabelMode={rootNote ? baseLabelMode : "note"}
+              fretRange={fretRange}
+              rootNote={rootNote ?? lastRootNoteRef.current}
+              layers={finderLayers}
+              leftHanded={leftHanded}
+              disableAnimation={false}
+              onNoteClick={handleNoteToggle}
+              onNoteLongPress={handleRootSet}
+            />
+          </View>
+        ) : (
+          <View style={styles.chipInputWrapper}>
+            <View style={styles.chipNoteGrid}>
+              {getNotesByAccidental(accidental).map((note) => {
+                const isSelected = note === rootNote || extraNotes.has(note);
+                return (
+                  <NotePill
+                    key={note}
+                    label={note}
+                    selected={isSelected}
+                    activeBg={accentColor}
+                    activeText="#fff"
+                    inactiveBg={isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"}
+                    inactiveText={textColor}
+                    onPress={() => {
+                      if (!rootNote) {
+                        handleRootSet(note);
+                      } else if (note !== rootNote) {
+                        handleNoteToggle(note);
+                      }
+                    }}
+                  />
+                );
+              })}
+            </View>
+          </View>
+        )}
+
+        {/* Selected notes chips + reset button */}
+        <View style={[styles.selectedRow, { borderBottomColor: borderColor }]}>
+          {(!rootNote || extraNotes.size === 0) && (
+            <Text pointerEvents="none" style={[styles.placeholder, { color: subTextColor }]}>
+              {t(
+                rootNote
+                  ? "finder.tapInstruction"
+                  : inputMode === "chip"
+                    ? "finder.chipRootInstruction"
+                    : "finder.longPressInstruction",
+              )}
+            </Text>
+          )}
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.chipsContent}
+            style={styles.chipsScroll}
+          >
+            {rootNote ? (
+              <>
+                <View style={[styles.rootChip, { backgroundColor: accentColor }]}>
+                  <Text style={styles.chipText}>{rootNote}</Text>
+                </View>
+                {[...extraNotes].map((note) => (
+                  <TouchableOpacity
+                    key={note}
+                    onPress={() => handleNoteToggle(note)}
+                    style={[styles.chip, { backgroundColor: accentColor }]}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.chipText}>{note}</Text>
+                  </TouchableOpacity>
+                ))}
+              </>
+            ) : null}
+          </ScrollView>
+
+          {rootNote && (
+            <PillButton isDark={isDark} onPress={handleReset} variant="danger">
+              <Text style={[styles.resetBtnText, { color: isDark ? "#f87171" : "#ef4444" }]}>
+                {t("finder.reset")}
+              </Text>
+            </PillButton>
+          )}
+        </View>
+
+        {/* Settings bottom sheet */}
+        <BottomSheetModal visible={settingsVisible} onClose={() => setSettingsVisible(false)}>
+          {({ close, dragHandlers }) => {
+            const sheetBg = isDark ? "#111827" : "#fafaf9";
+            const sheetBorder = isDark ? "rgba(255,255,255,0.08)" : "#e7e5e4";
+            const labelColor = isDark ? "#e5e7eb" : "#1c1917";
+            return (
+              <View
+                style={[
+                  styles.bottomSheetModal,
+                  { height: sheetHeight, backgroundColor: sheetBg, borderColor: sheetBorder },
+                ]}
+              >
+                <View style={{ flex: 1, overflow: "hidden" }}>
+                  <ScrollView
+                    style={styles.sheetScroll}
+                    contentContainerStyle={[
+                      styles.sheetScrollContent,
+                      { paddingTop: settingsHeaderHeight },
+                    ]}
+                    showsVerticalScrollIndicator
+                    indicatorStyle={isDark ? "white" : "black"}
+                  >
+                    <View style={styles.settingsBody}>
+                      {/* Input Mode */}
+                      <View style={[styles.iosSection, { borderColor: sheetBorder }]}>
+                        <View style={[styles.iosRow]}>
+                          <Text style={[styles.iosRowLabel, { color: labelColor }]}>
+                            {t("finder.inputMode")}
+                          </Text>
+                          <SegmentedToggle
+                            theme={theme}
+                            value={inputMode}
+                            onChange={setInputMode}
+                            options={[
+                              {
+                                value: "fretboard" as const,
+                                label: t("finder.inputModeFretboard"),
+                              },
+                              { value: "chip" as const, label: t("finder.inputModeChip") },
+                            ]}
+                            size="compact"
+                            segmentWidth={72}
+                          />
+                        </View>
                       </View>
-                    </View>
-                    {/* Color */}
-                    <View style={[styles.iosSection, { borderColor: sheetBorder }]}>
-                      <View
-                        style={[
-                          styles.iosRow,
-                          {
-                            borderBottomWidth: StyleSheet.hairlineWidth,
-                            borderBottomColor: sheetBorder,
-                          },
-                        ]}
-                      >
-                        <Text style={[styles.iosRowLabel, { color: labelColor }]}>
-                          {t("finder.color")}
-                        </Text>
-                      </View>
-                      <View style={[styles.colorPickerRow]}>
-                        <ColorPicker value={dotColor} onChange={onDotColorChange} isDark={isDark} />
-                      </View>
-                    </View>
-                    {/* Toggles */}
-                    <View style={[styles.iosSection, { borderColor: sheetBorder }]}>
-                      {(
-                        [
-                          [t("finder.showChords"), showChords, setShowChords],
-                          [t("finder.showScales"), showScales, setShowScales],
-                          [t("finder.showContained"), showContained, setShowContained],
-                          [t("finder.showContaining"), showContaining, setShowContaining],
-                        ] as [string, boolean, (v: boolean) => void][]
-                      ).map(([label, value, setter], i, arr) => (
+                      {/* Color */}
+                      <View style={[styles.iosSection, { borderColor: sheetBorder }]}>
                         <View
-                          key={label}
                           style={[
                             styles.iosRow,
-                            i < arr.length - 1 && {
+                            {
                               borderBottomWidth: StyleSheet.hairlineWidth,
                               borderBottomColor: sheetBorder,
                             },
                           ]}
                         >
-                          <Text style={[styles.iosRowLabel, { color: labelColor }]}>{label}</Text>
-                          <Switch
-                            value={value}
-                            onValueChange={setter}
-                            trackColor={{ false: isDark ? "#4b5563" : "#d6d3d1", true: "#34c759" }}
-                            ios_backgroundColor={isDark ? "#4b5563" : "#d6d3d1"}
-                          />
+                          <Text style={[styles.iosRowLabel, { color: labelColor }]}>
+                            {t("finder.color")}
+                          </Text>
                         </View>
-                      ))}
+                        <View style={[styles.colorPickerRow]}>
+                          <ColorPicker value={dotColor} onChange={setDotColor} isDark={isDark} />
+                        </View>
+                      </View>
+                      {/* Toggles */}
+                      <View style={[styles.iosSection, { borderColor: sheetBorder }]}>
+                        {(
+                          [
+                            [t("finder.showChords"), showChords, setShowChords],
+                            [t("finder.showScales"), showScales, setShowScales],
+                            [t("finder.showContained"), showContained, setShowContained],
+                            [t("finder.showContaining"), showContaining, setShowContaining],
+                          ] as [string, boolean, (v: boolean) => void][]
+                        ).map(([label, value, setter], i, arr) => (
+                          <View
+                            key={label}
+                            style={[
+                              styles.iosRow,
+                              i < arr.length - 1 && {
+                                borderBottomWidth: StyleSheet.hairlineWidth,
+                                borderBottomColor: sheetBorder,
+                              },
+                            ]}
+                          >
+                            <Text style={[styles.iosRowLabel, { color: labelColor }]}>{label}</Text>
+                            <Switch
+                              value={value}
+                              onValueChange={setter}
+                              trackColor={{
+                                false: isDark ? "#4b5563" : "#d6d3d1",
+                                true: "#34c759",
+                              }}
+                              ios_backgroundColor={isDark ? "#4b5563" : "#d6d3d1"}
+                            />
+                          </View>
+                        ))}
+                      </View>
                     </View>
-                  </View>
-                </ScrollView>
-                {/* Absolute glass header */}
-                <SheetProgressiveHeader
-                  isDark={isDark}
-                  bgColor={sheetBg}
-                  dragHandlers={dragHandlers}
-                  contentPaddingHorizontal={14}
-                  onLayout={setSettingsHeaderHeight}
-                  style={styles.absoluteHeader}
-                >
-                  <View style={{ flexDirection: "row", alignItems: "center" }}>
-                    <GlassIconButton
-                      isDark={isDark}
-                      onPress={close}
-                      icon="close"
-                      style={styles.headerLeft}
-                    />
-                    <View style={styles.headerCenter}>
-                      <Text style={[styles.headerTitle, { color: labelColor }]}>
-                        {t("finder.settings")}
-                      </Text>
+                  </ScrollView>
+                  {/* Absolute glass header */}
+                  <SheetProgressiveHeader
+                    isDark={isDark}
+                    bgColor={sheetBg}
+                    dragHandlers={dragHandlers}
+                    contentPaddingHorizontal={14}
+                    onLayout={setSettingsHeaderHeight}
+                    style={styles.absoluteHeader}
+                  >
+                    <View style={{ flexDirection: "row", alignItems: "center" }}>
+                      <GlassIconButton
+                        isDark={isDark}
+                        onPress={close}
+                        icon="close"
+                        style={styles.headerLeft}
+                      />
+                      <View style={styles.headerCenter}>
+                        <Text style={[styles.headerTitle, { color: labelColor }]}>
+                          {t("finder.settings")}
+                        </Text>
+                      </View>
+                      <View style={styles.headerRight} />
                     </View>
-                    <View style={styles.headerRight} />
-                  </View>
-                </SheetProgressiveHeader>
+                  </SheetProgressiveHeader>
+                </View>
               </View>
-            </View>
-          );
-        }}
-      </BottomSheetModal>
+            );
+          }}
+        </BottomSheetModal>
 
-      {/* Add-to-layer confirmation — shared ContextMenu design */}
-      {(() => {
-        const isFull = layers.length >= MAX_LAYERS;
-        const itemName = pendingItem
-          ? pendingItem.kind === "chord"
-            ? pendingItem.match.chordName
-            : `${pendingItem.match.root} ${t(`options.scale.${scaleI18nKey(pendingItem.match.scaleType)}`)}`
-          : "";
-        const isAlreadySet = (() => {
-          if (!pendingItem) return false;
-          const itemRoot = pendingItem.match.root;
-          const allNotes =
-            pendingItem.kind === "chord"
-              ? pendingItem.match.chordNotes
-              : pendingItem.match.scaleNotes;
-          const itemExtra = new Set(allNotes.filter((n) => n !== itemRoot));
-          if (rootNote !== itemRoot) return false;
-          if (extraNotes.size !== itemExtra.size) return false;
-          for (const n of itemExtra) if (!extraNotes.has(n)) return false;
-          return true;
-        })();
-        const descLayer: LayerConfig | null = (() => {
-          if (!pendingItem) return null;
-          if (pendingItem.kind === "chord") {
-            const layer = createDefaultLayer("chord", "finder-desc", "#000");
-            layer.chordDisplayMode = "form";
-            layer.chordType = pendingItem.match.chordType as ChordType;
-            return layer;
-          } else {
-            const layer = createDefaultLayer("scale", "finder-desc", "#000");
-            layer.scaleType = pendingItem.match.scaleType as ScaleType;
-            return layer;
-          }
-        })();
-        return (
-          <ContextMenu
-            visible={pendingItem !== null}
-            isDark={isDark}
-            title={itemName}
-            footer={
-              descLayer ? <LayerDescription theme={theme} layer={descLayer} itemOnly /> : undefined
+        {/* Add-to-layer confirmation */}
+        {(() => {
+          const isFull = layers.length >= MAX_LAYERS;
+          const itemName = pendingItem
+            ? pendingItem.kind === "chord"
+              ? pendingItem.match.chordName
+              : `${pendingItem.match.root} ${t(`options.scale.${scaleI18nKey(pendingItem.match.scaleType)}`)}`
+            : "";
+          const isAlreadySet = (() => {
+            if (!pendingItem) return false;
+            const itemRoot = pendingItem.match.root;
+            const allNotes =
+              pendingItem.kind === "chord"
+                ? pendingItem.match.chordNotes
+                : pendingItem.match.scaleNotes;
+            const itemExtra = new Set(allNotes.filter((n) => n !== itemRoot));
+            if (rootNote !== itemRoot) return false;
+            if (extraNotes.size !== itemExtra.size) return false;
+            for (const n of itemExtra) if (!extraNotes.has(n)) return false;
+            return true;
+          })();
+          const descLayer: LayerConfig | null = (() => {
+            if (!pendingItem) return null;
+            if (pendingItem.kind === "chord") {
+              const layer = createDefaultLayer("chord", "finder-desc", "#000");
+              layer.chordDisplayMode = "form";
+              layer.chordType = pendingItem.match.chordType as ChordType;
+              return layer;
+            } else {
+              const layer = createDefaultLayer("scale", "finder-desc", "#000");
+              layer.scaleType = pendingItem.match.scaleType as ScaleType;
+              return layer;
             }
-            items={[
-              {
-                label: t("finder.addToLayerTitle"),
-                subtitle: isFull ? t("finder.addToLayerFull") : undefined,
-                icon: <Icon name="plus" size={18} color={isDark ? "#ebebf599" : "#3c3c4399"} />,
-                onPress: handleConfirmAdd,
-                disabled: isFull,
-              },
-              {
-                label: t("finder.setNotes"),
-                subtitle: isAlreadySet ? t("finder.setNotesAlreadySet") : undefined,
-                disabled: isAlreadySet,
-                icon: (
-                  <Icon name="music-note" size={18} color={isDark ? "#ebebf599" : "#3c3c4399"} />
-                ),
-                onPress: handleSetNotes,
-              },
-            ]}
-            onClose={() => setPendingItem(null)}
-          />
-        );
-      })()}
+          })();
+          return (
+            <ContextMenu
+              visible={pendingItem !== null}
+              isDark={isDark}
+              title={itemName}
+              footer={
+                descLayer ? (
+                  <LayerDescription theme={theme} layer={descLayer} itemOnly />
+                ) : undefined
+              }
+              items={[
+                {
+                  label: t("finder.addToLayerTitle"),
+                  subtitle: isFull ? t("finder.addToLayerFull") : undefined,
+                  icon: <Icon name="plus" size={18} color={isDark ? "#ebebf599" : "#3c3c4399"} />,
+                  onPress: handleConfirmAdd,
+                  disabled: isFull,
+                },
+                {
+                  label: t("finder.setNotes"),
+                  subtitle: isAlreadySet ? t("finder.setNotesAlreadySet") : undefined,
+                  disabled: isAlreadySet,
+                  icon: (
+                    <Icon name="music-note" size={18} color={isDark ? "#ebebf599" : "#3c3c4399"} />
+                  ),
+                  onPress: handleSetNotes,
+                },
+              ]}
+              onClose={() => setPendingItem(null)}
+            />
+          );
+        })()}
 
-      {/* Results */}
-      {hasResult && (
-        <ScrollView
-          style={styles.resultScroll}
-          contentContainerStyle={[styles.resultContent, { paddingBottom: insets.bottom + 80 }]}
-          showsVerticalScrollIndicator={false}
-        >
-          {renderSection(t("finder.exactMatch"), exactItems, false)}
-          {showContained && renderSection(t("finder.containedMatch"), containedItems, true)}
-          {showContaining && renderSection(t("finder.containingMatch"), containingItems, true)}
-        </ScrollView>
-      )}
+        {/* Results */}
+        {hasResult && (
+          <ScrollView
+            style={styles.resultScroll}
+            contentContainerStyle={[styles.resultContent, { paddingBottom: insets.bottom + 80 }]}
+            showsVerticalScrollIndicator={false}
+          >
+            {renderSection(t("finder.exactMatch"), exactItems, false)}
+            {showContained && renderSection(t("finder.containedMatch"), containedItems, true)}
+            {showContaining && renderSection(t("finder.containingMatch"), containingItems, true)}
+          </ScrollView>
+        )}
+      </View>
     </View>
   );
 }
@@ -702,19 +719,10 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "600",
   },
-  resetBtn: {
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    marginLeft: 8,
-    alignItems: "center",
-  },
   resetBtnText: {
     fontSize: 13,
     fontWeight: "500",
   },
-  // Bottom sheet styles (same as LayerEditModal)
   bottomSheetModal: {
     width: "100%",
     borderTopLeftRadius: 28,
@@ -787,7 +795,7 @@ const styles = StyleSheet.create({
   },
   resultContent: {
     paddingBottom: 16,
-  }, // Note: dynamic bottom padding added inline via insets
+  },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
