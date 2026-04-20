@@ -12,7 +12,8 @@ import {
   getNotesByAccidental,
   getRootIndex,
   parseOnChord,
-  resolveProgressionDegree,
+  getTemplateLength,
+  resolveProgressionStep,
   type ProgressionTemplate,
 } from "../lib/fretboard";
 
@@ -68,15 +69,16 @@ export function useLayerDerivedState({
           (tp) => tp.id === (layer.progressionTemplateId ?? "251"),
         );
         if (!template) continue;
+        const totalSteps = getTemplateLength(template);
         const currentStep = Math.min(
           Math.max(layer.progressionCurrentStep ?? 0, 0),
-          template.degrees.length - 1,
+          totalSteps - 1,
         );
-        const chord = resolveProgressionDegree(
+        const chord = resolveProgressionStep(
           keyRootIndex,
           layer.progressionKeyType ?? "major",
-          layer.progressionChordSize ?? "seventh",
-          template.degrees[currentStep],
+          template,
+          currentStep,
         );
         const chordSemitones = CHORD_SEMITONES[chord.chordType] ?? new Set<number>();
         for (const s of chordSemitones) {
@@ -161,16 +163,14 @@ export function useLayerDerivedState({
           (tp) => tp.id === (l.progressionTemplateId ?? "251"),
         );
         if (template) {
-          const currentStep = Math.min(
-            Math.max(l.progressionCurrentStep ?? 0, 0),
-            template.degrees.length - 1,
-          );
-          const labels = template.degrees.map((degree, idx) => {
-            const chord = resolveProgressionDegree(
+          const totalSteps = getTemplateLength(template);
+          const currentStep = Math.min(Math.max(l.progressionCurrentStep ?? 0, 0), totalSteps - 1);
+          const labels = Array.from({ length: totalSteps }, (_, idx) => {
+            const chord = resolveProgressionStep(
               rootIndex,
               l.progressionKeyType ?? "major",
-              l.progressionChordSize ?? "seventh",
-              degree,
+              template,
+              idx,
             );
             const rootName = notes[chord.rootIndex];
             const label = `${rootName}${chordSuffix(chord.chordType)}`;

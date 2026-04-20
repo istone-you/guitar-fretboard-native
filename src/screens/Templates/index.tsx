@@ -1,8 +1,7 @@
-import { useRef, useState } from "react";
+import { useRef, useState, forwardRef, useImperativeHandle } from "react";
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   ScrollView,
   StyleSheet,
@@ -15,148 +14,51 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 import "../../i18n";
-import Svg, { Path } from "react-native-svg";
 import Icon from "../../components/ui/Icon";
-import AddCircleButton from "../../components/ui/AddCircleButton";
-import type { Theme, Accidental } from "../../types";
+import PillButton from "../../components/ui/PillButton";
+import type { Theme, ProgressionChord } from "../../types";
 import type { CustomProgressionTemplate } from "../../hooks/useProgressionTemplates";
-import BottomSheetModal, {
-  SHEET_HANDLE_CLEARANCE,
-  useSheetHeight,
-} from "../../components/ui/BottomSheetModal";
-import SheetProgressiveHeader from "../../components/ui/SheetProgressiveHeader";
-import GlassIconButton from "../../components/ui/GlassIconButton";
+import TemplateFormSheet, { chordDisplayLabel } from "./TemplateFormSheet";
 
 const ROW_GAP = 8;
 const ROW_RADIUS = 14;
-const MAX_PROGRESSION_DEGREES = 12;
-
-// [内部値, 表示ラベル]
-const MAJOR_DEGREE_CHIPS: [string, string][] = [
-  ["I", "I"],
-  ["ii", "IIm"],
-  ["iii", "IIIm"],
-  ["IV", "IV"],
-  ["V", "V"],
-  ["vi", "VIm"],
-  ["vii", "VIIm(-5)"],
-];
-const MINOR_DEGREE_CHIPS: [string, string][] = [
-  ["i", "Im"],
-  ["ii", "IIm(-5)"],
-  ["III", "♭III"],
-  ["iv", "IVm"],
-  ["v", "Vm"],
-  ["VI", "♭VI"],
-  ["VII", "♭VII"],
-];
-
-// チップのタプル配列から直接ラベルマップを構築。
-// "ii" はメジャー("IIm")を優先（マイナー"IIm(-5)"より後に書くことで上書き）。
-const CHIP_LABEL_MAP: Record<string, string> = Object.fromEntries([
-  ...MINOR_DEGREE_CHIPS,
-  ...MAJOR_DEGREE_CHIPS,
-]);
-const degreeLabel = (deg: string): string => CHIP_LABEL_MAP[deg] ?? deg;
-
-// ─────────────────────────────────────────────────────────────────
-// DegreeChip — shared chip for palette (add) and progression (remove)
-// ─────────────────────────────────────────────────────────────────
-function DegreeChip({
-  label,
-  variant,
-  isDark,
-  onPress,
-  disabled,
-}: {
-  label: string;
-  variant: "palette" | "selected";
-  isDark: boolean;
-  onPress: () => void;
-  disabled?: boolean;
-}) {
-  const isSelected = variant === "selected";
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      disabled={disabled}
-      style={[
-        styles.degreeChip,
-        {
-          backgroundColor: isSelected
-            ? isDark
-              ? "#6b7280"
-              : "#78716c"
-            : isDark
-              ? "#374151"
-              : "#f5f5f4",
-          borderColor: isSelected ? "transparent" : isDark ? "#4b5563" : "#d6d3d1",
-          opacity: disabled ? 0.35 : 1,
-        },
-      ]}
-      activeOpacity={0.7}
-      hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-    >
-      <Text
-        style={[
-          styles.degreeChipText,
-          { color: isSelected ? "#fff" : isDark ? "#e5e7eb" : "#44403c" },
-        ]}
-      >
-        {label}
-      </Text>
-      {isSelected && (
-        <Svg width={8} height={8} viewBox="0 0 12 12" fill="none" style={{ marginLeft: 4 }}>
-          <Path
-            d="M9 3L3 9M3 3l6 6"
-            stroke="rgba(255,255,255,0.7)"
-            strokeWidth={1.8}
-            strokeLinecap="round"
-          />
-        </Svg>
-      )}
-    </TouchableOpacity>
-  );
-}
 
 // ─────────────────────────────────────────────────────────────────
 // Props
 // ─────────────────────────────────────────────────────────────────
-export interface ManagePaneProps {
+export interface TemplatesPaneHandle {
+  openTemplateForm: (template: CustomProgressionTemplate | null) => void;
+}
+
+export interface TemplatesPaneProps {
   theme: Theme;
-  rootNote: string;
-  accidental: Accidental;
-  fretRange: [number, number];
-  leftHanded: boolean;
   customTemplates: CustomProgressionTemplate[];
-  onSaveTemplate: (name: string, degrees: string[]) => void;
-  onUpdateTemplate: (id: string, name: string, degrees: string[]) => void;
+  onSaveTemplate: (name: string, chords: ProgressionChord[]) => void;
+  onUpdateTemplate: (id: string, name: string, chords: ProgressionChord[]) => void;
   onDeleteTemplate: (id: string) => void;
   onReorderTemplates: (orderedIds: string[]) => void;
+  onShowTemplateDetail: (template: CustomProgressionTemplate) => void;
 }
 
 // ─────────────────────────────────────────────────────────────────
 // Main component
 // ─────────────────────────────────────────────────────────────────
-export default function ManagePane({
-  theme,
-  rootNote: _rootNote,
-  accidental: _accidental,
-  fretRange: _fretRange,
-  leftHanded: _leftHanded,
-  customTemplates,
-  onSaveTemplate,
-  onUpdateTemplate,
-  onDeleteTemplate,
-  onReorderTemplates,
-}: ManagePaneProps) {
+const TemplatesPane = forwardRef<TemplatesPaneHandle, TemplatesPaneProps>(function TemplatesPane(
+  {
+    theme,
+    customTemplates,
+    onSaveTemplate,
+    onUpdateTemplate,
+    onDeleteTemplate,
+    onReorderTemplates,
+    onShowTemplateDetail,
+  }: TemplatesPaneProps,
+  ref,
+) {
   const { t } = useTranslation();
   const isDark = theme === "dark";
   const insets = useSafeAreaInsets();
-  const sheetHeight = useSheetHeight();
 
-  const bg = isDark ? "#1f2937" : "#fff";
-  const border = isDark ? "#374151" : "#e7e5e4";
   const textPrimary = isDark ? "#e5e7eb" : "#1c1917";
   const textSecondary = isDark ? "#9ca3af" : "#78716c";
   const rowBg = isDark ? "#000000" : "#ffffff";
@@ -164,37 +66,15 @@ export default function ManagePane({
   const dragHandleColor = isDark ? "#4b5563" : "#c4c4c6";
   const sectionHeaderColor = isDark ? "#6b7280" : "#a8a29e";
 
-  // ── Bottom sheet state ─────────────────────────────────────────
   const [templateFormVisible, setTemplateFormVisible] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<CustomProgressionTemplate | null>(null);
 
-  // ── Template form state ────────────────────────────────────────
-  const [formName, setFormName] = useState("");
-  const [formDegrees, setFormDegrees] = useState<string[]>([]);
-
   const openTemplateForm = (template: CustomProgressionTemplate | null) => {
-    if (template) {
-      setFormName(template.name);
-      setFormDegrees([...template.degrees]);
-    } else {
-      setFormName("");
-      setFormDegrees([]);
-    }
     setEditingTemplate(template);
     setTemplateFormVisible(true);
   };
 
-  const handleSaveTemplate = () => {
-    const trimmed = formName.trim();
-    if (!trimmed || formDegrees.length === 0) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    if (editingTemplate) {
-      onUpdateTemplate(editingTemplate.id, trimmed, formDegrees);
-    } else {
-      onSaveTemplate(trimmed, formDegrees);
-    }
-    setTemplateFormVisible(false);
-  };
+  useImperativeHandle(ref, () => ({ openTemplateForm }));
 
   // ── Scroll control (disable during drag) ──────────────────────
   const [scrollEnabled, setScrollEnabled] = useState(true);
@@ -248,8 +128,6 @@ export default function ManagePane({
         if (templateDragActiveRef.current) return false;
         const absX = Math.abs(gs.dx);
         const absY = Math.abs(gs.dy);
-        // Disable scroll early when horizontal intent is detected to prevent
-        // the ScrollView from stealing the gesture on slight vertical deviation
         if (absX > 5 && absX >= absY) {
           scrollViewRef.current?.setNativeProps({ scrollEnabled: false });
         }
@@ -381,7 +259,6 @@ export default function ManagePane({
     return responder;
   };
 
-  // ── Shared drag handle icon ──────────────────────────────────
   const dragHandleIcon = <Icon name="drag-handle" size={18} color={dragHandleColor} />;
 
   // ─────────────────────────────────────────────────────────────
@@ -419,15 +296,18 @@ export default function ManagePane({
         {/* ── Section: Progression Templates ──────────────────── */}
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, { color: sectionHeaderColor }]}>
-            {t("manage.progressionTemplates").toUpperCase()}
+            {t("templates.progressionTemplates").toUpperCase()}
           </Text>
-          <AddCircleButton
+          <PillButton
             isDark={isDark}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               openTemplateForm(null);
             }}
-          />
+            style={{ paddingHorizontal: 8 }}
+          >
+            <Icon name="plus" size={16} color={isDark ? "#9ca3af" : "#78716c"} />
+          </PillButton>
         </View>
 
         <View
@@ -444,7 +324,7 @@ export default function ManagePane({
           {customTemplates.length === 0 ? (
             <View style={styles.emptyRow}>
               <Text style={[styles.emptyText, { color: textSecondary }]}>
-                {t("manage.noTemplates")}
+                {t("templates.noTemplates")}
               </Text>
             </View>
           ) : (
@@ -480,7 +360,7 @@ export default function ManagePane({
                       >
                         <TouchableOpacity
                           style={{ flex: 1 }}
-                          onPress={() => openTemplateForm(tpl)}
+                          onPress={() => onShowTemplateDetail(tpl)}
                           activeOpacity={0.7}
                         >
                           <Text
@@ -490,7 +370,7 @@ export default function ManagePane({
                             {tpl.name}
                           </Text>
                           <Text style={[styles.rowSecondary, { color: textSecondary }]}>
-                            {tpl.degrees.map((d) => degreeLabel(d)).join(" - ")}
+                            {tpl.chords.map((c) => chordDisplayLabel(c)).join(" - ")}
                           </Text>
                         </TouchableOpacity>
                         <View
@@ -552,7 +432,7 @@ export default function ManagePane({
                           {floatingTpl.name}
                         </Text>
                         <Text style={[styles.rowSecondary, { color: textSecondary }]}>
-                          {floatingTpl.degrees.map((d) => degreeLabel(d)).join(" - ")}
+                          {floatingTpl.chords.map((c) => chordDisplayLabel(c)).join(" - ")}
                         </Text>
                       </View>
                       <View style={styles.dragHandle}>{dragHandleIcon}</View>
@@ -564,126 +444,25 @@ export default function ManagePane({
         </View>
       </ScrollView>
 
-      {/* ── Template Form Sheet (always mounted) ────────────────── */}
-      <BottomSheetModal visible={templateFormVisible} onClose={() => setTemplateFormVisible(false)}>
-        {({ close, dragHandlers }) => (
-          <View
-            style={[
-              styles.sheet,
-              { height: sheetHeight, backgroundColor: bg, borderColor: border },
-            ]}
-          >
-            <SheetProgressiveHeader
-              isDark={isDark}
-              bgColor={bg}
-              dragHandlers={dragHandlers}
-              style={{ paddingTop: SHEET_HANDLE_CLEARANCE }}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <GlassIconButton
-                  isDark={isDark}
-                  onPress={close}
-                  icon="close"
-                  style={{ width: 36 }}
-                />
-                <TextInput
-                  style={{
-                    flex: 1,
-                    textAlign: "center",
-                    color: textPrimary,
-                    fontSize: 16,
-                    fontWeight: "600",
-                    marginHorizontal: 8,
-                    paddingVertical: 4,
-                  }}
-                  placeholder={t("manage.templateName")}
-                  placeholderTextColor={isDark ? "#6b7280" : "#a8a29e"}
-                  value={formName}
-                  onChangeText={setFormName}
-                  maxLength={30}
-                />
-                <GlassIconButton
-                  isDark={isDark}
-                  onPress={() => {
-                    handleSaveTemplate();
-                    close();
-                  }}
-                  icon="check"
-                  disabled={!formName.trim() || formDegrees.length === 0}
-                  style={{
-                    width: 36,
-                    opacity: !formName.trim() || formDegrees.length === 0 ? 0.35 : 1,
-                  }}
-                />
-              </View>
-            </SheetProgressiveHeader>
-
-            <ScrollView
-              style={{ flex: 1 }}
-              contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 24 }}
-            >
-              {/* Degree palette — メジャー行 + マイナー行を常時表示。自由に混在可 */}
-              {(
-                [
-                  { label: t("options.diatonicKey.major"), chips: MAJOR_DEGREE_CHIPS },
-                  { label: t("options.diatonicKey.naturalMinor"), chips: MINOR_DEGREE_CHIPS },
-                ] as const
-              ).map(({ label, chips }) => (
-                <View key={label} style={{ marginTop: 14 }}>
-                  <Text style={[styles.formLabel, { color: textSecondary, marginTop: 0 }]}>
-                    {label}
-                  </Text>
-                  <View style={styles.chipsRow}>
-                    {chips.map(([deg, lbl]) => (
-                      <DegreeChip
-                        key={`${label}-${deg}`}
-                        label={lbl}
-                        variant="palette"
-                        isDark={isDark}
-                        disabled={formDegrees.length >= MAX_PROGRESSION_DEGREES}
-                        onPress={() => {
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                          setFormDegrees((prev) => [...prev, deg]);
-                        }}
-                      />
-                    ))}
-                  </View>
-                </View>
-              ))}
-
-              {/* Progression chips */}
-              <Text style={[styles.formLabel, { color: textSecondary, marginTop: 12 }]}>
-                {t("manage.progression")}
-              </Text>
-              {formDegrees.length === 0 ? (
-                <Text style={[styles.emptyText, { color: textSecondary, marginTop: 4 }]}>-</Text>
-              ) : (
-                <View style={styles.chipsRow}>
-                  {formDegrees.map((deg, i) => (
-                    <View key={`${deg}-${i}`} style={styles.progressionItem}>
-                      {i > 0 && (
-                        <Text style={[styles.progressionArrow, { color: textSecondary }]}>→</Text>
-                      )}
-                      <DegreeChip
-                        label={degreeLabel(deg)}
-                        variant="selected"
-                        isDark={isDark}
-                        onPress={() => {
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                          setFormDegrees((prev) => prev.filter((_, idx) => idx !== i));
-                        }}
-                      />
-                    </View>
-                  ))}
-                </View>
-              )}
-            </ScrollView>
-          </View>
-        )}
-      </BottomSheetModal>
+      <TemplateFormSheet
+        key={editingTemplate?.id ?? "new"}
+        visible={templateFormVisible}
+        onClose={() => setTemplateFormVisible(false)}
+        theme={theme}
+        initialTemplate={editingTemplate}
+        onSave={(name, chords) => {
+          if (editingTemplate) {
+            onUpdateTemplate(editingTemplate.id, name, chords);
+          } else {
+            onSaveTemplate(name, chords);
+          }
+        }}
+      />
     </View>
   );
-}
+});
+
+export default TemplatesPane;
 
 const styles = StyleSheet.create({
   sectionHeader: {
@@ -733,47 +512,5 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 14,
-  },
-  sheet: {
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    borderWidth: 1,
-    overflow: "hidden",
-  },
-  formLabel: {
-    fontSize: 11,
-    fontWeight: "600",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginTop: 14,
-    marginBottom: 8,
-  },
-  chipsRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  degreeChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderRadius: 16,
-    height: 32,
-    minWidth: 32,
-    paddingHorizontal: 8,
-  },
-  degreeChipText: {
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  progressionItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  progressionArrow: {
-    fontSize: 12,
-    fontWeight: "400",
   },
 });

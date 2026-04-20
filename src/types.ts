@@ -72,6 +72,11 @@ export type DegreeName =
   | "m7"
   | "M7";
 
+export interface ProgressionChord {
+  degree: string;
+  chordType: ChordType;
+}
+
 // ===== Layer system =====
 export type LayerType = "scale" | "chord" | "caged" | "custom" | "progression";
 
@@ -104,7 +109,6 @@ export interface LayerConfig {
   // Progression settings (optional for backwards compatibility with partial mocks/presets)
   progressionTemplateId?: string;
   progressionKeyType?: "major" | "minor";
-  progressionChordSize?: "triad" | "seventh";
   progressionCurrentStep?: number;
   progressionShowPrevGhost?: boolean;
   progressionShowNextGhost?: boolean;
@@ -134,7 +138,6 @@ export function createDefaultLayer(type: LayerType, id: string, color: string): 
     chordFrames: [],
     progressionTemplateId: "251",
     progressionKeyType: "major",
-    progressionChordSize: "seventh",
     progressionCurrentStep: 0,
     progressionShowPrevGhost: false,
     progressionShowNextGhost: false,

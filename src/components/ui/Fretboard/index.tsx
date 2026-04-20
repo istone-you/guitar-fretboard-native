@@ -22,7 +22,8 @@ import {
   CHORD_CAGED_ORDER,
   getRootIndex,
   PROGRESSION_TEMPLATES,
-  resolveProgressionDegree,
+  getTemplateLength,
+  resolveProgressionStep,
   type FretCell,
   type ProgressionTemplate,
 } from "../../../lib/fretboard";
@@ -430,22 +431,21 @@ export default function Fretboard({
           (t) => t.id === (layer.progressionTemplateId ?? "251"),
         );
         if (!template) return;
-        const steps = template.degrees;
+        const totalSteps = getTemplateLength(template);
         const currentStep = Math.min(
           Math.max(layer.progressionCurrentStep ?? 0, 0),
-          steps.length - 1,
+          totalSteps - 1,
         );
         const ghostColor = hexToRgba(layer.color, 0.3);
 
         const getStepCells = (stepIdx: number): FretCell[] => {
-          const degree = steps[stepIdx];
-          const chord = resolveProgressionDegree(
+          const resolved = resolveProgressionStep(
             rootIndex,
             layer.progressionKeyType ?? "major",
-            layer.progressionChordSize ?? "seventh",
-            degree,
+            template,
+            stepIdx,
           );
-          return getChordLayerCells(chord.rootIndex, "form", chord.chordType, "root", "", degree);
+          return getChordLayerCells(resolved.rootIndex, "form", resolved.chordType, "root", "", "");
         };
 
         // Ghost: previous step
@@ -457,7 +457,7 @@ export default function Fretboard({
           }
         }
         // Ghost: next step
-        if (layer.progressionShowNextGhost && currentStep < steps.length - 1) {
+        if (layer.progressionShowNextGhost && currentStep < totalSteps - 1) {
           for (const cell of getStepCells(currentStep + 1)) {
             const cellKey = `${cell.string}-${cell.fret}`;
             if (!map.has(cellKey)) map.set(cellKey, []);
@@ -575,15 +575,16 @@ export default function Fretboard({
           (t) => t.id === (layer.progressionTemplateId ?? "251"),
         );
         if (!template) continue;
+        const totalSteps = getTemplateLength(template);
         const currentStep = Math.min(
           Math.max(layer.progressionCurrentStep ?? 0, 0),
-          template.degrees.length - 1,
+          totalSteps - 1,
         );
-        const chord = resolveProgressionDegree(
+        const chord = resolveProgressionStep(
           rootIndex,
           layer.progressionKeyType ?? "major",
-          layer.progressionChordSize ?? "seventh",
-          template.degrees[currentStep],
+          template,
+          currentStep,
         );
         effRootIndex = chord.rootIndex;
         effChordType = chord.chordType;

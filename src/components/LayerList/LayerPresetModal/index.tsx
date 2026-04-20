@@ -363,7 +363,7 @@ export default function LayerPresetModal({
                 />
                 <TextInput
                   style={[styles.nameInput, { color: textPrimary }]}
-                  placeholder={t("manage.presetNameInput")}
+                  placeholder={t("templates.presetNameInput")}
                   placeholderTextColor={isDark ? "#6b7280" : "#a8a29e"}
                   value={saveName}
                   onChangeText={setSaveName}

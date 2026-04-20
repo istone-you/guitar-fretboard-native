@@ -298,20 +298,21 @@ export default function LayerEditModal({
       .map((t_) => ({ value: t_.id, label: t_.name }));
     const result: SelectOption[] = [];
     if (customs.length > 0) {
-      result.push({ value: "__custom__", label: t("manage.custom"), isSection: true }, ...customs);
+      result.push(
+        { value: "__custom__", label: t("templates.custom"), isSection: true },
+        ...customs,
+      );
     }
-    result.push({ value: "__builtin__", label: t("manage.builtIn"), isSection: true }, ...builtins);
+    result.push(
+      { value: "__builtin__", label: t("templates.builtIn"), isSection: true },
+      ...builtins,
+    );
     return result;
   })();
   const progressionKeyTypeOptions = [
     { value: "major", label: t("options.diatonicKey.major") },
     { value: "minor", label: t("options.diatonicKey.naturalMinor") },
   ];
-  const progressionChordSizeOptions = [
-    { value: "triad", label: t("options.diatonicChordSize.triad") },
-    { value: "seventh", label: t("options.diatonicChordSize.seventh") },
-  ];
-
   const diatonicScaleType = `${layer.diatonicKeyType}-${layer.diatonicChordSize}`;
 
   const diatonicCodeOptions = (DIATONIC_CHORDS[diatonicScaleType] ?? []).map(({ value }) => {
@@ -759,21 +760,6 @@ export default function LayerEditModal({
                                       currentValue: layer.progressionKeyType ?? "major",
                                       onSelect: (v) =>
                                         update({ progressionKeyType: v as "major" | "minor" }),
-                                    }),
-                                )}
-                                {renderNavRow(
-                                  t("controls.chordType"),
-                                  findLabel(
-                                    progressionChordSizeOptions,
-                                    layer.progressionChordSize ?? "seventh",
-                                  ),
-                                  () =>
-                                    navigate("select", {
-                                      title: t("controls.chordType"),
-                                      options: progressionChordSizeOptions,
-                                      currentValue: layer.progressionChordSize ?? "seventh",
-                                      onSelect: (v) =>
-                                        update({ progressionChordSize: v as "triad" | "seventh" }),
                                     }),
                                 )}
                                 {renderToggleRow(

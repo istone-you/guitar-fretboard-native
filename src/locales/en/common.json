@@ -3,7 +3,7 @@
     "layer": "Layer",
     "finder": "Finder",
     "quiz": "Quiz",
-    "manage": "Templates"
+    "templates": "Templates"
   },
   "mode": {
     "normal": "Normal",
@@ -229,7 +229,7 @@
       "5": "A two-note chord using only the root and 5th. Also known as a power chord, it's widely used in rock and punk for its simple, powerful sound.\nFormula: R, P5"
     }
   },
-  "manage": {
+  "templates": {
     "builtIn": "Built-in",
     "custom": "Custom",
     "presets": "Layer Presets",
@@ -245,7 +245,10 @@
     "presetDetail": "Preset Detail",
     "layers": "layers",
     "degrees": "Degrees",
-    "progression": "Progression"
+    "progression": "Progression",
+    "tension": "Tension",
+    "selectDegree": "Select a degree first",
+    "key": "Key"
   },
   "finder": {
     "longPressInstruction": "Long press the fretboard to select root note",
@@ -271,7 +274,11 @@
     "addToLayerAdd": "Add",
     "addToLayerClose": "Close",
     "setNotes": "Set Notes",
-    "setNotesAlreadySet": "These notes are already set on the fretboard."
+    "setNotesAlreadySet": "These notes are already set on the fretboard.",
+    "inputMode": "Input Method",
+    "inputModeFretboard": "Fretboard",
+    "inputModeChip": "Chips",
+    "chipRootInstruction": "Tap to select root note"
   },
   "stats": {
     "title": "Weak Points",

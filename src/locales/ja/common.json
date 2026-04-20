@@ -3,7 +3,7 @@
     "layer": "レイヤー",
     "finder": "Finder",
     "quiz": "クイズ",
-    "manage": "テンプレート"
+    "templates": "テンプレート"
   },
   "mode": {
     "normal": "通常",
@@ -229,7 +229,7 @@
       "5": "ルートと5度の2音だけで構成されるシンプルなコード。パワーコードとも呼ばれ、ロックやパンクで多用される力強い響きです。\n構成: R, P5"
     }
   },
-  "manage": {
+  "templates": {
     "builtIn": "ビルトイン",
     "custom": "カスタム",
     "presets": "レイヤープリセット",
@@ -245,7 +245,10 @@
     "presetDetail": "プリセット詳細",
     "layers": "レイヤー",
     "degrees": "度数",
-    "progression": "進行"
+    "progression": "進行",
+    "tension": "テンション",
+    "selectDegree": "音度を先に選んでください",
+    "key": "キー"
   },
   "finder": {
     "longPressInstruction": "指板を長押しでルート音を選択",
@@ -271,7 +274,11 @@
     "addToLayerAdd": "追加する",
     "addToLayerClose": "閉じる",
     "setNotes": "構成音をセット",
-    "setNotesAlreadySet": "この構成音はすでにセット済みです。"
+    "setNotesAlreadySet": "この構成音はすでにセット済みです。",
+    "inputMode": "入力方法",
+    "inputModeFretboard": "指板図",
+    "inputModeChip": "チップ",
+    "chipRootInstruction": "タップでルート音を選択"
   },
   "stats": {
     "title": "苦手傾向",

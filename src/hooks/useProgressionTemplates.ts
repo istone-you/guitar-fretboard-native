@@ -1,13 +1,30 @@
 import { useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import type { ProgressionChord } from "../types";
 
 const STORAGE_KEY = "guiter:progression-templates";
 
 export interface CustomProgressionTemplate {
   id: string;
   name: string;
-  degrees: string[];
+  chords: ProgressionChord[];
   createdAt: number;
+}
+
+function migrateLegacyTemplate(raw: Record<string, unknown>): CustomProgressionTemplate {
+  if (Array.isArray(raw.chords)) {
+    return raw as unknown as CustomProgressionTemplate;
+  }
+  const degrees = Array.isArray(raw.degrees) ? (raw.degrees as string[]) : [];
+  return {
+    id: String(raw.id ?? ""),
+    name: String(raw.name ?? ""),
+    createdAt: Number(raw.createdAt ?? 0),
+    chords: degrees.map((d) => ({
+      degree: d,
+      chordType: d === d.toLowerCase() ? ("Minor" as const) : ("Major" as const),
+    })),
+  };
 }
 
 export function useProgressionTemplates() {
@@ -15,7 +32,10 @@ export function useProgressionTemplates() {
     AsyncStorage.getItem(STORAGE_KEY).then((stored) => {
       if (stored) {
         try {
-          setCustomTemplates(JSON.parse(stored));
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) {
+            setCustomTemplates(parsed.map((raw) => migrateLegacyTemplate(raw)));
+          }
         } catch {
           // ignore
         }
@@ -29,15 +49,12 @@ export function useProgressionTemplates() {
     AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   };
 
-  const saveTemplate = (name: string, degrees: string[]) => {
-    persist([
-      ...customTemplates,
-      { id: `tpl-${Date.now()}`, name, degrees, createdAt: Date.now() },
-    ]);
+  const saveTemplate = (name: string, chords: ProgressionChord[]) => {
+    persist([...customTemplates, { id: `tpl-${Date.now()}`, name, chords, createdAt: Date.now() }]);
   };
 
-  const updateTemplate = (id: string, name: string, degrees: string[]) => {
-    persist(customTemplates.map((t) => (t.id === id ? { ...t, name, degrees } : t)));
+  const updateTemplate = (id: string, name: string, chords: ProgressionChord[]) => {
+    persist(customTemplates.map((t) => (t.id === id ? { ...t, name, chords } : t)));
   };
 
   const deleteTemplate = (id: string) => {

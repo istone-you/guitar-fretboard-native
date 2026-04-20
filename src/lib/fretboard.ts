@@ -5,6 +5,7 @@ import type {
   TriadChordType,
   DegreeName,
   ScaleType,
+  ProgressionChord,
 } from "../types";
 
 // 音名配列（半音12音）
@@ -2424,7 +2425,8 @@ export function calcCagedPositions(
 export interface ProgressionTemplate {
   id: string;
   name: string;
-  degrees: string[];
+  degrees?: string[];
+  chords?: ProgressionChord[];
 }
 
 /**
@@ -2488,7 +2490,49 @@ export function diatonicDegreeLabel(
  */
 export function templateDisplayName(template: ProgressionTemplate): string {
   if (template.id.startsWith("tpl-") || template.id === "blues") return template.name;
-  return template.degrees.map((d) => diatonicDegreeLabel(d)).join("-");
+  return (template.degrees ?? []).map((d) => diatonicDegreeLabel(d)).join("-");
+}
+
+export const CHROMATIC_DEGREE_OFFSETS: Record<string, number> = {
+  I: 0,
+  bII: 1,
+  II: 2,
+  bIII: 3,
+  III: 4,
+  IV: 5,
+  bV: 6,
+  V: 7,
+  bVI: 8,
+  VI: 9,
+  bVII: 10,
+  VII: 11,
+  i: 0,
+  ii: 2,
+  iii: 4,
+  iv: 5,
+  v: 7,
+  vi: 9,
+  vii: 11,
+};
+
+export function getTemplateLength(template: ProgressionTemplate): number {
+  return template.chords?.length ?? template.degrees?.length ?? 0;
+}
+
+export function resolveProgressionStep(
+  keyRootIndex: number,
+  keyType: "major" | "minor",
+  template: ProgressionTemplate,
+  stepIdx: number,
+): { rootIndex: number; chordType: ChordType } {
+  if (template.chords) {
+    const chord = template.chords[stepIdx];
+    if (!chord) return { rootIndex: keyRootIndex, chordType: "Major" };
+    const offset = CHROMATIC_DEGREE_OFFSETS[chord.degree] ?? 0;
+    return { rootIndex: (keyRootIndex + offset) % 12, chordType: chord.chordType };
+  }
+  const degree = (template.degrees ?? [])[stepIdx] ?? "I";
+  return resolveProgressionDegree(keyRootIndex, keyType, "triad", degree);
 }
 
 export const PROGRESSION_TEMPLATES: ProgressionTemplate[] = [

@@ -23,6 +23,7 @@ import NormalFretboard from "../../components/NormalFretboard";
 import { identifyChords, type ChordMatch } from "../../lib/chordFinder";
 import { identifyScales, scaleI18nKey, type ScaleMatch } from "../../lib/scaleFinder";
 import { createDefaultLayer, pickNextLayerColor, MAX_LAYERS } from "../../types";
+import { getNotesByAccidental } from "../../lib/fretboard";
 import type {
   Accidental,
   BaseLabelMode,
@@ -36,6 +37,7 @@ import LayerDescription from "../../components/LayerEditModal/LayerDescription";
 import ColorPicker from "../../components/ui/ColorPicker";
 import { SegmentedToggle } from "../../components/ui/SegmentedToggle";
 import PillButton from "../../components/ui/PillButton";
+import NotePill from "../../components/ui/NotePill";
 import { getColors } from "../../themes/tokens";
 
 type FinderItem = { kind: "chord"; match: ChordMatch } | { kind: "scale"; match: ScaleMatch };
@@ -99,6 +101,12 @@ export default function FinderPane({
     true,
     (v) => String(v),
     (v) => v === "true",
+  );
+  const [inputMode, setInputMode] = usePersistedSetting<"fretboard" | "chip">(
+    "guiter:finder-input-mode",
+    "fretboard",
+    (v) => v,
+    (v) => (v === "chip" ? "chip" : "fretboard"),
   );
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [pendingItem, setPendingItem] = useState<FinderItem | null>(null);
@@ -231,13 +239,15 @@ export default function FinderPane({
 
   const handleConfirmAdd = () => {
     if (!pendingItem) return;
+    const usedColors = new Set(layers.map((l) => l.color));
+    const colorToUse = !usedColors.has(dotColor) ? dotColor : pickNextLayerColor(layers);
     let newLayer: LayerConfig;
     if (pendingItem.kind === "chord") {
-      newLayer = createDefaultLayer("chord", `layer-${Date.now()}`, pickNextLayerColor(layers));
+      newLayer = createDefaultLayer("chord", `layer-${Date.now()}`, colorToUse);
       newLayer.chordDisplayMode = "form";
       newLayer.chordType = pendingItem.match.chordType as ChordType;
     } else {
-      newLayer = createDefaultLayer("scale", `layer-${Date.now()}`, pickNextLayerColor(layers));
+      newLayer = createDefaultLayer("scale", `layer-${Date.now()}`, colorToUse);
       newLayer.scaleType = pendingItem.match.scaleType as ScaleType;
     }
     setPendingItem(null);
@@ -325,28 +335,62 @@ export default function FinderPane({
         </PillButton>
       </View>
 
-      {/* Fretboard */}
-      <View style={styles.fretboardWrapper}>
-        <NormalFretboard
-          theme={theme}
-          accidental={accidental}
-          baseLabelMode={rootNote ? baseLabelMode : "note"}
-          fretRange={fretRange}
-          rootNote={rootNote ?? lastRootNoteRef.current}
-          layers={finderLayers}
-          leftHanded={leftHanded}
-          disableAnimation={false}
-          onNoteClick={handleNoteToggle}
-          onNoteLongPress={handleRootSet}
-        />
-      </View>
+      {/* Fretboard or Chip Input */}
+      {inputMode === "fretboard" ? (
+        <View style={styles.fretboardWrapper}>
+          <NormalFretboard
+            theme={theme}
+            accidental={accidental}
+            baseLabelMode={rootNote ? baseLabelMode : "note"}
+            fretRange={fretRange}
+            rootNote={rootNote ?? lastRootNoteRef.current}
+            layers={finderLayers}
+            leftHanded={leftHanded}
+            disableAnimation={false}
+            onNoteClick={handleNoteToggle}
+            onNoteLongPress={handleRootSet}
+          />
+        </View>
+      ) : (
+        <View style={styles.chipInputWrapper}>
+          <View style={styles.chipNoteGrid}>
+            {getNotesByAccidental(accidental).map((note) => {
+              const isSelected = note === rootNote || extraNotes.has(note);
+              return (
+                <NotePill
+                  key={note}
+                  label={note}
+                  selected={isSelected}
+                  activeBg={accentColor}
+                  activeText="#fff"
+                  inactiveBg={isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"}
+                  inactiveText={textColor}
+                  onPress={() => {
+                    if (!rootNote) {
+                      handleRootSet(note);
+                    } else if (note !== rootNote) {
+                      handleNoteToggle(note);
+                    }
+                  }}
+                />
+              );
+            })}
+          </View>
+        </View>
+      )}
 
       {/* Selected notes chips + reset button + settings */}
       <View style={[styles.selectedRow, { borderBottomColor: borderColor }]}>
         {/* 説明文: absoluteで行全体に中央寄せ（チップやボタンの後ろに表示） */}
         {(!rootNote || extraNotes.size === 0) && (
           <Text pointerEvents="none" style={[styles.placeholder, { color: subTextColor }]}>
-            {t(rootNote ? "finder.tapInstruction" : "finder.longPressInstruction")}
+            {t(
+              rootNote
+                ? "finder.tapInstruction"
+                : inputMode === "chip"
+                  ? "finder.chipRootInstruction"
+                  : "finder.longPressInstruction",
+            )}
           </Text>
         )}
 
@@ -411,6 +455,25 @@ export default function FinderPane({
                   indicatorStyle={isDark ? "white" : "black"}
                 >
                   <View style={styles.settingsBody}>
+                    {/* Input Mode */}
+                    <View style={[styles.iosSection, { borderColor: sheetBorder }]}>
+                      <View style={[styles.iosRow]}>
+                        <Text style={[styles.iosRowLabel, { color: labelColor }]}>
+                          {t("finder.inputMode")}
+                        </Text>
+                        <SegmentedToggle
+                          theme={theme}
+                          value={inputMode}
+                          onChange={setInputMode}
+                          options={[
+                            { value: "fretboard" as const, label: t("finder.inputModeFretboard") },
+                            { value: "chip" as const, label: t("finder.inputModeChip") },
+                          ]}
+                          size="compact"
+                          segmentWidth={72}
+                        />
+                      </View>
+                    </View>
                     {/* Color */}
                     <View style={[styles.iosSection, { borderColor: sheetBorder }]}>
                       <View
@@ -579,6 +642,17 @@ const styles = StyleSheet.create({
   },
   fretboardWrapper: {
     paddingVertical: 8,
+  },
+  chipInputWrapper: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 8,
+  },
+  chipNoteGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    justifyContent: "center",
   },
   labelToggleRow: {
     flexDirection: "row",

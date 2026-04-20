@@ -21,12 +21,13 @@ import { MAX_LAYERS, pickNextLayerColor } from "../../types";
 import { getColors, radius } from "../../themes/tokens";
 import {
   PROGRESSION_TEMPLATES,
-  resolveProgressionDegree,
   getNotesByAccidental,
   getRootIndex,
   chordSuffix,
   diatonicDegreeLabel,
   templateDisplayName,
+  getTemplateLength,
+  resolveProgressionStep,
 } from "../../lib/fretboard";
 import LayerEditModal from "../LayerEditModal";
 import LayerPresetModal from "./LayerPresetModal";
@@ -183,7 +184,7 @@ function ContextMenu({
             activeOpacity={0.7}
           >
             <Text style={[menuStyles.label, { color: labelColor }]}>{t("layers.edit")}</Text>
-            <Icon name="edit" size={18} color={iconStroke} />
+            <Icon name="settings" size={18} color={iconStroke} />
           </TouchableOpacity>
           <View style={[menuStyles.divider, { backgroundColor: dividerColor }]} />
           <TouchableOpacity
@@ -669,17 +670,9 @@ export default function LayerList({
       const progKeyType = layer.progressionKeyType ?? "major";
       const notes = getNotesByAccidental(accidental);
       const keyRootIdx = getRootIndex(rootNote);
-      const step = Math.min(
-        Math.max(layer.progressionCurrentStep ?? 0, 0),
-        template.degrees.length - 1,
-      );
-      const degree = template.degrees[step];
-      const chord = resolveProgressionDegree(
-        keyRootIdx,
-        progKeyType,
-        layer.progressionChordSize ?? "seventh",
-        degree,
-      );
+      const totalLen = getTemplateLength(template);
+      const step = Math.min(Math.max(layer.progressionCurrentStep ?? 0, 0), totalLen - 1);
+      const chord = resolveProgressionStep(keyRootIdx, progKeyType, template, step);
       const chordName = `${notes[chord.rootIndex]}${chordSuffix(chord.chordType)}`;
       return `${templateDisplayName(template)}  ${chordName}`;
     }
@@ -897,7 +890,7 @@ export default function LayerList({
                           const template = (progressionTemplates ?? PROGRESSION_TEMPLATES).find(
                             (tp) => tp.id === slot.progressionTemplateId,
                           );
-                          const totalSteps = template?.degrees.length ?? 1;
+                          const totalSteps = template ? getTemplateLength(template) : 1;
                           const currentStep = slot.progressionCurrentStep ?? 0;
                           const iconColor = isDark ? "#6b7280" : "#a8a29e";
                           return (
