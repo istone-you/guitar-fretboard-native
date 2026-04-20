@@ -183,12 +183,14 @@ export const CHORD_TYPES_CORE: ChordType[] = [
   "m(maj7)",
   "sus2",
   "sus4",
+  "7sus4",
   "6",
   "m6",
   "9",
   "b9",
   "#9",
   "add9",
+  "m(add9)",
   "11",
   "#11",
   "add11",
@@ -324,6 +326,22 @@ export const CHORD_FORMS_6TH: Partial<Record<ChordType, FretPosition[]>> = {
     { string: 3, fretOffset: 2 },
     { string: 4, fretOffset: 0 },
     { string: 5, fretOffset: 0 },
+  ],
+  "7sus4": [
+    { string: 0, fretOffset: 0 }, // R
+    { string: 1, fretOffset: 2 }, // P5
+    { string: 2, fretOffset: 0 }, // m7
+    { string: 3, fretOffset: 2 }, // P4
+    { string: 4, fretOffset: 0 }, // P5
+    { string: 5, fretOffset: 0 }, // R
+  ],
+  "m(add9)": [
+    { string: 0, fretOffset: 0 }, // R
+    { string: 1, fretOffset: 2 }, // P5
+    { string: 2, fretOffset: 2 }, // R (octave)
+    { string: 3, fretOffset: 0 }, // m3
+    { string: 4, fretOffset: 0 }, // P5
+    { string: 5, fretOffset: 2 }, // M2
   ],
   "6": [
     { string: 0, fretOffset: 0 },
@@ -560,6 +578,19 @@ export const CHORD_FORMS_5TH: Partial<Record<ChordType, FretPosition[]>> = {
     { string: 3, fretOffset: 2 },
     { string: 4, fretOffset: 3 },
     { string: 5, fretOffset: 0 },
+  ],
+  "7sus4": [
+    { string: 1, fretOffset: 0 }, // R
+    { string: 2, fretOffset: 2 }, // P5
+    { string: 3, fretOffset: 0 }, // m7
+    { string: 4, fretOffset: 3 }, // P4
+    { string: 5, fretOffset: 3 }, // m7
+  ],
+  "m(add9)": [
+    { string: 1, fretOffset: 0 }, // R
+    { string: 2, fretOffset: -2 }, // m3
+    { string: 4, fretOffset: 0 }, // M2
+    { string: 5, fretOffset: 0 }, // P5
   ],
   "6": [
     { string: 1, fretOffset: 0 },
@@ -1668,6 +1699,8 @@ export const CHORD_SEMITONES: Record<string, Set<number>> = {
   m13: new Set([0, 3, 7, 10, 2, 9]), // R, m3, P5, m7, M9, M13
   "6/9": new Set([0, 4, 7, 9, 2]), // R, M3, P5, M6, M9
   "m6/9": new Set([0, 3, 7, 9, 2]), // R, m3, P5, M6, M9
+  "7sus4": new Set([0, 5, 7, 10]), // R, P4, P5, m7
+  "m(add9)": new Set([0, 2, 3, 7]), // R, M2, m3, P5
 };
 
 interface ActiveOverlaySemitoneParams {
@@ -2643,6 +2676,8 @@ export const CHORD_SUFFIX_MAP: Record<ChordType, string> = {
   m13: "m13",
   "6/9": "6/9",
   "m6/9": "m6/9",
+  "7sus4": "7sus4",
+  "m(add9)": "m(add9)",
 };
 
 export function chordSuffix(chordType: ChordType): string {

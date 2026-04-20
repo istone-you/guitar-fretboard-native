@@ -40,7 +40,7 @@
 
 表示形式:
 - **コードフォーム**: 6弦/5弦ルートのバレーコード + オープンコードを枠付きで表示
-  - 対応: Major, Minor, 5, 7th, maj7, m7, m7(b5), dim7, m(maj7), sus2, sus4, 6, m6, dim, aug, 9, b9, #9, maj9, m9, add9, 7(b9), 7(#9), 11, #11, add11, add#11, m11, 13, b13, maj13, m13, 6/9, m6/9
+  - 対応: Major, Minor, 5, 7th, maj7, m7, m7(b5), dim7, m(maj7), sus2, sus4, 7sus4, 6, m6, dim, aug, 9, b9, #9, maj9, m9, add9, m(add9), 7(b9), 7(#9), 11, #11, add11, add#11, m11, 13, b13, maj13, m13, 6/9, m6/9
   - コード枠の表示/非表示切り替え
 - **トライアド**: 3弦セット（1-3弦, 2-4弦, 3-5弦, 4-6弦）×転回形（基本/第一/第二）
   - 対応: Major, Minor, Diminished, Augmented

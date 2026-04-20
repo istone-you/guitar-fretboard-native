@@ -15,6 +15,7 @@ const CHORD_KEY_MAP: Record<string, string> = {
   "#9": "sharp9",
   "#11": "sharp11",
   "add#11": "addSharp11",
+  "m(add9)": "madd9",
 };
 
 /** Map ScaleType kebab-case to camelCase i18n keys */

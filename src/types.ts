@@ -56,7 +56,9 @@ export type ChordType =
   | "maj13"
   | "m13"
   | "6/9"
-  | "m6/9";
+  | "m6/9"
+  | "7sus4"
+  | "m(add9)";
 export type TriadChordType = "Major" | "Minor" | "Diminished" | "Augmented";
 export type DegreeName =
   | "P1"
@@ -136,7 +138,7 @@ export function createDefaultLayer(type: LayerType, id: string, color: string): 
   };
 }
 
-export const DEFAULT_LAYER_COLORS = ["#ff69b6", "#40e0d0", "#ffd700", "#7c3aed"];
+export const DEFAULT_LAYER_COLORS = ["#ff69b6", "#40e0d0", "#ffd700", "#a78bfa"];
 
 export function pickNextLayerColor(currentLayers: LayerConfig[]): string {
   const usedColors = new Set(currentLayers.map((l) => l.color));
@@ -155,7 +157,7 @@ export const COLOR_PRESETS = [
   "#40e0d0",
   "#00bfff",
   "#0ea5e9",
-  "#7c3aed",
+  "#a78bfa",
   "#ff69b6",
 ];
 
