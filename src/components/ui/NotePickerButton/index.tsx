@@ -4,7 +4,7 @@ import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 import type { Accidental, Theme } from "../../../types";
 import { getNotesByAccidental } from "../../../lib/fretboard";
-import { getColors, radius, WHITE, BLACK, TOGGLE_COLORS } from "../../../themes/design";
+import { getColors, radius, TOGGLE_COLORS } from "../../../themes/design";
 import { getPillStyle } from "../PillButton";
 import BottomSheetModal, { SHEET_HANDLE_CLEARANCE, useSheetHeight } from "../BottomSheetModal";
 import SheetProgressiveHeader from "../SheetProgressiveHeader";
@@ -42,9 +42,6 @@ export default function NotePickerButton({
   const colors = getColors(isDark);
   const bgColor = colors.surface;
   const notes = getNotesByAccidental(accidental);
-  const chipSelectedBg = isDark ? WHITE : BLACK;
-  const chipSelectedText = isDark ? BLACK : WHITE;
-  const chipUnselectedBg = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)";
 
   const scale = useRef(new Animated.Value(1)).current;
   const prevValue = useRef(value);
@@ -116,9 +113,9 @@ export default function NotePickerButton({
                   key={note}
                   label={note}
                   selected={note === value}
-                  activeBg={chipSelectedBg}
-                  activeText={chipSelectedText}
-                  inactiveBg={chipUnselectedBg}
+                  activeBg={colors.chipSelectedBg}
+                  activeText={colors.chipSelectedText}
+                  inactiveBg={colors.chipUnselectedBg}
                   inactiveText={colors.text}
                   onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);

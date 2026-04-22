@@ -34,7 +34,7 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 import type { Theme, Accidental, BaseLabelMode, LayerConfig } from "../../../types";
-import { getColors, WHITE, BLACK, SEMANTIC_COLORS } from "../../../themes/design";
+import { getColors, WHITE, BLACK, SEMANTIC_COLORS, ON_ACCENT } from "../../../themes/design";
 import { MAX_LAYERS } from "../../../types";
 
 const STRING_COUNT = 6;
@@ -95,7 +95,7 @@ function ScaleAnimView({
     ? {
         backgroundColor: lastColor.current,
         borderWidth: 1.5,
-        borderColor: "rgba(0,0,0,0.15)",
+        borderColor: ON_ACCENT.dotBorder,
       }
     : {};
 
@@ -902,9 +902,11 @@ const StringRow = memo(function StringRow({
   onNoteLongPress,
 }: StringRowProps) {
   const isDark = theme === "dark";
-  const stringColor = isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.09)";
-  const fretLineColor = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)";
-  const nutColor = isDark ? "#9a9a9a" : "#7a7a7a";
+  const {
+    fretString: stringColor,
+    fretLine: fretLineColor,
+    fretNutGray: nutColor,
+  } = getColors(isDark);
   const NOTES = getNotesByAccidental(accidental);
   const shouldSuppressRegularDisplay = suppressRegularDisplay || quizActive || quizAnswerMode;
 
@@ -1001,7 +1003,7 @@ const StringRow = memo(function StringRow({
                 <Text
                   style={{
                     fontSize: size.baseFontSize,
-                    color: isDark ? "#9a9a9a" : "#7a7a7a",
+                    color: getColors(isDark).fretNutGray,
                     fontWeight: "400",
                   }}
                 >
@@ -1053,7 +1055,7 @@ const StringRow = memo(function StringRow({
                   borderRadius: overlaySize / 2,
                   backgroundColor: quizColor ?? getColors(isDark).textStrong,
                   borderWidth: 1.5,
-                  borderColor: "rgba(0,0,0,0.15)",
+                  borderColor: ON_ACCENT.dotBorder,
                   alignItems: "center",
                   justifyContent: "center",
                   zIndex: 30,

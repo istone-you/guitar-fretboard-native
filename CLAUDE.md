@@ -223,6 +223,14 @@ bun run test
 - テストファイルは対象ファイルと同じディレクトリ内の `__tests__/` に配置すること。
 - `jest.mock()` のパスはテストファイルからの相対パスで解決されることに注意すること（ソースファイルからではない）。
 
+### 色の定義について
+
+色値（HEX・rgba・rgb）はコンポーネント内にインラインで書かず、必ず `src/themes/design.ts` で定義すること。
+
+- テーマに応じて変わる色（ライト/ダーク）は `lightPalette` / `darkPalette` にトークンとして追加し、`ThemeColors` 型にも追記する。`getColors(isDark).tokenName` で参照すること。
+- テーマに関わらず固定の色（オーバーレイ・セマンティック色など）は `design.ts` 内の対応するエクスポート定数（`OVERLAY_COLORS`・`ON_ACCENT`・`WHITE`・`BLACK` 等）に追加すること。
+- 例外は動的計算（`rgba(${r},${g},${b},...)` のような関数内生成）とテストの期待値アサーションのみ。
+
 ### useEffect の使用について
 
 `useEffect` を使う場合は https://zenn.dev/begineer/articles/8a0696fda04c09 のチェックリストに該当するかどうかを確認すること。該当しない場合は使わないこと。

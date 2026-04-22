@@ -15,7 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 import "../../i18n";
-import { getColors, SEMANTIC_COLORS } from "../../themes/design";
+import { getColors, SEMANTIC_COLORS, DEFAULT_LAYER_COLORS } from "../../themes/design";
 import Icon from "../../components/ui/Icon";
 import PillButton from "../../components/ui/PillButton";
 import SceneHeader from "../../components/AppHeader/SceneHeader";
@@ -435,7 +435,9 @@ const TemplatesPane = forwardRef<TemplatesPaneHandle, TemplatesPaneProps>(functi
                               styles.row,
                               {
                                 backgroundColor: colors.pageBg,
-                                borderColor: isHoverTarget ? "#ff69b6" : colors.border2,
+                                borderColor: isHoverTarget
+                                  ? DEFAULT_LAYER_COLORS[0]
+                                  : colors.border2,
                                 transform: [{ translateX: getTemplateSwipeX(tpl.id) }],
                               },
                             ]}
@@ -471,10 +473,8 @@ const TemplatesPane = forwardRef<TemplatesPaneHandle, TemplatesPaneProps>(functi
                               {
                                 borderWidth: 1,
                                 borderRadius: ROW_RADIUS,
-                                borderColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.07)",
-                                backgroundColor: isDark
-                                  ? "rgba(255,255,255,0.05)"
-                                  : "rgba(0,0,0,0.03)",
+                                borderColor: colors.dragPlaceholderBorder,
+                                backgroundColor: colors.dragPlaceholderBg,
                               },
                             ]}
                             pointerEvents="none"

@@ -3,7 +3,7 @@ import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 import "../../../i18n";
 import type { Theme, ChordType, QuizQuestion } from "../../../types";
-import { getColors, SEMANTIC_COLORS, WHITE } from "../../../themes/design";
+import { getColors, SEMANTIC_COLORS, WHITE, ON_ACCENT } from "../../../themes/design";
 import BounceButton from "../BounceButton";
 
 interface DiatonicPanelProps {
@@ -100,7 +100,7 @@ export default function DiatonicPanel({
                   <Text style={{ fontSize: 14, color: colors.borderStrong }}>--</Text>
                 )}
                 {answered && (
-                  <Text style={{ fontSize: 14, color: "rgba(255,255,255,0.8)" }}>
+                  <Text style={{ fontSize: 14, color: ON_ACCENT.text }}>
                     {entry.root}
                     {entry.chordType === "Major"
                       ? ""

@@ -208,8 +208,11 @@ function HeatmapGrid({
 }) {
   const CELL = 20;
   const LABEL_W = 32;
-  const { textSubtle: textColor, progressTrack: emptyBorder } = getColors(isDark);
-  const noDataBg = isDark ? "rgba(107,114,128,0.3)" : "rgba(156,163,175,0.3)";
+  const {
+    textSubtle: textColor,
+    progressTrack: emptyBorder,
+    heatmapEmpty: noDataBg,
+  } = getColors(isDark);
 
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} testID="heatmap-grid">

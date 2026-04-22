@@ -25,6 +25,7 @@ import {
   SEMANTIC_COLORS,
   WHITE,
   BLACK,
+  OVERLAY_COLORS,
 } from "../../themes/design";
 import {
   PROGRESSION_TEMPLATES,
@@ -73,7 +74,7 @@ function LayerCheckbox({
       useNativeDriver: true,
     }).start();
   }
-  const borderColor = isDark ? "rgba(255,255,255,0.28)" : "rgba(0,0,0,0.22)";
+  const borderColor = getColors(isDark).layerCheckboxBorder;
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -156,16 +157,16 @@ function ContextMenu({
 
   if (!visible) return null;
 
-  const menuBg = isDark ? "rgba(38,38,40,0.98)" : "rgba(255,255,255,0.98)";
+  const menuBg = getColors(isDark).contextMenuBg;
   const labelColor = isDark ? WHITE : BLACK;
-  const dividerColor = isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.1)";
-  const iconStroke = isDark ? "#ebebf599" : "#3c3c4399";
+  const dividerColor = getColors(isDark).contextMenuDivider;
+  const iconStroke = getColors(isDark).contextMenuIconStroke;
 
   return (
     <Modal visible transparent animationType="none" statusBarTranslucent>
       <TouchableWithoutFeedback onPress={() => dismiss()}>
         <Animated.View
-          style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(0,0,0,0.25)", opacity }]}
+          style={[StyleSheet.absoluteFill, { backgroundColor: OVERLAY_COLORS.dim, opacity }]}
         />
       </TouchableWithoutFeedback>
       <View style={menuStyles.positioner} pointerEvents="box-none">
@@ -975,8 +976,8 @@ export default function LayerList({
                         {
                           borderWidth: 1,
                           borderRadius: ROW_RADIUS,
-                          borderColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.07)",
-                          backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)",
+                          borderColor: getColors(isDark).dragPlaceholderBorder,
+                          backgroundColor: getColors(isDark).dragPlaceholderBg,
                         },
                       ]}
                       pointerEvents="none"

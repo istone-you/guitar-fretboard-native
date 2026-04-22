@@ -1,4 +1,5 @@
 import { useCallback, useRef } from "react";
+import { OVERLAY_COLORS } from "../../../themes/design";
 import {
   Animated,
   Dimensions,
@@ -233,7 +234,7 @@ export default function BottomSheetModal({ visible, onClose, children }: BottomS
         <Animated.View
           style={[
             StyleSheet.absoluteFill,
-            { opacity: overlayOpacity, backgroundColor: "rgba(0,0,0,0.45)" },
+            { opacity: overlayOpacity, backgroundColor: OVERLAY_COLORS.sheet },
           ]}
         >
           <Pressable
@@ -280,6 +281,6 @@ const styles = StyleSheet.create({
     width: 36,
     height: 5,
     borderRadius: 2.5,
-    backgroundColor: "rgba(128, 128, 128, 0.45)",
+    backgroundColor: OVERLAY_COLORS.handle,
   },
 });

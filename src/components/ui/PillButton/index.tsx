@@ -18,8 +18,8 @@ export function getPillStyle(colors: ThemeColors): ViewStyle {
 
 function getDangerStyle(isDark: boolean): ViewStyle {
   return {
-    borderColor: isDark ? "rgba(239,68,68,0.3)" : "rgba(239,68,68,0.25)",
-    backgroundColor: isDark ? "rgba(239,68,68,0.08)" : "rgba(254,226,226,0.7)",
+    borderColor: getColors(isDark).pillDangerBorder,
+    backgroundColor: getColors(isDark).pillDangerBg,
   };
 }
 

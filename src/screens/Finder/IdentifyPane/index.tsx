@@ -24,7 +24,15 @@ import NormalFretboard from "../../../components/NormalFretboard";
 import { identifyChords, type ChordMatch } from "../../../lib/chordFinder";
 import { identifyScales, scaleI18nKey, type ScaleMatch } from "../../../lib/scaleFinder";
 import { createDefaultLayer, MAX_LAYERS } from "../../../types";
-import { pickNextLayerColor, getColors, TOGGLE_COLORS } from "../../../themes/design";
+import {
+  pickNextLayerColor,
+  getColors,
+  TOGGLE_COLORS,
+  WHITE,
+  BLACK,
+  DEFAULT_LAYER_COLORS,
+  ON_ACCENT,
+} from "../../../themes/design";
 import { getNotesByAccidental } from "../../../lib/fretboard";
 import type {
   Accidental,
@@ -99,7 +107,7 @@ export default function IdentifyPane({
   );
   const [dotColor, setDotColor] = usePersistedSetting(
     "guiter:finder-dot-color",
-    "#ff69b6",
+    DEFAULT_LAYER_COLORS[0],
     (v) => v,
     (v) => v,
   );
@@ -349,8 +357,8 @@ export default function IdentifyPane({
                   label={note}
                   selected={isSelected}
                   activeBg={accentColor}
-                  activeText="#fff"
-                  inactiveBg={isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"}
+                  activeText={WHITE}
+                  inactiveBg={colors.chipUnselectedBg}
                   inactiveText={textColor}
                   onPress={() => {
                     if (!rootNote) {
@@ -568,12 +576,12 @@ export default function IdentifyPane({
         const descLayer: LayerConfig | null = (() => {
           if (!pendingItem) return null;
           if (pendingItem.kind === "chord") {
-            const layer = createDefaultLayer("chord", "finder-desc", "#000");
+            const layer = createDefaultLayer("chord", "finder-desc", BLACK);
             layer.chordDisplayMode = "form";
             layer.chordType = pendingItem.match.chordType as ChordType;
             return layer;
           } else {
-            const layer = createDefaultLayer("scale", "finder-desc", "#000");
+            const layer = createDefaultLayer("scale", "finder-desc", BLACK);
             layer.scaleType = pendingItem.match.scaleType as ScaleType;
             return layer;
           }
@@ -692,7 +700,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginRight: 6,
     borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.5)",
+    borderColor: ON_ACCENT.chipBorder,
   },
   chip: {
     paddingHorizontal: 10,
@@ -701,7 +709,7 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   chipText: {
-    color: "#ffffff",
+    color: WHITE,
     fontSize: 13,
     fontWeight: "600",
   },

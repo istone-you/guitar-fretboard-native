@@ -32,6 +32,7 @@ import BottomSheetModal, { SHEET_HANDLE_CLEARANCE, useSheetHeight } from "../ui/
 import GlassIconButton from "../ui/GlassIconButton";
 import SheetProgressiveHeader from "../ui/SheetProgressiveHeader";
 import PillButton from "../ui/PillButton";
+import NoteSelectPage from "../ui/NoteSelectPage";
 import { getColors, TOGGLE_COLORS, WHITE, BLACK } from "../../themes/design";
 import {
   CHORD_CAGED_ORDER,
@@ -153,9 +154,9 @@ export default function LayerEditModal({
   const { width: winWidth } = useWindowDimensions();
   const sheetHeight = useSheetHeight();
 
-  const [step, setStep] = useState<"settings" | "color" | "chips" | "select" | "caged">(
-    initialLayer ? "settings" : "select",
-  );
+  const [step, setStep] = useState<
+    "settings" | "color" | "chips" | "select" | "caged" | "noteSelect"
+  >(initialLayer ? "settings" : "select");
   const [layer, setLayer] = useState<LayerConfig>(
     initialLayer ?? createDefaultLayer("scale", `layer-${Date.now()}`, defaultColor),
   );
@@ -239,7 +240,7 @@ export default function LayerEditModal({
 
   // Navigate forward: new page slides in from right
   const navigate = (
-    target: "settings" | "color" | "chips" | "select" | "caged",
+    target: "settings" | "color" | "chips" | "select" | "caged" | "noteSelect",
     context?: SelectContext,
   ) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -443,7 +444,7 @@ export default function LayerEditModal({
                               t("layers.layerRoot"),
                               layer.layerRoot ?? rootNote,
                               () =>
-                                navigate("select", {
+                                navigate("noteSelect", {
                                   title: t("layers.layerRoot"),
                                   options: notes.map((n) => ({ value: n, label: n })),
                                   currentValue: layer.layerRoot ?? rootNote,
@@ -715,9 +716,7 @@ export default function LayerEditModal({
                                   backgroundColor: layer.color,
                                   marginRight: 4,
                                   borderWidth: 1,
-                                  borderColor: isDark
-                                    ? "rgba(255,255,255,0.15)"
-                                    : "rgba(0,0,0,0.12)",
+                                  borderColor: colors.colorSwatchBorder,
                                 }}
                               />
                               <ChevronIcon size={12} color={chevronColor} direction="right" />
@@ -1161,6 +1160,22 @@ export default function LayerEditModal({
                       )
                     )}
                   </View>
+                )}
+
+                {step === "noteSelect" && selectContextRef.current && (
+                  <NoteSelectPage
+                    theme={theme}
+                    bgColor={bgColor}
+                    title={selectContextRef.current.title}
+                    notes={notes}
+                    selectedNote={selectContextRef.current.currentValue}
+                    onSelect={(note) => {
+                      selectContextRef.current!.onSelect(note);
+                      selectContextRef.current!.currentValue = note;
+                    }}
+                    onBack={navigateBack}
+                    dragHandlers={dragHandlers}
+                  />
                 )}
               </Animated.View>
             </View>

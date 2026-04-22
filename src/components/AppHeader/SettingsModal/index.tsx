@@ -8,7 +8,7 @@ import SlideToggle from "../../ui/SlideToggle";
 import GlassIconButton from "../../ui/GlassIconButton";
 import SheetProgressiveHeader from "../../ui/SheetProgressiveHeader";
 import RangeSlider from "./RangeSlider";
-import { getColors, radius } from "../../../themes/design";
+import { getColors, radius, SURFACE_DIVIDER } from "../../../themes/design";
 import BottomSheetModal, { SHEET_HANDLE_CLEARANCE } from "../../ui/BottomSheetModal";
 
 export interface SettingsModalRef {
@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "rgba(128,128,128,0.2)",
+    borderBottomColor: SURFACE_DIVIDER,
   },
   label: {
     fontSize: 14,

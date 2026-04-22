@@ -34,6 +34,37 @@ const lightPalette = {
   sliderTrackEmpty: "rgba(0,0,0,0.13)",
   fretNut: "#78716c",
   sheetBorder: "#e7e5e4",
+  chipSelectedBg: "#000000",
+  chipSelectedText: "#ffffff",
+  chipUnselectedBg: "rgba(0,0,0,0.06)",
+
+  // ContextMenu
+  contextMenuBg: "rgba(255,255,255,0.98)",
+  contextMenuDivider: "rgba(0,0,0,0.1)",
+  contextMenuIconStroke: "#3c3c4399",
+
+  // Layer list
+  layerCheckboxBorder: "rgba(0,0,0,0.22)",
+  dragPlaceholderBorder: "rgba(0,0,0,0.07)",
+  dragPlaceholderBg: "rgba(0,0,0,0.03)",
+
+  // PillButton danger
+  pillDangerBorder: "rgba(239,68,68,0.25)",
+  pillDangerBg: "rgba(254,226,226,0.7)",
+
+  // Color swatch
+  colorSwatchBorder: "rgba(0,0,0,0.12)",
+
+  // Fretboard
+  fretString: "rgba(0,0,0,0.09)",
+  fretLine: "rgba(0,0,0,0.05)",
+  fretNutGray: "#7a7a7a",
+
+  // Glass button
+  glassIconColor: "rgba(0,0,0,0.5)",
+
+  // Stats heatmap
+  heatmapEmpty: "rgba(156,163,175,0.3)",
 } as const;
 
 const darkPalette = {
@@ -68,6 +99,37 @@ const darkPalette = {
   sliderTrackEmpty: "rgba(255,255,255,0.18)",
   fretNut: "#d1d5db",
   sheetBorder: "rgba(255,255,255,0.08)",
+  chipSelectedBg: "#ffffff",
+  chipSelectedText: "#000000",
+  chipUnselectedBg: "rgba(255,255,255,0.08)",
+
+  // ContextMenu
+  contextMenuBg: "rgba(38,38,40,0.98)",
+  contextMenuDivider: "rgba(255,255,255,0.12)",
+  contextMenuIconStroke: "#ebebf599",
+
+  // Layer list
+  layerCheckboxBorder: "rgba(255,255,255,0.28)",
+  dragPlaceholderBorder: "rgba(255,255,255,0.06)",
+  dragPlaceholderBg: "rgba(255,255,255,0.05)",
+
+  // PillButton danger
+  pillDangerBorder: "rgba(239,68,68,0.3)",
+  pillDangerBg: "rgba(239,68,68,0.08)",
+
+  // Color swatch
+  colorSwatchBorder: "rgba(255,255,255,0.15)",
+
+  // Fretboard
+  fretString: "rgba(255,255,255,0.12)",
+  fretLine: "rgba(255,255,255,0.06)",
+  fretNutGray: "#9a9a9a",
+
+  // Glass button
+  glassIconColor: "rgba(255,255,255,0.85)",
+
+  // Stats heatmap
+  heatmapEmpty: "rgba(107,114,128,0.3)",
 } as const;
 
 export type ThemeColors = {
@@ -102,6 +164,30 @@ export type ThemeColors = {
   sliderTrackEmpty: string;
   fretNut: string;
   sheetBorder: string;
+  chipSelectedBg: string;
+  chipSelectedText: string;
+  chipUnselectedBg: string;
+
+  contextMenuBg: string;
+  contextMenuDivider: string;
+  contextMenuIconStroke: string;
+
+  layerCheckboxBorder: string;
+  dragPlaceholderBorder: string;
+  dragPlaceholderBg: string;
+
+  pillDangerBorder: string;
+  pillDangerBg: string;
+
+  colorSwatchBorder: string;
+
+  fretString: string;
+  fretLine: string;
+  fretNutGray: string;
+
+  glassIconColor: string;
+
+  heatmapEmpty: string;
 };
 
 export function getColors(isDark: boolean): ThemeColors {
@@ -138,6 +224,27 @@ export const SEMANTIC_COLORS = {
   destructive: "#ff3b30",
 };
 
+// ── Overlay / modal ───────────────────────────────────────────────────────────
+
+export const OVERLAY_COLORS = {
+  dim: "rgba(0,0,0,0.25)",
+  sheet: "rgba(0,0,0,0.45)",
+  handle: "rgba(128,128,128,0.45)",
+};
+
+// ── Surface dividers ──────────────────────────────────────────────────────────
+
+export const SURFACE_DIVIDER = "rgba(128,128,128,0.2)";
+
+// ── On-accent-color surface (always white-toned — used on layer/accent bg) ───
+
+export const ON_ACCENT = {
+  chipBorder: "rgba(255,255,255,0.5)",
+  dotBorder: "rgba(0,0,0,0.15)",
+  text: "rgba(255,255,255,0.8)",
+  iconStroke: "rgba(255,255,255,0.7)",
+};
+
 // ── Quiz mode accent colors ───────────────────────────────────────────────────
 
 export const QUIZ_MODE_COLORS = {
@@ -150,7 +257,7 @@ export const QUIZ_MODE_COLORS = {
 
 // ── Layer colors ──────────────────────────────────────────────────────────────
 
-const DEFAULT_LAYER_COLORS = ["#ff69b6", "#40e0d0", "#ffd700", "#a78bfa"];
+export const DEFAULT_LAYER_COLORS = ["#ff69b6", "#40e0d0", "#ffd700", "#a78bfa"];
 
 export const COLOR_PRESETS = [
   "#ff4d4d",

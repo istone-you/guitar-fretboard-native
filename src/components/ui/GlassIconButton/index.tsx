@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Text, TouchableOpacity, type StyleProp, type ViewStyle } from "react-native";
 import { GlassView } from "expo-glass-effect";
 import Icon, { type IconName } from "../Icon";
+import { getColors } from "../../../themes/design";
 
 interface GlassIconButtonProps {
   isDark: boolean;
@@ -35,7 +36,7 @@ export default function GlassIconButton({
 }: GlassIconButtonProps) {
   const size = sizeProp ?? 36;
   const resolvedFontSize = fontSize ?? Math.round(size * 0.38);
-  const iconColor = isDark ? "rgba(255,255,255,0.85)" : "rgba(0,0,0,0.5)";
+  const iconColor = getColors(isDark).glassIconColor;
 
   const iconNode = icon ? <Icon name={icon} size={22} color={iconColor} strokeWidth={2.2} /> : null;
 

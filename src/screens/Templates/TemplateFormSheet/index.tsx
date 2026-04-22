@@ -17,9 +17,10 @@ import "../../../i18n";
 import type { Theme, ChordType, ProgressionChord, Accidental } from "../../../types";
 import type { CustomProgressionTemplate } from "../../../hooks/useProgressionTemplates";
 import { CHORD_SUFFIX_MAP, getNotesByAccidental } from "../../../lib/fretboard";
-import { getColors, WHITE } from "../../../themes/design";
+import { getColors, WHITE, ON_ACCENT } from "../../../themes/design";
 import NoteDegreeModeToggle from "../../../components/ui/NoteDegreeModeToggle";
 import { getPillStyle } from "../../../components/ui/PillButton";
+import NoteSelectPage from "../../../components/ui/NoteSelectPage";
 import BottomSheetModal, {
   SHEET_HANDLE_CLEARANCE,
   useSheetHeight,
@@ -162,7 +163,7 @@ function DegreeChip({
       <Svg width={8} height={8} viewBox="0 0 12 12" fill="none" style={{ marginLeft: 4 }}>
         <Path
           d="M9 3L3 9M3 3l6 6"
-          stroke="rgba(255,255,255,0.7)"
+          stroke={ON_ACCENT.iconStroke}
           strokeWidth={1.8}
           strokeLinecap="round"
         />
@@ -623,85 +624,24 @@ export default function TemplateFormSheet({
 
               {/* Step: キー選択 */}
               {step === "keySelect" && (
-                <View style={{ flex: 1 }}>
-                  <SheetProgressiveHeader
-                    isDark={isDark}
-                    bgColor={colors.sheetBg}
-                    dragHandlers={dragHandlers}
-                    style={{ paddingTop: SHEET_HANDLE_CLEARANCE }}
-                  >
-                    <View style={{ flexDirection: "row", alignItems: "center" }}>
-                      <GlassIconButton
-                        isDark={isDark}
-                        onPress={navigateBack}
-                        icon="back"
-                        style={{ width: 36 }}
-                      />
-                      <Text
-                        style={{
-                          flex: 1,
-                          textAlign: "center",
-                          color: colors.textStrong,
-                          fontSize: 17,
-                          fontWeight: "700",
-                        }}
-                      >
-                        {t("templates.key")}
-                      </Text>
-                      <View style={{ width: 36 }} />
-                    </View>
-                  </SheetProgressiveHeader>
-
-                  <View
-                    style={[
-                      styles.chipsRow,
-                      { justifyContent: "center", padding: 16, paddingTop: 20 },
-                    ]}
-                  >
-                    {noteNames.map((note) => {
-                      const isActive = note === noteKey;
-                      return (
-                        <TouchableOpacity
-                          key={note}
-                          onPress={() => {
-                            if (note !== noteKey) {
-                              setNoteKey(note);
-                              hideCallout(() => {
-                                setSelectedDegree(null);
-                                setSelectedNote(null);
-                              });
-                            }
-                            navigateBack();
-                          }}
-                          style={[
-                            styles.degreePickerChip,
-                            {
-                              backgroundColor: isActive ? colors.primaryBtn : colors.fillIdle,
-                              borderColor: isActive ? "transparent" : colors.borderStrong,
-                            },
-                          ]}
-                          activeOpacity={0.7}
-                          hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-                        >
-                          <Text
-                            style={[
-                              styles.degreeChipText,
-                              {
-                                color: isActive
-                                  ? colors.primaryBtnText
-                                  : isDark
-                                    ? colors.textStrong
-                                    : colors.textDim,
-                              },
-                            ]}
-                          >
-                            {note}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-                </View>
+                <NoteSelectPage
+                  theme={theme}
+                  bgColor={colors.sheetBg}
+                  title={t("templates.key")}
+                  notes={noteNames}
+                  selectedNote={noteKey}
+                  onSelect={(note) => {
+                    if (note !== noteKey) {
+                      setNoteKey(note);
+                      hideCallout(() => {
+                        setSelectedDegree(null);
+                        setSelectedNote(null);
+                      });
+                    }
+                  }}
+                  onBack={navigateBack}
+                  dragHandlers={dragHandlers}
+                />
               )}
             </Animated.View>
           </View>

@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import NormalFretboard from "../../components/NormalFretboard";
 import type { LayerPaneProps } from "../../screens/Layer";
 import type { Theme } from "../../types";
-import { getColors, WHITE } from "../../themes/design";
+import { getColors, WHITE, ON_ACCENT } from "../../themes/design";
 
 type LandscapeLayoutProps = Omit<LayerPaneProps, "isLandscape" | "disableAnimation"> & {
   winHeight: number;
@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderWidth: 1.5,
-    borderColor: "rgba(0,0,0,0.15)",
+    borderColor: ON_ACCENT.dotBorder,
   },
   infoPillText: {
     fontSize: 14,
