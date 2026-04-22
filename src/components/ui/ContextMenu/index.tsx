@@ -36,7 +36,7 @@ export function ContextMenu({ visible, isDark, title, items, footer, onClose }: 
 
   return (
     <BottomSheetModal visible={visible} onClose={onClose}>
-      {({ close, closeWithCallback, dragHandlers }) => (
+      {({ closeWithCallback, dragHandlers }) => (
         <View
           style={[styles.sheet, { height: sheetHeight, backgroundColor: sheetBg, borderColor }]}
           {...dragHandlers}

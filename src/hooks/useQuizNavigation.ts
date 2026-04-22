@@ -40,6 +40,7 @@ export function useQuizNavigation({
     (value: string) => {
       onQuizKindChangeRef.current(value);
       quizSlideAnim.setValue(winWidth);
+      setShowQuiz(true);
       setQuizModeSelected(true);
       setTimeout(() => {
         Animated.timing(quizSlideAnim, {

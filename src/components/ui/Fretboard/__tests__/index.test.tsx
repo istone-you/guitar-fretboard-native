@@ -667,10 +667,10 @@ describe("Fretboard - Theme", () => {
   it("uses dark theme colors", () => {
     const { toJSON } = render(<Fretboard {...makeProps({ theme: "dark", fretRange: [0, 2] })} />);
     const json = JSON.stringify(toJSON());
-    // Dark mode fret number color
-    expect(json).toContain("#6b7280");
-    // Dark mode border color
-    expect(json).toContain("#4b5563");
+    // Dark mode text color
+    expect(json).toContain("#9ca3af");
+    // Dark mode nut color
+    expect(json).toContain("#9a9a9a");
   });
 
   it("uses light theme colors", () => {
@@ -678,22 +678,20 @@ describe("Fretboard - Theme", () => {
     const json = JSON.stringify(toJSON());
     // Light mode fret number color: #78716c
     expect(json).toContain("#78716c");
-    // Light mode border color: #d6d3d1
-    expect(json).toContain("#d6d3d1");
+    // Light mode nut color
+    expect(json).toContain("#7a7a7a");
   });
 
   it("uses dark theme string line color", () => {
     const { toJSON } = render(<Fretboard {...makeProps({ theme: "dark", fretRange: [0, 0] })} />);
     const json = JSON.stringify(toJSON());
-    // Dark mode string line: #6b7280
-    expect(json).toContain("#e5e7eb");
+    expect(json).toContain("rgba(255,255,255,0.12)");
   });
 
   it("uses light theme string line color", () => {
     const { toJSON } = render(<Fretboard {...makeProps({ theme: "light", fretRange: [0, 0] })} />);
     const json = JSON.stringify(toJSON());
-    // Light mode string line: #a8a29e
-    expect(json).toContain("#a8a29e");
+    expect(json).toContain("rgba(0,0,0,0.09)");
   });
 });
 

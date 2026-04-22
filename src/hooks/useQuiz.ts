@@ -135,8 +135,6 @@ export function useQuiz({
       const notes = getNotesByAccidental(accidental);
       const stringIdx = Math.floor(Math.random() * 6);
       const fret = fretRange[0] + Math.floor(Math.random() * (fretRange[1] - fretRange[0] + 1));
-      const noteIdx = getNoteIndex(stringIdx, fret);
-
       // For degree/scale, pick a random key from quizKeys
       const effectiveQuizKeys = overrides?.quizKeys ?? quizKeys;
       const effectiveRoot =

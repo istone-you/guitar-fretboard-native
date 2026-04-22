@@ -12,7 +12,7 @@ import ChordPanel from "./ChordPanel";
 import DiatonicPanel from "./DiatonicPanel";
 import BounceButton from "./BounceButton";
 import PillButton from "../ui/PillButton";
-import { getColors, SEMANTIC_COLORS, WHITE } from "../../themes/design";
+import { getColors, SEMANTIC_COLORS } from "../../themes/design";
 
 function BounceView({ children, style }: { children: React.ReactNode; style?: any }) {
   const scale = useRef(new Animated.Value(0.8)).current;

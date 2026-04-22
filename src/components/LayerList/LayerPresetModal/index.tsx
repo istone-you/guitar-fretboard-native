@@ -279,8 +279,6 @@ export default function LayerPresetModal({
   const border = isDark ? colors.border : colors.border2;
   const textPrimary = colors.textStrong;
   const textSecondary = colors.textSubtle;
-  const iconColor = isDark ? "rgba(255,255,255,0.85)" : "rgba(0,0,0,0.5)";
-
   return (
     <BottomSheetModal visible={visible} onClose={onClose}>
       {({ close, closeWithCallback, dragHandlers }) => (

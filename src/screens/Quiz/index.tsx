@@ -251,7 +251,7 @@ const QuizScreen = forwardRef<QuizScreenHandle, QuizScreenProps>(function QuizSc
   }, [quizMode, quizType, quizAccentColor, quizQuestion]);
 
   return (
-    <View style={styles.quizScene} {...swipePanResponder.panHandlers}>
+    <View style={styles.quizScene}>
       <SceneHeader
         theme={theme}
         title={showStats || quizModeSelected ? undefined : t("tabs.quiz")}
@@ -306,6 +306,7 @@ const QuizScreen = forwardRef<QuizScreenHandle, QuizScreenProps>(function QuizSc
                 overflow: "hidden",
               },
             ]}
+            {...swipePanResponder.panHandlers}
           >
             <QuizActivePracticePane
               isLandscape={isLandscape}

@@ -113,7 +113,10 @@ export default function BottomSheetModal({ visible, onClose, children }: BottomS
     [translateY, overlayOpacity],
   );
 
-  const close = useCallback(() => closeWithCallback(onCloseRef.current), [closeWithCallback]);
+  const close = useCallback(
+    () => closeWithCallback(() => onCloseRef.current()),
+    [closeWithCallback],
+  );
 
   const handleLayout = useCallback(
     (h: number) => {

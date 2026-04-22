@@ -1,5 +1,5 @@
 import { forwardRef, useImperativeHandle, useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { useTranslation } from "react-i18next";
 import { changeLocale } from "../../../i18n";
 import type { Accidental, Theme } from "../../../types";

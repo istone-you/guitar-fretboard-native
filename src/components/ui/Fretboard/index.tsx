@@ -255,18 +255,23 @@ const LayerOverlayDot = memo(function LayerOverlayDot({
   );
 });
 
+function getStringThickness(stringIdx: number): number {
+  const thicknesses = [2.5, 2, 1.5, 1.5, 1, 1];
+  return thicknesses[stringIdx] ?? 1;
+}
+
 const FRETBOARD_SIZE = {
   cellWidth: 34,
-  rowHeight: 26,
+  rowHeight: 28,
   rowGap: 1,
   headerFontSize: 12,
   markHeight: 12,
   customSize: 4,
   customGap: 2,
-  baseFontSize: 12,
-  overlayFontSize: 12,
+  baseFontSize: 14,
+  overlayFontSize: 13,
   rootRingInset: 1,
-  overlayInset: 2,
+  overlayInset: 3,
   chordBorderWidth: 2,
 } as const;
 
@@ -684,7 +689,12 @@ export default function Fretboard({
 
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-      <View style={{ width: totalWidth, marginLeft: 8 }}>
+      <View
+        style={{
+          width: totalWidth,
+          marginLeft: 8,
+        }}
+      >
         {/* Fret number header */}
         <View style={styles.row}>
           {displayFrets.map((fret) => (
@@ -890,6 +900,9 @@ const StringRow = memo(function StringRow({
   onNoteLongPress,
 }: StringRowProps) {
   const isDark = theme === "dark";
+  const stringColor = isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.09)";
+  const fretLineColor = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)";
+  const nutColor = isDark ? "#9a9a9a" : "#7a7a7a";
   const NOTES = getNotesByAccidental(accidental);
   const shouldSuppressRegularDisplay = suppressRegularDisplay || quizActive || quizAnswerMode;
 
@@ -960,15 +973,9 @@ const StringRow = memo(function StringRow({
               alignItems: "center",
               justifyContent: "center",
               borderLeftWidth: fret === 0 && leftHanded ? 4 : 1,
-              borderLeftColor:
-                fret === 0 && leftHanded
-                  ? getColors(isDark).fretNut
-                  : getColors(isDark).borderStrong,
+              borderLeftColor: fret === 0 && leftHanded ? nutColor : fretLineColor,
               ...(fret === 0 && !leftHanded
-                ? {
-                    borderRightWidth: 4,
-                    borderRightColor: getColors(isDark).fretNut,
-                  }
+                ? { borderRightWidth: 4, borderRightColor: nutColor }
                 : {}),
               position: "relative",
             }}
@@ -980,32 +987,20 @@ const StringRow = memo(function StringRow({
                 position: "absolute",
                 left: 0,
                 right: 0,
-                height: 1,
-                backgroundColor: getColors(isDark).textMuted,
+                height: getStringThickness(stringIdx),
+                top: (size.rowHeight - getStringThickness(stringIdx)) / 2,
+                backgroundColor: stringColor,
               }}
             />
 
             {/* Base label */}
             {!shouldSuppressRegularDisplay && (
-              <Animated.View
-                style={{
-                  backgroundColor: isDark ? BLACK : WHITE,
-                  borderRadius:
-                    (baseLabelMode === "degree" ? overlaySize - 4 : overlaySize - 8) / 2,
-                  width: baseLabelMode === "degree" ? overlaySize - 4 : overlaySize - 8,
-                  height: baseLabelMode === "degree" ? overlaySize - 4 : overlaySize - 8,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  zIndex: 0,
-                  transform: [{ scale: labelScale }],
-                }}
-              >
+              <Animated.View style={{ zIndex: 0, transform: [{ scale: labelScale }] }}>
                 <Text
                   style={{
                     fontSize: size.baseFontSize,
-                    color: getColors(isDark).iconSubtle,
-                    fontFamily: "monospace",
-                    fontWeight: "500",
+                    color: isDark ? "#9a9a9a" : "#7a7a7a",
+                    fontWeight: "400",
                   }}
                 >
                   {labelText}

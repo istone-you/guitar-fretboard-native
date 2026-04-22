@@ -1698,12 +1698,10 @@ interface ActiveOverlaySemitoneParams {
 }
 
 export function getActiveOverlaySemitones({
-  rootNote,
   showScale,
   scaleType,
   showCaged,
   showChord,
-  chordDisplayMode,
   chordType,
 }: ActiveOverlaySemitoneParams): Set<number> {
   const active = new Set<number>();
@@ -2259,8 +2257,6 @@ export function getOnChordVoicings(onChordName: string): FretCell[][] {
   const frettedInForm = baseForm.map((c) => c.fret).filter((f) => f > 0);
   const formCenter =
     frettedInForm.length > 0 ? frettedInForm.reduce((a, b) => a + b, 0) / frettedInForm.length : 0;
-  const highestFormString = Math.max(...baseForm.map((c) => c.string));
-
   // Collect all valid bass candidates across all strings
   const allBassCandidates: { string: number; fret: number; score: number }[] = [];
   for (let stringIdx = 0; stringIdx < 6; stringIdx++) {
