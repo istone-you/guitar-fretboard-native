@@ -49,6 +49,24 @@ const MODES: {
     titleKey: "finder.homeCapoTitle",
     descKey: "finder.homeCapoDesc",
   },
+  {
+    mode: "modulation",
+    icon: "arrows-lr",
+    titleKey: "finder.homeModulationTitle",
+    descKey: "finder.homeModulationDesc",
+  },
+  {
+    mode: "related-keys",
+    icon: "network",
+    titleKey: "finder.homeRelatedKeysTitle",
+    descKey: "finder.homeRelatedKeysDesc",
+  },
+  {
+    mode: "modes",
+    icon: "rotate-cw",
+    titleKey: "finder.homeModesTitle",
+    descKey: "finder.homeModesDesc",
+  },
 ];
 
 export default function FinderSelection({ theme, onSelect }: SelectionProps) {

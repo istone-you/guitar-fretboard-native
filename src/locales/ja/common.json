@@ -312,6 +312,53 @@
     },
     "homeCapoTitle": "カポ",
     "homeCapoDesc": "カポタスト位置とコード形を変換する",
+    "homeModulationTitle": "転調",
+    "homeModulationDesc": "2つのキーを繋ぐ共通コードを見つける",
+    "homeRelatedKeysTitle": "関係調",
+    "homeRelatedKeysDesc": "キーと調性の関係を俯瞰する",
+    "homeModesTitle": "モード",
+    "homeModesDesc": "スケールとモードの親子関係を確認する",
+    "modulation": {
+      "keyA": "転調元キー",
+      "keyB": "転調先キー",
+      "pivotLabel": "{{keyA}} → {{keyB}} の共通コード",
+      "none": "共通コードなし"
+    },
+    "relatedKeys": {
+      "baseKey": "基準キー: {{key}}",
+      "diatonicChords": "ダイアトニックコード",
+      "pivotChords": "共通コード（ピボット）",
+      "desc": {
+        "relative": "同じ調号（同じ音）を持ちながら主音が異なるキー。長調の主音から短3度下が関係短調の主音になります。同じ音材で異なる感情を持ちます。",
+        "parallel": "同じ主音を持ちながら調号が異なるキー。平行調への転換は明暗の劇的な変化をもたらし、楽曲に表情の幅を生み出します。",
+        "dominant": "第5音上のキー（属調）。属調への転換は推進力と緊張感を生み出し、元のキーへの強い解決感を促します。",
+        "subdominant": "第4音上のキー（下属調）。下属調への転換は温かく落ち着いたコントラストを生み出し、元のキーへの帰還を準備します。"
+      },
+      "relation": {
+        "relative": {
+          "major": { "minor": "関係短調" },
+          "minor": { "major": "関係長調" }
+        },
+        "parallel": {
+          "major": { "minor": "平行短調" },
+          "minor": { "major": "平行長調" }
+        },
+        "dominant": {
+          "major": { "major": "属調" },
+          "minor": { "minor": "属調" }
+        },
+        "subdominant": {
+          "major": { "major": "下属調" },
+          "minor": { "minor": "下属調" }
+        }
+      }
+    },
+    "modes": {
+      "parentScale": "親スケール",
+      "parentScaleValue": "{{root}} {{scale}}",
+      "current": "選択中",
+      "notes": "構成音"
+    },
     "capo": {
       "modeFormToSound": "形 → 実音",
       "modeSoundToForm": "実音 → 形",

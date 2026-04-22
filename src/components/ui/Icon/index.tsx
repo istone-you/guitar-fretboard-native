@@ -20,7 +20,10 @@ export type IconName =
   | "music-note"
   | "chord-grid"
   | "ellipsis"
-  | "capo";
+  | "capo"
+  | "arrows-lr"
+  | "network"
+  | "rotate-cw";
 
 interface IconProps {
   name: IconName;
@@ -234,6 +237,55 @@ export default function Icon({
           strokeWidth={3}
           strokeLinecap="round"
         />
+      )}
+      {name === "arrows-lr" && (
+        <>
+          <Path
+            d="M5 8h14M15 5l4 3-4 3"
+            stroke={color}
+            strokeWidth={sw}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <Path
+            d="M19 16H5M9 13l-4 3 4 3"
+            stroke={color}
+            strokeWidth={sw}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </>
+      )}
+      {name === "network" && (
+        <>
+          <Circle cx="12" cy="5" r="2" stroke={color} strokeWidth={sw} />
+          <Circle cx="5" cy="18" r="2" stroke={color} strokeWidth={sw} />
+          <Circle cx="19" cy="18" r="2" stroke={color} strokeWidth={sw} />
+          <Path
+            d="M10.8 6.9L6.4 16.1M13.2 6.9L17.6 16.1M7 18h10"
+            stroke={color}
+            strokeWidth={sw}
+            strokeLinecap="round"
+          />
+        </>
+      )}
+      {name === "rotate-cw" && (
+        <>
+          <Path
+            d="M23 4v6h-6"
+            stroke={color}
+            strokeWidth={sw}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <Path
+            d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"
+            stroke={color}
+            strokeWidth={sw}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </>
       )}
     </Svg>
   );

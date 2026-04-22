@@ -12,6 +12,9 @@ import ChordBrowser from "./ChordBrowser";
 import DiatonicBrowser from "./DiatonicBrowser";
 import SubstitutionFinder from "./SubstitutionFinder";
 import CapoFinder from "./CapoFinder";
+import ModulationFinder from "./ModulationFinder";
+import RelatedKeysBrowser from "./RelatedKeysBrowser";
+import ModeBrowser from "./ModeBrowser";
 import type { FinderMode } from "./types";
 
 export interface FinderPaneProps {
@@ -174,6 +177,33 @@ export default function FinderPane({
               />
             ) : selectedMode === "substitution" ? (
               <SubstitutionFinder
+                theme={theme}
+                accidental={accidental}
+                layers={layers}
+                globalRootNote={rootNote}
+                onAddLayerAndNavigate={onAddLayerAndNavigate}
+                onEnablePerLayerRoot={onEnablePerLayerRoot}
+              />
+            ) : selectedMode === "modulation" ? (
+              <ModulationFinder
+                theme={theme}
+                accidental={accidental}
+                layers={layers}
+                globalRootNote={rootNote}
+                onAddLayerAndNavigate={onAddLayerAndNavigate}
+                onEnablePerLayerRoot={onEnablePerLayerRoot}
+              />
+            ) : selectedMode === "related-keys" ? (
+              <RelatedKeysBrowser
+                theme={theme}
+                accidental={accidental}
+                layers={layers}
+                globalRootNote={rootNote}
+                onAddLayerAndNavigate={onAddLayerAndNavigate}
+                onEnablePerLayerRoot={onEnablePerLayerRoot}
+              />
+            ) : selectedMode === "modes" ? (
+              <ModeBrowser
                 theme={theme}
                 accidental={accidental}
                 layers={layers}

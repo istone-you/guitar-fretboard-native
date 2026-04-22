@@ -312,6 +312,53 @@
     },
     "homeCapoTitle": "Capo",
     "homeCapoDesc": "Convert between capo position and chord shapes",
+    "homeModulationTitle": "Modulation",
+    "homeModulationDesc": "Find common chords between two keys",
+    "homeRelatedKeysTitle": "Related Keys",
+    "homeRelatedKeysDesc": "Explore relationships between keys",
+    "homeModesTitle": "Modes",
+    "homeModesDesc": "Explore the mode family of a scale",
+    "modulation": {
+      "keyA": "From Key",
+      "keyB": "To Key",
+      "pivotLabel": "Common chords: {{keyA}} → {{keyB}}",
+      "none": "No common chords"
+    },
+    "relatedKeys": {
+      "baseKey": "Key: {{key}}",
+      "diatonicChords": "Diatonic Chords",
+      "pivotChords": "Common Chords (Pivot)",
+      "desc": {
+        "relative": "Shares the same key signature but has a different tonic. The relative minor starts a minor 3rd below the major root — same notes, different feel.",
+        "parallel": "Shares the same tonic but has a different key signature. Switching between parallel keys creates a dramatic shift between brightness and darkness.",
+        "dominant": "The key built on the 5th degree. Moving to the dominant creates forward momentum and tension that strongly wants to resolve back home.",
+        "subdominant": "The key built on the 4th degree. Moving to the subdominant creates a warm, expansive contrast before returning to the home key."
+      },
+      "relation": {
+        "relative": {
+          "major": { "minor": "Relative Minor" },
+          "minor": { "major": "Relative Major" }
+        },
+        "parallel": {
+          "major": { "minor": "Parallel Minor" },
+          "minor": { "major": "Parallel Major" }
+        },
+        "dominant": {
+          "major": { "major": "Dominant Key" },
+          "minor": { "minor": "Dominant Key" }
+        },
+        "subdominant": {
+          "major": { "major": "Subdominant Key" },
+          "minor": { "minor": "Subdominant Key" }
+        }
+      }
+    },
+    "modes": {
+      "parentScale": "Parent Scale",
+      "parentScaleValue": "{{root}} {{scale}}",
+      "current": "Selected",
+      "notes": "Notes"
+    },
     "capo": {
       "modeFormToSound": "Shape → Sound",
       "modeSoundToForm": "Sound → Shape",
