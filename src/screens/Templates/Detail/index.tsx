@@ -142,6 +142,7 @@ function TemplateDetailPane({
         visible={formVisible}
         onClose={() => setFormVisible(false)}
         theme={theme}
+        accidental={accidental}
         initialTemplate={template}
         onSave={(name, chords) => {
           onUpdateTemplate(template.id, name, chords);

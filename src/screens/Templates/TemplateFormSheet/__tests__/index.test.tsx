@@ -64,6 +64,18 @@ jest.mock("../../../../components/ui/GlassIconButton", () => {
   };
 });
 
+jest.mock("../../../../components/ui/NotePickerButton", () => {
+  const { TouchableOpacity, Text } = require("react-native");
+  return {
+    __esModule: true,
+    default: ({ value, onChange }: { value: string; onChange: (n: string) => void }) => (
+      <TouchableOpacity testID="note-picker" onPress={() => onChange("G")}>
+        <Text>{value}</Text>
+      </TouchableOpacity>
+    ),
+  };
+});
+
 jest.mock("../../../../components/ui/SegmentedToggle", () => ({
   SegmentedToggle: ({ onChange, value }: { onChange: (v: string) => void; value: string }) => {
     const { TouchableOpacity, Text } = require("react-native");
@@ -79,6 +91,7 @@ const defaultProps = {
   visible: true,
   onClose: jest.fn(),
   theme: "light" as const,
+  accidental: "sharp" as const,
   initialTemplate: null,
   onSave: jest.fn(),
 };

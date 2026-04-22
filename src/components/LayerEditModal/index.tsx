@@ -25,7 +25,7 @@ import type {
 import { createDefaultLayer } from "../../types";
 import ChevronIcon from "../ui/ChevronIcon";
 import ColorPicker from "../ui/ColorPicker";
-import { SegmentedToggle } from "../ui/SegmentedToggle";
+import NoteDegreeModeToggle from "../ui/NoteDegreeModeToggle";
 import { buildScaleOptions } from "../ui/scaleOptions";
 import LayerDescription from "./LayerDescription";
 import BottomSheetModal, { SHEET_HANDLE_CLEARANCE, useSheetHeight } from "../ui/BottomSheetModal";
@@ -860,20 +860,11 @@ export default function LayerEditModal({
                     >
                       <View style={[styles.settingsBody, { paddingTop: 8 }]}>
                         {/* Mode (note / degree) inline segment toggle */}
-                        {renderSection(
-                          <View style={[styles.iosRow, { justifyContent: "center" }]}>
-                            <SegmentedToggle
-                              theme={theme}
-                              value={layer.customMode ?? "note"}
-                              onChange={(mode) => update({ customMode: mode as "note" | "degree" })}
-                              options={[
-                                { value: "note", label: t("noteFilter.title") },
-                                { value: "degree", label: t("degreeFilter.title") },
-                              ]}
-                              size="compact"
-                            />
-                          </View>,
-                        )}
+                        <NoteDegreeModeToggle
+                          theme={theme}
+                          value={layer.customMode ?? "note"}
+                          onChange={(mode) => update({ customMode: mode })}
+                        />
                         <View style={styles.customChipsGrid}>
                           {(layer.customMode === "note" ? notes : [...CUSTOM_DEGREE_CHIPS]).map(
                             (item) => {

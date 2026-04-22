@@ -62,8 +62,8 @@ const SettingsModal = forwardRef<SettingsModalRef, SettingsModalProps>(function 
                 value={theme}
                 onChange={onThemeChange}
                 options={[
-                  { value: "dark" as Theme, label: "☾" },
-                  { value: "light" as Theme, label: "☀︎" },
+                  { value: "light" as Theme, label: "☀️" },
+                  { value: "dark" as Theme, label: "🌙" },
                 ]}
                 size="compact"
               />

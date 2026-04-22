@@ -540,6 +540,7 @@ const TemplatesPane = forwardRef<TemplatesPaneHandle, TemplatesPaneProps>(functi
             visible={templateFormVisible}
             onClose={() => setTemplateFormVisible(false)}
             theme={theme}
+            accidental={accidental}
             initialTemplate={editingTemplate}
             onSave={(name, chords) => {
               if (editingTemplate) {

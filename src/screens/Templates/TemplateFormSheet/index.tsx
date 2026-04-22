@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useLayoutEffect } from "react";
 import {
   View,
   Text,
@@ -8,15 +8,18 @@ import {
   StyleSheet,
   Animated,
   Easing,
+  useWindowDimensions,
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import Svg, { Path } from "react-native-svg";
 import { useTranslation } from "react-i18next";
 import "../../../i18n";
-import type { Theme, ChordType, ProgressionChord } from "../../../types";
+import type { Theme, ChordType, ProgressionChord, Accidental } from "../../../types";
 import type { CustomProgressionTemplate } from "../../../hooks/useProgressionTemplates";
-import { CHORD_SUFFIX_MAP } from "../../../lib/fretboard";
+import { CHORD_SUFFIX_MAP, getNotesByAccidental } from "../../../lib/fretboard";
 import { getColors, WHITE } from "../../../themes/design";
+import NoteDegreeModeToggle from "../../../components/ui/NoteDegreeModeToggle";
+import { getPillStyle } from "../../../components/ui/PillButton";
 import BottomSheetModal, {
   SHEET_HANDLE_CLEARANCE,
   useSheetHeight,
@@ -26,6 +29,36 @@ import GlassIconButton from "../../../components/ui/GlassIconButton";
 import { SegmentedToggle } from "../../../components/ui/SegmentedToggle";
 
 export const MAX_PROGRESSION_DEGREES = 16;
+
+const DEGREE_TO_OFFSET: Record<string, number> = {
+  I: 0,
+  bII: 1,
+  II: 2,
+  bIII: 3,
+  III: 4,
+  IV: 5,
+  bV: 6,
+  V: 7,
+  bVI: 8,
+  VI: 9,
+  bVII: 10,
+  VII: 11,
+};
+
+const OFFSET_TO_DEGREE: Record<number, string> = {
+  0: "I",
+  1: "bII",
+  2: "II",
+  3: "bIII",
+  4: "III",
+  5: "IV",
+  6: "bV",
+  7: "V",
+  8: "bVI",
+  9: "VI",
+  10: "bVII",
+  11: "VII",
+};
 
 export const CHROMATIC_DEGREES: [string, string][] = [
   ["I", "I"],
@@ -142,6 +175,7 @@ interface TemplateFormSheetProps {
   visible: boolean;
   onClose: () => void;
   theme: Theme;
+  accidental: Accidental;
   initialTemplate: CustomProgressionTemplate | null;
   onSave: (name: string, chords: ProgressionChord[]) => void;
 }
@@ -150,12 +184,14 @@ export default function TemplateFormSheet({
   visible,
   onClose,
   theme,
+  accidental,
   initialTemplate,
   onSave,
 }: TemplateFormSheetProps) {
   const { t } = useTranslation();
   const isDark = theme === "dark";
   const sheetHeight = useSheetHeight();
+  const { width: winWidth } = useWindowDimensions();
 
   const colors = getColors(isDark);
   const calloutBorder = isDark ? colors.border2 : colors.borderStrong;
@@ -168,6 +204,45 @@ export default function TemplateFormSheet({
   const [selectedChordGroup, setSelectedChordGroup] = useState<"triad" | "seventh" | "tension">(
     "triad",
   );
+  const [inputMode, setInputMode] = useState<"degree" | "note">("degree");
+  const [noteKey, setNoteKey] = useState("C");
+  const [selectedNote, setSelectedNote] = useState<string | null>(null);
+  const [step, setStep] = useState<"main" | "keySelect">("main");
+  const slideAnim = useRef(new Animated.Value(0)).current;
+  const pendingEnterDir = useRef(0);
+
+  const noteNames = getNotesByAccidental(accidental);
+  const keyNoteIndex = noteNames.findIndex((n) => n === noteKey);
+
+  const noteToChromaDegree = (note: string): string => {
+    const noteIdx = noteNames.findIndex((n) => n === note);
+    if (noteIdx < 0 || keyNoteIndex < 0) return "I";
+    return OFFSET_TO_DEGREE[(noteIdx - keyNoteIndex + 12) % 12] ?? "I";
+  };
+
+  const degreeToNote = (degree: string): string => {
+    const offset = DEGREE_TO_OFFSET[degree];
+    if (offset === undefined || keyNoteIndex < 0) return "";
+    return noteNames[(keyNoteIndex + offset) % 12] ?? "";
+  };
+
+  const handleNotePress = (note: string) => {
+    const degree = noteToChromaDegree(note);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (selectedNote === note) {
+      hideCallout(() => {
+        setSelectedDegree(null);
+        setSelectedNote(null);
+      });
+    } else if (selectedDegree === null) {
+      setSelectedDegree(degree);
+      setSelectedNote(note);
+      showCallout();
+    } else {
+      setSelectedDegree(degree);
+      setSelectedNote(note);
+    }
+  };
 
   const calloutAnim = useRef(new Animated.Value(0)).current;
 
@@ -187,6 +262,34 @@ export default function TemplateFormSheet({
       useNativeDriver: false,
     }).start(onDone);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useLayoutEffect(() => {
+    const dir = pendingEnterDir.current;
+    if (dir !== 0) {
+      pendingEnterDir.current = 0;
+      slideAnim.stopAnimation();
+      slideAnim.setValue(dir * winWidth);
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        tension: 120,
+        friction: 20,
+        useNativeDriver: false,
+      }).start();
+    }
+  }, [step]);
+
+  const navigateToKeySelect = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    pendingEnterDir.current = 1;
+    setStep("keySelect");
+  };
+
+  const navigateBack = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    pendingEnterDir.current = -1;
+    setStep("main");
+  };
+
   const handleDegreePress = (deg: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (selectedDegree === deg) {
@@ -204,14 +307,21 @@ export default function TemplateFormSheet({
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const deg = selectedDegree;
     setFormChords((prev) => [...prev, { degree: deg, chordType }]);
-    hideCallout(() => setSelectedDegree(null));
+    hideCallout(() => {
+      setSelectedDegree(null);
+      setSelectedNote(null);
+    });
   };
 
   const resetForm = () => {
     setFormName(initialTemplate?.name ?? "");
     setFormChords(initialTemplate?.chords ? [...initialTemplate.chords] : []);
     setSelectedDegree(null);
+    setSelectedNote(null);
     setSelectedChordGroup("triad");
+    setInputMode("degree");
+    setNoteKey("C");
+    setStep("main");
     calloutAnim.setValue(0);
   };
 
@@ -243,184 +353,358 @@ export default function TemplateFormSheet({
             { height: sheetHeight, backgroundColor: colors.sheetBg, borderColor: colors.border2 },
           ]}
         >
-          <SheetProgressiveHeader
-            isDark={isDark}
-            bgColor={colors.sheetBg}
-            dragHandlers={dragHandlers}
-            style={{ paddingTop: SHEET_HANDLE_CLEARANCE }}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <GlassIconButton isDark={isDark} onPress={close} icon="close" style={{ width: 36 }} />
-              <TextInput
-                style={{
-                  flex: 1,
-                  textAlign: "center",
-                  color: colors.textStrong,
-                  fontSize: 16,
-                  fontWeight: "600",
-                  marginHorizontal: 8,
-                  paddingVertical: 4,
-                }}
-                placeholder={t("templates.templateName")}
-                placeholderTextColor={colors.textMuted}
-                value={formName}
-                onChangeText={setFormName}
-                maxLength={30}
-              />
-              <GlassIconButton
-                isDark={isDark}
-                onPress={() => handleSave(close)}
-                icon="check"
-                disabled={!formName.trim() || formChords.length === 0}
-                style={{
-                  width: 36,
-                  opacity: !formName.trim() || formChords.length === 0 ? 0.35 : 1,
-                }}
-              />
-            </View>
-          </SheetProgressiveHeader>
-
-          <ScrollView
-            style={{ flex: 1 }}
-            contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 24 }}
-          >
-            {/* 度数セレクター */}
-            <Text
-              style={[
-                styles.formLabel,
-                { color: colors.textSubtle, marginTop: 14, textAlign: "center" },
-              ]}
-            >
-              {t("templates.degrees")}
-            </Text>
-            <View style={[styles.chipsRow, { justifyContent: "center" }]}>
-              {CHROMATIC_DEGREES.map(([deg, label]) => {
-                const isActive = selectedDegree === deg;
-                return (
-                  <TouchableOpacity
-                    key={deg}
-                    onPress={() => handleDegreePress(deg)}
-                    style={[
-                      styles.degreePickerChip,
-                      {
-                        backgroundColor: isActive ? colors.primaryBtn : colors.fillIdle,
-                        borderColor: isActive ? "transparent" : colors.borderStrong,
-                      },
-                    ]}
-                    activeOpacity={0.7}
-                    hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+          <View style={{ flex: 1, overflow: "hidden" }}>
+            <Animated.View style={{ flex: 1, transform: [{ translateX: slideAnim }] }}>
+              {/* Step: Main */}
+              {step === "main" && (
+                <>
+                  <SheetProgressiveHeader
+                    isDark={isDark}
+                    bgColor={colors.sheetBg}
+                    dragHandlers={dragHandlers}
+                    style={{ paddingTop: SHEET_HANDLE_CLEARANCE }}
                   >
-                    <Text
-                      style={[
-                        styles.degreeChipText,
-                        {
-                          color: isActive
-                            ? colors.primaryBtnText
-                            : isDark
-                              ? colors.textStrong
-                              : colors.textDim,
-                        },
-                      ]}
-                    >
-                      {label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+                    <View style={{ flexDirection: "row", alignItems: "center" }}>
+                      <GlassIconButton
+                        isDark={isDark}
+                        onPress={close}
+                        icon="close"
+                        style={{ width: 36 }}
+                      />
+                      <TextInput
+                        style={{
+                          flex: 1,
+                          textAlign: "center",
+                          color: colors.textStrong,
+                          fontSize: 16,
+                          fontWeight: "600",
+                          marginHorizontal: 8,
+                          paddingVertical: 4,
+                        }}
+                        placeholder={t("templates.templateName")}
+                        placeholderTextColor={colors.textMuted}
+                        value={formName}
+                        onChangeText={setFormName}
+                        maxLength={30}
+                      />
+                      <GlassIconButton
+                        isDark={isDark}
+                        onPress={() => handleSave(close)}
+                        icon="check"
+                        disabled={!formName.trim() || formChords.length === 0}
+                        style={{
+                          width: 36,
+                          opacity: !formName.trim() || formChords.length === 0 ? 0.35 : 1,
+                        }}
+                      />
+                    </View>
+                  </SheetProgressiveHeader>
 
-            {/* コードタイプパネル */}
-            <Animated.View
-              pointerEvents={selectedDegree ? "auto" : "none"}
-              style={{
-                opacity: calloutAnim,
-                maxHeight: calloutAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0, 300],
-                }),
-                overflow: "hidden",
-                marginTop: 8,
-              }}
-            >
-              {/* パネル本体 */}
-              <View
-                style={[
-                  styles.callout,
-                  { backgroundColor: colors.sheetBg, borderColor: calloutBorder },
-                ]}
-              >
-                <SegmentedToggle
-                  theme={theme}
-                  value={selectedChordGroup}
-                  onChange={(v) => setSelectedChordGroup(v as "triad" | "seventh" | "tension")}
-                  options={chordGroupOptions}
-                  size="compact"
-                  segmentWidth={84}
-                />
-                <View style={[styles.chipsRow, { marginTop: 16, justifyContent: "center" }]}>
-                  {(
-                    CHORD_TYPE_GROUPS.find((g) => g.labelKey === selectedChordGroup)?.types ?? []
-                  ).map(([chordType, label]) => (
-                    <TouchableOpacity
-                      key={chordType}
-                      onPress={() => handleChordTypePress(chordType)}
-                      disabled={formChords.length >= MAX_PROGRESSION_DEGREES}
-                      style={[
-                        styles.chordTypeChip,
-                        {
-                          backgroundColor: colors.sheetBg,
-                          borderColor: colors.borderStrong,
-                        },
-                      ]}
-                      activeOpacity={0.7}
-                      hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-                    >
-                      <Text
-                        style={[
-                          styles.degreeChipText,
-                          { color: isDark ? colors.textStrong : colors.textDim },
-                        ]}
-                      >
-                        {label}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-            </Animated.View>
-
-            {/* コード進行 */}
-            <Text
-              style={[
-                styles.formLabel,
-                { color: colors.textSubtle, marginTop: 14, textAlign: "center" },
-              ]}
-            >
-              {t("templates.progression")}
-            </Text>
-            {formChords.length > 0 && (
-              <View style={styles.chipsRow}>
-                {formChords.map((chord, i) => (
-                  <View
-                    key={`${chord.degree}-${chord.chordType}-${i}`}
-                    style={styles.progressionItem}
+                  <ScrollView
+                    style={{ flex: 1 }}
+                    contentContainerStyle={{
+                      paddingHorizontal: 16,
+                      paddingTop: 8,
+                      paddingBottom: 24,
+                    }}
                   >
-                    {i > 0 && (
-                      <Text style={[styles.progressionArrow, { color: colors.textSubtle }]}>→</Text>
-                    )}
-                    <DegreeChip
-                      label={chordDisplayLabel(chord)}
-                      isDark={isDark}
-                      onPress={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        setFormChords((prev) => prev.filter((_, idx) => idx !== i));
+                    {/* 音名・度数 モードトグル */}
+                    <NoteDegreeModeToggle
+                      theme={theme}
+                      value={inputMode}
+                      onChange={(mode) => {
+                        setInputMode(mode);
+                        hideCallout(() => {
+                          setSelectedDegree(null);
+                          setSelectedNote(null);
+                        });
                       }}
                     />
+
+                    {/* セレクター (度数 or 音名) */}
+                    <Text
+                      style={[
+                        styles.formLabel,
+                        { color: colors.textSubtle, marginTop: 14, textAlign: "center" },
+                      ]}
+                    >
+                      {inputMode === "note" ? t("noteFilter.title") : t("templates.degrees")}
+                    </Text>
+
+                    {/* 音名モード: キー選択ナビ行 */}
+                    {inputMode === "note" && (
+                      <View style={styles.keyNavRow}>
+                        <TouchableOpacity onPress={navigateToKeySelect} activeOpacity={0.7}>
+                          <View style={getPillStyle(colors)}>
+                            <Text style={[styles.pillLabel, { color: colors.textSubtle }]}>
+                              {t("templates.key")}
+                            </Text>
+                            <Text style={[styles.pillValue, { color: colors.text }]}>
+                              {noteKey}
+                            </Text>
+                          </View>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                    <View style={[styles.chipsRow, { justifyContent: "center" }]}>
+                      {inputMode === "degree"
+                        ? CHROMATIC_DEGREES.map(([deg, label]) => {
+                            const isActive = selectedDegree === deg;
+                            return (
+                              <TouchableOpacity
+                                key={deg}
+                                onPress={() => handleDegreePress(deg)}
+                                style={[
+                                  styles.degreePickerChip,
+                                  {
+                                    backgroundColor: isActive ? colors.primaryBtn : colors.fillIdle,
+                                    borderColor: isActive ? "transparent" : colors.borderStrong,
+                                  },
+                                ]}
+                                activeOpacity={0.7}
+                                hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                              >
+                                <Text
+                                  style={[
+                                    styles.degreeChipText,
+                                    {
+                                      color: isActive
+                                        ? colors.primaryBtnText
+                                        : isDark
+                                          ? colors.textStrong
+                                          : colors.textDim,
+                                    },
+                                  ]}
+                                >
+                                  {label}
+                                </Text>
+                              </TouchableOpacity>
+                            );
+                          })
+                        : noteNames.map((note) => {
+                            const isActive = selectedNote === note;
+                            return (
+                              <TouchableOpacity
+                                key={note}
+                                onPress={() => handleNotePress(note)}
+                                style={[
+                                  styles.degreePickerChip,
+                                  {
+                                    backgroundColor: isActive ? colors.primaryBtn : colors.fillIdle,
+                                    borderColor: isActive ? "transparent" : colors.borderStrong,
+                                  },
+                                ]}
+                                activeOpacity={0.7}
+                                hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                              >
+                                <Text
+                                  style={[
+                                    styles.degreeChipText,
+                                    {
+                                      color: isActive
+                                        ? colors.primaryBtnText
+                                        : isDark
+                                          ? colors.textStrong
+                                          : colors.textDim,
+                                    },
+                                  ]}
+                                >
+                                  {note}
+                                </Text>
+                              </TouchableOpacity>
+                            );
+                          })}
+                    </View>
+
+                    {/* コードタイプパネル */}
+                    <Animated.View
+                      pointerEvents={selectedDegree ? "auto" : "none"}
+                      style={{
+                        opacity: calloutAnim,
+                        maxHeight: calloutAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0, 300],
+                        }),
+                        overflow: "hidden",
+                        marginTop: 8,
+                      }}
+                    >
+                      <View
+                        style={[
+                          styles.callout,
+                          { backgroundColor: colors.sheetBg, borderColor: calloutBorder },
+                        ]}
+                      >
+                        <SegmentedToggle
+                          theme={theme}
+                          value={selectedChordGroup}
+                          onChange={(v) =>
+                            setSelectedChordGroup(v as "triad" | "seventh" | "tension")
+                          }
+                          options={chordGroupOptions}
+                          size="compact"
+                          segmentWidth={84}
+                        />
+                        <View
+                          style={[styles.chipsRow, { marginTop: 16, justifyContent: "center" }]}
+                        >
+                          {(
+                            CHORD_TYPE_GROUPS.find((g) => g.labelKey === selectedChordGroup)
+                              ?.types ?? []
+                          ).map(([chordType, label]) => (
+                            <TouchableOpacity
+                              key={chordType}
+                              onPress={() => handleChordTypePress(chordType)}
+                              disabled={formChords.length >= MAX_PROGRESSION_DEGREES}
+                              style={[
+                                styles.chordTypeChip,
+                                {
+                                  backgroundColor: colors.sheetBg,
+                                  borderColor: colors.borderStrong,
+                                },
+                              ]}
+                              activeOpacity={0.7}
+                              hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                            >
+                              <Text
+                                style={[
+                                  styles.degreeChipText,
+                                  { color: isDark ? colors.textStrong : colors.textDim },
+                                ]}
+                              >
+                                {label}
+                              </Text>
+                            </TouchableOpacity>
+                          ))}
+                        </View>
+                      </View>
+                    </Animated.View>
+
+                    {/* コード進行 */}
+                    <Text
+                      style={[
+                        styles.formLabel,
+                        { color: colors.textSubtle, marginTop: 14, textAlign: "center" },
+                      ]}
+                    >
+                      {t("templates.progression")}
+                    </Text>
+                    {formChords.length > 0 && (
+                      <View style={styles.chipsRow}>
+                        {formChords.map((chord, i) => (
+                          <View
+                            key={`${chord.degree}-${chord.chordType}-${i}`}
+                            style={styles.progressionItem}
+                          >
+                            {i > 0 && (
+                              <Text style={[styles.progressionArrow, { color: colors.textSubtle }]}>
+                                →
+                              </Text>
+                            )}
+                            <DegreeChip
+                              label={
+                                inputMode === "note"
+                                  ? `${degreeToNote(chord.degree)}${CHORD_SUFFIX_MAP[chord.chordType] ?? chord.chordType}`
+                                  : chordDisplayLabel(chord)
+                              }
+                              isDark={isDark}
+                              onPress={() => {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                setFormChords((prev) => prev.filter((_, idx) => idx !== i));
+                              }}
+                            />
+                          </View>
+                        ))}
+                      </View>
+                    )}
+                  </ScrollView>
+                </>
+              )}
+
+              {/* Step: キー選択 */}
+              {step === "keySelect" && (
+                <View style={{ flex: 1 }}>
+                  <SheetProgressiveHeader
+                    isDark={isDark}
+                    bgColor={colors.sheetBg}
+                    dragHandlers={dragHandlers}
+                    style={{ paddingTop: SHEET_HANDLE_CLEARANCE }}
+                  >
+                    <View style={{ flexDirection: "row", alignItems: "center" }}>
+                      <GlassIconButton
+                        isDark={isDark}
+                        onPress={navigateBack}
+                        icon="back"
+                        style={{ width: 36 }}
+                      />
+                      <Text
+                        style={{
+                          flex: 1,
+                          textAlign: "center",
+                          color: colors.textStrong,
+                          fontSize: 17,
+                          fontWeight: "700",
+                        }}
+                      >
+                        {t("templates.key")}
+                      </Text>
+                      <View style={{ width: 36 }} />
+                    </View>
+                  </SheetProgressiveHeader>
+
+                  <View
+                    style={[
+                      styles.chipsRow,
+                      { justifyContent: "center", padding: 16, paddingTop: 20 },
+                    ]}
+                  >
+                    {noteNames.map((note) => {
+                      const isActive = note === noteKey;
+                      return (
+                        <TouchableOpacity
+                          key={note}
+                          onPress={() => {
+                            if (note !== noteKey) {
+                              setNoteKey(note);
+                              hideCallout(() => {
+                                setSelectedDegree(null);
+                                setSelectedNote(null);
+                              });
+                            }
+                            navigateBack();
+                          }}
+                          style={[
+                            styles.degreePickerChip,
+                            {
+                              backgroundColor: isActive ? colors.primaryBtn : colors.fillIdle,
+                              borderColor: isActive ? "transparent" : colors.borderStrong,
+                            },
+                          ]}
+                          activeOpacity={0.7}
+                          hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                        >
+                          <Text
+                            style={[
+                              styles.degreeChipText,
+                              {
+                                color: isActive
+                                  ? colors.primaryBtnText
+                                  : isDark
+                                    ? colors.textStrong
+                                    : colors.textDim,
+                              },
+                            ]}
+                          >
+                            {note}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
                   </View>
-                ))}
-              </View>
-            )}
-          </ScrollView>
+                </View>
+              )}
+            </Animated.View>
+          </View>
         </View>
       )}
     </BottomSheetModal>
@@ -493,5 +777,17 @@ const styles = StyleSheet.create({
   progressionArrow: {
     fontSize: 12,
     fontWeight: "400",
+  },
+  keyNavRow: {
+    alignItems: "center",
+    paddingBottom: 12,
+  },
+  pillLabel: {
+    fontSize: 11,
+    fontWeight: "500",
+  },
+  pillValue: {
+    fontSize: 14,
+    fontWeight: "600",
   },
 });
