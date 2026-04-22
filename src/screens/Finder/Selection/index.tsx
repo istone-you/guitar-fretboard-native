@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { ScrollView, View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
@@ -6,8 +6,7 @@ import "../../../i18n";
 import type { Theme } from "../../../types";
 import { getColors } from "../../../themes/design";
 import Icon, { type IconName } from "../../../components/ui/Icon";
-
-type FinderMode = "identify" | "chord-list";
+import type { FinderMode } from "../types";
 
 interface SelectionProps {
   theme: Theme;
@@ -32,6 +31,24 @@ const MODES: {
     titleKey: "finder.homeChordListTitle",
     descKey: "finder.homeChordListDesc",
   },
+  {
+    mode: "diatonic",
+    icon: "bar-chart",
+    titleKey: "finder.homeDiatonicTitle",
+    descKey: "finder.homeDiatonicDesc",
+  },
+  {
+    mode: "substitution",
+    icon: "music-note",
+    titleKey: "finder.homeSubTitle",
+    descKey: "finder.homeSubDesc",
+  },
+  {
+    mode: "capo",
+    icon: "capo",
+    titleKey: "finder.homeCapoTitle",
+    descKey: "finder.homeCapoDesc",
+  },
 ];
 
 export default function FinderSelection({ theme, onSelect }: SelectionProps) {
@@ -41,11 +58,10 @@ export default function FinderSelection({ theme, onSelect }: SelectionProps) {
   const insets = useSafeAreaInsets();
 
   return (
-    <View
-      style={[
-        styles.container,
-        { backgroundColor: colors.pageBg, paddingBottom: insets.bottom + 16 },
-      ]}
+    <ScrollView
+      style={{ flex: 1, backgroundColor: colors.pageBg }}
+      contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + 80 }]}
+      showsVerticalScrollIndicator={false}
     >
       {MODES.map(({ mode, icon, titleKey, descKey }) => (
         <TouchableOpacity
@@ -70,15 +86,14 @@ export default function FinderSelection({ theme, onSelect }: SelectionProps) {
           <Text style={[styles.cardDesc, { color: colors.textSubtle }]}>{t(descKey)}</Text>
         </TouchableOpacity>
       ))}
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     paddingHorizontal: 20,
-    justifyContent: "center",
+    paddingTop: 16,
     gap: 16,
   },
   card: {

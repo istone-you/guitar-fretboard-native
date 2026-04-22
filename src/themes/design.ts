@@ -301,3 +301,11 @@ export const TOGGLE_COLORS = {
   offDark: "#3A3A3C",
   offLight: "#E5E5EA",
 };
+
+// ── Diatonic chord function badge colors ──────────────────────────────────────
+
+export const DIATONIC_FUNCTION_COLORS: Record<"T" | "SD" | "D", string> = {
+  T: "#007AFF",
+  SD: "#34C759",
+  D: "#FF9500",
+};

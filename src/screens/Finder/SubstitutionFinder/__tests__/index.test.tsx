@@ -1,0 +1,147 @@
+import React from "react";
+import { render, fireEvent, screen } from "@testing-library/react-native";
+import SubstitutionFinder from "..";
+import type { LayerConfig } from "../../../../types";
+
+jest.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (key: string, opts?: Record<string, string>) =>
+      opts ? `${key}:${JSON.stringify(opts)}` : key,
+  }),
+}));
+jest.mock("../../../../i18n", () => ({}));
+jest.mock("expo-haptics", () => ({
+  impactAsync: jest.fn(),
+  ImpactFeedbackStyle: { Light: "Light", Medium: "Medium" },
+}));
+jest.mock("react-native-safe-area-context", () => ({
+  useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
+}));
+
+jest.mock("../../../../components/ui/NotePickerButton", () => {
+  const { TouchableOpacity, Text } = require("react-native");
+  return {
+    __esModule: true,
+    default: ({
+      value,
+      onChange,
+    }: {
+      value: string;
+      onChange: (n: string) => void;
+      label: string;
+    }) => (
+      <TouchableOpacity testID="note-picker" onPress={() => onChange("G")}>
+        <Text testID="note-value">{value}</Text>
+      </TouchableOpacity>
+    ),
+  };
+});
+
+jest.mock("../../../../components/ui/ChordDiagram", () => {
+  const { View } = require("react-native");
+  return {
+    __esModule: true,
+    default: () => <View testID="chord-diagram" />,
+    getAllChordForms: (_rootIndex: number, chordType: string) =>
+      chordType === "Major" || chordType === "Minor" ? [[{ string: 0, fret: 1 }]] : [],
+  };
+});
+
+jest.mock("../../../../components/LayerEditModal/LayerDescription", () => {
+  const { View } = require("react-native");
+  return { __esModule: true, default: () => <View testID="layer-description" /> };
+});
+
+function makeLayer(overrides: Partial<LayerConfig> = {}): LayerConfig {
+  return {
+    id: "l1",
+    type: "scale",
+    scaleType: "major",
+    color: "#ff0000",
+    enabled: true,
+    chordDisplayMode: "form",
+    chordType: "Major",
+    triadInversion: "root",
+    cagedForms: new Set(),
+    cagedChordType: "major",
+    onChordName: "C/E",
+    customMode: "note",
+    selectedNotes: new Set(),
+    selectedDegrees: new Set(),
+    hiddenCells: new Set(),
+    chordFrames: [],
+    ...overrides,
+  };
+}
+
+const defaultProps = {
+  theme: "light" as const,
+  accidental: "sharp" as const,
+  layers: [],
+  globalRootNote: "C",
+  onAddLayerAndNavigate: jest.fn(),
+};
+
+describe("SubstitutionFinder", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it("renders without crashing", () => {
+    expect(render(<SubstitutionFinder {...defaultProps} />).toJSON()).toBeTruthy();
+  });
+
+  it("shows note picker with default root C", () => {
+    render(<SubstitutionFinder {...defaultProps} />);
+    expect(screen.getByTestId("note-value").props.children).toBe("C");
+  });
+
+  it("renders chord type chips", () => {
+    render(<SubstitutionFinder {...defaultProps} />);
+    expect(screen.getByText("Maj")).toBeTruthy();
+    expect(screen.getByText("m")).toBeTruthy();
+    expect(screen.getByText("maj7")).toBeTruthy();
+    expect(screen.getByText("m7")).toBeTruthy();
+    expect(screen.getByText("7")).toBeTruthy();
+  });
+
+  it("shows two diatonic substitutions for Major (Am and Em)", () => {
+    render(<SubstitutionFinder {...defaultProps} />);
+    // C Major → Am (rootIndex 9) and Em (rootIndex 4)
+    expect(screen.getByTestId("sub-section-diatonic-9")).toBeTruthy();
+    expect(screen.getByTestId("sub-section-diatonic-4")).toBeTruthy();
+  });
+
+  it("shows tritone substitution when 7 chip is selected", () => {
+    render(<SubstitutionFinder {...defaultProps} />);
+    fireEvent.press(screen.getByText("7"));
+    // C7: tritone at rootIndex (0+6)%12 = 6
+    expect(screen.getByTestId("sub-section-tritone-6")).toBeTruthy();
+  });
+
+  it("updates root note when NotePickerButton changes", () => {
+    render(<SubstitutionFinder {...defaultProps} />);
+    fireEvent.press(screen.getByTestId("note-picker"));
+    expect(screen.getByTestId("note-value").props.children).toBe("G");
+  });
+
+  it("calls onAddLayerAndNavigate when add button is pressed", () => {
+    const onAdd = jest.fn();
+    render(<SubstitutionFinder {...defaultProps} onAddLayerAndNavigate={onAdd} />);
+    fireEvent.press(screen.getAllByText("finder.addToLayerTitle")[0]);
+    expect(onAdd).toHaveBeenCalled();
+  });
+
+  it("disables add buttons when layers are full", () => {
+    const fullLayers = [makeLayer({ id: "1" }), makeLayer({ id: "2" }), makeLayer({ id: "3" })];
+    render(<SubstitutionFinder {...defaultProps} layers={fullLayers} />);
+    const { UNSAFE_getAllByType } = screen;
+    const { TouchableOpacity } = require("react-native");
+    const disabled = UNSAFE_getAllByType(TouchableOpacity).filter(
+      (b: any) => b.props.disabled === true,
+    );
+    expect(disabled.length).toBeGreaterThan(0);
+  });
+
+  it("renders in dark theme without crashing", () => {
+    expect(render(<SubstitutionFinder {...defaultProps} theme="dark" />).toJSON()).toBeTruthy();
+  });
+});

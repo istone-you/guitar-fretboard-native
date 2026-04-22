@@ -109,8 +109,8 @@
       "on-chord": "オンコード"
     },
     "diatonicKey": {
-      "major": "メジャー",
-      "naturalMinor": "マイナー"
+      "major": "Major",
+      "naturalMinor": "Minor"
     },
     "diatonicChordSize": {
       "triad": "3和音",
@@ -285,10 +285,45 @@
     "inputModeFretboard": "指板図",
     "inputModeChip": "チップ",
     "chipRootInstruction": "タップでルート音を選択",
-    "homeIdentifyTitle": "音から探す",
+    "homeIdentifyTitle": "構成音",
     "homeIdentifyDesc": "構成音からコード・スケールを見つける",
-    "homeChordListTitle": "コードフォームから探す",
-    "homeChordListDesc": "フォームからコードを見つける"
+    "homeChordListTitle": "コードフォーム",
+    "homeChordListDesc": "フォームからコードを見つける",
+    "homeDiatonicTitle": "ダイアトニック",
+    "homeDiatonicDesc": "キーのダイアトニックコードを一覧で確認する",
+    "diatonic": {
+      "addAsProgression": "コード進行として追加"
+    },
+    "diatonicFunction": {
+      "tonic": "トニック",
+      "subdominant": "サブドミナント",
+      "dominant": "ドミナント",
+      "tonicDesc": "安定した響きを持つ機能。解決感があり、フレーズの落ち着き先になります。",
+      "subdominantDesc": "トニックとドミナントの中間に位置する機能。動きや色彩を加えます。",
+      "dominantDesc": "緊張感を持ち、トニックへ強く解決しようとする機能。半音上のリーディングトーンを含みます。"
+    },
+    "homeSubTitle": "代理コード",
+    "homeSubDesc": "コードの代理・置換候補を確認する",
+    "substitution": {
+      "sourceLabel": "{{chord}} の代理コード",
+      "diatonic": "ダイアトニック代理",
+      "tritone": "トライトーン代理",
+      "none": "この和音の代理コードはありません"
+    },
+    "homeCapoTitle": "カポ",
+    "homeCapoDesc": "カポタスト位置とコード形を変換する",
+    "capo": {
+      "modeFormToSound": "形 → 実音",
+      "modeSoundToForm": "実音 → 形",
+      "capoFret": "カポフレット",
+      "formKey": "押さえる形のキー",
+      "actualSound": "実際に鳴る音",
+      "targetKey": "出したい音のキー",
+      "shapeKey": "使うフォームのキー",
+      "capoPosition": "カポ位置",
+      "noCapo": "カポなし",
+      "highFret": "高フレット（実用外の可能性あり）"
+    }
   },
   "stats": {
     "title": "苦手傾向",

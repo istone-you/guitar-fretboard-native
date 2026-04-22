@@ -19,7 +19,8 @@ export type IconName =
   | "search"
   | "music-note"
   | "chord-grid"
-  | "ellipsis";
+  | "ellipsis"
+  | "capo";
 
 interface IconProps {
   name: IconName;
@@ -211,6 +212,19 @@ export default function Icon({
           {/* Dots */}
           <Circle cx={12} cy={9} r={2.5} fill={color} />
           <Circle cx={4} cy={15} r={2.5} fill={color} />
+        </>
+      )}
+      {name === "capo" && (
+        <>
+          <Path
+            d="M7 2V22M12 2V22M17 2V22"
+            stroke={color}
+            strokeWidth={sw * 0.7}
+            strokeLinecap="round"
+          />
+          <Path d="M4 8H20" stroke={color} strokeWidth={sw * 2.5} strokeLinecap="round" />
+          <Circle cx={7} cy={15} r={2.2} fill={color} />
+          <Circle cx={17} cy={13} r={2.2} fill={color} />
         </>
       )}
       {name === "ellipsis" && (

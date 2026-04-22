@@ -1,6 +1,6 @@
 import React from "react";
 import { render, fireEvent, screen } from "@testing-library/react-native";
-import ChordBrowser from "..";
+import DiatonicBrowser from "..";
 import type { LayerConfig } from "../../../../types";
 
 jest.mock("react-i18next", () => ({
@@ -29,7 +29,7 @@ jest.mock("../../../../components/ui/BottomSheetModal", () => {
       onClose: () => void;
     }) =>
       visible ? (
-        <View testID="chord-detail-sheet">{children({ close: onClose, dragHandlers: {} })}</View>
+        <View testID="diatonic-detail-sheet">{children({ close: onClose, dragHandlers: {} })}</View>
       ) : null,
     SHEET_HANDLE_CLEARANCE: 28,
     useSheetHeight: () => 500,
@@ -135,87 +135,81 @@ const defaultProps = {
   onAddLayerAndNavigate: jest.fn(),
 };
 
-describe("ChordBrowser", () => {
+describe("DiatonicBrowser", () => {
   beforeEach(() => jest.clearAllMocks());
 
   it("renders without crashing", () => {
-    const { toJSON } = render(<ChordBrowser {...defaultProps} />);
+    const { toJSON } = render(<DiatonicBrowser {...defaultProps} />);
     expect(toJSON()).toBeTruthy();
   });
 
-  it("shows the note picker button with default root C", () => {
-    render(<ChordBrowser {...defaultProps} />);
+  it("shows the note picker with default root C", () => {
+    render(<DiatonicBrowser {...defaultProps} />);
     expect(screen.getByTestId("note-value").props.children).toBe("C");
   });
 
   it("updates root note when NotePickerButton changes", () => {
-    render(<ChordBrowser {...defaultProps} />);
+    render(<DiatonicBrowser {...defaultProps} />);
     fireEvent.press(screen.getByTestId("note-picker"));
     expect(screen.getByTestId("note-value").props.children).toBe("G");
   });
 
-  it("renders chord diagrams in the list", () => {
-    render(<ChordBrowser {...defaultProps} />);
+  it("renders 7 chord rows for major key with app-style labels", () => {
+    render(<DiatonicBrowser {...defaultProps} />);
+    expect(screen.getByText("I")).toBeTruthy();
+    expect(screen.getByText("IIm")).toBeTruthy();
+    expect(screen.getByText("IV")).toBeTruthy();
+    expect(screen.getByText("VIIm(-5)")).toBeTruthy();
+  });
+
+  it("shows minor key chords when Min is selected from mode sheet", () => {
+    render(<DiatonicBrowser {...defaultProps} />);
+    fireEvent.press(screen.getByText("Maj"));
+    fireEvent.press(screen.getByText("Minor Triad"));
+    expect(screen.getByText("Im")).toBeTruthy();
+    expect(screen.getByText("♭III")).toBeTruthy();
+  });
+
+  it("renders chord diagrams for Major and Minor chords", () => {
+    render(<DiatonicBrowser {...defaultProps} />);
     const diagrams = screen.getAllByTestId("chord-diagram");
     expect(diagrams.length).toBeGreaterThan(0);
   });
 
-  it("shows chord labels for chord types with forms", () => {
-    render(<ChordBrowser {...defaultProps} />);
-    expect(screen.getAllByText("C").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Cm").length).toBeGreaterThan(0);
-  });
-
-  it("opens detail sheet when a chord item is tapped", () => {
-    const { UNSAFE_getAllByType } = render(<ChordBrowser {...defaultProps} />);
-    const { TouchableOpacity } = require("react-native");
-    const items = UNSAFE_getAllByType(TouchableOpacity);
-    fireEvent.press(items[1]);
-    expect(screen.getByTestId("chord-detail-sheet")).toBeTruthy();
+  it("opens detail sheet when a chord row is tapped", () => {
+    render(<DiatonicBrowser {...defaultProps} />);
+    fireEvent.press(screen.getByTestId("chord-row-I"));
+    expect(screen.getByTestId("diatonic-detail-sheet")).toBeTruthy();
   });
 
   it("closes detail sheet when close button is pressed", () => {
-    const { UNSAFE_getAllByType } = render(<ChordBrowser {...defaultProps} />);
-    const { TouchableOpacity } = require("react-native");
-    const items = UNSAFE_getAllByType(TouchableOpacity);
-    fireEvent.press(items[1]);
+    render(<DiatonicBrowser {...defaultProps} />);
+    fireEvent.press(screen.getByTestId("chord-row-I"));
     fireEvent.press(screen.getByTestId("glass-btn-close"));
-    expect(screen.queryByTestId("chord-detail-sheet")).toBeNull();
-  });
-
-  it("shows layer description in detail sheet", () => {
-    const { UNSAFE_getAllByType } = render(<ChordBrowser {...defaultProps} />);
-    const { TouchableOpacity } = require("react-native");
-    const items = UNSAFE_getAllByType(TouchableOpacity);
-    fireEvent.press(items[1]);
-    expect(screen.getByTestId("layer-description")).toBeTruthy();
+    expect(screen.queryByTestId("diatonic-detail-sheet")).toBeNull();
   });
 
   it("calls onAddLayerAndNavigate when add button is pressed", () => {
     const onAdd = jest.fn();
-    const { UNSAFE_getAllByType } = render(
-      <ChordBrowser {...defaultProps} onAddLayerAndNavigate={onAdd} />,
-    );
-    const { TouchableOpacity } = require("react-native");
-    const items = UNSAFE_getAllByType(TouchableOpacity);
-    fireEvent.press(items[1]);
+    render(<DiatonicBrowser {...defaultProps} onAddLayerAndNavigate={onAdd} />);
+    fireEvent.press(screen.getByTestId("chord-row-I"));
     fireEvent.press(screen.getByText("finder.addToLayerTitle"));
     expect(onAdd).toHaveBeenCalled();
   });
 
   it("disables add button when layers are full", () => {
     const fullLayers = [makeLayer({ id: "1" }), makeLayer({ id: "2" }), makeLayer({ id: "3" })];
-    const { UNSAFE_getAllByType } = render(<ChordBrowser {...defaultProps} layers={fullLayers} />);
+    render(<DiatonicBrowser {...defaultProps} layers={fullLayers} />);
+    fireEvent.press(screen.getByTestId("chord-row-I"));
+    const { UNSAFE_getAllByType } = screen;
     const { TouchableOpacity } = require("react-native");
-    const items = UNSAFE_getAllByType(TouchableOpacity);
-    fireEvent.press(items[1]);
     const allItems = UNSAFE_getAllByType(TouchableOpacity);
     const disabledBtn = allItems.find((b: any) => b.props.disabled === true);
     expect(disabledBtn).toBeTruthy();
   });
 
   it("renders in dark theme without crashing", () => {
-    const { toJSON } = render(<ChordBrowser {...defaultProps} theme="dark" />);
+    const { toJSON } = render(<DiatonicBrowser {...defaultProps} theme="dark" />);
     expect(toJSON()).toBeTruthy();
   });
 });

@@ -31,14 +31,18 @@ interface ChordBrowserProps {
   theme: Theme;
   accidental: Accidental;
   layers: LayerConfig[];
+  globalRootNote: string;
   onAddLayerAndNavigate: (layer: LayerConfig) => void;
+  onEnablePerLayerRoot?: () => void;
 }
 
 export default function ChordBrowser({
   theme,
   accidental,
   layers,
+  globalRootNote,
   onAddLayerAndNavigate,
+  onEnablePerLayerRoot,
 }: ChordBrowserProps) {
   const { t } = useTranslation();
   const isDark = theme === "dark";
@@ -65,9 +69,21 @@ export default function ChordBrowser({
     const layer = createDefaultLayer("chord", `layer-${Date.now()}`, color);
     layer.chordDisplayMode = "form";
     layer.chordType = pendingType;
+    if (rootNote !== globalRootNote) {
+      layer.layerRoot = rootNote;
+      onEnablePerLayerRoot?.();
+    }
     setPendingType(null);
     onAddLayerAndNavigate(layer);
-  }, [pendingType, isFull, layers, onAddLayerAndNavigate]);
+  }, [
+    pendingType,
+    isFull,
+    layers,
+    rootNote,
+    globalRootNote,
+    onAddLayerAndNavigate,
+    onEnablePerLayerRoot,
+  ]);
 
   const pendingLayer = useMemo(() => {
     if (!pendingType) return null;
@@ -230,7 +246,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    alignItems: "flex-start",
+    alignItems: "center",
   },
   chordItem: {
     paddingHorizontal: 16,

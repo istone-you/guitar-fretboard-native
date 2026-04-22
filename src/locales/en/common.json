@@ -285,10 +285,45 @@
     "inputModeFretboard": "Fretboard",
     "inputModeChip": "Chips",
     "chipRootInstruction": "Tap to select root note",
-    "homeIdentifyTitle": "Find by Notes",
+    "homeIdentifyTitle": "Notes",
     "homeIdentifyDesc": "Find chords and scales from selected notes",
-    "homeChordListTitle": "Find by Chord Form",
-    "homeChordListDesc": "Find a chord by its shape on the fretboard"
+    "homeChordListTitle": "Chord Forms",
+    "homeChordListDesc": "Find a chord by its shape on the fretboard",
+    "homeDiatonicTitle": "Diatonic",
+    "homeDiatonicDesc": "Browse diatonic chords for any key",
+    "diatonic": {
+      "addAsProgression": "Add as Progression"
+    },
+    "diatonicFunction": {
+      "tonic": "Tonic",
+      "subdominant": "Subdominant",
+      "dominant": "Dominant",
+      "tonicDesc": "A stable function that provides resolution and a sense of rest. Acts as the home base of the key.",
+      "subdominantDesc": "A function between tonic and dominant. Adds movement and color to a progression.",
+      "dominantDesc": "A tense function that strongly resolves to the tonic. Contains the leading tone a half-step below the root."
+    },
+    "homeSubTitle": "Substitutions",
+    "homeSubDesc": "Find substitute chords for any chord",
+    "substitution": {
+      "sourceLabel": "Substitutes for {{chord}}",
+      "diatonic": "Diatonic Sub.",
+      "tritone": "Tritone Sub.",
+      "none": "No substitutions for this chord type"
+    },
+    "homeCapoTitle": "Capo",
+    "homeCapoDesc": "Convert between capo position and chord shapes",
+    "capo": {
+      "modeFormToSound": "Shape → Sound",
+      "modeSoundToForm": "Sound → Shape",
+      "capoFret": "Capo Fret",
+      "formKey": "Shape Key",
+      "actualSound": "Actual Sound",
+      "targetKey": "Target Key",
+      "shapeKey": "Shape Key",
+      "capoPosition": "Capo Position",
+      "noCapo": "No Capo",
+      "highFret": "High fret (may be impractical)"
+    }
   },
   "stats": {
     "title": "Weak Points",

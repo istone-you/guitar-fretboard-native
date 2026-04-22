@@ -9,8 +9,10 @@ import type { Theme, Accidental, BaseLabelMode, LayerConfig } from "../../types"
 import FinderSelection from "./Selection";
 import IdentifyPane from "./IdentifyPane";
 import ChordBrowser from "./ChordBrowser";
-
-type FinderMode = "identify" | "chord-list";
+import DiatonicBrowser from "./DiatonicBrowser";
+import SubstitutionFinder from "./SubstitutionFinder";
+import CapoFinder from "./CapoFinder";
+import type { FinderMode } from "./types";
 
 export interface FinderPaneProps {
   theme: Theme;
@@ -22,6 +24,7 @@ export interface FinderPaneProps {
   layers: LayerConfig[];
   onAddLayerAndNavigate: (layer: LayerConfig) => void;
   onBaseLabelModeChange: (mode: BaseLabelMode) => void;
+  onEnablePerLayerRoot?: () => void;
   // Header props
   onThemeChange: (theme: Theme) => void;
   onFretRangeChange: (range: [number, number]) => void;
@@ -39,6 +42,7 @@ export default function FinderPane({
   layers,
   onAddLayerAndNavigate,
   onBaseLabelModeChange,
+  onEnablePerLayerRoot,
   onThemeChange,
   onFretRangeChange,
   onAccidentalChange,
@@ -150,13 +154,35 @@ export default function FinderPane({
                 onAddLayerAndNavigate={onAddLayerAndNavigate}
                 onBaseLabelModeChange={onBaseLabelModeChange}
               />
-            ) : (
+            ) : selectedMode === "chord-list" ? (
               <ChordBrowser
                 theme={theme}
                 accidental={accidental}
                 layers={layers}
+                globalRootNote={rootNote}
                 onAddLayerAndNavigate={onAddLayerAndNavigate}
+                onEnablePerLayerRoot={onEnablePerLayerRoot}
               />
+            ) : selectedMode === "diatonic" ? (
+              <DiatonicBrowser
+                theme={theme}
+                accidental={accidental}
+                layers={layers}
+                globalRootNote={rootNote}
+                onAddLayerAndNavigate={onAddLayerAndNavigate}
+                onEnablePerLayerRoot={onEnablePerLayerRoot}
+              />
+            ) : selectedMode === "substitution" ? (
+              <SubstitutionFinder
+                theme={theme}
+                accidental={accidental}
+                layers={layers}
+                globalRootNote={rootNote}
+                onAddLayerAndNavigate={onAddLayerAndNavigate}
+                onEnablePerLayerRoot={onEnablePerLayerRoot}
+              />
+            ) : (
+              <CapoFinder theme={theme} accidental={accidental} />
             )}
           </Animated.View>
         )}

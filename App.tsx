@@ -122,6 +122,20 @@ export default function App() {
   const [tabIndex, setTabIndex] = useState(0);
   const quizScreenRef = useRef<QuizScreenHandle>(null);
 
+  const handlePerLayerRootChange = useCallback(
+    (v: boolean) => {
+      setPerLayerRoot(v);
+      if (!v) {
+        layers.forEach((layer) => {
+          if (layer.layerRoot) {
+            handleUpdateLayer(layer.id, { ...layer, layerRoot: undefined });
+          }
+        });
+      }
+    },
+    [setPerLayerRoot, layers, handleUpdateLayer],
+  );
+
   const handleAccidentalChange = useCallback(
     (mode: Accidental) => {
       const idx = getRootIndex(rootNote);
@@ -247,7 +261,7 @@ export default function App() {
           isLandscape={isLandscape}
           disableAnimation={isLandscape || animDisabled}
           perLayerRoot={perLayerRoot}
-          onPerLayerRootChange={setPerLayerRoot}
+          onPerLayerRootChange={handlePerLayerRootChange}
         />
       );
     }
@@ -259,6 +273,7 @@ export default function App() {
           rootNote={rootNote}
           layers={layers}
           onBaseLabelModeChange={setBaseLabelMode}
+          onEnablePerLayerRoot={() => setPerLayerRoot(true)}
           onAddLayerAndNavigate={(layer) => {
             setTabIndex(0);
             setTimeout(() => handleAddLayer(layer), 0);
