@@ -264,3 +264,55 @@ describe("useLayerDerivedState – overlaySemitones (progression)", () => {
     expect(result.current.overlaySemitones).toBeDefined();
   });
 });
+
+// ---------------------------------------------------------------------------
+// layerNoteLabelsMap — per-layer root (layerRoot)
+// ---------------------------------------------------------------------------
+
+describe("useLayerDerivedState – layerNoteLabelsMap (per-layer root)", () => {
+  it("uses layerRoot instead of global rootNote for note labels", () => {
+    const layer = createDefaultLayer("scale", "l1", "#ff0000");
+    layer.scaleType = "major";
+    layer.layerRoot = "G";
+    const { result } = setup({
+      layers: [layer],
+      rootNote: "C",
+      accidental: "sharp",
+      baseLabelMode: "note",
+    });
+    const labels = result.current.layerNoteLabelsMap.get("l1");
+    // G major notes: G, A, B, C, D, E, F♯
+    expect(labels).toEqual(["G", "A", "B", "C", "D", "E", "F♯"]);
+  });
+
+  it("uses global rootNote when layerRoot is undefined", () => {
+    const layer = createDefaultLayer("scale", "l1", "#ff0000");
+    layer.scaleType = "major";
+    // layerRoot is undefined by default
+    const { result } = setup({
+      layers: [layer],
+      rootNote: "G",
+      accidental: "sharp",
+      baseLabelMode: "note",
+    });
+    const labels = result.current.layerNoteLabelsMap.get("l1");
+    // G major notes: G, A, B, C, D, E, F♯
+    expect(labels).toEqual(["G", "A", "B", "C", "D", "E", "F♯"]);
+  });
+
+  it("uses per-layer root for chord layer labels", () => {
+    const layer = createDefaultLayer("chord", "l1", "#ff0000");
+    layer.chordDisplayMode = "form";
+    layer.chordType = "Major";
+    layer.layerRoot = "E";
+    const { result } = setup({
+      layers: [layer],
+      rootNote: "C",
+      accidental: "sharp",
+      baseLabelMode: "note",
+    });
+    const labels = result.current.layerNoteLabelsMap.get("l1");
+    // E Major: E, G♯, B (semitones 0, 4, 7 from E)
+    expect(labels).toEqual(["E", "G♯", "B"]);
+  });
+});

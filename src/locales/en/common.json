@@ -53,7 +53,8 @@
     "layerCount": "layers",
     "back": "Back",
     "type": "Type",
-    "customMode": "Mode"
+    "customMode": "Mode",
+    "layerRoot": "Root"
   },
   "controls": {
     "displayMode": "Display",
@@ -75,7 +76,8 @@
     "display": "Labels",
     "note": "Notes",
     "degree": "Degrees",
-    "quiz": "Quiz"
+    "quiz": "Quiz",
+    "perLayerRoot": "Per-Layer Root"
   },
   "degreeFilter": {
     "title": "Degrees"

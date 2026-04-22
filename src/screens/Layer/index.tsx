@@ -42,6 +42,8 @@ export interface LayerPaneProps {
   onDeletePreset?: (id: string) => void;
   progressionTemplates?: ProgressionTemplate[];
   hidePresetButton?: boolean;
+  perLayerRoot?: boolean;
+  onPerLayerRootChange?: (value: boolean) => void;
   // Header props
   onThemeChange: (theme: Theme) => void;
   onFretRangeChange: (range: [number, number]) => void;
@@ -80,6 +82,8 @@ export default function LayerPane({
   onDeletePreset,
   progressionTemplates,
   hidePresetButton,
+  perLayerRoot,
+  onPerLayerRootChange,
   onThemeChange,
   onFretRangeChange,
   onAccidentalChange,
@@ -129,6 +133,8 @@ export default function LayerPane({
             onRootNoteChange={onRootNoteChange}
             onBaseLabelModeChange={onBaseLabelModeChange}
             onPresetPress={hidePresetButton ? undefined : () => setPresetModalVisible(true)}
+            perLayerRoot={perLayerRoot}
+            onPerLayerRootChange={onPerLayerRootChange}
           />
         }
       >
@@ -149,6 +155,7 @@ export default function LayerPane({
             overlayNotes={overlayNotes}
             overlaySemitones={overlaySemitones}
             layerNoteLabels={layerNoteLabelsMap}
+            perLayerRoot={perLayerRoot}
             onLoadPreset={onLoadPreset}
             presetModalVisible={presetModalVisible}
             onPresetModalClose={() => setPresetModalVisible(false)}

@@ -1,9 +1,10 @@
 import { useRef, useState } from "react";
-import { Animated, View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { Animated, View, Text, TouchableOpacity, StyleSheet, Switch } from "react-native";
 import * as Haptics from "expo-haptics";
+import { useTranslation } from "react-i18next";
 import type { Accidental, Theme } from "../../../types";
 import { getNotesByAccidental } from "../../../lib/fretboard";
-import { getColors, radius, WHITE, BLACK } from "../../../themes/design";
+import { getColors, radius, WHITE, BLACK, TOGGLE_COLORS } from "../../../themes/design";
 import { getPillStyle } from "../PillButton";
 import BottomSheetModal, { SHEET_HANDLE_CLEARANCE, useSheetHeight } from "../BottomSheetModal";
 import SheetProgressiveHeader from "../SheetProgressiveHeader";
@@ -17,6 +18,9 @@ interface NotePickerButtonProps {
   onChange: (note: string) => void;
   label: string;
   sheetTitle: string;
+  perLayerRoot?: boolean;
+  onPerLayerRootChange?: (value: boolean) => void;
+  disabled?: boolean;
 }
 
 export default function NotePickerButton({
@@ -26,7 +30,11 @@ export default function NotePickerButton({
   onChange,
   label,
   sheetTitle,
+  perLayerRoot,
+  onPerLayerRootChange,
+  disabled,
 }: NotePickerButtonProps) {
+  const { t } = useTranslation();
   const isDark = theme === "dark";
   const sheetHeight = useSheetHeight();
   const [sheetVisible, setSheetVisible] = useState(false);
@@ -40,8 +48,10 @@ export default function NotePickerButton({
 
   const scale = useRef(new Animated.Value(1)).current;
   const prevValue = useRef(value);
-  if (prevValue.current !== value) {
+  const prevDisabled = useRef(disabled);
+  if (prevValue.current !== value || prevDisabled.current !== disabled) {
     prevValue.current = value;
+    prevDisabled.current = disabled;
     scale.stopAnimation();
     scale.setValue(0.8);
     Animated.spring(scale, {
@@ -63,7 +73,9 @@ export default function NotePickerButton({
       >
         <Animated.View style={[getPillStyle(colors), { transform: [{ scale }] }]}>
           <Text style={[styles.pillLabel, { color: colors.textSubtle }]}>{label}</Text>
-          <Text style={[styles.pillText, { color: colors.text }]}>{value}</Text>
+          <Text style={[styles.pillText, { color: disabled ? colors.textMuted : colors.text }]}>
+            {disabled ? "-" : value}
+          </Text>
         </Animated.View>
       </TouchableOpacity>
 
@@ -95,7 +107,10 @@ export default function NotePickerButton({
               </View>
             </SheetProgressiveHeader>
 
-            <View style={styles.noteGrid}>
+            <View
+              style={[styles.noteGrid, disabled && { opacity: 0.35 }]}
+              pointerEvents={disabled ? "none" : "auto"}
+            >
               {notes.map((note) => (
                 <NotePill
                   key={note}
@@ -112,6 +127,30 @@ export default function NotePickerButton({
                 />
               ))}
             </View>
+
+            {onPerLayerRootChange !== undefined && (
+              <View
+                style={[
+                  styles.settingsSection,
+                  { borderTopColor: colors.border, borderColor: colors.border },
+                ]}
+              >
+                <View style={[styles.settingsRow, { borderColor: colors.border }]}>
+                  <Text style={[styles.settingsLabel, { color: colors.text }]}>
+                    {t("header.perLayerRoot")}
+                  </Text>
+                  <Switch
+                    value={perLayerRoot ?? false}
+                    onValueChange={(v) => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      onPerLayerRootChange(v);
+                    }}
+                    trackColor={{ false: colors.borderStrong, true: TOGGLE_COLORS.on }}
+                    ios_backgroundColor={colors.borderStrong}
+                  />
+                </View>
+              </View>
+            )}
           </View>
         )}
       </BottomSheetModal>
@@ -158,5 +197,21 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     gap: 10,
     justifyContent: "center",
+  },
+  settingsSection: {
+    marginTop: 16,
+    marginHorizontal: 20,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingTop: 12,
+  },
+  settingsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 4,
+  },
+  settingsLabel: {
+    fontSize: 15,
+    fontWeight: "500",
   },
 });

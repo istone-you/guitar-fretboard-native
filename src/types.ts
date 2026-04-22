@@ -89,6 +89,7 @@ export interface LayerConfig {
   type: LayerType;
   color: string;
   enabled: boolean;
+  layerRoot?: string;
   // Scale settings
   scaleType: ScaleType;
   // Chord settings

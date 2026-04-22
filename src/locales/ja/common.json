@@ -53,7 +53,8 @@
     "back": "戻る",
     "type": "タイプ",
     "customMode": "モード",
-    "layerCount": "レイヤー"
+    "layerCount": "レイヤー",
+    "layerRoot": "ルート"
   },
   "controls": {
     "displayMode": "表示形式",
@@ -75,7 +76,8 @@
     "display": "表示",
     "note": "音名",
     "degree": "度数",
-    "quiz": "クイズ"
+    "quiz": "クイズ",
+    "perLayerRoot": "レイヤーごとのルート"
   },
   "degreeFilter": {
     "title": "度数"

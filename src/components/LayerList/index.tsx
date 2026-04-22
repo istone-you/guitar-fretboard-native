@@ -259,6 +259,7 @@ interface LayerListProps {
   loadPreset: (id: string) => LayerConfig[] | null;
   onDeletePreset?: (id: string) => void;
   progressionTemplates?: ProgressionTemplate[];
+  perLayerRoot?: boolean;
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -288,6 +289,7 @@ export default function LayerList({
   loadPreset,
   onDeletePreset,
   progressionTemplates,
+  perLayerRoot,
 }: LayerListProps) {
   const { t } = useTranslation();
   const isDark = theme === "dark";
@@ -848,10 +850,19 @@ export default function LayerList({
                         activeOpacity={0.7}
                       >
                         <View style={styles.summaryArea}>
-                          <View style={[styles.typeBadge, { borderColor: colors.border }]}>
-                            <Text style={[styles.layerType, { color: colors.textSubtle }]}>
-                              {getTypeLabel(slot)}
-                            </Text>
+                          <View style={styles.badgeRow}>
+                            <View style={[styles.typeBadge, { borderColor: colors.border }]}>
+                              <Text style={[styles.layerType, { color: colors.textSubtle }]}>
+                                {getTypeLabel(slot)}
+                              </Text>
+                            </View>
+                            {perLayerRoot && (
+                              <View style={[styles.typeBadge, { borderColor: colors.border }]}>
+                                <Text style={[styles.layerType, { color: colors.textSubtle }]}>
+                                  {slot.layerRoot ?? rootNote}
+                                </Text>
+                              </View>
+                            )}
                           </View>
                           <Text
                             style={[styles.layerSummary, { color: colors.text }]}
@@ -1096,6 +1107,7 @@ export default function LayerList({
         onSave={handleSave}
         onPreview={onPreviewLayer}
         progressionTemplates={progressionTemplates}
+        perLayerRoot={perLayerRoot}
       />
 
       <LayerPresetModal
@@ -1153,6 +1165,11 @@ const styles = StyleSheet.create({
   },
   actionBtn: {
     padding: 8,
+  },
+  badgeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
   },
   typeBadge: {
     alignSelf: "flex-start",

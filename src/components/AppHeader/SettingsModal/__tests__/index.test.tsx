@@ -109,7 +109,7 @@ describe("SettingsModal", () => {
     const ref = createRef<SettingsModalRef>();
     render(<SettingsModal ref={ref} {...defaultProps} onThemeChange={onThemeChange} />);
     openModal(ref);
-    fireEvent.press(screen.getByText("☾"));
+    fireEvent.press(screen.getByText("🌙"));
     expect(onThemeChange).toHaveBeenCalledWith("dark");
   });
 

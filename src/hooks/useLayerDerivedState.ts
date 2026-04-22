@@ -107,11 +107,12 @@ export function useLayerDerivedState({
 
   const layerNoteLabelsMap = useMemo(() => {
     const notes = getNotesByAccidental(accidental);
-    const rootIndex = getRootIndex(rootNote);
+    const globalRootIndex = getRootIndex(rootNote);
     const useDegree = baseLabelMode === "degree";
     const map = new Map<string, string[]>();
 
     for (const l of effectiveLayers) {
+      const rootIndex = l.layerRoot ? getRootIndex(l.layerRoot) : globalRootIndex;
       let semitones: number[] = [];
       if (l.type === "scale") {
         semitones = [...(SCALE_DEGREES[l.scaleType] ?? [])];

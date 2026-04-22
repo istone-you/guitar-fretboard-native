@@ -132,6 +132,7 @@ interface LayerEditModalProps {
   onSave: (layer: LayerConfig) => void;
   onPreview?: (layer: LayerConfig) => void;
   progressionTemplates?: ProgressionTemplate[];
+  perLayerRoot?: boolean;
 }
 
 export default function LayerEditModal({
@@ -145,6 +146,7 @@ export default function LayerEditModal({
   onSave,
   onPreview,
   progressionTemplates,
+  perLayerRoot,
 }: LayerEditModalProps) {
   const { t } = useTranslation();
   const isDark = theme === "dark";
@@ -263,13 +265,17 @@ export default function LayerEditModal({
 
   const { options: scaleOptions } = buildScaleOptions(t);
   const notes = getNotesByAccidental(accidental);
+  const effectiveRootNote = layer.layerRoot ?? rootNote;
 
   const chordDisplayOptions: { value: ChordDisplayMode; label: string }[] = [
     { value: "form", label: t("options.chordDisplayMode.form") },
     { value: "triad", label: t("options.chordDisplayMode.triad") },
     { value: "on-chord", label: t("options.chordDisplayMode.on-chord") },
   ];
-  const onChordOptions = getOnChordListForRoot(rootNote).map((v) => ({ value: v, label: v }));
+  const onChordOptions = getOnChordListForRoot(effectiveRootNote).map((v) => ({
+    value: v,
+    label: v,
+  }));
   const triadInversionOptions = TRIAD_INVERSION_OPTIONS.map(({ value }) => ({
     value,
     label: t(`options.triadInversions.${value}`),
@@ -430,6 +436,23 @@ export default function LayerEditModal({
                       onContentSizeChange={flashSheetScrollIndicator}
                     >
                       <View style={styles.settingsBody}>
+                        {/* Per-layer root selector */}
+                        {perLayerRoot &&
+                          renderSection(
+                            renderNavRow(
+                              t("layers.layerRoot"),
+                              layer.layerRoot ?? rootNote,
+                              () =>
+                                navigate("select", {
+                                  title: t("layers.layerRoot"),
+                                  options: notes.map((n) => ({ value: n, label: n })),
+                                  currentValue: layer.layerRoot ?? rootNote,
+                                  onSelect: (v) => update({ layerRoot: v }),
+                                }),
+                              true,
+                            ),
+                          )}
+
                         {/* Scale settings */}
                         {layer.type === "scale" &&
                           renderSection(

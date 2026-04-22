@@ -27,6 +27,7 @@ const STORAGE_KEYS = {
   accidental: "guiter:accidental",
   fretRange: "guiter:fret-range",
   leftHanded: "guiter:left-handed",
+  perLayerRoot: "guiter:per-layer-root",
 } as const;
 
 export default function App() {
@@ -66,6 +67,12 @@ export default function App() {
   );
   const [leftHanded, setLeftHanded] = usePersistedSetting<boolean>(
     STORAGE_KEYS.leftHanded,
+    false,
+    (v) => String(v),
+    (v) => v === "true",
+  );
+  const [perLayerRoot, setPerLayerRoot] = usePersistedSetting<boolean>(
+    STORAGE_KEYS.perLayerRoot,
     false,
     (v) => String(v),
     (v) => v === "true",
@@ -239,6 +246,8 @@ export default function App() {
           {...sharedHeaderProps}
           isLandscape={isLandscape}
           disableAnimation={isLandscape || animDisabled}
+          perLayerRoot={perLayerRoot}
+          onPerLayerRootChange={setPerLayerRoot}
         />
       );
     }

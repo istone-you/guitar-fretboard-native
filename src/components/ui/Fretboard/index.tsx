@@ -370,13 +370,14 @@ export default function Fretboard({
     const map = new Map<string, { color: string; zIndex: number }[]>();
     layers.forEach((layer, idx) => {
       if (!layer.enabled) return;
+      const effectiveRootIndex = layer.layerRoot ? getRootIndex(layer.layerRoot) : rootIndex;
       const cells: { string: number; fret: number }[] = [];
       if (layer.type === "scale") {
         // Generate all cells where the note is in the scale
         for (let s = 0; s < 6; s++) {
           for (let f = fretMin; f <= fretMax; f++) {
             const noteIdx = getNoteIndex(s, f);
-            const semitone = calcDegree(noteIdx, rootIndex);
+            const semitone = calcDegree(noteIdx, effectiveRootIndex);
             if (isInScale(semitone, layer.scaleType)) {
               cells.push({ string: s, fret: f });
             }
@@ -386,7 +387,7 @@ export default function Fretboard({
         const seen = new Set<string>();
         for (const key of CHORD_CAGED_ORDER) {
           if (!layer.cagedForms.has(key)) continue;
-          for (const cell of getCagedFormCells(key, rootIndex, layer.cagedChordType)) {
+          for (const cell of getCagedFormCells(key, effectiveRootIndex, layer.cagedChordType)) {
             const k = `${cell.string}-${cell.fret}`;
             if (seen.has(k)) continue;
             seen.add(k);
@@ -396,7 +397,7 @@ export default function Fretboard({
       } else if (layer.type === "chord") {
         cells.push(
           ...getChordLayerCells(
-            rootIndex,
+            effectiveRootIndex,
             layer.chordDisplayMode,
             layer.chordType,
             layer.triadInversion,
@@ -421,7 +422,7 @@ export default function Fretboard({
             if (layer.customMode === "note" && layer.selectedNotes.has(noteName)) {
               cells.push({ string: s, fret: f });
             } else if (layer.customMode === "degree" && selectedSemitones) {
-              const semitone = calcDegree(noteIdx, rootIndex);
+              const semitone = calcDegree(noteIdx, effectiveRootIndex);
               if (selectedSemitones.has(semitone)) {
                 cells.push({ string: s, fret: f });
               }
@@ -441,7 +442,7 @@ export default function Fretboard({
         const ghostColor = hexToRgba(layer.color, 0.3);
 
         const getStepCells = (stepIdx: number): FretCell[] => {
-          const resolved = resolveProgressionStep(rootIndex, template, stepIdx);
+          const resolved = resolveProgressionStep(effectiveRootIndex, template, stepIdx);
           return getChordLayerCells(resolved.rootIndex, "form", resolved.chordType, "root");
         };
 
@@ -484,11 +485,12 @@ export default function Fretboard({
 
       // CAGED layer type
       if (layer.type === "caged") {
+        const effectiveRootIndex = layer.layerRoot ? getRootIndex(layer.layerRoot) : rootIndex;
         const color = layer.color;
         const frameVisible = layer.showChordFrame !== false;
         for (const key of CHORD_CAGED_ORDER) {
           if (!layer.cagedForms.has(key)) continue;
-          const cells = getCagedFormCells(key, rootIndex, layer.cagedChordType);
+          const cells = getCagedFormCells(key, effectiveRootIndex, layer.cagedChordType);
           if (cells.length === 0) continue;
           const frets = cells.map((c) => c.fret);
           const strings = cells.map((c) => c.string);
@@ -516,7 +518,7 @@ export default function Fretboard({
         continue;
       const color = layer.color;
       const frameVisible = layer.showChordFrame !== false;
-      const ri = rootIndex;
+      const ri = layer.layerRoot ? getRootIndex(layer.layerRoot) : rootIndex;
 
       if (layer.chordDisplayMode === "triad") {
         for (const opt of TRIAD_STRING_SET_OPTIONS) {
@@ -577,7 +579,7 @@ export default function Fretboard({
           Math.max(layer.progressionCurrentStep ?? 0, 0),
           totalSteps - 1,
         );
-        const chord = resolveProgressionStep(rootIndex, template, currentStep);
+        const chord = resolveProgressionStep(ri, template, currentStep);
         effRootIndex = chord.rootIndex;
         effChordType = chord.chordType;
       }

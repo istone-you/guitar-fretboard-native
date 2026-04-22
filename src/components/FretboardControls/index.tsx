@@ -17,6 +17,8 @@ interface FretboardControlsProps {
   onRootNoteChange: (note: string) => void;
   onBaseLabelModeChange: (mode: BaseLabelMode) => void;
   onPresetPress?: () => void;
+  perLayerRoot?: boolean;
+  onPerLayerRootChange?: (value: boolean) => void;
 }
 
 export default function FretboardControls({
@@ -27,6 +29,8 @@ export default function FretboardControls({
   onRootNoteChange,
   onBaseLabelModeChange,
   onPresetPress,
+  perLayerRoot,
+  onPerLayerRootChange,
 }: FretboardControlsProps) {
   const { t, i18n } = useTranslation();
   const isDark = theme === "dark";
@@ -56,6 +60,9 @@ export default function FretboardControls({
           onChange={onRootNoteChange}
           label={t("header.root")}
           sheetTitle={t("header.root")}
+          perLayerRoot={perLayerRoot}
+          onPerLayerRootChange={onPerLayerRootChange}
+          disabled={perLayerRoot}
         />
 
         {onPresetPress && (
