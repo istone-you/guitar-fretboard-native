@@ -13,6 +13,7 @@ import { useLayers } from "@/hooks/useLayers";
 import { useOrientation } from "@/hooks/useOrientation";
 import { getNotesByAccidental, getRootIndex, PROGRESSION_TEMPLATES } from "@/lib/fretboard";
 import type { Theme, Accidental, BaseLabelMode } from "@/types";
+import { BLACK, WHITE } from "@/themes/design";
 import LayerPane from "@/screens/Layer";
 import QuizScreen, { type QuizScreenHandle } from "@/screens/Quiz";
 import FinderPane from "@/screens/Finder";
@@ -178,7 +179,7 @@ export default function App() {
   );
 
   const isDark = theme === "dark";
-  const bgColor = isDark ? "#000000" : "#ffffff";
+  const bgColor = isDark ? BLACK : WHITE;
 
   const routes = useMemo(
     () => [

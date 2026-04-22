@@ -15,7 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 import "../../i18n";
-import { getColors, SEMANTIC_COLORS, DEFAULT_LAYER_COLORS } from "../../themes/design";
+import { getColors, SEMANTIC_COLORS, DEFAULT_LAYER_COLORS, BLACK } from "../../themes/design";
 import Icon from "../../components/ui/Icon";
 import PillButton from "../../components/ui/PillButton";
 import SceneHeader from "../../components/AppHeader/SceneHeader";
@@ -501,7 +501,7 @@ const TemplatesPane = forwardRef<TemplatesPaneHandle, TemplatesPaneProps>(functi
                         right: 0,
                         transform: [{ translateY: templateFloatY }],
                         zIndex: 100,
-                        shadowColor: "#000",
+                        shadowColor: BLACK,
                         shadowOffset: { width: 0, height: 8 },
                         shadowOpacity: isDark ? 0.5 : 0.22,
                         shadowRadius: 16,

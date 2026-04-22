@@ -1,8 +1,9 @@
 import Svg, { Path } from "react-native-svg";
+import { getColors } from "../../../themes/design";
 
 export default function ChevronIcon({
   size = 10,
-  color = "#6b7280",
+  color = getColors(false).iconSubtle,
   direction = "down",
 }: {
   size?: number;

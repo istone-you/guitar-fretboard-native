@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
     width: THUMB_W,
     height: THUMB_H,
     borderRadius: THUMB_H / 2,
-    shadowColor: "#000",
+    shadowColor: BLACK,
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.22,
     shadowRadius: 8,

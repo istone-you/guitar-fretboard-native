@@ -13,7 +13,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import "../../../i18n";
 import type { Accidental, Theme, LayerConfig, ChordType } from "../../../types";
 import { createDefaultLayer, MAX_LAYERS } from "../../../types";
-import { getColors, pickNextLayerColor, DIATONIC_FUNCTION_COLORS } from "../../../themes/design";
+import {
+  getColors,
+  pickNextLayerColor,
+  DIATONIC_FUNCTION_COLORS,
+  BLACK,
+} from "../../../themes/design";
 import {
   DIATONIC_CHORDS,
   CHORD_SUFFIX_MAP,
@@ -125,7 +130,7 @@ export default function DiatonicBrowser({
 
   const pendingLayer = useMemo(() => {
     if (!pendingEntry) return null;
-    const layer = createDefaultLayer("chord", "diatonic-desc", "#000");
+    const layer = createDefaultLayer("chord", "diatonic-desc", BLACK);
     layer.chordDisplayMode = "form";
     layer.chordType = pendingEntry.chordType;
     return layer;

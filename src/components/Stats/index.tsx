@@ -16,7 +16,7 @@ import Icon from "../ui/Icon";
 import { DEGREE_BY_SEMITONE, getNotesByAccidental } from "../../lib/fretboard";
 import { CHORD_QUIZ_TYPES_ALL } from "../../hooks/useQuiz";
 import type { Accidental, QuizMode, QuizRecord, ScaleType, Theme } from "../../types";
-import { getColors, STATS_RATE_COLORS } from "../../themes/design";
+import { getColors, STATS_RATE_COLORS, BLACK } from "../../themes/design";
 import PillButton from "../ui/PillButton";
 
 const MIN_SAMPLES = 5;
@@ -573,7 +573,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     overflow: "hidden",
-    shadowColor: "#000",
+    shadowColor: BLACK,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,

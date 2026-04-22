@@ -243,7 +243,7 @@ const LayerOverlayDot = memo(function LayerOverlayDot({
         <Animated.Text
           style={{
             fontSize: overlayFontSize,
-            color: "#ffffff",
+            color: WHITE,
             fontWeight: "bold",
             transform: [{ scale: textScale }],
           }}

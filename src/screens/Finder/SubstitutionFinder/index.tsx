@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import "../../../i18n";
 import type { Accidental, Theme, LayerConfig, ChordType } from "../../../types";
 import { createDefaultLayer, MAX_LAYERS } from "../../../types";
-import { getColors, pickNextLayerColor } from "../../../themes/design";
+import { getColors, pickNextLayerColor, BLACK } from "../../../themes/design";
 import { CHORD_SUFFIX_MAP, getRootIndex, getNotesByAccidental } from "../../../lib/fretboard";
 import {
   getSubstitutions,
@@ -163,7 +163,7 @@ export default function SubstitutionFinder({
             const subRootName = notes[sub.rootIndex];
             const subChordName = `${subRootName}${CHORD_SUFFIX_MAP[sub.chordType] ?? ""}`;
             const forms = getAllChordForms(sub.rootIndex, sub.chordType);
-            const descLayer = createDefaultLayer("chord", "sub-desc", "#000");
+            const descLayer = createDefaultLayer("chord", "sub-desc", BLACK);
             descLayer.chordDisplayMode = "form";
             descLayer.chordType = sub.chordType;
 

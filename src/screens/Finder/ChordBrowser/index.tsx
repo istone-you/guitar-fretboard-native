@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import "../../../i18n";
 import type { Accidental, Theme, LayerConfig, ChordType } from "../../../types";
 import { createDefaultLayer, MAX_LAYERS } from "../../../types";
-import { getColors, pickNextLayerColor } from "../../../themes/design";
+import { getColors, pickNextLayerColor, BLACK } from "../../../themes/design";
 import { CHORD_TYPES_CORE, CHORD_SUFFIX_MAP, getRootIndex } from "../../../lib/fretboard";
 import ChordDiagram, { getAllChordForms } from "../../../components/ui/ChordDiagram";
 import NotePickerButton from "../../../components/ui/NotePickerButton";
@@ -87,7 +87,7 @@ export default function ChordBrowser({
 
   const pendingLayer = useMemo(() => {
     if (!pendingType) return null;
-    const layer = createDefaultLayer("chord", "browser-desc", "#000");
+    const layer = createDefaultLayer("chord", "browser-desc", BLACK);
     layer.chordDisplayMode = "form";
     layer.chordType = pendingType;
     return layer;

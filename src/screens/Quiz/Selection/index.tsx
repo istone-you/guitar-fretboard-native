@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import "../../../i18n";
 import type { Theme } from "../../../types";
 import PillButton from "../../../components/ui/PillButton";
-import { getColors, QUIZ_MODE_COLORS } from "../../../themes/design";
+import { getColors, QUIZ_MODE_COLORS, BLACK } from "../../../themes/design";
 
 interface QuizKindOption {
   value: string;
@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     overflow: "hidden",
-    shadowColor: "#000",
+    shadowColor: BLACK,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
