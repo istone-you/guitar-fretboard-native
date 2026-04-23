@@ -153,10 +153,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     marginBottom: 6,
   },
-  statsBtnText: {
-    fontSize: 13,
-    fontWeight: "500",
-  },
+  statsBtnText: {},
   card: {
     borderRadius: 16,
     borderWidth: 1,

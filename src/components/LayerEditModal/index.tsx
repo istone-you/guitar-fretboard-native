@@ -952,7 +952,7 @@ export default function LayerEditModal({
                             }
                             style={{ flex: 1, justifyContent: "center" }}
                           >
-                            <Text style={{ fontSize: 13, fontWeight: "500", color: labelColor }}>
+                            <Text style={{ color: labelColor }}>
                               {t("layers.extractFromChord")}
                             </Text>
                           </PillButton>
@@ -968,15 +968,7 @@ export default function LayerEditModal({
                             }
                             style={{ flex: 1, justifyContent: "center" }}
                           >
-                            <Text
-                              style={{
-                                fontSize: 13,
-                                fontWeight: "500",
-                                color: colors.textDanger,
-                              }}
-                            >
-                              {t("layers.reset")}
-                            </Text>
+                            <Text style={{ color: colors.textDanger }}>{t("layers.reset")}</Text>
                           </PillButton>
                         </View>
                       </View>

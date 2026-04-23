@@ -317,10 +317,7 @@ const styles = StyleSheet.create({
     gap: 8,
     alignItems: "center",
   },
-  addButtonText: {
-    fontSize: 15,
-    fontWeight: "600",
-  },
+  addButtonText: {},
   fullText: {
     fontSize: 12,
     textAlign: "center",

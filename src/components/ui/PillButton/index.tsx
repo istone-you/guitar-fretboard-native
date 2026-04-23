@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
-import { TouchableOpacity, type StyleProp, type ViewStyle } from "react-native";
+import React, { type ReactNode } from "react";
+import { Text, TouchableOpacity, type StyleProp, type ViewStyle } from "react-native";
 import { getColors, radius, type ThemeColors } from "../../../themes/design";
 
 export function getPillStyle(colors: ThemeColors): ViewStyle {
@@ -21,6 +21,18 @@ function getDangerStyle(isDark: boolean): ViewStyle {
     borderColor: getColors(isDark).pillDangerBorder,
     backgroundColor: getColors(isDark).pillDangerBg,
   };
+}
+
+function applyDefaultTextStyle(children: ReactNode): ReactNode {
+  return React.Children.map(children, (child) => {
+    if (React.isValidElement(child) && child.type === Text) {
+      const textChild = child as React.ReactElement<{ style?: object }>;
+      return React.cloneElement(textChild, {
+        style: [{ fontSize: 13, fontWeight: "500" }, textChild.props.style],
+      });
+    }
+    return child;
+  });
 }
 
 interface PillButtonProps {
@@ -58,7 +70,7 @@ export default function PillButton({
       activeOpacity={activeOpacity}
       testID={testID}
     >
-      {children}
+      {applyDefaultTextStyle(children)}
     </TouchableOpacity>
   );
 }

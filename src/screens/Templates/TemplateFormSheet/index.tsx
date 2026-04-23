@@ -31,7 +31,7 @@ import { SegmentedToggle } from "../../../components/ui/SegmentedToggle";
 
 export const MAX_PROGRESSION_DEGREES = 16;
 
-const DEGREE_TO_OFFSET: Record<string, number> = {
+export const DEGREE_TO_OFFSET: Record<string, number> = {
   I: 0,
   bII: 1,
   II: 2,
@@ -179,6 +179,8 @@ interface TemplateFormSheetProps {
   accidental: Accidental;
   initialTemplate: CustomProgressionTemplate | null;
   onSave: (name: string, chords: ProgressionChord[]) => void;
+  initialInputMode?: "degree" | "note";
+  initialNoteKey?: string;
 }
 
 export default function TemplateFormSheet({
@@ -188,6 +190,8 @@ export default function TemplateFormSheet({
   accidental,
   initialTemplate,
   onSave,
+  initialInputMode,
+  initialNoteKey,
 }: TemplateFormSheetProps) {
   const { t } = useTranslation();
   const isDark = theme === "dark";
@@ -205,8 +209,8 @@ export default function TemplateFormSheet({
   const [selectedChordGroup, setSelectedChordGroup] = useState<"triad" | "seventh" | "tension">(
     "triad",
   );
-  const [inputMode, setInputMode] = useState<"degree" | "note">("degree");
-  const [noteKey, setNoteKey] = useState("C");
+  const [inputMode, setInputMode] = useState<"degree" | "note">(initialInputMode ?? "degree");
+  const [noteKey, setNoteKey] = useState(initialNoteKey ?? "C");
   const [selectedNote, setSelectedNote] = useState<string | null>(null);
   const [step, setStep] = useState<"main" | "keySelect">("main");
   const slideAnim = useRef(new Animated.Value(0)).current;
@@ -320,8 +324,8 @@ export default function TemplateFormSheet({
     setSelectedDegree(null);
     setSelectedNote(null);
     setSelectedChordGroup("triad");
-    setInputMode("degree");
-    setNoteKey("C");
+    setInputMode(initialInputMode ?? "degree");
+    setNoteKey(initialNoteKey ?? "C");
     setStep("main");
     calloutAnim.setValue(0);
   };

@@ -3,6 +3,8 @@ import {
   getRelatedKeys,
   getModeFamily,
   getDiatonicChordList,
+  analyzeProgression,
+  getCompatibleScales,
 } from "../harmonyUtils";
 
 describe("getDiatonicChordList", () => {
@@ -115,5 +117,110 @@ describe("getModeFamily", () => {
   it("B Locrian has parent C major", () => {
     const { parentRootIndex } = getModeFamily("locrian", 11);
     expect(parentRootIndex).toBe(0);
+  });
+});
+
+describe("analyzeProgression", () => {
+  it("returns empty array for empty input", () => {
+    expect(analyzeProgression([])).toHaveLength(0);
+  });
+
+  it("returns up to 5 results sorted by score descending", () => {
+    const chords = [
+      { rootIndex: 0, chordType: "Major" as const },
+      { rootIndex: 7, chordType: "Major" as const },
+      { rootIndex: 5, chordType: "Major" as const },
+    ];
+    const results = analyzeProgression(chords);
+    expect(results.length).toBeLessThanOrEqual(5);
+    for (let i = 1; i < results.length; i++) {
+      expect(results[i - 1].score).toBeGreaterThanOrEqual(results[i].score);
+    }
+  });
+
+  it("identifies C major key for I-IV-V progression", () => {
+    // C=0, F=5, G=7 — I, IV, V of C major
+    const chords = [
+      { rootIndex: 0, chordType: "Major" as const },
+      { rootIndex: 5, chordType: "Major" as const },
+      { rootIndex: 7, chordType: "Major" as const },
+    ];
+    const results = analyzeProgression(chords);
+    const top = results[0];
+    expect(top.score).toBe(1);
+    expect(top.rootIndex).toBe(0);
+    expect(top.keyType).toBe("major");
+  });
+
+  it("marks non-diatonic chords with isDiatonic false", () => {
+    // C Major + D♭ Major (out of key for C major)
+    const chords = [
+      { rootIndex: 0, chordType: "Major" as const },
+      { rootIndex: 1, chordType: "Major" as const },
+    ];
+    const results = analyzeProgression(chords);
+    const cMajorResult = results.find((r) => r.rootIndex === 0 && r.keyType === "major");
+    expect(cMajorResult?.chords[1].isDiatonic).toBe(false);
+    expect(cMajorResult?.chords[1].degree).toBeUndefined();
+  });
+
+  it("provides degree and fn for diatonic chords", () => {
+    const chords = [{ rootIndex: 0, chordType: "Major" as const }];
+    const results = analyzeProgression(chords);
+    const cMajorResult = results.find((r) => r.rootIndex === 0 && r.keyType === "major");
+    const analyzed = cMajorResult?.chords[0];
+    expect(analyzed?.isDiatonic).toBe(true);
+    expect(analyzed?.degree).toBe("I");
+    expect(analyzed?.fn).toBe("T");
+  });
+});
+
+describe("getCompatibleScales", () => {
+  it("returns an array of scale types for a single chord", () => {
+    const scales = getCompatibleScales([{ rootIndex: 0, chordType: "Major" }], 0);
+    expect(Array.isArray(scales)).toBe(true);
+    expect(scales.length).toBeGreaterThan(0);
+  });
+
+  it("C major chord is compatible with C major scale", () => {
+    const scales = getCompatibleScales([{ rootIndex: 0, chordType: "Major" }], 0);
+    expect(scales).toContain("major");
+  });
+
+  it("C major chord is compatible with C ionian", () => {
+    const scales = getCompatibleScales([{ rootIndex: 0, chordType: "Major" }], 0);
+    expect(scales).toContain("ionian");
+  });
+
+  it("Am7 (rootIndex=9) + Cmaj (rootIndex=0) both fit in C major scale", () => {
+    const scales = getCompatibleScales(
+      [
+        { rootIndex: 9, chordType: "m7" },
+        { rootIndex: 0, chordType: "Major" },
+      ],
+      0,
+    );
+    expect(scales).toContain("major");
+  });
+
+  it("returns empty array when chords array is empty", () => {
+    const scales = getCompatibleScales([], 0);
+    expect(scales).toHaveLength(0);
+  });
+
+  it("returns empty array when chords array is empty regardless of root", () => {
+    expect(getCompatibleScales([], 5)).toHaveLength(0);
+  });
+
+  it("combining incompatible chords reduces compatible scales", () => {
+    const single = getCompatibleScales([{ rootIndex: 0, chordType: "Major" }], 0);
+    const combined = getCompatibleScales(
+      [
+        { rootIndex: 0, chordType: "Major" },
+        { rootIndex: 6, chordType: "Major" },
+      ],
+      0,
+    );
+    expect(combined.length).toBeLessThanOrEqual(single.length);
   });
 });

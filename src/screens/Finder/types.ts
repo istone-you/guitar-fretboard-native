@@ -6,4 +6,6 @@ export type FinderMode =
   | "capo"
   | "modulation"
   | "related-keys"
-  | "modes";
+  | "modes"
+  | "progression-analysis"
+  | "scale-compat";

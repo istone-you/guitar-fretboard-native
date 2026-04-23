@@ -54,7 +54,7 @@ export default function BottomSheetModal({ visible, onClose, children }: BottomS
   const naturalHeightRef = useRef(300);
   const isClosingRef = useRef(false);
   const isOpenRef = useRef(visible);
-  const shouldOpenRef = useRef(false);
+  const shouldOpenRef = useRef(visible);
 
   // Keep onClose current inside PanResponder closures
   const onCloseRef = useRef(onClose);

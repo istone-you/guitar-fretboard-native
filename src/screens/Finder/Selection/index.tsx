@@ -72,6 +72,18 @@ const MODES: {
     titleKey: "finder.homeModesTitle",
     descKey: "finder.homeModesDesc",
   },
+  {
+    mode: "progression-analysis",
+    icon: "bar-chart",
+    titleKey: "finder.homeProgressionAnalysisTitle",
+    descKey: "finder.homeProgressionAnalysisDesc",
+  },
+  {
+    mode: "scale-compat",
+    icon: "music-note",
+    titleKey: "finder.homeScaleCompatTitle",
+    descKey: "finder.homeScaleCompatDesc",
+  },
 ];
 
 export default function FinderSelection({ theme, onSelect, resetDescRef }: SelectionProps) {

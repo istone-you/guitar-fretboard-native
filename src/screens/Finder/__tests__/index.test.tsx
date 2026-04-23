@@ -70,6 +70,15 @@ jest.mock("../ChordBrowser", () => {
   };
 });
 
+jest.mock("../../../hooks/useProgressionTemplates", () => ({
+  useProgressionTemplates: () => ({
+    customTemplates: [],
+    saveTemplate: jest.fn(),
+    updateTemplate: jest.fn(),
+    deleteTemplate: jest.fn(),
+  }),
+}));
+
 const defaultProps = {
   theme: "dark" as Theme,
   accidental: "sharp" as Accidental,

@@ -307,9 +307,12 @@
     "homeSubDesc": "コードの代理・置換候補を確認する",
     "substitution": {
       "sourceLabel": "{{chord}} の代理コード",
+      "typeLabel": "代理タイプ",
       "diatonic": "ダイアトニック代理",
       "tritone": "トライトーン代理",
-      "none": "この和音の代理コードはありません"
+      "none": "この和音の代理コードはありません",
+      "diatonicDesc": "元のコードと共通音を2つ以上持つダイアトニックコードを代理として使う技法。コードの機能（トニック・サブドミナント・ドミナント）を保ちながら、色彩感や意外性を加えられる。平行調（メジャーならVIm / マイナーなら♭III）や同機能代理（メジャーならIIIm / マイナーなら♭VI）が代表的。",
+      "tritoneDesc": "ドミナント7thコードを、ルート音が増4度（トライトーン＝6半音）離れた7thコードで置き換える技法。両コードは3rdと7thが入れ替わる関係で共有されており、ルート音の半音進行により滑らかな声部導音が得られる。例：G7 → D♭7。"
     },
     "homeCapoTitle": "カポ",
     "homeCapoDesc": "カポタスト位置とコード形を変換する",
@@ -371,6 +374,39 @@
       "capoPosition": "カポ位置",
       "noCapo": "カポなし",
       "highFret": "高フレット（実用外の可能性あり）"
+    },
+    "homeProgressionAnalysisTitle": "コード進行分析",
+    "homeProgressionAnalysisDesc": "コード進行からキーと機能を分析",
+    "homeScaleCompatTitle": "スケール互換",
+    "homeScaleCompatDesc": "コードに合うスケールを検索",
+    "progressionAnalysis": {
+      "addChord": "追加",
+      "analyze": "分析",
+      "result": "分析結果",
+      "keyScore": "{{matched}} / {{total}}",
+      "nonDiatonic": "非ダイアトニック",
+      "empty": "コードを追加して分析",
+      "noResult": "一致するキーが見つかりません",
+      "borrowed": "借用{{degree}}",
+      "loadTemplate": "テンプレから読み込む",
+      "saveAsTemplate": "テンプレとして保存",
+      "save": "保存",
+      "reset": "リセット",
+      "builtIn": "プリセット",
+      "custom": "カスタム",
+      "templateNamePlaceholder": "テンプレ名を入力",
+      "legendT": "主和音",
+      "legendSD": "下属和音",
+      "legendD": "属和音",
+      "legendSecDom": "セカンダリードミナント",
+      "legendBorrowed": "借用和音（平行調）"
+    },
+    "scaleCompat": {
+      "empty": "コードを追加して互換スケールを検索",
+      "noResult": "この組み合わせに対応するスケールなし",
+      "addToLayer": "レイヤーに追加",
+      "removeChord": "削除",
+      "reset": "リセット"
     }
   },
   "stats": {

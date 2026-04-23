@@ -1,5 +1,11 @@
-import type { ChordType } from "../types";
-import { DIATONIC_CHORDS, CHORD_SUFFIX_MAP, diatonicDegreeLabel } from "./fretboard";
+import type { ChordType, ScaleType } from "../types";
+import {
+  DIATONIC_CHORDS,
+  CHORD_SUFFIX_MAP,
+  diatonicDegreeLabel,
+  CHORD_SEMITONES,
+  SCALE_DEGREES,
+} from "./fretboard";
 
 export type KeyType = "major" | "minor";
 
@@ -120,4 +126,162 @@ export function chordDisplayName(
   notes: readonly string[],
 ): string {
   return `${notes[rootIndex]}${CHORD_SUFFIX_MAP[chordType] ?? ""}`;
+}
+
+// ── Progression Analyzer ──────────────────────────────────────────────────────
+
+type DiatonicFn = "T" | "SD" | "D";
+
+const MAJOR_DIATONIC = [
+  { offset: 0, chordType: "Major" as ChordType, degree: "I", fn: "T" as DiatonicFn },
+  { offset: 2, chordType: "Minor" as ChordType, degree: "ii", fn: "SD" as DiatonicFn },
+  { offset: 4, chordType: "Minor" as ChordType, degree: "iii", fn: "T" as DiatonicFn },
+  { offset: 5, chordType: "Major" as ChordType, degree: "IV", fn: "SD" as DiatonicFn },
+  { offset: 7, chordType: "Major" as ChordType, degree: "V", fn: "D" as DiatonicFn },
+  { offset: 9, chordType: "Minor" as ChordType, degree: "vi", fn: "T" as DiatonicFn },
+  { offset: 11, chordType: "Diminished" as ChordType, degree: "vii°", fn: "D" as DiatonicFn },
+  { offset: 0, chordType: "maj7" as ChordType, degree: "Imaj7", fn: "T" as DiatonicFn },
+  { offset: 2, chordType: "m7" as ChordType, degree: "iim7", fn: "SD" as DiatonicFn },
+  { offset: 4, chordType: "m7" as ChordType, degree: "iiim7", fn: "T" as DiatonicFn },
+  { offset: 5, chordType: "maj7" as ChordType, degree: "IVmaj7", fn: "SD" as DiatonicFn },
+  { offset: 7, chordType: "7th" as ChordType, degree: "V7", fn: "D" as DiatonicFn },
+  { offset: 9, chordType: "m7" as ChordType, degree: "vim7", fn: "T" as DiatonicFn },
+  { offset: 11, chordType: "m7(b5)" as ChordType, degree: "viiø7", fn: "D" as DiatonicFn },
+];
+
+const MINOR_DIATONIC = [
+  { offset: 0, chordType: "Minor" as ChordType, degree: "i", fn: "T" as DiatonicFn },
+  { offset: 2, chordType: "Diminished" as ChordType, degree: "ii°", fn: "SD" as DiatonicFn },
+  { offset: 3, chordType: "Major" as ChordType, degree: "III", fn: "T" as DiatonicFn },
+  { offset: 5, chordType: "Minor" as ChordType, degree: "iv", fn: "SD" as DiatonicFn },
+  { offset: 7, chordType: "Minor" as ChordType, degree: "v", fn: "D" as DiatonicFn },
+  { offset: 8, chordType: "Major" as ChordType, degree: "VI", fn: "SD" as DiatonicFn },
+  { offset: 10, chordType: "Major" as ChordType, degree: "VII", fn: "T" as DiatonicFn },
+  { offset: 0, chordType: "m7" as ChordType, degree: "im7", fn: "T" as DiatonicFn },
+  { offset: 2, chordType: "m7(b5)" as ChordType, degree: "iiø7", fn: "SD" as DiatonicFn },
+  { offset: 3, chordType: "maj7" as ChordType, degree: "IIImaj7", fn: "T" as DiatonicFn },
+  { offset: 5, chordType: "m7" as ChordType, degree: "ivm7", fn: "SD" as DiatonicFn },
+  { offset: 7, chordType: "m7" as ChordType, degree: "vm7", fn: "D" as DiatonicFn },
+  { offset: 8, chordType: "maj7" as ChordType, degree: "VImaj7", fn: "SD" as DiatonicFn },
+  { offset: 10, chordType: "7th" as ChordType, degree: "VII7", fn: "T" as DiatonicFn },
+];
+
+export interface AnalyzedChord {
+  rootIndex: number;
+  chordType: ChordType;
+  degree?: string;
+  fn?: DiatonicFn;
+  isDiatonic: boolean;
+  secDomTarget?: string; // e.g. "V", "ii" — display as "V/V", "V/ii"
+  borrowedDegree?: string; // e.g. "♭VII", "iv" — display as "借用 ♭VII"
+}
+
+const DOMINANT_CHORD_TYPES = new Set<ChordType>(["Major", "7th"]);
+
+const CHROMATIC_NUMS: Record<number, string> = {
+  0: "I",
+  1: "♭II",
+  2: "II",
+  3: "♭III",
+  4: "III",
+  5: "IV",
+  6: "♭V",
+  7: "V",
+  8: "♭VI",
+  9: "VI",
+  10: "♭VII",
+  11: "VII",
+};
+
+function chromaticDegreeLabel(offset: number, chordType: ChordType): string {
+  const num = CHROMATIC_NUMS[offset] ?? "?";
+  if (chordType === "Minor" || chordType === "m7" || chordType === "m7(b5)")
+    return num.toLowerCase();
+  if (chordType === "dim" || chordType === "dim7") return num.toLowerCase() + "°";
+  return num;
+}
+
+function findSecondaryDominantTarget(
+  chordOffset: number,
+  chordType: ChordType,
+  diatonic: { offset: number; chordType: ChordType; degree: string }[],
+): string | undefined {
+  if (!DOMINANT_CHORD_TYPES.has(chordType)) return undefined;
+  const targetOffset = (chordOffset - 7 + 12) % 12;
+  // Only use triad entries for clean degree labels; skip diminished targets
+  const target = diatonic.find(
+    (d) =>
+      d.offset === targetOffset &&
+      (d.chordType === "Major" || d.chordType === "Minor") &&
+      !d.degree.includes("7"),
+  );
+  return target?.degree;
+}
+
+function findBorrowedDegree(
+  chordOffset: number,
+  chordType: ChordType,
+  parallelDiatonic: { offset: number; chordType: ChordType }[],
+): string | undefined {
+  const match = parallelDiatonic.find((d) => d.offset === chordOffset && d.chordType === chordType);
+  if (!match) return undefined;
+  return chromaticDegreeLabel(chordOffset, chordType);
+}
+
+export interface KeyAnalysisResult {
+  rootIndex: number;
+  keyType: "major" | "minor";
+  score: number;
+  chords: AnalyzedChord[];
+}
+
+export function analyzeProgression(
+  chords: { rootIndex: number; chordType: ChordType }[],
+): KeyAnalysisResult[] {
+  if (chords.length === 0) return [];
+  const results: KeyAnalysisResult[] = [];
+  for (let root = 0; root < 12; root++) {
+    for (const keyType of ["major", "minor"] as const) {
+      const diatonic = keyType === "major" ? MAJOR_DIATONIC : MINOR_DIATONIC;
+      const parallelDiatonic = keyType === "major" ? MINOR_DIATONIC : MAJOR_DIATONIC;
+      const analyzedChords: AnalyzedChord[] = chords.map(({ rootIndex: cRoot, chordType }) => {
+        const offset = (cRoot - root + 12) % 12;
+        const match = diatonic.find((d) => d.offset === offset && d.chordType === chordType);
+        if (match) {
+          return {
+            rootIndex: cRoot,
+            chordType,
+            degree: match.degree,
+            fn: match.fn,
+            isDiatonic: true,
+          };
+        }
+        const secDomTarget = findSecondaryDominantTarget(offset, chordType, diatonic);
+        const borrowedDegree = findBorrowedDegree(offset, chordType, parallelDiatonic);
+        return { rootIndex: cRoot, chordType, isDiatonic: false, secDomTarget, borrowedDegree };
+      });
+      const score = analyzedChords.filter((c) => c.isDiatonic).length / chords.length;
+      results.push({ rootIndex: root, keyType, score, chords: analyzedChords });
+    }
+  }
+  return results.sort((a, b) => b.score - a.score).slice(0, 5);
+}
+
+export function getCompatibleScales(
+  chords: { rootIndex: number; chordType: ChordType }[],
+  referenceRootIndex: number,
+): ScaleType[] {
+  if (chords.length === 0) return [];
+  const requiredPCs = new Set<number>();
+  for (const { rootIndex, chordType } of chords) {
+    const tones = CHORD_SEMITONES[chordType];
+    if (!tones) continue;
+    for (const tone of tones) requiredPCs.add((rootIndex + tone) % 12);
+  }
+  return (Object.entries(SCALE_DEGREES) as [ScaleType, Set<number>][])
+    .filter(([, scaleDegrees]) => {
+      const scalePCs = new Set([...scaleDegrees].map((d) => (referenceRootIndex + d) % 12));
+      return [...requiredPCs].every((pc) => scalePCs.has(pc));
+    })
+    .map(([scaleType]) => scaleType);
 }

@@ -676,8 +676,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: "center",
   },
-  resetText: {
-    fontSize: 14,
-    fontWeight: "500",
-  },
+  resetText: {},
 });

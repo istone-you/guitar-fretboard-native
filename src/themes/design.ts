@@ -37,6 +37,10 @@ const lightPalette = {
   chipSelectedBg: "#000000",
   chipSelectedText: "#ffffff",
   chipUnselectedBg: "rgba(0,0,0,0.06)",
+  secDomBadgeBg: "#f59e0b",
+  secDomBadgeText: "#ffffff",
+  borrowedBadgeBg: "#06b6d4",
+  borrowedBadgeText: "#ffffff",
 
   // ContextMenu
   contextMenuBg: "rgba(255,255,255,0.98)",
@@ -102,6 +106,10 @@ const darkPalette = {
   chipSelectedBg: "#ffffff",
   chipSelectedText: "#000000",
   chipUnselectedBg: "rgba(255,255,255,0.08)",
+  secDomBadgeBg: "#d97706",
+  secDomBadgeText: "#ffffff",
+  borrowedBadgeBg: "#0891b2",
+  borrowedBadgeText: "#ffffff",
 
   // ContextMenu
   contextMenuBg: "rgba(38,38,40,0.98)",
@@ -167,6 +175,10 @@ export type ThemeColors = {
   chipSelectedBg: string;
   chipSelectedText: string;
   chipUnselectedBg: string;
+  secDomBadgeBg: string;
+  secDomBadgeText: string;
+  borrowedBadgeBg: string;
+  borrowedBadgeText: string;
 
   contextMenuBg: string;
   contextMenuDivider: string;

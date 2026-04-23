@@ -307,9 +307,12 @@
     "homeSubDesc": "Find substitute chords for any chord",
     "substitution": {
       "sourceLabel": "Substitutes for {{chord}}",
+      "typeLabel": "Substitute Type",
       "diatonic": "Diatonic Sub.",
       "tritone": "Tritone Sub.",
-      "none": "No substitutions for this chord type"
+      "none": "No substitutions for this chord type",
+      "diatonicDesc": "A technique that substitutes a chord with another diatonic chord sharing at least two common tones. It preserves the harmonic function (tonic, subdominant, or dominant) while adding color or variety. Common examples include the relative key (VIm for major / ♭III for minor) and same-function substitutes (IIIm for major / ♭VI for minor).",
+      "tritoneDesc": "A technique that replaces a dominant 7th chord with a 7th chord whose root is a tritone (6 semitones) away. Both chords share the same guide tones — the 3rd and 7th swap roles — allowing smooth half-step voice leading in the bass. Example: G7 → D♭7."
     },
     "homeCapoTitle": "Capo",
     "homeCapoDesc": "Convert between capo position and chord shapes",
@@ -371,6 +374,39 @@
       "capoPosition": "Capo Position",
       "noCapo": "No Capo",
       "highFret": "High fret (may be impractical)"
+    },
+    "homeProgressionAnalysisTitle": "Progression Analysis",
+    "homeProgressionAnalysisDesc": "Analyze key and chord functions from a progression",
+    "homeScaleCompatTitle": "Scale Compat",
+    "homeScaleCompatDesc": "Find scales that fit a chord",
+    "progressionAnalysis": {
+      "addChord": "Add",
+      "analyze": "Analyze",
+      "result": "Analysis Result",
+      "keyScore": "{{matched}} / {{total}}",
+      "nonDiatonic": "Non-diatonic",
+      "empty": "Add chords to analyze",
+      "noResult": "No matching key found",
+      "borrowed": "b.{{degree}}",
+      "loadTemplate": "Load from template",
+      "saveAsTemplate": "Save as template",
+      "save": "Save",
+      "reset": "Reset",
+      "builtIn": "Presets",
+      "custom": "Custom",
+      "templateNamePlaceholder": "Template name",
+      "legendT": "Tonic",
+      "legendSD": "Subdominant",
+      "legendD": "Dominant",
+      "legendSecDom": "Secondary dominant",
+      "legendBorrowed": "Borrowed chord"
+    },
+    "scaleCompat": {
+      "empty": "Add chords to find compatible scales",
+      "noResult": "No compatible scales for this combination",
+      "addToLayer": "Add to Layer",
+      "removeChord": "Remove",
+      "reset": "Reset"
     }
   },
   "stats": {

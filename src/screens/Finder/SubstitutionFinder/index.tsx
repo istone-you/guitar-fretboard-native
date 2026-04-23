@@ -1,5 +1,12 @@
 import { useState, useMemo, useCallback } from "react";
-import { View, Text, ScrollView, StyleSheet, useWindowDimensions } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  useWindowDimensions,
+} from "react-native";
 import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -19,6 +26,12 @@ import NotePickerButton from "../../../components/ui/NotePickerButton";
 import Icon from "../../../components/ui/Icon";
 import PillButton from "../../../components/ui/PillButton";
 import NotePill from "../../../components/ui/NotePill";
+import BottomSheetModal, {
+  SHEET_HANDLE_CLEARANCE,
+  useSheetHeight,
+} from "../../../components/ui/BottomSheetModal";
+import SheetProgressiveHeader from "../../../components/ui/SheetProgressiveHeader";
+import GlassIconButton from "../../../components/ui/GlassIconButton";
 
 interface SubstitutionFinderProps {
   theme: Theme;
@@ -28,6 +41,12 @@ interface SubstitutionFinderProps {
   onAddLayerAndNavigate: (layer: LayerConfig) => void;
   onEnablePerLayerRoot?: () => void;
 }
+
+type PendingSubstitution = {
+  type: SubstitutionType;
+  rootIndex: number;
+  chordType: ChordType;
+};
 
 export default function SubstitutionFinder({
   theme,
@@ -45,7 +64,10 @@ export default function SubstitutionFinder({
 
   const [rootNote, setRootNote] = useState("C");
   const [selectedChordType, setSelectedChordType] = useState<ChordType>("Major");
+  const [pendingSub, setPendingSub] = useState<PendingSubstitution | null>(null);
+  const [modalHeaderHeight, setModalHeaderHeight] = useState(96);
 
+  const sheetHeight = useSheetHeight();
   const rootIndex = getRootIndex(rootNote);
   const notes = getNotesByAccidental(accidental);
   const isFull = layers.length >= MAX_LAYERS;
@@ -135,7 +157,7 @@ export default function SubstitutionFinder({
             {sourceChordName}
           </Text>
           {sourceForms.length > 0 && (
-            <View style={styles.formsRow}>
+            <View style={styles.cardFormsRow}>
               {sourceForms.map((cells, fi) => (
                 <ChordDiagram
                   key={fi}
@@ -161,13 +183,22 @@ export default function SubstitutionFinder({
           substitutions.map((sub) => {
             const subRootName = notes[sub.rootIndex];
             const subChordName = `${subRootName}${CHORD_SUFFIX_MAP[sub.chordType] ?? ""}`;
-            const forms = getAllChordForms(sub.rootIndex, sub.chordType);
+            const subForms = getAllChordForms(sub.rootIndex, sub.chordType);
 
             return (
-              <View
+              <TouchableOpacity
                 key={`${sub.type}-${sub.rootIndex}`}
                 style={[styles.subSection, { borderColor }]}
                 testID={`sub-section-${sub.type}-${sub.rootIndex}`}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setPendingSub({
+                    type: sub.type,
+                    rootIndex: sub.rootIndex,
+                    chordType: sub.chordType,
+                  });
+                }}
+                activeOpacity={0.7}
               >
                 <View style={styles.subHeader}>
                   <View style={[styles.typeBadge, { backgroundColor: colors.surface }]}>
@@ -179,10 +210,9 @@ export default function SubstitutionFinder({
                     {subChordName}
                   </Text>
                 </View>
-
-                {forms.length > 0 && (
-                  <View style={styles.formsRow}>
-                    {forms.map((cells, fi) => (
+                {subForms.length > 0 && (
+                  <View style={styles.cardFormsRow}>
+                    {subForms.map((cells, fi) => (
                       <ChordDiagram
                         key={fi}
                         cells={cells}
@@ -193,29 +223,111 @@ export default function SubstitutionFinder({
                     ))}
                   </View>
                 )}
-
-                <View style={styles.addRow}>
-                  <PillButton
-                    isDark={isDark}
-                    onPress={() => handleAdd(sub.rootIndex, sub.chordType)}
-                    disabled={isFull}
-                  >
-                    <Icon name="plus" size={15} color={colors.textStrong} />
-                    <Text style={[styles.addBtnText, { color: colors.textStrong }]}>
-                      {t("finder.addToLayerTitle")}
-                    </Text>
-                  </PillButton>
-                  {isFull && (
-                    <Text style={[styles.fullText, { color: colors.textSubtle }]}>
-                      {t("finder.addToLayerFull")}
-                    </Text>
-                  )}
-                </View>
-              </View>
+              </TouchableOpacity>
             );
           })
         )}
       </ScrollView>
+
+      {/* Substitution detail sheet */}
+      <BottomSheetModal visible={pendingSub !== null} onClose={() => setPendingSub(null)}>
+        {({ close, dragHandlers }) => {
+          if (!pendingSub) return null;
+          const subRootName = notes[pendingSub.rootIndex];
+          const subChordName = `${subRootName}${CHORD_SUFFIX_MAP[pendingSub.chordType] ?? ""}`;
+          const forms = getAllChordForms(pendingSub.rootIndex, pendingSub.chordType);
+          const sheetBg = colors.deepBg;
+          const descKey =
+            pendingSub.type === "diatonic"
+              ? "finder.substitution.diatonicDesc"
+              : "finder.substitution.tritoneDesc";
+
+          return (
+            <View
+              style={[
+                styles.sheet,
+                {
+                  height: sheetHeight,
+                  backgroundColor: sheetBg,
+                  borderColor: colors.sheetBorder,
+                },
+              ]}
+            >
+              <View style={{ flex: 1, overflow: "hidden" }}>
+                <ScrollView
+                  contentContainerStyle={[styles.sheetContent, { paddingTop: modalHeaderHeight }]}
+                  showsVerticalScrollIndicator={false}
+                >
+                  {forms.length > 0 && (
+                    <View style={styles.modalDiagrams}>
+                      {forms.map((cells, fi) => (
+                        <ChordDiagram
+                          key={fi}
+                          cells={cells}
+                          rootIndex={pendingSub.rootIndex}
+                          theme={theme}
+                          width={formWidth}
+                        />
+                      ))}
+                    </View>
+                  )}
+                  <View style={styles.descriptionArea}>
+                    <Text style={[styles.functionLabel, { color: colors.textStrong }]}>
+                      {subTypeLabel(pendingSub.type)}
+                    </Text>
+                    <Text style={[styles.functionDesc, { color: colors.textSubtle }]}>
+                      {t(descKey)}
+                    </Text>
+                  </View>
+                  <View style={styles.addButtonArea}>
+                    <PillButton
+                      isDark={isDark}
+                      onPress={() => {
+                        handleAdd(pendingSub.rootIndex, pendingSub.chordType);
+                        close();
+                      }}
+                      disabled={isFull}
+                    >
+                      <Icon name="upload" size={15} color={colors.textStrong} />
+                      <Text style={[styles.addButtonText, { color: colors.textStrong }]}>
+                        {t("finder.addToLayerTitle")}
+                      </Text>
+                    </PillButton>
+                    {isFull && (
+                      <Text style={[styles.fullText, { color: colors.textSubtle }]}>
+                        {t("finder.addToLayerFull")}
+                      </Text>
+                    )}
+                  </View>
+                </ScrollView>
+                <SheetProgressiveHeader
+                  isDark={isDark}
+                  bgColor={sheetBg}
+                  dragHandlers={dragHandlers}
+                  contentPaddingHorizontal={14}
+                  onLayout={setModalHeaderHeight}
+                  style={styles.absoluteHeader}
+                >
+                  <View style={styles.headerRow}>
+                    <GlassIconButton
+                      isDark={isDark}
+                      onPress={close}
+                      icon="close"
+                      style={styles.headerSide}
+                    />
+                    <View style={styles.headerCenter}>
+                      <Text style={[styles.headerTitle, { color: colors.textStrong }]}>
+                        {subChordName}
+                      </Text>
+                    </View>
+                    <View style={styles.headerSide} />
+                  </View>
+                </SheetProgressiveHeader>
+              </View>
+            </View>
+          );
+        }}
+      </BottomSheetModal>
     </View>
   );
 }
@@ -289,25 +401,81 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: "700",
   },
-  formsRow: {
+  cardFormsRow: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
     paddingHorizontal: 14,
     paddingBottom: 10,
   },
-  addRow: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    alignItems: "center",
-    gap: 6,
+  sheet: {
+    width: "100%",
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    borderWidth: 1,
+    overflow: "hidden",
   },
-  addBtnText: {
-    fontSize: 15,
+  sheetContent: {
+    paddingBottom: 32,
+  },
+  modalDiagrams: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+  },
+  descriptionArea: {
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+  },
+  functionLabel: {
+    fontSize: 13,
     fontWeight: "600",
+    paddingTop: 4,
   },
+  functionDesc: {
+    fontSize: 13,
+    lineHeight: 20,
+    paddingTop: 4,
+  },
+  addButtonArea: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 8,
+    gap: 8,
+    alignItems: "center",
+  },
+  addButtonText: {},
   fullText: {
     fontSize: 12,
+    textAlign: "center",
+    lineHeight: 18,
+  },
+  absoluteHeader: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1,
+    paddingTop: SHEET_HANDLE_CLEARANCE,
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  headerSide: {
+    width: 44,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: "center",
+  },
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: "700",
     textAlign: "center",
   },
 });

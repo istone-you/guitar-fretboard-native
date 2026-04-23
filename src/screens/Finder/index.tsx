@@ -15,6 +15,8 @@ import CapoFinder from "./CapoFinder";
 import ModulationFinder from "./ModulationFinder";
 import RelatedKeysBrowser from "./RelatedKeysBrowser";
 import ModeBrowser from "./ModeBrowser";
+import ProgressionAnalyzer from "./ProgressionAnalyzer";
+import ScaleCompatibility from "./ScaleCompatibility";
 import type { FinderMode } from "./types";
 
 export interface FinderPaneProps {
@@ -208,6 +210,17 @@ export default function FinderPane({
               />
             ) : selectedMode === "modes" ? (
               <ModeBrowser
+                theme={theme}
+                accidental={accidental}
+                layers={layers}
+                globalRootNote={rootNote}
+                onAddLayerAndNavigate={onAddLayerAndNavigate}
+                onEnablePerLayerRoot={onEnablePerLayerRoot}
+              />
+            ) : selectedMode === "progression-analysis" ? (
+              <ProgressionAnalyzer theme={theme} accidental={accidental} />
+            ) : selectedMode === "scale-compat" ? (
+              <ScaleCompatibility
                 theme={theme}
                 accidental={accidental}
                 layers={layers}

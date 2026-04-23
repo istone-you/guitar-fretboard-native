@@ -47,9 +47,28 @@ jest.mock("../../../../components/ui/ChordDiagram", () => {
   };
 });
 
-jest.mock("../../../../components/LayerEditModal/LayerDescription", () => {
+jest.mock("../../../../components/ui/BottomSheetModal", () => ({
+  __esModule: true,
+  default: ({ children, visible }: any) => {
+    if (!visible) return null;
+    const { View } = require("react-native");
+    return <View testID="bottom-sheet">{children({ close: jest.fn(), dragHandlers: {} })}</View>;
+  },
+  SHEET_HANDLE_CLEARANCE: 32,
+  useSheetHeight: () => 400,
+}));
+
+jest.mock("../../../../components/ui/SheetProgressiveHeader", () => {
   const { View } = require("react-native");
-  return { __esModule: true, default: () => <View testID="layer-description" /> };
+  return {
+    __esModule: true,
+    default: ({ children }: any) => <View>{children}</View>,
+  };
+});
+
+jest.mock("../../../../components/ui/GlassIconButton", () => {
+  const { View } = require("react-native");
+  return { __esModule: true, default: () => <View /> };
 });
 
 function makeLayer(overrides: Partial<LayerConfig> = {}): LayerConfig {
@@ -105,7 +124,6 @@ describe("SubstitutionFinder", () => {
 
   it("shows two diatonic substitutions for Major (Am and Em)", () => {
     render(<SubstitutionFinder {...defaultProps} />);
-    // C Major → Am (rootIndex 9) and Em (rootIndex 4)
     expect(screen.getByTestId("sub-section-diatonic-9")).toBeTruthy();
     expect(screen.getByTestId("sub-section-diatonic-4")).toBeTruthy();
   });
@@ -113,7 +131,6 @@ describe("SubstitutionFinder", () => {
   it("shows tritone substitution when 7 chip is selected", () => {
     render(<SubstitutionFinder {...defaultProps} />);
     fireEvent.press(screen.getByText("7"));
-    // C7: tritone at rootIndex (0+6)%12 = 6
     expect(screen.getByTestId("sub-section-tritone-6")).toBeTruthy();
   });
 
@@ -123,16 +140,25 @@ describe("SubstitutionFinder", () => {
     expect(screen.getByTestId("note-value").props.children).toBe("G");
   });
 
-  it("calls onAddLayerAndNavigate when add button is pressed", () => {
+  it("opens bottom sheet when tapping a sub-section card", () => {
+    render(<SubstitutionFinder {...defaultProps} />);
+    expect(screen.queryByTestId("bottom-sheet")).toBeNull();
+    fireEvent.press(screen.getByTestId("sub-section-diatonic-9"));
+    expect(screen.getByTestId("bottom-sheet")).toBeTruthy();
+  });
+
+  it("calls onAddLayerAndNavigate when add button is pressed in sheet", () => {
     const onAdd = jest.fn();
     render(<SubstitutionFinder {...defaultProps} onAddLayerAndNavigate={onAdd} />);
-    fireEvent.press(screen.getAllByText("finder.addToLayerTitle")[0]);
+    fireEvent.press(screen.getByTestId("sub-section-diatonic-9"));
+    fireEvent.press(screen.getByText("finder.addToLayerTitle"));
     expect(onAdd).toHaveBeenCalled();
   });
 
-  it("disables add buttons when layers are full", () => {
+  it("disables add button when layers are full", () => {
     const fullLayers = [makeLayer({ id: "1" }), makeLayer({ id: "2" }), makeLayer({ id: "3" })];
     render(<SubstitutionFinder {...defaultProps} layers={fullLayers} />);
+    fireEvent.press(screen.getByTestId("sub-section-diatonic-9"));
     const { UNSAFE_getAllByType } = screen;
     const { TouchableOpacity } = require("react-native");
     const disabled = UNSAFE_getAllByType(TouchableOpacity).filter(
