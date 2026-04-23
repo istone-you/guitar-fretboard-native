@@ -24,7 +24,14 @@ export type IconName =
   | "arrows-lr"
   | "network"
   | "rotate-cw"
-  | "info";
+  | "info"
+  | "chord-sequence"
+  | "scale-overlap"
+  | "secondary-dom"
+  | "key-unlock"
+  | "voice-arrows"
+  | "tension-note"
+  | "substitute";
 
 interface IconProps {
   name: IconName;
@@ -288,6 +295,126 @@ export default function Icon({
             strokeWidth={sw}
             strokeLinecap="round"
             strokeLinejoin="round"
+          />
+        </>
+      )}
+      {name === "chord-sequence" && (
+        <>
+          <Path
+            d="M1.5 9h5v6h-5zM9.5 9h5v6h-5zM17.5 9h5v6h-5z"
+            stroke={color}
+            strokeWidth={sw}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <Path d="M7 12h2" stroke={color} strokeWidth={sw} strokeLinecap="round" />
+          <Path
+            d="M7.5 10.5L9 12l-1.5 1.5"
+            stroke={color}
+            strokeWidth={sw}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <Path d="M15 12h2" stroke={color} strokeWidth={sw} strokeLinecap="round" />
+          <Path
+            d="M15.5 10.5L17 12l-1.5 1.5"
+            stroke={color}
+            strokeWidth={sw}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </>
+      )}
+      {name === "scale-overlap" && (
+        <>
+          <Circle cx="9" cy="12" r="7" stroke={color} strokeWidth={sw} />
+          <Circle cx="15" cy="12" r="7" stroke={color} strokeWidth={sw} />
+        </>
+      )}
+      {name === "secondary-dom" && (
+        <>
+          <Path
+            d="M3 4l9 14 9-14"
+            stroke={color}
+            strokeWidth={sw}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <Path
+            d="M8 18l4 4 4-4"
+            stroke={color}
+            strokeWidth={sw}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </>
+      )}
+      {name === "key-unlock" && (
+        <>
+          <Circle cx="8" cy="10" r="5" stroke={color} strokeWidth={sw} />
+          <Path d="M13 10h8" stroke={color} strokeWidth={sw} strokeLinecap="round" />
+          <Path d="M17 10v3M20 10v2" stroke={color} strokeWidth={sw} strokeLinecap="round" />
+        </>
+      )}
+      {name === "voice-arrows" && (
+        <>
+          <Path d="M2 5L19 12" stroke={color} strokeWidth={sw} strokeLinecap="round" />
+          <Path d="M2 12L19 12" stroke={color} strokeWidth={sw} strokeLinecap="round" />
+          <Path d="M2 19L19 12" stroke={color} strokeWidth={sw} strokeLinecap="round" />
+          <Path
+            d="M17 9l3 3-3 3"
+            stroke={color}
+            strokeWidth={sw}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </>
+      )}
+      {name === "substitute" && (
+        <>
+          <Circle cx="5" cy="12" r="3.5" stroke={color} strokeWidth={sw} />
+          <Circle cx="19" cy="12" r="3.5" stroke={color} strokeWidth={sw} />
+          {/* Top arc: left → right */}
+          <Path d="M9.5 9.5 Q12 7 14.5 9.5" stroke={color} strokeWidth={sw} strokeLinecap="round" />
+          <Path
+            d="M14.5 7.5L14.5 9.5L12.5 9.5"
+            stroke={color}
+            strokeWidth={sw}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          {/* Bottom arc: right → left */}
+          <Path
+            d="M14.5 14.5 Q12 17 9.5 14.5"
+            stroke={color}
+            strokeWidth={sw}
+            strokeLinecap="round"
+          />
+          <Path
+            d="M9.5 16.5L9.5 14.5L11.5 14.5"
+            stroke={color}
+            strokeWidth={sw}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </>
+      )}
+      {name === "tension-note" && (
+        <>
+          <Path
+            d="M9 18V5l12-2v13"
+            stroke={color}
+            strokeWidth={sw}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <Circle cx="6" cy="18" r="3" stroke={color} strokeWidth={sw} />
+          <Circle cx="18" cy="16" r="3" stroke={color} strokeWidth={sw} />
+          <Path
+            d="M15.5 13.5l5 5M20.5 13.5l-5 5"
+            stroke={color}
+            strokeWidth={sw}
+            strokeLinecap="round"
           />
         </>
       )}

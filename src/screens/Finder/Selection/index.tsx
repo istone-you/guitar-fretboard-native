@@ -50,7 +50,7 @@ const MODES: {
   { mode: "capo", icon: "capo", titleKey: "finder.homeCapoTitle", descKey: "finder.homeCapoDesc" },
   {
     mode: "substitution",
-    icon: "music-note",
+    icon: "substitute",
     titleKey: "finder.homeSubTitle",
     descKey: "finder.homeSubDesc",
   },
@@ -74,15 +74,39 @@ const MODES: {
   },
   {
     mode: "progression-analysis",
-    icon: "bar-chart",
+    icon: "chord-sequence",
     titleKey: "finder.homeProgressionAnalysisTitle",
     descKey: "finder.homeProgressionAnalysisDesc",
   },
   {
     mode: "scale-compat",
-    icon: "music-note",
+    icon: "scale-overlap",
     titleKey: "finder.homeScaleCompatTitle",
     descKey: "finder.homeScaleCompatDesc",
+  },
+  {
+    mode: "secondary-dominant",
+    icon: "secondary-dom",
+    titleKey: "finder.homeSecondaryDominantTitle",
+    descKey: "finder.homeSecondaryDominantDesc",
+  },
+  {
+    mode: "key-from-chords",
+    icon: "key-unlock",
+    titleKey: "finder.homeKeyFromChordsTitle",
+    descKey: "finder.homeKeyFromChordsDesc",
+  },
+  {
+    mode: "voice-leading",
+    icon: "voice-arrows",
+    titleKey: "finder.homeVoiceLeadingTitle",
+    descKey: "finder.homeVoiceLeadingDesc",
+  },
+  {
+    mode: "tension-avoid",
+    icon: "tension-note",
+    titleKey: "finder.homeTensionAvoidTitle",
+    descKey: "finder.homeTensionAvoidDesc",
   },
 ];
 

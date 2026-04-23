@@ -341,20 +341,36 @@
       },
       "relation": {
         "relative": {
-          "major": { "minor": "関係短調" },
-          "minor": { "major": "関係長調" }
+          "major": {
+            "minor": "関係短調"
+          },
+          "minor": {
+            "major": "関係長調"
+          }
         },
         "parallel": {
-          "major": { "minor": "平行短調" },
-          "minor": { "major": "平行長調" }
+          "major": {
+            "minor": "平行短調"
+          },
+          "minor": {
+            "major": "平行長調"
+          }
         },
         "dominant": {
-          "major": { "major": "属調" },
-          "minor": { "minor": "属調" }
+          "major": {
+            "major": "属調"
+          },
+          "minor": {
+            "minor": "属調"
+          }
         },
         "subdominant": {
-          "major": { "major": "下属調" },
-          "minor": { "minor": "下属調" }
+          "major": {
+            "major": "下属調"
+          },
+          "minor": {
+            "minor": "下属調"
+          }
         }
       }
     },
@@ -408,6 +424,56 @@
       "addToLayer": "レイヤーに追加",
       "removeChord": "削除",
       "reset": "リセット"
+    },
+    "secondaryDominant": {
+      "secDomDesc": "セカンダリードミナントとは、トニック以外のダイアトニックコードへ一時的に解決するドミナント7thコードです。解決先コードを一時的なトニックとみなして、その V7 を鳴らすことで強い推進力を生み出します。",
+      "tritoneSubDesc": "裏コード（トライトーン代理）は、セカンダリードミナントをルート音が増4度（トライトーン）離れたドミナント7thコードで置き換える技法です。3度と7度のガイドトーンを共有するため、同じターゲットへスムーズに解決できます。",
+      "target": "ターゲット",
+      "secDom": "セカンダリードミナント",
+      "tritoneSub": "裏コード"
+    },
+    "keyFromChords": {
+      "addChord": "コードを追加",
+      "confirm": "追加",
+      "empty": "コードを入力してキーを特定"
+    },
+    "homeSecondaryDominantTitle": "セカンダリードミナント",
+    "homeSecondaryDominantDesc": "各キーのセカンダリードミナントコードを確認する",
+    "homeKeyFromChordsTitle": "コードからキーを特定",
+    "homeKeyFromChordsDesc": "コードの組み合わせからキーを推定する",
+    "homeVoiceLeadingTitle": "ボイスリーディング",
+    "homeVoiceLeadingDesc": "2つのコード間の声部移動を確認する",
+    "homeTensionAvoidTitle": "テンション/アボイド",
+    "homeTensionAvoidDesc": "コードに使えるテンションとアボイドノートを確認する",
+    "voiceLeading": {
+      "commonTones": "コモントーン",
+      "movements": "声部移動",
+      "common": "共通",
+      "halfStep": "半音",
+      "wholeStep": "全音",
+      "large": "大きな移動",
+      "legendCommon": "コモントーン",
+      "legendHalf": "半音移動（最小）",
+      "legendWhole": "全音移動",
+      "legendLarge": "大きな移動",
+      "chord": "コード",
+      "from": "元コード",
+      "to": "先コード",
+      "notesA": "コードAの構成音",
+      "notesB": "コードBの構成音"
+    },
+    "tensionAvoid": {
+      "major": "メジャー",
+      "minor": "マイナー",
+      "keySection": "キー",
+      "keyRoot": "キールート",
+      "chordSection": "コード",
+      "chordRoot": "コードルート",
+      "context": "{{key}} の中の {{chord}}",
+      "chordTones": "コードトーン",
+      "tensions": "テンション",
+      "avoidNotes": "アボイドノート",
+      "none": "なし"
     }
   },
   "stats": {

@@ -5,6 +5,7 @@ import {
   getDiatonicChordList,
   analyzeProgression,
   getCompatibleScales,
+  getTensionsAndAvoids,
 } from "../harmonyUtils";
 
 describe("getDiatonicChordList", () => {
@@ -222,5 +223,32 @@ describe("getCompatibleScales", () => {
       0,
     );
     expect(combined.length).toBeLessThanOrEqual(single.length);
+  });
+});
+
+describe("getTensionsAndAvoids", () => {
+  it("Dm7 in C major marks B as avoid note (tritone with b3)", () => {
+    const result = getTensionsAndAvoids(0, "major", 2, "m7");
+    expect(result.avoidNotes).toEqual(
+      expect.arrayContaining([expect.objectContaining({ noteIndex: 11 })]),
+    );
+  });
+
+  it("Dm7 in C major does not include B in tensions", () => {
+    const result = getTensionsAndAvoids(0, "major", 2, "m7");
+    expect(result.tensions).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ noteIndex: 11 })]),
+    );
+  });
+
+  it("FM7 in C major keeps avoid notes empty", () => {
+    const result = getTensionsAndAvoids(0, "major", 5, "maj7");
+    expect(result.avoidNotes).toHaveLength(0);
+  });
+
+  it("CM7 in C major has only F as avoid note", () => {
+    const result = getTensionsAndAvoids(0, "major", 0, "maj7");
+    expect(result.avoidNotes).toHaveLength(1);
+    expect(result.avoidNotes[0]).toMatchObject({ noteIndex: 5 });
   });
 });

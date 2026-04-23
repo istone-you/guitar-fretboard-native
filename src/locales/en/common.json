@@ -341,20 +341,36 @@
       },
       "relation": {
         "relative": {
-          "major": { "minor": "Relative Minor" },
-          "minor": { "major": "Relative Major" }
+          "major": {
+            "minor": "Relative Minor"
+          },
+          "minor": {
+            "major": "Relative Major"
+          }
         },
         "parallel": {
-          "major": { "minor": "Parallel Minor" },
-          "minor": { "major": "Parallel Major" }
+          "major": {
+            "minor": "Parallel Minor"
+          },
+          "minor": {
+            "major": "Parallel Major"
+          }
         },
         "dominant": {
-          "major": { "major": "Dominant Key" },
-          "minor": { "minor": "Dominant Key" }
+          "major": {
+            "major": "Dominant Key"
+          },
+          "minor": {
+            "minor": "Dominant Key"
+          }
         },
         "subdominant": {
-          "major": { "major": "Subdominant Key" },
-          "minor": { "minor": "Subdominant Key" }
+          "major": {
+            "major": "Subdominant Key"
+          },
+          "minor": {
+            "minor": "Subdominant Key"
+          }
         }
       }
     },
@@ -408,6 +424,56 @@
       "addToLayer": "Add to Layer",
       "removeChord": "Remove",
       "reset": "Reset"
+    },
+    "secondaryDominant": {
+      "secDomDesc": "A secondary dominant is a dominant 7th chord that temporarily resolves to a diatonic chord other than the tonic. By treating the target chord as a momentary tonic and playing its V7, it creates strong forward motion.",
+      "tritoneSubDesc": "The tritone substitute replaces a secondary dominant with another dominant 7th chord whose root is a tritone away. The two chords share the 3rd and 7th guide tones, so both resolve smoothly to the same target.",
+      "target": "Target",
+      "secDom": "Secondary Dominant",
+      "tritoneSub": "Tritone Sub"
+    },
+    "keyFromChords": {
+      "addChord": "Add Chord",
+      "confirm": "Add",
+      "empty": "Add chords to find the key"
+    },
+    "homeSecondaryDominantTitle": "Secondary Dominants",
+    "homeSecondaryDominantDesc": "Find secondary dominant chords for any key",
+    "homeKeyFromChordsTitle": "Key from Chords",
+    "homeKeyFromChordsDesc": "Identify the key from a set of chords",
+    "homeVoiceLeadingTitle": "Voice Leading",
+    "homeVoiceLeadingDesc": "See how notes move between two chords",
+    "homeTensionAvoidTitle": "Tensions & Avoids",
+    "homeTensionAvoidDesc": "Find tensions and avoid notes for a chord in a key",
+    "voiceLeading": {
+      "commonTones": "Common Tones",
+      "movements": "Voice Movements",
+      "common": "Common",
+      "halfStep": "Half Step",
+      "wholeStep": "Whole Step",
+      "large": "Large Move",
+      "legendCommon": "Common Tone",
+      "legendHalf": "Half Step (closest)",
+      "legendWhole": "Whole Step",
+      "legendLarge": "Large Move",
+      "chord": "Chord",
+      "from": "From Chord",
+      "to": "To Chord",
+      "notesA": "Notes in Chord A",
+      "notesB": "Notes in Chord B"
+    },
+    "tensionAvoid": {
+      "major": "Major",
+      "minor": "Minor",
+      "keySection": "Key",
+      "keyRoot": "Key Root",
+      "chordSection": "Chord",
+      "chordRoot": "Chord Root",
+      "context": "{{chord}} in {{key}}",
+      "chordTones": "Chord Tones",
+      "tensions": "Tensions",
+      "avoidNotes": "Avoid Notes",
+      "none": "None"
     }
   },
   "stats": {

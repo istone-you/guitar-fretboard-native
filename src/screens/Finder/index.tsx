@@ -17,6 +17,10 @@ import RelatedKeysBrowser from "./RelatedKeysBrowser";
 import ModeBrowser from "./ModeBrowser";
 import ProgressionAnalyzer from "./ProgressionAnalyzer";
 import ScaleCompatibility from "./ScaleCompatibility";
+import SecondaryDominantFinder from "./SecondaryDominantFinder";
+import KeyFromChordsFinder from "./KeyFromChordsFinder";
+import VoiceLeadingFinder from "./VoiceLeadingFinder";
+import TensionAvoidFinder from "./TensionAvoidFinder";
 import type { FinderMode } from "./types";
 
 export interface FinderPaneProps {
@@ -221,6 +225,42 @@ export default function FinderPane({
               <ProgressionAnalyzer theme={theme} accidental={accidental} />
             ) : selectedMode === "scale-compat" ? (
               <ScaleCompatibility
+                theme={theme}
+                accidental={accidental}
+                layers={layers}
+                globalRootNote={rootNote}
+                onAddLayerAndNavigate={onAddLayerAndNavigate}
+                onEnablePerLayerRoot={onEnablePerLayerRoot}
+              />
+            ) : selectedMode === "secondary-dominant" ? (
+              <SecondaryDominantFinder
+                theme={theme}
+                accidental={accidental}
+                layers={layers}
+                globalRootNote={rootNote}
+                onAddLayerAndNavigate={onAddLayerAndNavigate}
+                onEnablePerLayerRoot={onEnablePerLayerRoot}
+              />
+            ) : selectedMode === "key-from-chords" ? (
+              <KeyFromChordsFinder
+                theme={theme}
+                accidental={accidental}
+                layers={layers}
+                globalRootNote={rootNote}
+                onAddLayerAndNavigate={onAddLayerAndNavigate}
+                onEnablePerLayerRoot={onEnablePerLayerRoot}
+              />
+            ) : selectedMode === "voice-leading" ? (
+              <VoiceLeadingFinder
+                theme={theme}
+                accidental={accidental}
+                layers={layers}
+                globalRootNote={rootNote}
+                onAddLayerAndNavigate={onAddLayerAndNavigate}
+                onEnablePerLayerRoot={onEnablePerLayerRoot}
+              />
+            ) : selectedMode === "tension-avoid" ? (
+              <TensionAvoidFinder
                 theme={theme}
                 accidental={accidental}
                 layers={layers}

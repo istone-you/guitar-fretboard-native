@@ -5,6 +5,8 @@ import {
   diatonicDegreeLabel,
   CHORD_SEMITONES,
   SCALE_DEGREES,
+  MAJOR_SCALE_DEGREES,
+  NATURAL_MINOR_SCALE_DEGREES,
 } from "./fretboard";
 
 export type KeyType = "major" | "minor";
@@ -284,4 +286,239 @@ export function getCompatibleScales(
       return [...requiredPCs].every((pc) => scalePCs.has(pc));
     })
     .map(([scaleType]) => scaleType);
+}
+
+// ── Voice Leading ─────────────────────────────────────────────────────────────
+
+export interface VoiceLeadingTone {
+  from: number; // absolute note index mod 12
+  to: number; // absolute note index mod 12
+  semitones: number; // signed: positive = up, negative = down, 0 = common tone
+}
+
+export interface VoiceLeadingResult {
+  notesA: number[]; // all absolute note indices of chord A
+  notesB: number[]; // all absolute note indices of chord B
+  commonTones: number[]; // shared note indices
+  movements: VoiceLeadingTone[]; // non-common tones in A paired to nearest note in B
+}
+
+export function getVoiceLeading(
+  rootAIndex: number,
+  chordTypeA: ChordType,
+  rootBIndex: number,
+  chordTypeB: ChordType,
+): VoiceLeadingResult {
+  const semitonesA = CHORD_SEMITONES[chordTypeA] ?? [];
+  const semitonesB = CHORD_SEMITONES[chordTypeB] ?? [];
+
+  const notesA = [...semitonesA].map((s) => (rootAIndex + s) % 12).sort((a, b) => a - b);
+  const notesB = [...semitonesB].map((s) => (rootBIndex + s) % 12).sort((a, b) => a - b);
+
+  const setB = new Set(notesB);
+  const commonTones = notesA.filter((n) => setB.has(n));
+  const commonSet = new Set(commonTones);
+
+  const movements: VoiceLeadingTone[] = notesA
+    .filter((n) => !commonSet.has(n))
+    .map((noteA) => {
+      let bestNote = notesB[0];
+      let bestUp = (notesB[0] - noteA + 12) % 12;
+      let bestDown = (noteA - notesB[0] + 12) % 12;
+      for (const noteB of notesB) {
+        const up = (noteB - noteA + 12) % 12;
+        const down = (noteA - noteB + 12) % 12;
+        const minDist = Math.min(up, down);
+        const bestMinDist = Math.min(bestUp, bestDown);
+        if (
+          minDist < bestMinDist ||
+          (minDist === bestMinDist && up <= down && !(bestUp <= bestDown))
+        ) {
+          bestNote = noteB;
+          bestUp = up;
+          bestDown = down;
+        }
+      }
+      const up = (bestNote - noteA + 12) % 12;
+      const down = (noteA - bestNote + 12) % 12;
+      const semitones = up <= down ? up : -down;
+      return { from: noteA, to: bestNote, semitones };
+    });
+
+  return { notesA, notesB, commonTones, movements };
+}
+
+// ── Tensions and Avoid Notes ──────────────────────────────────────────────────
+
+export interface TensionNote {
+  noteIndex: number; // absolute note index mod 12
+  interval: number; // semitones above chord root (0-11)
+}
+
+export interface TensionAvoidResult {
+  chordTones: TensionNote[];
+  tensions: TensionNote[];
+  avoidNotes: TensionNote[];
+}
+
+export function getTensionsAndAvoids(
+  keyRootIndex: number,
+  keyType: KeyType,
+  chordRootIndex: number,
+  chordType: ChordType,
+): TensionAvoidResult {
+  const scaleSet = keyType === "major" ? MAJOR_SCALE_DEGREES : NATURAL_MINOR_SCALE_DEGREES;
+  const scaleNotes = [...scaleSet].map((s) => (keyRootIndex + s) % 12);
+
+  const chordSet = CHORD_SEMITONES[chordType] ?? new Set<number>();
+  const chordNotesList = [...chordSet].map((s) => (chordRootIndex + s) % 12);
+  const chordNoteSet = new Set(chordNotesList);
+
+  const chordTones: TensionNote[] = chordNotesList
+    .map((noteIndex) => ({
+      noteIndex,
+      interval: (noteIndex - chordRootIndex + 12) % 12,
+    }))
+    .sort((a, b) => a.interval - b.interval);
+
+  const tensions: TensionNote[] = [];
+  const avoidNotes: TensionNote[] = [];
+  const thirdTritoneTargets = new Set<number>();
+  for (const chordTone of chordTones) {
+    if (chordTone.interval === 3 || chordTone.interval === 4) {
+      thirdTritoneTargets.add((chordTone.noteIndex + 6) % 12);
+    }
+  }
+
+  for (const note of scaleNotes) {
+    if (chordNoteSet.has(note)) continue;
+    const interval = (note - chordRootIndex + 12) % 12;
+    const isB9Avoid = chordNotesList.some((ct) => (note - ct + 12) % 12 === 1);
+    const isTritoneAvoid = thirdTritoneTargets.has(note);
+    const isAvoid = isB9Avoid || isTritoneAvoid;
+    const entry: TensionNote = { noteIndex: note, interval };
+    if (isAvoid) {
+      avoidNotes.push(entry);
+    } else {
+      tensions.push(entry);
+    }
+  }
+
+  tensions.sort((a, b) => a.interval - b.interval);
+  avoidNotes.sort((a, b) => a.interval - b.interval);
+
+  return { chordTones, tensions, avoidNotes };
+}
+
+// ── Secondary Dominants ───────────────────────────────────────────────────────
+
+export interface SecondaryDominantEntry {
+  targetDegree: string; // e.g. "ii", "IV", "V"
+  targetRootIndex: number;
+  targetChordType: ChordType;
+  secDomRootIndex: number; // dominant of target = (targetRootIndex + 7) % 12
+  tritoneSubRootIndex: number; // (secDomRootIndex + 6) % 12
+}
+
+const DIM_CHORD_TYPES = new Set<ChordType>(["dim", "m7(b5)"]);
+
+export function getSecondaryDominants(
+  keyRootIndex: number,
+  keyType: KeyType,
+): SecondaryDominantEntry[] {
+  const diatonicChords = getDiatonicChordList(keyRootIndex, keyType);
+  return diatonicChords
+    .filter((chord) => !DIM_CHORD_TYPES.has(chord.chordType))
+    .map((chord) => {
+      const secDomRootIndex = (chord.rootIndex + 7) % 12;
+      const tritoneSubRootIndex = (secDomRootIndex + 6) % 12;
+      return {
+        targetDegree: chord.degree,
+        targetRootIndex: chord.rootIndex,
+        targetChordType: chord.chordType,
+        secDomRootIndex,
+        tritoneSubRootIndex,
+      };
+    });
+}
+
+// ── Find Key From Chords ──────────────────────────────────────────────────────
+
+const OFFSET_TO_CHROMATIC: Record<number, string> = {
+  0: "I",
+  1: "bII",
+  2: "II",
+  3: "bIII",
+  4: "III",
+  5: "IV",
+  6: "bV",
+  7: "V",
+  8: "bVI",
+  9: "VI",
+  10: "bVII",
+  11: "VII",
+};
+
+export interface KeyFromChordsMatch {
+  rootIndex: number;
+  keyType: KeyType;
+  score: number;
+  total: number;
+  matchedChords: { rootIndex: number; chordType: ChordType; degree: string }[];
+}
+
+export function findKeyFromChords(
+  chords: { rootIndex: number; chordType: ChordType }[],
+): KeyFromChordsMatch[] {
+  if (chords.length === 0) return [];
+
+  const majorEntries = [...DIATONIC_CHORDS["major-triad"], ...DIATONIC_CHORDS["major-seventh"]];
+  const minorEntries = [
+    ...DIATONIC_CHORDS["natural-minor-triad"],
+    ...DIATONIC_CHORDS["natural-minor-seventh"],
+  ];
+
+  const results: KeyFromChordsMatch[] = [];
+
+  for (let keyRoot = 0; keyRoot < 12; keyRoot++) {
+    for (const keyType of ["major", "minor"] as const) {
+      const entries = keyType === "major" ? majorEntries : minorEntries;
+
+      const matchedChords: { rootIndex: number; chordType: ChordType; degree: string }[] = [];
+
+      for (const chord of chords) {
+        const match = entries.find(
+          (entry) =>
+            (keyRoot + entry.offset) % 12 === chord.rootIndex &&
+            entry.chordType === chord.chordType,
+        );
+        if (match) {
+          matchedChords.push({
+            rootIndex: chord.rootIndex,
+            chordType: chord.chordType,
+            degree: OFFSET_TO_CHROMATIC[match.offset] ?? match.value,
+          });
+        }
+      }
+
+      const score = matchedChords.length;
+      if (score > 0) {
+        results.push({
+          rootIndex: keyRoot,
+          keyType,
+          score,
+          total: chords.length,
+          matchedChords,
+        });
+      }
+    }
+  }
+
+  return results.sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    // major before minor as tiebreaker
+    if (a.keyType === "major" && b.keyType !== "major") return -1;
+    if (b.keyType === "major" && a.keyType !== "major") return 1;
+    return 0;
+  });
 }

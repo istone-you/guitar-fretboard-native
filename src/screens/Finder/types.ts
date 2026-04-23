@@ -8,4 +8,8 @@ export type FinderMode =
   | "related-keys"
   | "modes"
   | "progression-analysis"
-  | "scale-compat";
+  | "scale-compat"
+  | "secondary-dominant"
+  | "key-from-chords"
+  | "voice-leading"
+  | "tension-avoid";
