@@ -9,7 +9,9 @@ jest.mock("react-i18next", () => ({
 jest.mock("../../../../i18n", () => ({}));
 jest.mock("expo-haptics", () => ({
   impactAsync: jest.fn(),
+  notificationAsync: jest.fn(),
   ImpactFeedbackStyle: { Light: "Light", Medium: "Medium" },
+  NotificationFeedbackType: { Error: "error" },
 }));
 jest.mock("react-native-safe-area-context", () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
@@ -199,19 +201,26 @@ describe("ChordBrowser", () => {
     const { TouchableOpacity } = require("react-native");
     const items = UNSAFE_getAllByType(TouchableOpacity);
     fireEvent.press(items[1]);
-    fireEvent.press(screen.getByText("finder.addToLayerTitle"));
+    fireEvent.press(screen.getByTestId("glass-btn-upload"));
     expect(onAdd).toHaveBeenCalled();
   });
 
-  it("disables add button when layers are full", () => {
+  it("shows alert and haptics when add button is pressed with full layers", () => {
+    const { Alert } = require("react-native");
+    const alertSpy = jest.spyOn(Alert, "alert");
+    const Haptics = require("expo-haptics");
+    const onAdd = jest.fn();
     const fullLayers = [makeLayer({ id: "1" }), makeLayer({ id: "2" }), makeLayer({ id: "3" })];
-    const { UNSAFE_getAllByType } = render(<ChordBrowser {...defaultProps} layers={fullLayers} />);
+    const { UNSAFE_getAllByType } = render(
+      <ChordBrowser {...defaultProps} layers={fullLayers} onAddLayerAndNavigate={onAdd} />,
+    );
     const { TouchableOpacity } = require("react-native");
     const items = UNSAFE_getAllByType(TouchableOpacity);
     fireEvent.press(items[1]);
-    const allItems = UNSAFE_getAllByType(TouchableOpacity);
-    const disabledBtn = allItems.find((b: any) => b.props.disabled === true);
-    expect(disabledBtn).toBeTruthy();
+    fireEvent.press(screen.getByTestId("glass-btn-upload"));
+    expect(Haptics.notificationAsync).toHaveBeenCalledWith("error");
+    expect(alertSpy).toHaveBeenCalled();
+    expect(onAdd).not.toHaveBeenCalled();
   });
 
   it("renders in dark theme without crashing", () => {
