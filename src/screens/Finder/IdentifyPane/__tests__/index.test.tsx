@@ -26,16 +26,9 @@ jest.mock("../../../../components/NormalFretboard", () => {
   const { TouchableOpacity, Text } = require("react-native");
   return {
     __esModule: true,
-    default: ({
-      onNoteClick,
-      onNoteLongPress,
-    }: {
-      onNoteClick?: (note: string) => void;
-      onNoteLongPress?: (note: string) => void;
-    }) => (
+    default: ({ onNoteClick }: { onNoteClick?: (note: string) => void }) => (
       <>
         <TouchableOpacity testID="fretboard-note-C" onPress={() => onNoteClick?.("C")} />
-        <TouchableOpacity testID="fretboard-root-C" onPress={() => onNoteLongPress?.("C")} />
         <TouchableOpacity testID="fretboard-note-E" onPress={() => onNoteClick?.("E")} />
         <Text testID="fretboard-mock">fretboard</Text>
       </>
@@ -84,34 +77,42 @@ jest.mock("../../../../components/ui/GlassIconButton", () => {
   };
 });
 
-jest.mock("../../../../components/ui/ContextMenu", () => {
+jest.mock("../../../../components/ui/FinderDetailSheet", () => {
   const { View, TouchableOpacity, Text } = require("react-native");
   return {
-    ContextMenu: ({
+    __esModule: true,
+    default: ({
       visible,
       title,
-      items,
       onClose,
+      onAddLayer,
+      extraAction,
     }: {
       visible: boolean;
       title: string;
-      items: { label: string; onPress: () => void; disabled?: boolean }[];
       onClose: () => void;
+      onAddLayer?: () => void;
+      isFull: boolean;
+      extraAction?: { label: string; onPress: () => void; disabled?: boolean };
     }) =>
       visible ? (
-        <View testID="context-menu">
-          <Text testID="context-title">{title}</Text>
-          {items.map((item) => (
+        <View testID="finder-detail-sheet">
+          <Text testID="detail-sheet-title">{title}</Text>
+          {extraAction && (
             <TouchableOpacity
-              key={item.label}
-              testID={`ctx-item-${item.label}`}
-              onPress={item.onPress}
-              disabled={item.disabled}
+              testID={`detail-extra-${extraAction.label}`}
+              onPress={extraAction.onPress}
+              disabled={extraAction.disabled}
             >
-              <Text>{item.label}</Text>
+              <Text>{extraAction.label}</Text>
             </TouchableOpacity>
-          ))}
-          <TouchableOpacity testID="ctx-close" onPress={onClose} />
+          )}
+          {onAddLayer && (
+            <TouchableOpacity testID="detail-add-layer" onPress={onAddLayer}>
+              <Text>finder.addToLayerTitle</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity testID="detail-close" onPress={onClose} />
         </View>
       ) : null,
   };
@@ -120,6 +121,15 @@ jest.mock("../../../../components/ui/ContextMenu", () => {
 jest.mock("../../../../components/ui/Icon", () => {
   const { View } = require("react-native");
   return { __esModule: true, default: () => <View /> };
+});
+
+jest.mock("../../../../components/ui/ChordDiagram", () => {
+  const { View } = require("react-native");
+  return {
+    __esModule: true,
+    default: () => <View testID="chord-diagram" />,
+    getAllChordForms: (_rootIndex: number, _chordType: string) => [],
+  };
 });
 
 jest.mock("../../../../components/ui/ColorPicker", () => {
@@ -195,7 +205,7 @@ describe("IdentifyPane", () => {
 
   it("shows instruction placeholder text when no root selected", () => {
     render(<IdentifyPane {...defaultProps} />);
-    expect(screen.getByText("finder.longPressInstruction")).toBeTruthy();
+    expect(screen.getByText("finder.chipRootInstruction")).toBeTruthy();
   });
 
   it("shows settings button", () => {
@@ -218,39 +228,39 @@ describe("IdentifyPane", () => {
 
   it("shows reset button after root is set via long press", () => {
     render(<IdentifyPane {...defaultProps} />);
-    fireEvent.press(screen.getByTestId("fretboard-root-C"));
+    fireEvent.press(screen.getByTestId("fretboard-note-C"));
     expect(screen.getByText("finder.reset")).toBeTruthy();
   });
 
   it("hides instruction text after root is set", () => {
     render(<IdentifyPane {...defaultProps} />);
-    fireEvent.press(screen.getByTestId("fretboard-root-C"));
-    expect(screen.queryByText("finder.longPressInstruction")).toBeNull();
+    fireEvent.press(screen.getByTestId("fretboard-note-C"));
+    expect(screen.queryByText("finder.chipRootInstruction")).toBeNull();
   });
 
   it("clears root when reset button is pressed", () => {
     render(<IdentifyPane {...defaultProps} />);
-    fireEvent.press(screen.getByTestId("fretboard-root-C"));
+    fireEvent.press(screen.getByTestId("fretboard-note-C"));
     fireEvent.press(screen.getByText("finder.reset"));
     expect(screen.queryByText("finder.reset")).toBeNull();
   });
 
-  it("opens context menu when a result row is tapped", () => {
+  it("opens detail sheet when a result row is tapped", () => {
     render(<IdentifyPane {...defaultProps} />);
-    fireEvent.press(screen.getByTestId("fretboard-root-C"));
+    fireEvent.press(screen.getByTestId("fretboard-note-C"));
     fireEvent.press(screen.getByTestId("fretboard-note-E"));
-    const ctxMenu = screen.queryByTestId("context-menu");
-    if (ctxMenu) {
-      expect(ctxMenu).toBeTruthy();
+    const sheet = screen.queryByTestId("finder-detail-sheet");
+    if (sheet) {
+      expect(sheet).toBeTruthy();
     }
   });
 
-  it("calls onAddLayerAndNavigate from context menu add action", () => {
+  it("calls onAddLayerAndNavigate from detail sheet add action", () => {
     const onAdd = jest.fn();
     render(<IdentifyPane {...defaultProps} onAddLayerAndNavigate={onAdd} />);
-    fireEvent.press(screen.getByTestId("fretboard-root-C"));
+    fireEvent.press(screen.getByTestId("fretboard-note-C"));
     fireEvent.press(screen.getByTestId("fretboard-note-E"));
-    const addBtn = screen.queryByTestId(`ctx-item-finder.addToLayerTitle`);
+    const addBtn = screen.queryByTestId("detail-add-layer");
     if (addBtn) {
       fireEvent.press(addBtn);
       expect(onAdd).toHaveBeenCalled();

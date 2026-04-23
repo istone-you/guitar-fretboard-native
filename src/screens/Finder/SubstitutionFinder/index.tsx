@@ -23,15 +23,8 @@ import {
 } from "../../../lib/substitutions";
 import ChordDiagram, { getAllChordForms } from "../../../components/ui/ChordDiagram";
 import NotePickerButton from "../../../components/ui/NotePickerButton";
-import Icon from "../../../components/ui/Icon";
-import PillButton from "../../../components/ui/PillButton";
 import NotePill from "../../../components/ui/NotePill";
-import BottomSheetModal, {
-  SHEET_HANDLE_CLEARANCE,
-  useSheetHeight,
-} from "../../../components/ui/BottomSheetModal";
-import SheetProgressiveHeader from "../../../components/ui/SheetProgressiveHeader";
-import GlassIconButton from "../../../components/ui/GlassIconButton";
+import FinderDetailSheet from "../../../components/ui/FinderDetailSheet";
 
 interface SubstitutionFinderProps {
   theme: Theme;
@@ -65,9 +58,6 @@ export default function SubstitutionFinder({
   const [rootNote, setRootNote] = useState("C");
   const [selectedChordType, setSelectedChordType] = useState<ChordType>("Major");
   const [pendingSub, setPendingSub] = useState<PendingSubstitution | null>(null);
-  const [modalHeaderHeight, setModalHeaderHeight] = useState(96);
-
-  const sheetHeight = useSheetHeight();
   const rootIndex = getRootIndex(rootNote);
   const notes = getNotesByAccidental(accidental);
   const isFull = layers.length >= MAX_LAYERS;
@@ -110,6 +100,18 @@ export default function SubstitutionFinder({
     if (type === "diatonic") return t("finder.substitution.diatonic");
     return t("finder.substitution.tritone");
   };
+
+  const pendingSubData = useMemo(() => {
+    if (!pendingSub) return null;
+    const subRootName = notes[pendingSub.rootIndex];
+    const subChordName = `${subRootName}${CHORD_SUFFIX_MAP[pendingSub.chordType] ?? ""}`;
+    const forms = getAllChordForms(pendingSub.rootIndex, pendingSub.chordType);
+    const descKey =
+      pendingSub.type === "diatonic"
+        ? "finder.substitution.diatonicDesc"
+        : "finder.substitution.tritoneDesc";
+    return { subChordName, forms, descKey };
+  }, [pendingSub, notes]);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.pageBg }}>
@@ -229,105 +231,43 @@ export default function SubstitutionFinder({
         )}
       </ScrollView>
 
-      {/* Substitution detail sheet */}
-      <BottomSheetModal visible={pendingSub !== null} onClose={() => setPendingSub(null)}>
-        {({ close, dragHandlers }) => {
-          if (!pendingSub) return null;
-          const subRootName = notes[pendingSub.rootIndex];
-          const subChordName = `${subRootName}${CHORD_SUFFIX_MAP[pendingSub.chordType] ?? ""}`;
-          const forms = getAllChordForms(pendingSub.rootIndex, pendingSub.chordType);
-          const sheetBg = colors.deepBg;
-          const descKey =
-            pendingSub.type === "diatonic"
-              ? "finder.substitution.diatonicDesc"
-              : "finder.substitution.tritoneDesc";
-
-          return (
-            <View
-              style={[
-                styles.sheet,
-                {
-                  height: sheetHeight,
-                  backgroundColor: sheetBg,
-                  borderColor: colors.sheetBorder,
-                },
-              ]}
-            >
-              <View style={{ flex: 1, overflow: "hidden" }}>
-                <ScrollView
-                  contentContainerStyle={[styles.sheetContent, { paddingTop: modalHeaderHeight }]}
-                  showsVerticalScrollIndicator={false}
-                >
-                  {forms.length > 0 && (
-                    <View style={styles.modalDiagrams}>
-                      {forms.map((cells, fi) => (
-                        <ChordDiagram
-                          key={fi}
-                          cells={cells}
-                          rootIndex={pendingSub.rootIndex}
-                          theme={theme}
-                          width={formWidth}
-                        />
-                      ))}
-                    </View>
-                  )}
-                  <View style={styles.descriptionArea}>
-                    <Text style={[styles.functionLabel, { color: colors.textStrong }]}>
-                      {subTypeLabel(pendingSub.type)}
-                    </Text>
-                    <Text style={[styles.functionDesc, { color: colors.textSubtle }]}>
-                      {t(descKey)}
-                    </Text>
-                  </View>
-                  <View style={styles.addButtonArea}>
-                    <PillButton
-                      isDark={isDark}
-                      onPress={() => {
-                        handleAdd(pendingSub.rootIndex, pendingSub.chordType);
-                        close();
-                      }}
-                      disabled={isFull}
-                    >
-                      <Icon name="upload" size={15} color={colors.textStrong} />
-                      <Text style={[styles.addButtonText, { color: colors.textStrong }]}>
-                        {t("finder.addToLayerTitle")}
-                      </Text>
-                    </PillButton>
-                    {isFull && (
-                      <Text style={[styles.fullText, { color: colors.textSubtle }]}>
-                        {t("finder.addToLayerFull")}
-                      </Text>
-                    )}
-                  </View>
-                </ScrollView>
-                <SheetProgressiveHeader
-                  isDark={isDark}
-                  bgColor={sheetBg}
-                  dragHandlers={dragHandlers}
-                  contentPaddingHorizontal={14}
-                  onLayout={setModalHeaderHeight}
-                  style={styles.absoluteHeader}
-                >
-                  <View style={styles.headerRow}>
-                    <GlassIconButton
-                      isDark={isDark}
-                      onPress={close}
-                      icon="close"
-                      style={styles.headerSide}
-                    />
-                    <View style={styles.headerCenter}>
-                      <Text style={[styles.headerTitle, { color: colors.textStrong }]}>
-                        {subChordName}
-                      </Text>
-                    </View>
-                    <View style={styles.headerSide} />
-                  </View>
-                </SheetProgressiveHeader>
-              </View>
+      <FinderDetailSheet
+        visible={pendingSub !== null}
+        onClose={() => setPendingSub(null)}
+        theme={theme}
+        title={pendingSubData?.subChordName ?? ""}
+        mediaContent={
+          pendingSub && pendingSubData && pendingSubData.forms.length > 0 ? (
+            <View style={styles.modalDiagrams}>
+              {pendingSubData.forms.map((cells, fi) => (
+                <ChordDiagram
+                  key={fi}
+                  cells={cells}
+                  rootIndex={pendingSub.rootIndex}
+                  theme={theme}
+                  width={formWidth}
+                />
+              ))}
             </View>
-          );
-        }}
-      </BottomSheetModal>
+          ) : null
+        }
+        description={
+          pendingSub && pendingSubData ? (
+            <>
+              <Text style={[styles.functionLabel, { color: colors.textStrong }]}>
+                {subTypeLabel(pendingSub.type)}
+              </Text>
+              <Text style={[styles.functionDesc, { color: colors.textSubtle }]}>
+                {t(pendingSubData.descKey)}
+              </Text>
+            </>
+          ) : null
+        }
+        isFull={isFull}
+        onAddLayer={
+          pendingSub ? () => handleAdd(pendingSub.rootIndex, pendingSub.chordType) : undefined
+        }
+      />
     </View>
   );
 }
@@ -408,26 +348,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingBottom: 10,
   },
-  sheet: {
-    width: "100%",
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    borderWidth: 1,
-    overflow: "hidden",
-  },
-  sheetContent: {
-    paddingBottom: 32,
-  },
   modalDiagrams: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
     paddingHorizontal: 16,
     paddingVertical: 16,
-  },
-  descriptionArea: {
-    paddingHorizontal: 16,
-    paddingBottom: 8,
   },
   functionLabel: {
     fontSize: 13,
@@ -438,44 +364,5 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 20,
     paddingTop: 4,
-  },
-  addButtonArea: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 8,
-    gap: 8,
-    alignItems: "center",
-  },
-  addButtonText: {},
-  fullText: {
-    fontSize: 12,
-    textAlign: "center",
-    lineHeight: 18,
-  },
-  absoluteHeader: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 1,
-    paddingTop: SHEET_HANDLE_CLEARANCE,
-  },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  headerSide: {
-    width: 44,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: "center",
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: "700",
-    textAlign: "center",
   },
 });

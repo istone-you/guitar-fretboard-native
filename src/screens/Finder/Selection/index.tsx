@@ -47,13 +47,13 @@ const MODES: {
     titleKey: "finder.homeDiatonicTitle",
     descKey: "finder.homeDiatonicDesc",
   },
+  { mode: "capo", icon: "capo", titleKey: "finder.homeCapoTitle", descKey: "finder.homeCapoDesc" },
   {
     mode: "substitution",
     icon: "music-note",
     titleKey: "finder.homeSubTitle",
     descKey: "finder.homeSubDesc",
   },
-  { mode: "capo", icon: "capo", titleKey: "finder.homeCapoTitle", descKey: "finder.homeCapoDesc" },
   {
     mode: "modulation",
     icon: "arrows-lr",

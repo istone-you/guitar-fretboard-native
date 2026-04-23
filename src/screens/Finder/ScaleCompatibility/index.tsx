@@ -39,16 +39,10 @@ import NoteDegreeModeToggle from "../../../components/ui/NoteDegreeModeToggle";
 import NoteSelectPage from "../../../components/ui/NoteSelectPage";
 import { SegmentedToggle } from "../../../components/ui/SegmentedToggle";
 import PillButton from "../../../components/ui/PillButton";
-import Icon from "../../../components/ui/Icon";
 import { buildScaleOptions } from "../../../components/ui/scaleOptions";
-import BottomSheetModal, {
-  SHEET_HANDLE_CLEARANCE,
-  useSheetHeight,
-} from "../../../components/ui/BottomSheetModal";
-import SheetProgressiveHeader from "../../../components/ui/SheetProgressiveHeader";
-import GlassIconButton from "../../../components/ui/GlassIconButton";
 import ChordDiagram, { getAllChordForms } from "../../../components/ui/ChordDiagram";
 import LayerDescription from "../../../components/LayerEditModal/LayerDescription";
+import FinderDetailSheet from "../../../components/ui/FinderDetailSheet";
 
 const MAX_CHORDS = 8;
 
@@ -93,7 +87,6 @@ export default function ScaleCompatibility({
   const colors = getColors(isDark);
   const insets = useSafeAreaInsets();
   const { width: winWidth } = useWindowDimensions();
-  const sheetHeight = useSheetHeight();
   const borderColor = isDark ? colors.border : colors.border2;
   const calloutBorder = isDark ? colors.border2 : colors.borderStrong;
 
@@ -111,7 +104,6 @@ export default function ScaleCompatibility({
   const [chords, setChords] = useState<ProgressionChord[]>([]);
   const [step, setStep] = useState<"main" | "keySelect">("main");
   const [activeSheet, setActiveSheet] = useState<SheetState | null>(null);
-  const [modalHeaderHeight, setModalHeaderHeight] = useState(60);
 
   const calloutAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
@@ -296,7 +288,23 @@ export default function ScaleCompatibility({
     chords.length > 0 &&
     groups.some((g) => g.options.some((opt) => compatibleScales.has(opt.value)));
 
-  const sheetBg = colors.deepBg;
+  const sheetDerivedData = useMemo(() => {
+    if (!activeSheet) return null;
+    if (activeSheet.kind === "chord") {
+      const { chord, index } = activeSheet;
+      const chordRootIndex = (keyNoteIndex + (DEGREE_TO_OFFSET[chord.degree] ?? 0)) % 12;
+      const forms = getAllChordForms(chordRootIndex, chord.chordType);
+      const formWidth = Math.floor((winWidth - 32 - 8 * 2) / 3);
+      const tmpLayer = createDefaultLayer("chord", "tmp", BLACK);
+      tmpLayer.chordDisplayMode = "form";
+      tmpLayer.chordType = chord.chordType;
+      return { kind: "chord" as const, chord, index, chordRootIndex, forms, formWidth, tmpLayer };
+    }
+    const { scaleType, label } = activeSheet;
+    const tmpLayer = createDefaultLayer("scale", "tmp", BLACK);
+    tmpLayer.scaleType = scaleType;
+    return { kind: "scale" as const, scaleType, label, tmpLayer };
+  }, [activeSheet, keyNoteIndex, winWidth]);
 
   return (
     <View style={[styles.root, { backgroundColor: colors.pageBg }]}>
@@ -596,7 +604,6 @@ export default function ScaleCompatibility({
                                     })}
                                   </View>
                                 </View>
-                                <Icon name="chevron-right" size={14} color={colors.textSubtle} />
                               </TouchableOpacity>
                             );
                           })}
@@ -640,189 +647,57 @@ export default function ScaleCompatibility({
         )}
       </Animated.View>
 
-      {/* Chord / Scale detail bottom sheet */}
-      <BottomSheetModal visible={activeSheet !== null} onClose={() => setActiveSheet(null)}>
-        {({ close, dragHandlers }) => {
-          if (!activeSheet) return null;
-
-          if (activeSheet.kind === "chord") {
-            const { chord, index } = activeSheet;
-            const title = chordLabel(chord);
-            const chordRootIndex = (keyNoteIndex + (DEGREE_TO_OFFSET[chord.degree] ?? 0)) % 12;
-            const forms = getAllChordForms(chordRootIndex, chord.chordType);
-            const formWidth = Math.floor((winWidth - 32 - 8 * 2) / 3);
-            const tmpChordLayer = createDefaultLayer("chord", "tmp", BLACK);
-            tmpChordLayer.chordDisplayMode = "form";
-            tmpChordLayer.chordType = chord.chordType;
-            return (
-              <View
-                style={[
-                  styles.sheet,
-                  {
-                    height: sheetHeight,
-                    backgroundColor: sheetBg,
-                    borderColor: colors.sheetBorder,
-                  },
-                ]}
-              >
-                <View style={{ flex: 1, overflow: "hidden" }}>
-                  <ScrollView
-                    contentContainerStyle={[styles.sheetContent, { paddingTop: modalHeaderHeight }]}
-                    showsVerticalScrollIndicator={false}
-                  >
-                    {forms.length > 0 && (
-                      <View style={styles.modalDiagrams}>
-                        {forms.map((cells, fi) => (
-                          <ChordDiagram
-                            key={fi}
-                            cells={cells}
-                            rootIndex={chordRootIndex}
-                            theme={theme}
-                            width={formWidth}
-                          />
-                        ))}
-                      </View>
-                    )}
-                    <View style={styles.descriptionArea}>
-                      <LayerDescription theme={theme} layer={tmpChordLayer} itemOnly />
-                    </View>
-                    <View style={styles.chordActionRow}>
-                      <PillButton
-                        isDark={isDark}
-                        onPress={() => {
-                          handleAddChordToLayer(chord);
-                          close();
-                        }}
-                        disabled={isFull}
-                      >
-                        <Icon name="upload" size={15} color={colors.textStrong} />
-                        <Text style={[styles.addBtnText, { color: colors.textStrong }]}>
-                          {t("finder.addToLayerTitle")}
-                        </Text>
-                      </PillButton>
-                      <PillButton
-                        isDark={isDark}
-                        variant="danger"
-                        onPress={() => {
-                          handleRemove(index);
-                          close();
-                        }}
-                      >
-                        <Text style={[styles.addBtnText, { color: colors.textDanger }]}>
-                          {t("finder.scaleCompat.removeChord")}
-                        </Text>
-                      </PillButton>
-                    </View>
-                    {isFull && (
-                      <Text
-                        style={[
-                          styles.fullText,
-                          { color: colors.textSubtle, paddingHorizontal: 16 },
-                        ]}
-                      >
-                        {t("finder.addToLayerFull")}
-                      </Text>
-                    )}
-                  </ScrollView>
-                  <SheetProgressiveHeader
-                    isDark={isDark}
-                    bgColor={sheetBg}
-                    dragHandlers={dragHandlers}
-                    contentPaddingHorizontal={14}
-                    onLayout={setModalHeaderHeight}
-                    style={styles.absoluteHeader}
-                  >
-                    <View style={styles.headerRow}>
-                      <GlassIconButton
-                        isDark={isDark}
-                        onPress={close}
-                        icon="close"
-                        style={styles.headerSide}
-                      />
-                      <View style={styles.headerCenter}>
-                        <Text style={[styles.headerTitle, { color: colors.textStrong }]}>
-                          {title}
-                        </Text>
-                      </View>
-                      <View style={styles.headerSide} />
-                    </View>
-                  </SheetProgressiveHeader>
-                </View>
-              </View>
-            );
-          }
-
-          // Scale detail sheet
-          const { scaleType, label } = activeSheet;
-          const tmpScaleLayer = createDefaultLayer("scale", "tmp", BLACK);
-          tmpScaleLayer.scaleType = scaleType;
-          return (
-            <View
-              style={[
-                styles.sheet,
-                { height: sheetHeight, backgroundColor: sheetBg, borderColor: colors.sheetBorder },
-              ]}
-            >
-              <View style={{ flex: 1, overflow: "hidden" }}>
-                <ScrollView
-                  contentContainerStyle={[styles.sheetContent, { paddingTop: modalHeaderHeight }]}
-                  showsVerticalScrollIndicator={false}
-                >
-                  <View style={styles.descriptionArea}>
-                    <LayerDescription theme={theme} layer={tmpScaleLayer} itemOnly />
-                  </View>
-                  <View style={styles.addButtonArea}>
-                    <PillButton
-                      isDark={isDark}
-                      onPress={() => {
-                        handleAddToLayer(scaleType);
-                        close();
-                      }}
-                      disabled={isFull}
-                    >
-                      <Icon name="upload" size={15} color={colors.textStrong} />
-                      <Text style={[styles.addBtnText, { color: colors.textStrong }]}>
-                        {t("finder.addToLayerTitle")}
-                      </Text>
-                    </PillButton>
-                    {isFull && (
-                      <Text style={[styles.fullText, { color: colors.textSubtle }]}>
-                        {t("finder.addToLayerFull")}
-                      </Text>
-                    )}
-                  </View>
-                </ScrollView>
-                <SheetProgressiveHeader
-                  isDark={isDark}
-                  bgColor={sheetBg}
-                  dragHandlers={dragHandlers}
-                  contentPaddingHorizontal={14}
-                  onLayout={setModalHeaderHeight}
-                  style={styles.absoluteHeader}
-                >
-                  <View style={styles.headerRow}>
-                    <GlassIconButton
-                      isDark={isDark}
-                      onPress={close}
-                      icon="close"
-                      style={styles.headerSide}
-                    />
-                    <View style={styles.headerCenter}>
-                      <Text style={[styles.headerSubtitle, { color: colors.textSubtle }]}>
-                        {noteKey}
-                      </Text>
-                      <Text style={[styles.headerTitle, { color: colors.textStrong }]}>
-                        {label}
-                      </Text>
-                    </View>
-                    <View style={styles.headerSide} />
-                  </View>
-                </SheetProgressiveHeader>
-              </View>
+      <FinderDetailSheet
+        visible={activeSheet !== null}
+        onClose={() => setActiveSheet(null)}
+        theme={theme}
+        title={
+          sheetDerivedData
+            ? sheetDerivedData.kind === "chord"
+              ? chordLabel(sheetDerivedData.chord)
+              : sheetDerivedData.label
+            : ""
+        }
+        subtitle={sheetDerivedData?.kind === "scale" ? noteKey : undefined}
+        mediaContent={
+          sheetDerivedData?.kind === "chord" && sheetDerivedData.forms.length > 0 ? (
+            <View style={styles.modalDiagrams}>
+              {sheetDerivedData.forms.map((cells, fi) => (
+                <ChordDiagram
+                  key={fi}
+                  cells={cells}
+                  rootIndex={sheetDerivedData.chordRootIndex}
+                  theme={theme}
+                  width={sheetDerivedData.formWidth}
+                />
+              ))}
             </View>
-          );
-        }}
-      </BottomSheetModal>
+          ) : null
+        }
+        description={
+          sheetDerivedData ? (
+            <LayerDescription theme={theme} layer={sheetDerivedData.tmpLayer} itemOnly />
+          ) : null
+        }
+        isFull={isFull}
+        onAddLayer={
+          sheetDerivedData
+            ? sheetDerivedData.kind === "chord"
+              ? () => handleAddChordToLayer(sheetDerivedData.chord)
+              : () => handleAddToLayer(sheetDerivedData.scaleType)
+            : undefined
+        }
+        extraAction={
+          sheetDerivedData?.kind === "chord"
+            ? {
+                label: t("finder.scaleCompat.removeChord"),
+                variant: "danger",
+                position: "after",
+                onPress: () => handleRemove(sheetDerivedData.index),
+              }
+            : undefined
+        }
+      />
     </View>
   );
 }
@@ -969,71 +844,12 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 18,
   },
-  // Sheet styles
-  sheet: {
-    width: "100%",
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    borderWidth: 1,
-    overflow: "hidden",
-  },
-  sheetContent: {
-    paddingBottom: 32,
-  },
-  absoluteHeader: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 1,
-    paddingTop: SHEET_HANDLE_CLEARANCE,
-  },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  headerSide: {
-    width: 44,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: "center",
-  },
-  headerSubtitle: {
-    fontSize: 12,
-    fontWeight: "500",
-  },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-  },
   modalDiagrams: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
     paddingHorizontal: 16,
     paddingVertical: 16,
-  },
-  descriptionArea: {
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-  },
-  chordActionRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 8,
-  },
-  addButtonArea: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 8,
-    gap: 8,
-    alignItems: "center",
   },
   addBtnText: {},
   resetRow: {

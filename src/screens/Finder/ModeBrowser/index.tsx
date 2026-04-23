@@ -19,6 +19,7 @@ import SheetProgressiveHeader from "../../../components/ui/SheetProgressiveHeade
 import GlassIconButton from "../../../components/ui/GlassIconButton";
 import Icon from "../../../components/ui/Icon";
 import PillButton from "../../../components/ui/PillButton";
+import FinderDetailSheet from "../../../components/ui/FinderDetailSheet";
 
 interface ModeBrowserProps {
   theme: Theme;
@@ -53,7 +54,6 @@ export default function ModeBrowser({
   const [modeSheetVisible, setModeSheetVisible] = useState(false);
   const [modeHeaderHeight, setModeHeaderHeight] = useState(96);
   const [pendingEntry, setPendingEntry] = useState<PendingEntry | null>(null);
-  const [detailHeaderHeight, setDetailHeaderHeight] = useState(96);
 
   const notes = getNotesByAccidental(accidental);
   const isFull = layers.length >= MAX_LAYERS;
@@ -86,6 +86,26 @@ export default function ModeBrowser({
     },
     [isFull, layers, notes, globalRootNote, onAddLayerAndNavigate, onEnablePerLayerRoot],
   );
+
+  const pendingData = useMemo(() => {
+    if (!pendingEntry) return null;
+    const { scaleType: entryScaleType, rootIndex: entryRootIndex } = pendingEntry;
+    const entryRootName = notes[entryRootIndex];
+    const entryScaleName = t(`options.scale.${scaleI18nKey(entryScaleType)}`);
+    const { parentRootIndex: entryParentIdx } = getModeFamily(entryScaleType, entryRootIndex);
+    const entryParentName = notes[entryParentIdx];
+    const entryScaleNotes = Array.from(SCALE_DEGREES[entryScaleType as ScaleType] ?? [])
+      .sort((a, b) => a - b)
+      .map((s) => notes[(entryRootIndex + s) % 12]);
+    return {
+      entryScaleType,
+      entryRootIndex,
+      entryRootName,
+      entryScaleName,
+      entryParentName,
+      entryScaleNotes,
+    };
+  }, [pendingEntry, notes, t]);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.pageBg }}>
@@ -158,118 +178,59 @@ export default function ModeBrowser({
         ))}
       </ScrollView>
 
-      {/* Mode detail sheet */}
-      <BottomSheetModal visible={pendingEntry !== null} onClose={() => setPendingEntry(null)}>
-        {({ close, dragHandlers }) => {
-          if (!pendingEntry) return null;
-          const { scaleType: entryScaleType, rootIndex: entryRootIndex } = pendingEntry;
-          const entryRootName = notes[entryRootIndex];
-          const entryScaleName = scaleName(entryScaleType);
-          const { parentRootIndex: entryParentIdx } = getModeFamily(entryScaleType, entryRootIndex);
-          const entryParentName = notes[entryParentIdx];
-          const entryScaleNotes = Array.from(SCALE_DEGREES[entryScaleType as ScaleType] ?? [])
-            .sort((a, b) => a - b)
-            .map((s) => notes[(entryRootIndex + s) % 12]);
-          const sheetBg = colors.deepBg;
-
-          return (
-            <View
-              style={[
-                styles.detailSheet,
-                { height: sheetHeight, backgroundColor: sheetBg, borderColor: colors.sheetBorder },
-              ]}
-            >
-              <View style={{ flex: 1, overflow: "hidden" }}>
-                <ScrollView
-                  contentContainerStyle={[styles.detailContent, { paddingTop: detailHeaderHeight }]}
-                  showsVerticalScrollIndicator={false}
-                >
-                  {/* Parent scale */}
-                  <View style={[styles.detailParentRow, { borderBottomColor: borderColor }]}>
-                    <Text style={[styles.detailParentLabel, { color: colors.textSubtle }]}>
-                      {t("finder.modes.parentScale")}
-                    </Text>
-                    <Text style={[styles.detailParentValue, { color: colors.textStrong }]}>
-                      {`${entryParentName} ${t("options.scale.major")}`}
-                    </Text>
-                  </View>
-
-                  {/* Description */}
-                  <View style={styles.descriptionArea}>
-                    <Text style={[styles.functionLabel, { color: colors.textStrong }]}>
-                      {entryScaleName}
-                    </Text>
-                    <Text style={[styles.functionDesc, { color: colors.textSubtle }]}>
-                      {t(`description.scale.${scaleI18nKey(entryScaleType)}`)}
-                    </Text>
-                  </View>
-
-                  {/* Scale notes */}
-                  <Text style={[styles.sectionLabel, { color: colors.textSubtle }]}>
-                    {t("finder.modes.notes")}
-                  </Text>
-                  <View style={styles.noteChipsRow}>
-                    {entryScaleNotes.map((n) => (
-                      <View key={n} style={[styles.noteChip, { backgroundColor: colors.surface2 }]}>
-                        <Text style={[styles.noteChipText, { color: colors.textStrong }]}>{n}</Text>
-                      </View>
-                    ))}
-                  </View>
-
-                  {/* Add to layer */}
-                  <View style={styles.addButtonArea}>
-                    <PillButton
-                      isDark={isDark}
-                      onPress={() => {
-                        handleAddMode(entryScaleType, entryRootIndex);
-                        close();
-                      }}
-                      disabled={isFull}
-                    >
-                      <Icon name="upload" size={15} color={colors.textStrong} />
-                      <Text style={[styles.addButtonText, { color: colors.textStrong }]}>
-                        {t("finder.addToLayerTitle")}
-                      </Text>
-                    </PillButton>
-                    {isFull && (
-                      <Text style={[styles.fullText, { color: colors.textSubtle }]}>
-                        {t("finder.addToLayerFull")}
-                      </Text>
-                    )}
-                  </View>
-                </ScrollView>
-
-                <SheetProgressiveHeader
-                  isDark={isDark}
-                  bgColor={sheetBg}
-                  dragHandlers={dragHandlers}
-                  contentPaddingHorizontal={14}
-                  onLayout={setDetailHeaderHeight}
-                  style={styles.absoluteHeader}
-                >
-                  <View style={styles.headerRow}>
-                    <GlassIconButton
-                      isDark={isDark}
-                      onPress={close}
-                      icon="close"
-                      style={styles.headerSide}
-                    />
-                    <View style={styles.headerCenter}>
-                      <Text style={[styles.headerSubtitle, { color: colors.textSubtle }]}>
-                        {entryRootName}
-                      </Text>
-                      <Text style={[styles.headerTitle, { color: colors.textStrong }]}>
-                        {entryScaleName}
-                      </Text>
-                    </View>
-                    <View style={styles.headerSide} />
-                  </View>
-                </SheetProgressiveHeader>
-              </View>
+      <FinderDetailSheet
+        visible={pendingEntry !== null}
+        onClose={() => setPendingEntry(null)}
+        theme={theme}
+        title={pendingData?.entryScaleName ?? ""}
+        subtitle={pendingData?.entryRootName}
+        topContent={
+          pendingData ? (
+            <View style={[styles.detailParentRow, { borderBottomColor: borderColor }]}>
+              <Text style={[styles.detailParentLabel, { color: colors.textSubtle }]}>
+                {t("finder.modes.parentScale")}
+              </Text>
+              <Text style={[styles.detailParentValue, { color: colors.textStrong }]}>
+                {`${pendingData.entryParentName} ${t("options.scale.major")}`}
+              </Text>
             </View>
-          );
-        }}
-      </BottomSheetModal>
+          ) : null
+        }
+        description={
+          pendingData ? (
+            <>
+              <Text style={[styles.functionLabel, { color: colors.textStrong }]}>
+                {pendingData.entryScaleName}
+              </Text>
+              <Text style={[styles.functionDesc, { color: colors.textSubtle }]}>
+                {t(`description.scale.${scaleI18nKey(pendingData.entryScaleType)}`)}
+              </Text>
+            </>
+          ) : null
+        }
+        bottomContent={
+          pendingData ? (
+            <>
+              <Text style={[styles.sectionLabel, { color: colors.textSubtle }]}>
+                {t("finder.modes.notes")}
+              </Text>
+              <View style={[styles.noteChipsRow, { paddingTop: 8 }]}>
+                {pendingData.entryScaleNotes.map((n) => (
+                  <View key={n} style={[styles.noteChip, { backgroundColor: colors.surface2 }]}>
+                    <Text style={[styles.noteChipText, { color: colors.textStrong }]}>{n}</Text>
+                  </View>
+                ))}
+              </View>
+            </>
+          ) : null
+        }
+        isFull={isFull}
+        onAddLayer={
+          pendingData
+            ? () => handleAddMode(pendingData.entryScaleType, pendingData.entryRootIndex)
+            : undefined
+        }
+      />
 
       {/* Mode picker sheet */}
       <BottomSheetModal visible={modeSheetVisible} onClose={() => setModeSheetVisible(false)}>
@@ -417,11 +378,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     overflow: "hidden",
   },
-  detailContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 32,
-    gap: 12,
-  },
   detailParentRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -436,9 +392,6 @@ const styles = StyleSheet.create({
   detailParentValue: {
     fontSize: 13,
     fontWeight: "700",
-  },
-  descriptionArea: {
-    paddingBottom: 4,
   },
   functionLabel: {
     fontSize: 13,
@@ -470,16 +423,6 @@ const styles = StyleSheet.create({
   noteChipText: {
     fontSize: 14,
     fontWeight: "600",
-  },
-  addButtonArea: {
-    alignItems: "center",
-    gap: 6,
-    paddingTop: 8,
-  },
-  addButtonText: {},
-  fullText: {
-    fontSize: 12,
-    textAlign: "center",
   },
   modeOption: {
     flexDirection: "row",

@@ -8,12 +8,14 @@ import {
   StyleSheet,
   Animated,
   Switch,
+  useWindowDimensions,
 } from "react-native";
-import { ContextMenu } from "../../../components/ui/ContextMenu";
 import BottomSheetModal, {
   SHEET_HANDLE_CLEARANCE,
   useSheetHeight,
 } from "../../../components/ui/BottomSheetModal";
+import FinderDetailSheet from "../../../components/ui/FinderDetailSheet";
+import ChordDiagram, { getAllChordForms } from "../../../components/ui/ChordDiagram";
 import SheetProgressiveHeader from "../../../components/ui/SheetProgressiveHeader";
 import GlassIconButton from "../../../components/ui/GlassIconButton";
 import { useTranslation } from "react-i18next";
@@ -33,7 +35,7 @@ import {
   DEFAULT_LAYER_COLORS,
   ON_ACCENT,
 } from "../../../themes/design";
-import { getNotesByAccidental } from "../../../lib/fretboard";
+import { getNotesByAccidental, getRootIndex } from "../../../lib/fretboard";
 import type {
   Accidental,
   BaseLabelMode,
@@ -120,6 +122,7 @@ export default function IdentifyPane({
 
   const insets = useSafeAreaInsets();
   const sheetHeight = useSheetHeight();
+  const { width: screenWidth } = useWindowDimensions();
 
   const rootNote = finderRoot;
   const extraNotes = finderNotes;
@@ -132,7 +135,6 @@ export default function IdentifyPane({
   const colors = getColors(isDark);
   const accentColor = dotColor;
   const bgColor = colors.pageBg;
-  const cardBg = colors.surface;
   const textColor = colors.textStrong;
   const subTextColor = colors.iconSubtle;
   const borderColor = isDark ? colors.border : colors.border2;
@@ -224,6 +226,9 @@ export default function IdentifyPane({
     return [layer];
   }, [effectiveNotes, accentColor]);
 
+  const isFull = layers.length >= MAX_LAYERS;
+  const formWidth = Math.floor((screenWidth - 32 - 8 * 2) / 3);
+
   const handleSetNotes = () => {
     if (!pendingItem) return;
     const allNotes =
@@ -231,7 +236,6 @@ export default function IdentifyPane({
     const root = pendingItem.match.root;
     setFinderRoot(root);
     setFinderNotes(new Set(allNotes.filter((n) => n !== root)));
-    setPendingItem(null);
   };
 
   const handleConfirmAdd = () => {
@@ -247,9 +251,46 @@ export default function IdentifyPane({
       newLayer = createDefaultLayer("scale", `layer-${Date.now()}`, colorToUse);
       newLayer.scaleType = pendingItem.match.scaleType as ScaleType;
     }
-    setPendingItem(null);
     onAddLayerAndNavigate(newLayer);
   };
+
+  const itemName = useMemo(() => {
+    if (!pendingItem) return "";
+    if (pendingItem.kind === "chord") return pendingItem.match.chordName;
+    return `${pendingItem.match.root} ${t(`options.scale.${scaleI18nKey(pendingItem.match.scaleType)}`)}`;
+  }, [pendingItem, t]);
+
+  const descLayer = useMemo<LayerConfig | null>(() => {
+    if (!pendingItem) return null;
+    if (pendingItem.kind === "chord") {
+      const layer = createDefaultLayer("chord", "finder-desc", BLACK);
+      layer.chordDisplayMode = "form";
+      layer.chordType = pendingItem.match.chordType as ChordType;
+      return layer;
+    }
+    const layer = createDefaultLayer("scale", "finder-desc", BLACK);
+    layer.scaleType = pendingItem.match.scaleType as ScaleType;
+    return layer;
+  }, [pendingItem]);
+
+  const isAlreadySet = useMemo(() => {
+    if (!pendingItem) return false;
+    const itemRoot = pendingItem.match.root;
+    const allNotes =
+      pendingItem.kind === "chord" ? pendingItem.match.chordNotes : pendingItem.match.scaleNotes;
+    const itemExtra = new Set(allNotes.filter((n) => n !== itemRoot));
+    if (rootNote !== itemRoot) return false;
+    if (extraNotes.size !== itemExtra.size) return false;
+    for (const n of itemExtra) if (!extraNotes.has(n)) return false;
+    return true;
+  }, [pendingItem, rootNote, extraNotes]);
+
+  const pendingChordData = useMemo(() => {
+    if (!pendingItem || pendingItem.kind !== "chord") return null;
+    const chordRootIndex = getRootIndex(pendingItem.match.root);
+    const forms = getAllChordForms(chordRootIndex, pendingItem.match.chordType as ChordType);
+    return { chordRootIndex, forms };
+  }, [pendingItem]);
 
   const renderItem = (item: FinderItem, index: number) => {
     const isChord = item.kind === "chord";
@@ -272,7 +313,7 @@ export default function IdentifyPane({
         key={key}
         activeOpacity={0.7}
         onPress={() => setPendingItem(item)}
-        style={[styles.matchRow, { backgroundColor: cardBg, borderBottomColor: borderColor }]}
+        style={[styles.matchRow, { borderTopColor: borderColor }]}
       >
         <View style={styles.matchNameRow}>
           <Text style={[styles.matchName, { color: textColor }]}>{name}</Text>
@@ -289,10 +330,10 @@ export default function IdentifyPane({
     );
   };
 
-  const renderSection = (label: string, items: FinderItem[], topSpacing: boolean) => (
-    <>
-      <View style={[styles.sectionHeader, topSpacing && { marginTop: 8 }]}>
-        <Text style={[styles.sectionTitle, { color: textColor }]}>{label}</Text>
+  const renderSection = (label: string, items: FinderItem[]) => (
+    <View style={[styles.card, { borderColor }]}>
+      <View style={styles.cardHeader}>
+        <Text style={[styles.cardTitle, { color: textColor }]}>{label}</Text>
         <Text style={[styles.sectionBadge, { color: subTextColor }]}>{items.length}</Text>
       </View>
       {items.length === 0 ? (
@@ -300,7 +341,7 @@ export default function IdentifyPane({
       ) : (
         items.map(renderItem)
       )}
-    </>
+    </View>
   );
 
   return (
@@ -342,8 +383,13 @@ export default function IdentifyPane({
             layers={finderLayers}
             leftHanded={leftHanded}
             disableAnimation={false}
-            onNoteClick={handleNoteToggle}
-            onNoteLongPress={handleRootSet}
+            onNoteClick={(note) => {
+              if (!rootNote) {
+                handleRootSet(note);
+              } else {
+                handleNoteToggle(note);
+              }
+            }}
           />
         </View>
       ) : (
@@ -383,7 +429,7 @@ export default function IdentifyPane({
                 ? "finder.tapInstruction"
                 : inputMode === "chip"
                   ? "finder.chipRootInstruction"
-                  : "finder.longPressInstruction",
+                  : "finder.chipRootInstruction",
             )}
           </Text>
         )}
@@ -552,71 +598,38 @@ export default function IdentifyPane({
         }}
       </BottomSheetModal>
 
-      {/* Add-to-layer confirmation */}
-      {(() => {
-        const isFull = layers.length >= MAX_LAYERS;
-        const itemName = pendingItem
-          ? pendingItem.kind === "chord"
-            ? pendingItem.match.chordName
-            : `${pendingItem.match.root} ${t(`options.scale.${scaleI18nKey(pendingItem.match.scaleType)}`)}`
-          : "";
-        const isAlreadySet = (() => {
-          if (!pendingItem) return false;
-          const itemRoot = pendingItem.match.root;
-          const allNotes =
-            pendingItem.kind === "chord"
-              ? pendingItem.match.chordNotes
-              : pendingItem.match.scaleNotes;
-          const itemExtra = new Set(allNotes.filter((n) => n !== itemRoot));
-          if (rootNote !== itemRoot) return false;
-          if (extraNotes.size !== itemExtra.size) return false;
-          for (const n of itemExtra) if (!extraNotes.has(n)) return false;
-          return true;
-        })();
-        const descLayer: LayerConfig | null = (() => {
-          if (!pendingItem) return null;
-          if (pendingItem.kind === "chord") {
-            const layer = createDefaultLayer("chord", "finder-desc", BLACK);
-            layer.chordDisplayMode = "form";
-            layer.chordType = pendingItem.match.chordType as ChordType;
-            return layer;
-          } else {
-            const layer = createDefaultLayer("scale", "finder-desc", BLACK);
-            layer.scaleType = pendingItem.match.scaleType as ScaleType;
-            return layer;
-          }
-        })();
-        return (
-          <ContextMenu
-            visible={pendingItem !== null}
-            isDark={isDark}
-            title={itemName}
-            footer={
-              descLayer ? (
-                <View style={styles.contextFooter}>
-                  <LayerDescription theme={theme} layer={descLayer} itemOnly />
-                  <View style={styles.contextButtons}>
-                    <PillButton isDark={isDark} onPress={handleSetNotes} disabled={isAlreadySet}>
-                      <Icon name="music-note" size={15} color={colors.textStrong} />
-                      <Text style={[styles.pillBtnText, { color: colors.textStrong }]}>
-                        {t("finder.setNotes")}
-                      </Text>
-                    </PillButton>
-                    <PillButton isDark={isDark} onPress={handleConfirmAdd} disabled={isFull}>
-                      <Icon name="plus" size={15} color={colors.textStrong} />
-                      <Text style={[styles.pillBtnText, { color: colors.textStrong }]}>
-                        {t("finder.addToLayerTitle")}
-                      </Text>
-                    </PillButton>
-                  </View>
-                </View>
-              ) : undefined
-            }
-            items={[]}
-            onClose={() => setPendingItem(null)}
-          />
-        );
-      })()}
+      <FinderDetailSheet
+        visible={pendingItem !== null}
+        onClose={() => setPendingItem(null)}
+        theme={theme}
+        title={itemName}
+        mediaContent={
+          pendingChordData && pendingChordData.forms.length > 0 ? (
+            <View style={styles.modalDiagrams}>
+              {pendingChordData.forms.map((cells, fi) => (
+                <ChordDiagram
+                  key={fi}
+                  cells={cells}
+                  rootIndex={pendingChordData.chordRootIndex}
+                  theme={theme}
+                  width={formWidth}
+                />
+              ))}
+            </View>
+          ) : null
+        }
+        description={
+          descLayer ? <LayerDescription theme={theme} layer={descLayer} itemOnly /> : null
+        }
+        isFull={isFull}
+        onAddLayer={handleConfirmAdd}
+        extraAction={{
+          label: t("finder.setNotes"),
+          onPress: handleSetNotes,
+          position: "before",
+          disabled: isAlreadySet,
+        }}
+      />
 
       {/* Results */}
       {hasResult && (
@@ -625,9 +638,9 @@ export default function IdentifyPane({
           contentContainerStyle={[styles.resultContent, { paddingBottom: insets.bottom + 80 }]}
           showsVerticalScrollIndicator={false}
         >
-          {renderSection(t("finder.exactMatch"), exactItems, false)}
-          {showContained && renderSection(t("finder.containedMatch"), containedItems, true)}
-          {showContaining && renderSection(t("finder.containingMatch"), containingItems, true)}
+          {renderSection(t("finder.exactMatch"), exactItems)}
+          {showContained && renderSection(t("finder.containedMatch"), containedItems)}
+          {showContaining && renderSection(t("finder.containingMatch"), containingItems)}
         </ScrollView>
       )}
     </View>
@@ -638,18 +651,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  contextFooter: {
-    gap: 12,
-    paddingBottom: 4,
-  },
-  contextButtons: {
+  modalDiagrams: {
     flexDirection: "row",
-    justifyContent: "center",
-    gap: 10,
-  },
-  pillBtnText: {
-    fontSize: 15,
-    fontWeight: "600",
+    flexWrap: "wrap",
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
   },
   fretboardWrapper: {
     paddingVertical: 8,
@@ -788,26 +795,33 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   resultContent: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
     paddingBottom: 16,
+    gap: 12,
   },
-  sectionHeader: {
+  card: {
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: "hidden",
+  },
+  cardHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 14,
+    paddingTop: 12,
+    paddingBottom: 10,
   },
-  sectionTitle: {
-    fontSize: 13,
+  cardTitle: {
+    fontSize: 16,
     fontWeight: "700",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
   },
   sectionBadge: {
     fontSize: 13,
   },
   emptySection: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     paddingVertical: 10,
     fontSize: 13,
   },
@@ -815,9 +829,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     paddingVertical: 13,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
   matchNameRow: {
     flexDirection: "row",
@@ -826,7 +840,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   matchName: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
   },
   tag: {
@@ -840,7 +854,8 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   matchNotes: {
-    fontSize: 13,
+    fontSize: 11,
+    fontWeight: "600",
     textAlign: "right",
   },
 });

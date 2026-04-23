@@ -17,15 +17,8 @@ import { getColors, pickNextLayerColor, BLACK } from "../../../themes/design";
 import { CHORD_TYPES_CORE, CHORD_SUFFIX_MAP, getRootIndex } from "../../../lib/fretboard";
 import ChordDiagram, { getAllChordForms } from "../../../components/ui/ChordDiagram";
 import NotePickerButton from "../../../components/ui/NotePickerButton";
-import BottomSheetModal, {
-  SHEET_HANDLE_CLEARANCE,
-  useSheetHeight,
-} from "../../../components/ui/BottomSheetModal";
-import SheetProgressiveHeader from "../../../components/ui/SheetProgressiveHeader";
-import GlassIconButton from "../../../components/ui/GlassIconButton";
+import FinderDetailSheet from "../../../components/ui/FinderDetailSheet";
 import LayerDescription from "../../../components/LayerEditModal/LayerDescription";
-import Icon from "../../../components/ui/Icon";
-import PillButton from "../../../components/ui/PillButton";
 
 interface ChordBrowserProps {
   theme: Theme;
@@ -49,11 +42,8 @@ export default function ChordBrowser({
   const colors = getColors(isDark);
   const insets = useSafeAreaInsets();
   const { width: screenWidth } = useWindowDimensions();
-  const sheetHeight = useSheetHeight();
-
   const [rootNote, setRootNote] = useState("C");
   const [pendingType, setPendingType] = useState<ChordType | null>(null);
-  const [modalHeaderHeight, setModalHeaderHeight] = useState(96);
 
   const rootIndex = getRootIndex(rootNote);
   const isFull = layers.length >= MAX_LAYERS;
@@ -73,7 +63,6 @@ export default function ChordBrowser({
       layer.layerRoot = rootNote;
       onEnablePerLayerRoot?.();
     }
-    setPendingType(null);
     onAddLayerAndNavigate(layer);
   }, [
     pendingType,
@@ -92,6 +81,16 @@ export default function ChordBrowser({
     layer.chordType = pendingType;
     return layer;
   }, [pendingType]);
+
+  const pendingForms = useMemo(
+    () => (pendingType ? getAllChordForms(rootIndex, pendingType) : []),
+    [rootIndex, pendingType],
+  );
+
+  const pendingChordName = useMemo(
+    () => (pendingType ? `${rootNote}${CHORD_SUFFIX_MAP[pendingType] ?? pendingType}` : ""),
+    [pendingType, rootNote],
+  );
 
   const chordList = useMemo(
     () =>
@@ -153,90 +152,32 @@ export default function ChordBrowser({
         ))}
       </ScrollView>
 
-      {/* Chord detail bottom sheet */}
-      <BottomSheetModal visible={pendingType !== null} onClose={() => setPendingType(null)}>
-        {({ close, dragHandlers }) => {
-          if (!pendingType || !pendingLayer) return null;
-          const suffix = CHORD_SUFFIX_MAP[pendingType] ?? pendingType;
-          const chordName = `${rootNote}${suffix}`;
-          const forms = getAllChordForms(rootIndex, pendingType);
-          const sheetBg = colors.deepBg;
-
-          return (
-            <View
-              style={[
-                styles.sheet,
-                { height: sheetHeight, backgroundColor: sheetBg, borderColor: colors.sheetBorder },
-              ]}
-            >
-              <View style={{ flex: 1, overflow: "hidden" }}>
-                <ScrollView
-                  contentContainerStyle={[styles.sheetContent, { paddingTop: modalHeaderHeight }]}
-                  showsVerticalScrollIndicator={false}
-                >
-                  {/* Chord diagrams */}
-                  <View style={styles.modalDiagrams}>
-                    {forms.map((cells, fi) => (
-                      <ChordDiagram
-                        key={fi}
-                        cells={cells}
-                        rootIndex={rootIndex}
-                        theme={theme}
-                        width={formWidth}
-                      />
-                    ))}
-                  </View>
-
-                  {/* Description */}
-                  <View style={styles.descriptionArea}>
-                    <LayerDescription theme={theme} layer={pendingLayer} itemOnly />
-                  </View>
-
-                  {/* Add to layer button */}
-                  <View style={styles.addButtonArea}>
-                    <PillButton isDark={isDark} onPress={handleAddLayer} disabled={isFull}>
-                      <Icon name="plus" size={15} color={colors.textStrong} />
-                      <Text style={[styles.addButtonText, { color: colors.textStrong }]}>
-                        {t("finder.addToLayerTitle")}
-                      </Text>
-                    </PillButton>
-                    {isFull && (
-                      <Text style={[styles.fullText, { color: colors.textSubtle }]}>
-                        {t("finder.addToLayerFull")}
-                      </Text>
-                    )}
-                  </View>
-                </ScrollView>
-
-                {/* Absolute glass header */}
-                <SheetProgressiveHeader
-                  isDark={isDark}
-                  bgColor={sheetBg}
-                  dragHandlers={dragHandlers}
-                  contentPaddingHorizontal={14}
-                  onLayout={setModalHeaderHeight}
-                  style={styles.absoluteHeader}
-                >
-                  <View style={styles.headerRow}>
-                    <GlassIconButton
-                      isDark={isDark}
-                      onPress={close}
-                      icon="close"
-                      style={styles.headerSide}
-                    />
-                    <View style={styles.headerCenter}>
-                      <Text style={[styles.headerTitle, { color: colors.textStrong }]}>
-                        {chordName}
-                      </Text>
-                    </View>
-                    <View style={styles.headerSide} />
-                  </View>
-                </SheetProgressiveHeader>
-              </View>
+      <FinderDetailSheet
+        visible={pendingType !== null}
+        onClose={() => setPendingType(null)}
+        theme={theme}
+        title={pendingChordName}
+        mediaContent={
+          pendingForms.length > 0 ? (
+            <View style={styles.modalDiagrams}>
+              {pendingForms.map((cells, fi) => (
+                <ChordDiagram
+                  key={fi}
+                  cells={cells}
+                  rootIndex={rootIndex}
+                  theme={theme}
+                  width={formWidth}
+                />
+              ))}
             </View>
-          );
-        }}
-      </BottomSheetModal>
+          ) : null
+        }
+        description={
+          pendingLayer ? <LayerDescription theme={theme} layer={pendingLayer} itemOnly /> : null
+        }
+        isFull={isFull}
+        onAddLayer={handleAddLayer}
+      />
     </View>
   );
 }
@@ -263,64 +204,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
   },
-  sheet: {
-    width: "100%",
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    borderWidth: 1,
-    overflow: "hidden",
-  },
-  sheetContent: {
-    paddingBottom: 32,
-  },
-  absoluteHeader: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 1,
-    paddingTop: SHEET_HANDLE_CLEARANCE,
-  },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  headerSide: {
-    width: 44,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: "center",
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: "700",
-    textAlign: "center",
-  },
   modalDiagrams: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
     paddingHorizontal: 16,
     paddingVertical: 16,
-  },
-  descriptionArea: {
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-  },
-  addButtonArea: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 8,
-    gap: 8,
-    alignItems: "center",
-  },
-  addButtonText: {},
-  fullText: {
-    fontSize: 12,
-    textAlign: "center",
-    lineHeight: 18,
   },
 });

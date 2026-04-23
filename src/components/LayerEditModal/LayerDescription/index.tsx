@@ -41,7 +41,7 @@ export default function LayerDescription({
   const { t } = useTranslation();
   const isDark = theme === "dark";
   const colors = getColors(isDark);
-  const textColor = colors.textDim;
+  const textColor = colors.textSubtle;
   const headingColor = colors.textStrong;
   const dividerColor = isDark ? colors.border : colors.border2;
 

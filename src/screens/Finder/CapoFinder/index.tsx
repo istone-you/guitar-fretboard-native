@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import "../../../i18n";
 import type { Accidental, Theme, LayerConfig, ChordType } from "../../../types";
 import { createDefaultLayer, MAX_LAYERS } from "../../../types";
-import { getColors, pickNextLayerColor } from "../../../themes/design";
+import { getColors, pickNextLayerColor, BLACK } from "../../../themes/design";
 import { getNotesByAccidental, getRootIndex, CHORD_SUFFIX_MAP } from "../../../lib/fretboard";
 import { chordDisplayName } from "../../../lib/harmonyUtils";
 import { SUBSTITUTION_CHORD_TYPES, SUBSTITUTION_CHORD_LABELS } from "../../../lib/substitutions";
@@ -23,12 +23,8 @@ import Icon from "../../../components/ui/Icon";
 import PillButton from "../../../components/ui/PillButton";
 import NotePill from "../../../components/ui/NotePill";
 import ChordDiagram, { getAllChordForms } from "../../../components/ui/ChordDiagram";
-import BottomSheetModal, {
-  SHEET_HANDLE_CLEARANCE,
-  useSheetHeight,
-} from "../../../components/ui/BottomSheetModal";
-import SheetProgressiveHeader from "../../../components/ui/SheetProgressiveHeader";
-import GlassIconButton from "../../../components/ui/GlassIconButton";
+import FinderDetailSheet from "../../../components/ui/FinderDetailSheet";
+import LayerDescription from "../../../components/LayerEditModal/LayerDescription";
 
 type CapoMode = "form-to-sound" | "sound-to-form";
 
@@ -52,7 +48,6 @@ export default function CapoFinder({
   const colors = getColors(isDark);
   const insets = useSafeAreaInsets();
   const { width: screenWidth } = useWindowDimensions();
-  const sheetHeight = useSheetHeight();
 
   const [capoMode, setCapoMode] = useState<CapoMode>("form-to-sound");
   const [capoFret, setCapoFret] = useState(0);
@@ -61,10 +56,16 @@ export default function CapoFinder({
   const [targetKey, setTargetKey] = useState("G");
   const [shapeKey, setShapeKey] = useState("E");
   const [sheetVisible, setSheetVisible] = useState(false);
-  const [detailHeaderHeight, setDetailHeaderHeight] = useState(96);
 
   const notes = getNotesByAccidental(accidental);
   const borderColor = isDark ? colors.border : colors.border2;
+
+  const sheetTmpLayer = useMemo(() => {
+    const layer = createDefaultLayer("chord", "capo-tmp", BLACK);
+    layer.chordDisplayMode = "form";
+    layer.chordType = chordType;
+    return layer;
+  }, [chordType]);
 
   const FORM_GAP = 8;
   const formWidth = Math.floor((screenWidth - 32 - FORM_GAP * 2) / 3);
@@ -90,7 +91,6 @@ export default function CapoFinder({
     onAddLayerAndNavigate(layer);
   };
 
-  const sheetBg = colors.deepBg;
   const sheetChordName = chordDisplayName(actualSoundIndex, chordType, notes);
   const sheetForms = getAllChordForms(actualSoundIndex, chordType);
 
@@ -268,80 +268,30 @@ export default function CapoFinder({
         )}
       </ScrollView>
 
-      <BottomSheetModal visible={sheetVisible} onClose={() => setSheetVisible(false)}>
-        {({ close, dragHandlers }) => (
-          <View
-            style={[
-              styles.detailSheet,
-              { height: sheetHeight, backgroundColor: sheetBg, borderColor: colors.sheetBorder },
-            ]}
-          >
-            <View style={{ flex: 1, overflow: "hidden" }}>
-              <ScrollView
-                contentContainerStyle={[styles.sheetContent, { paddingTop: detailHeaderHeight }]}
-                showsVerticalScrollIndicator={false}
-              >
-                {sheetForms.length > 0 && (
-                  <View style={styles.formsRow}>
-                    {sheetForms.map((cells, fi) => (
-                      <ChordDiagram
-                        key={fi}
-                        cells={cells}
-                        rootIndex={actualSoundIndex}
-                        theme={theme}
-                        width={formWidth}
-                      />
-                    ))}
-                  </View>
-                )}
-                <View style={styles.addButtonArea}>
-                  <PillButton
-                    isDark={isDark}
-                    onPress={() => {
-                      handleAdd();
-                      close();
-                    }}
-                    disabled={isFull || !onAddLayerAndNavigate}
-                  >
-                    <Icon name="upload" size={15} color={colors.textStrong} />
-                    <Text style={[styles.addButtonText, { color: colors.textStrong }]}>
-                      {t("finder.addToLayerTitle")}
-                    </Text>
-                  </PillButton>
-                  {isFull && (
-                    <Text style={[styles.fullText, { color: colors.textSubtle }]}>
-                      {t("finder.addToLayerFull")}
-                    </Text>
-                  )}
-                </View>
-              </ScrollView>
-              <SheetProgressiveHeader
-                isDark={isDark}
-                bgColor={sheetBg}
-                dragHandlers={dragHandlers}
-                contentPaddingHorizontal={14}
-                onLayout={setDetailHeaderHeight}
-                style={styles.absoluteHeader}
-              >
-                <View style={styles.headerRow}>
-                  <GlassIconButton
-                    isDark={isDark}
-                    onPress={close}
-                    icon="close"
-                    style={styles.headerSide}
-                  />
-                  <View style={styles.headerCenter}>
-                    <Text style={[styles.headerTitle, { color: colors.textStrong }]}>
-                      {sheetChordName}
-                    </Text>
-                  </View>
-                  <View style={styles.headerSide} />
-                </View>
-              </SheetProgressiveHeader>
+      <FinderDetailSheet
+        visible={sheetVisible}
+        onClose={() => setSheetVisible(false)}
+        theme={theme}
+        title={sheetChordName}
+        mediaContent={
+          sheetForms.length > 0 ? (
+            <View style={styles.formsRow}>
+              {sheetForms.map((cells, fi) => (
+                <ChordDiagram
+                  key={fi}
+                  cells={cells}
+                  rootIndex={actualSoundIndex}
+                  theme={theme}
+                  width={formWidth}
+                />
+              ))}
             </View>
-          </View>
-        )}
-      </BottomSheetModal>
+          ) : null
+        }
+        description={<LayerDescription theme={theme} layer={sheetTmpLayer} itemOnly />}
+        isFull={isFull}
+        onAddLayer={onAddLayerAndNavigate ? handleAdd : undefined}
+      />
     </View>
   );
 }
@@ -408,56 +358,11 @@ const styles = StyleSheet.create({
   resultHint: {
     fontSize: 12,
   },
-  detailSheet: {
-    width: "100%",
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    borderWidth: 1,
-    overflow: "hidden",
-  },
-  sheetContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 32,
-    gap: 12,
-  },
   formsRow: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
-  },
-  addButtonArea: {
-    alignItems: "center",
-    gap: 6,
-    paddingTop: 4,
-  },
-  addButtonText: {},
-  fullText: {
-    fontSize: 12,
-    textAlign: "center",
-  },
-  absoluteHeader: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 1,
-    paddingTop: SHEET_HANDLE_CLEARANCE,
-  },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  headerSide: {
-    width: 44,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: "center",
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: "700",
+    paddingHorizontal: 16,
+    paddingVertical: 16,
   },
 });

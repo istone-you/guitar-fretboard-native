@@ -277,6 +277,7 @@
     "scales": "Scales",
     "addToLayerTitle": "Add to Layer",
     "addToLayerConfirm": "Add {{name}} as a layer?",
+    "addToLayerFullTitle": "Layer Limit Reached",
     "addToLayerFull": "You can have up to 3 layers. Remove an existing layer to add a new one.",
     "addToLayerAdd": "Add",
     "addToLayerClose": "Close",

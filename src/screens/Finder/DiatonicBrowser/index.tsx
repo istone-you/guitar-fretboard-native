@@ -34,6 +34,7 @@ import BottomSheetModal, {
 } from "../../../components/ui/BottomSheetModal";
 import SheetProgressiveHeader from "../../../components/ui/SheetProgressiveHeader";
 import GlassIconButton from "../../../components/ui/GlassIconButton";
+import FinderDetailSheet from "../../../components/ui/FinderDetailSheet";
 import LayerDescription from "../../../components/LayerEditModal/LayerDescription";
 import Icon from "../../../components/ui/Icon";
 import PillButton from "../../../components/ui/PillButton";
@@ -98,7 +99,6 @@ export default function DiatonicBrowser({
 
   const keyType = diatonicMode.startsWith("major") ? "major" : "minor";
   const chordSize = diatonicMode.endsWith("triad") ? "triad" : "seventh";
-  const [modalHeaderHeight, setModalHeaderHeight] = useState(96);
 
   const rootIndex = getRootIndex(rootNote);
   const notes = getNotesByAccidental(accidental);
@@ -149,7 +149,6 @@ export default function DiatonicBrowser({
     if (rootNote !== globalRootNote) {
       onEnablePerLayerRoot?.();
     }
-    setPendingEntry(null);
     onAddLayerAndNavigate(layer);
   }, [
     pendingEntry,
@@ -344,101 +343,54 @@ export default function DiatonicBrowser({
         )}
       </ScrollView>
 
-      {/* Chord detail bottom sheet */}
-      <BottomSheetModal visible={pendingEntry !== null} onClose={() => setPendingEntry(null)}>
-        {({ close, dragHandlers }) => {
-          if (!pendingEntry || !pendingLayer) return null;
-          const forms = getAllChordForms(pendingEntry.chordRootIndex, pendingEntry.chordType);
-          const sheetBg = colors.deepBg;
-
-          return (
-            <View
-              style={[
-                styles.sheet,
-                { height: sheetHeight, backgroundColor: sheetBg, borderColor: colors.sheetBorder },
-              ]}
-            >
-              <View style={{ flex: 1, overflow: "hidden" }}>
-                <ScrollView
-                  contentContainerStyle={[styles.sheetContent, { paddingTop: modalHeaderHeight }]}
-                  showsVerticalScrollIndicator={false}
-                >
-                  {forms.length > 0 && (
-                    <View style={styles.modalDiagrams}>
-                      {forms.map((cells, fi) => (
-                        <ChordDiagram
-                          key={fi}
-                          cells={cells}
-                          rootIndex={pendingEntry.chordRootIndex}
-                          theme={theme}
-                          width={formWidth}
-                        />
-                      ))}
-                    </View>
-                  )}
-                  <View style={styles.descriptionArea}>
-                    <Text style={[styles.functionLabel, { color: colors.textStrong }]}>
-                      {pendingEntry.fn === "T"
-                        ? t("finder.diatonicFunction.tonic")
-                        : pendingEntry.fn === "SD"
-                          ? t("finder.diatonicFunction.subdominant")
-                          : t("finder.diatonicFunction.dominant")}
-                    </Text>
-                    <Text style={[styles.functionDesc, { color: colors.textSubtle }]}>
-                      {pendingEntry.fn === "T"
-                        ? t("finder.diatonicFunction.tonicDesc")
-                        : pendingEntry.fn === "SD"
-                          ? t("finder.diatonicFunction.subdominantDesc")
-                          : t("finder.diatonicFunction.dominantDesc")}
-                    </Text>
-                    <LayerDescription theme={theme} layer={pendingLayer} itemOnly />
-                  </View>
-                  <View style={styles.addButtonArea}>
-                    <PillButton isDark={isDark} onPress={handleAddLayer} disabled={isFull}>
-                      <Icon name="plus" size={15} color={colors.textStrong} />
-                      <Text style={[styles.addButtonText, { color: colors.textStrong }]}>
-                        {t("finder.addToLayerTitle")}
-                      </Text>
-                    </PillButton>
-                    {isFull && (
-                      <Text style={[styles.fullText, { color: colors.textSubtle }]}>
-                        {t("finder.addToLayerFull")}
-                      </Text>
-                    )}
-                  </View>
-                </ScrollView>
-
-                <SheetProgressiveHeader
-                  isDark={isDark}
-                  bgColor={sheetBg}
-                  dragHandlers={dragHandlers}
-                  contentPaddingHorizontal={14}
-                  onLayout={setModalHeaderHeight}
-                  style={styles.absoluteHeader}
-                >
-                  <View style={styles.headerRow}>
-                    <GlassIconButton
-                      isDark={isDark}
-                      onPress={close}
-                      icon="close"
-                      style={styles.headerSide}
-                    />
-                    <View style={styles.headerCenter}>
-                      <Text style={[styles.headerDegree, { color: colors.textSubtle }]}>
-                        {pendingEntry.degreeLabel}
-                      </Text>
-                      <Text style={[styles.headerTitle, { color: colors.textStrong }]}>
-                        {pendingEntry.chordName}
-                      </Text>
-                    </View>
-                    <View style={styles.headerSide} />
-                  </View>
-                </SheetProgressiveHeader>
-              </View>
+      <FinderDetailSheet
+        visible={pendingEntry !== null}
+        onClose={() => setPendingEntry(null)}
+        theme={theme}
+        title={pendingEntry?.chordName ?? ""}
+        subtitle={pendingEntry?.degreeLabel}
+        mediaContent={
+          pendingEntry &&
+          getAllChordForms(pendingEntry.chordRootIndex, pendingEntry.chordType).length > 0 ? (
+            <View style={styles.modalDiagrams}>
+              {getAllChordForms(pendingEntry.chordRootIndex, pendingEntry.chordType).map(
+                (cells, fi) => (
+                  <ChordDiagram
+                    key={fi}
+                    cells={cells}
+                    rootIndex={pendingEntry.chordRootIndex}
+                    theme={theme}
+                    width={formWidth}
+                  />
+                ),
+              )}
             </View>
-          );
-        }}
-      </BottomSheetModal>
+          ) : null
+        }
+        description={
+          pendingEntry && pendingLayer ? (
+            <>
+              <Text style={[styles.functionLabel, { color: colors.textStrong }]}>
+                {pendingEntry.fn === "T"
+                  ? t("finder.diatonicFunction.tonic")
+                  : pendingEntry.fn === "SD"
+                    ? t("finder.diatonicFunction.subdominant")
+                    : t("finder.diatonicFunction.dominant")}
+              </Text>
+              <Text style={[styles.functionDesc, { color: colors.textSubtle }]}>
+                {pendingEntry.fn === "T"
+                  ? t("finder.diatonicFunction.tonicDesc")
+                  : pendingEntry.fn === "SD"
+                    ? t("finder.diatonicFunction.subdominantDesc")
+                    : t("finder.diatonicFunction.dominantDesc")}
+              </Text>
+              <LayerDescription theme={theme} layer={pendingLayer} itemOnly />
+            </>
+          ) : null
+        }
+        isFull={isFull}
+        onAddLayer={handleAddLayer}
+      />
     </View>
   );
 }
@@ -528,16 +480,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
   },
-  sheet: {
-    width: "100%",
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    borderWidth: 1,
-    overflow: "hidden",
-  },
-  sheetContent: {
-    paddingBottom: 32,
-  },
   absoluteHeader: {
     position: "absolute",
     top: 0,
@@ -559,39 +501,12 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
   },
-  headerDegree: {
-    fontSize: 12,
-    fontWeight: "500",
-    textAlign: "center",
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: "700",
-    textAlign: "center",
-  },
   modalDiagrams: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
     paddingHorizontal: 16,
     paddingVertical: 16,
-  },
-  descriptionArea: {
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-  },
-  addButtonArea: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 8,
-    gap: 8,
-    alignItems: "center",
-  },
-  addButtonText: {},
-  fullText: {
-    fontSize: 12,
-    textAlign: "center",
-    lineHeight: 18,
   },
   functionLabel: {
     fontSize: 13,

@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import "../../../i18n";
 import type { Accidental, Theme, LayerConfig, ChordType } from "../../../types";
 import { createDefaultLayer, MAX_LAYERS } from "../../../types";
-import { getColors, pickNextLayerColor } from "../../../themes/design";
+import { getColors, pickNextLayerColor, BLACK } from "../../../themes/design";
 import { getRootIndex, getNotesByAccidental } from "../../../lib/fretboard";
 import {
   getPivotChords,
@@ -24,14 +24,8 @@ import {
 import ChordDiagram, { getAllChordForms } from "../../../components/ui/ChordDiagram";
 import NotePickerButton from "../../../components/ui/NotePickerButton";
 import { SegmentedToggle } from "../../../components/ui/SegmentedToggle";
-import BottomSheetModal, {
-  SHEET_HANDLE_CLEARANCE,
-  useSheetHeight,
-} from "../../../components/ui/BottomSheetModal";
-import SheetProgressiveHeader from "../../../components/ui/SheetProgressiveHeader";
-import GlassIconButton from "../../../components/ui/GlassIconButton";
-import Icon from "../../../components/ui/Icon";
-import PillButton from "../../../components/ui/PillButton";
+import FinderDetailSheet from "../../../components/ui/FinderDetailSheet";
+import LayerDescription from "../../../components/LayerEditModal/LayerDescription";
 
 interface ModulationFinderProps {
   theme: Theme;
@@ -55,7 +49,6 @@ export default function ModulationFinder({
   const colors = getColors(isDark);
   const insets = useSafeAreaInsets();
   const { width: screenWidth } = useWindowDimensions();
-  const sheetHeight = useSheetHeight();
 
   const [rootNoteA, setRootNoteA] = useState("C");
   const [keyTypeA, setKeyTypeA] = useState<KeyType>("major");
@@ -67,7 +60,6 @@ export default function ModulationFinder({
     degreeA?: string;
     degreeB?: string;
   } | null>(null);
-  const [detailHeaderHeight, setDetailHeaderHeight] = useState(96);
 
   const notes = getNotesByAccidental(accidental);
   const isFull = layers.length >= MAX_LAYERS;
@@ -99,6 +91,14 @@ export default function ModulationFinder({
     () => new Set(pivotChords.map((p) => `${p.rootIndex}-${p.chordType}`)),
     [pivotChords],
   );
+
+  const pendingTmpLayer = useMemo(() => {
+    if (!pendingChord) return null;
+    const layer = createDefaultLayer("chord", "modulation-tmp", BLACK);
+    layer.chordDisplayMode = "form";
+    layer.chordType = pendingChord.chordType;
+    return layer;
+  }, [pendingChord]);
 
   const handleAdd = useCallback(
     (rootIndex: number, chordType: ChordType) => {
@@ -314,116 +314,67 @@ export default function ModulationFinder({
         </View>
       </ScrollView>
 
-      {/* Chord detail sheet */}
-      <BottomSheetModal visible={pendingChord !== null} onClose={() => setPendingChord(null)}>
-        {({ close, dragHandlers }) => {
-          if (!pendingChord) return null;
-          const chordName = chordDisplayName(pendingChord.rootIndex, pendingChord.chordType, notes);
-          const forms = getAllChordForms(pendingChord.rootIndex, pendingChord.chordType);
-          const sheetBg = colors.deepBg;
-
-          return (
-            <View
-              style={[
-                styles.detailSheet,
-                { height: sheetHeight, backgroundColor: sheetBg, borderColor: colors.sheetBorder },
-              ]}
-            >
-              <View style={{ flex: 1, overflow: "hidden" }}>
-                <ScrollView
-                  contentContainerStyle={[styles.sheetContent, { paddingTop: detailHeaderHeight }]}
-                  showsVerticalScrollIndicator={false}
-                >
-                  {/* Degree badges */}
-                  <View style={styles.degreeBadges}>
-                    {pendingChord.degreeA && (
-                      <View style={[styles.degreeBadge, { backgroundColor: colors.surface }]}>
-                        <Text style={[styles.degreeText, { color: colors.textSubtle }]}>
-                          {keyLabel(rootNoteA, keyTypeA)}
-                        </Text>
-                        <Text style={[styles.degreeValue, { color: colors.textStrong }]}>
-                          {pendingChord.degreeA}
-                        </Text>
-                      </View>
-                    )}
-                    {pendingChord.degreeB && (
-                      <View style={[styles.degreeBadge, { backgroundColor: colors.surface }]}>
-                        <Text style={[styles.degreeText, { color: colors.textSubtle }]}>
-                          {keyLabel(rootNoteB, keyTypeB)}
-                        </Text>
-                        <Text style={[styles.degreeValue, { color: colors.textStrong }]}>
-                          {pendingChord.degreeB}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-
-                  {/* Chord diagrams */}
-                  {forms.length > 0 && (
-                    <View style={styles.formsRow}>
-                      {forms.map((cells, fi) => (
-                        <ChordDiagram
-                          key={fi}
-                          cells={cells}
-                          rootIndex={pendingChord.rootIndex}
-                          theme={theme}
-                          width={formWidth}
-                        />
-                      ))}
-                    </View>
-                  )}
-
-                  {/* Add to layer */}
-                  <View style={styles.addButtonArea}>
-                    <PillButton
-                      isDark={isDark}
-                      onPress={() => {
-                        handleAdd(pendingChord.rootIndex, pendingChord.chordType);
-                        close();
-                      }}
-                      disabled={isFull}
-                    >
-                      <Icon name="upload" size={15} color={colors.textStrong} />
-                      <Text style={[styles.addButtonText, { color: colors.textStrong }]}>
-                        {t("finder.addToLayerTitle")}
-                      </Text>
-                    </PillButton>
-                    {isFull && (
-                      <Text style={[styles.fullText, { color: colors.textSubtle }]}>
-                        {t("finder.addToLayerFull")}
-                      </Text>
-                    )}
-                  </View>
-                </ScrollView>
-
-                <SheetProgressiveHeader
-                  isDark={isDark}
-                  bgColor={sheetBg}
-                  dragHandlers={dragHandlers}
-                  contentPaddingHorizontal={14}
-                  onLayout={setDetailHeaderHeight}
-                  style={styles.absoluteHeader}
-                >
-                  <View style={styles.headerRow}>
-                    <GlassIconButton
-                      isDark={isDark}
-                      onPress={close}
-                      icon="close"
-                      style={styles.headerSide}
-                    />
-                    <View style={styles.headerCenter}>
-                      <Text style={[styles.headerTitle, { color: colors.textStrong }]}>
-                        {chordName}
-                      </Text>
-                    </View>
-                    <View style={styles.headerSide} />
-                  </View>
-                </SheetProgressiveHeader>
-              </View>
+      <FinderDetailSheet
+        visible={pendingChord !== null}
+        onClose={() => setPendingChord(null)}
+        theme={theme}
+        title={
+          pendingChord
+            ? chordDisplayName(pendingChord.rootIndex, pendingChord.chordType, notes)
+            : ""
+        }
+        topContent={
+          pendingChord ? (
+            <View style={styles.degreeBadges}>
+              {pendingChord.degreeA && (
+                <View style={[styles.degreeBadge, { backgroundColor: colors.surface }]}>
+                  <Text style={[styles.degreeText, { color: colors.textSubtle }]}>
+                    {keyLabel(rootNoteA, keyTypeA)}
+                  </Text>
+                  <Text style={[styles.degreeValue, { color: colors.textStrong }]}>
+                    {pendingChord.degreeA}
+                  </Text>
+                </View>
+              )}
+              {pendingChord.degreeB && (
+                <View style={[styles.degreeBadge, { backgroundColor: colors.surface }]}>
+                  <Text style={[styles.degreeText, { color: colors.textSubtle }]}>
+                    {keyLabel(rootNoteB, keyTypeB)}
+                  </Text>
+                  <Text style={[styles.degreeValue, { color: colors.textStrong }]}>
+                    {pendingChord.degreeB}
+                  </Text>
+                </View>
+              )}
             </View>
-          );
-        }}
-      </BottomSheetModal>
+          ) : null
+        }
+        mediaContent={
+          pendingChord &&
+          getAllChordForms(pendingChord.rootIndex, pendingChord.chordType).length > 0 ? (
+            <View style={styles.formsRow}>
+              {getAllChordForms(pendingChord.rootIndex, pendingChord.chordType).map((cells, fi) => (
+                <ChordDiagram
+                  key={fi}
+                  cells={cells}
+                  rootIndex={pendingChord.rootIndex}
+                  theme={theme}
+                  width={formWidth}
+                />
+              ))}
+            </View>
+          ) : null
+        }
+        description={
+          pendingTmpLayer ? (
+            <LayerDescription theme={theme} layer={pendingTmpLayer} itemOnly />
+          ) : null
+        }
+        isFull={isFull}
+        onAddLayer={
+          pendingChord ? () => handleAdd(pendingChord.rootIndex, pendingChord.chordType) : undefined
+        }
+      />
     </View>
   );
 }
@@ -496,18 +447,6 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 16,
   },
-  detailSheet: {
-    width: "100%",
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    borderWidth: 1,
-    overflow: "hidden",
-  },
-  sheetContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 32,
-    gap: 12,
-  },
   degreeBadges: {
     flexDirection: "row",
     gap: 8,
@@ -531,40 +470,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
-  },
-  addButtonArea: {
-    alignItems: "center",
-    gap: 6,
-    paddingTop: 4,
-  },
-  addButtonText: {},
-  fullText: {
-    fontSize: 12,
-    textAlign: "center",
-  },
-  absoluteHeader: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 1,
-    paddingTop: SHEET_HANDLE_CLEARANCE,
-  },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  headerSide: {
-    width: 44,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: "center",
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: "700",
+    paddingHorizontal: 16,
+    paddingVertical: 16,
   },
 });
