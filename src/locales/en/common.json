@@ -77,6 +77,7 @@
     "note": "Notes",
     "degree": "Degrees",
     "quiz": "Quiz",
+    "key": "Key",
     "perLayerRoot": "Per-Layer Root"
   },
   "degreeFilter": {
@@ -360,8 +361,8 @@
       "notes": "Notes"
     },
     "capo": {
-      "modeFormToSound": "Shape → Sound",
-      "modeSoundToForm": "Sound → Shape",
+      "modeFormToSound": "Find Actual Sound",
+      "modeSoundToForm": "Find Capo Position",
       "capoFret": "Capo Fret",
       "formKey": "Shape Key",
       "actualSound": "Actual Sound",

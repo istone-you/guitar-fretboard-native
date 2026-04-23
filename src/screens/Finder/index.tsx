@@ -62,6 +62,7 @@ export default function FinderPane({
   const selectedModeRef = useRef(selectedMode);
   selectedModeRef.current = selectedMode;
   const handleBackRef = useRef(() => {});
+  const selectionResetRef = useRef<(() => void) | null>(null);
 
   const handleSelect = (mode: FinderMode) => {
     setSelectedMode(mode);
@@ -71,7 +72,9 @@ export default function FinderPane({
         toValue: 0,
         duration: 120,
         useNativeDriver: true,
-      }).start();
+      }).start(() => {
+        selectionResetRef.current?.();
+      });
     }, 0);
   };
 
@@ -130,7 +133,7 @@ export default function FinderPane({
         onLeftHandedChange={onLeftHandedChange}
       />
       <View style={styles.content}>
-        <FinderSelection theme={theme} onSelect={handleSelect} />
+        <FinderSelection theme={theme} onSelect={handleSelect} resetDescRef={selectionResetRef} />
         {selectedMode !== null && (
           <Animated.View
             style={[
@@ -141,6 +144,7 @@ export default function FinderPane({
                 borderTopLeftRadius: 28,
                 borderBottomLeftRadius: 28,
                 overflow: "hidden",
+                zIndex: 20,
               },
             ]}
             {...swipePanResponder.panHandlers}
@@ -212,7 +216,13 @@ export default function FinderPane({
                 onEnablePerLayerRoot={onEnablePerLayerRoot}
               />
             ) : (
-              <CapoFinder theme={theme} accidental={accidental} />
+              <CapoFinder
+                theme={theme}
+                accidental={accidental}
+                layers={layers}
+                onAddLayerAndNavigate={onAddLayerAndNavigate}
+                onEnablePerLayerRoot={onEnablePerLayerRoot}
+              />
             )}
           </Animated.View>
         )}

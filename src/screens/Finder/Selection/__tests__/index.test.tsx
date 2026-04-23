@@ -42,16 +42,6 @@ describe("FinderSelection (mode selection page)", () => {
     expect(screen.getByText("finder.homeChordListTitle")).toBeTruthy();
   });
 
-  it("shows identify card description", () => {
-    render(<FinderSelection {...defaultProps} />);
-    expect(screen.getByText("finder.homeIdentifyDesc")).toBeTruthy();
-  });
-
-  it("shows chord list card description", () => {
-    render(<FinderSelection {...defaultProps} />);
-    expect(screen.getByText("finder.homeChordListDesc")).toBeTruthy();
-  });
-
   it("calls onSelect('identify') when identify card is pressed", () => {
     render(<FinderSelection {...defaultProps} />);
     fireEvent.press(screen.getByText("finder.homeIdentifyTitle"));

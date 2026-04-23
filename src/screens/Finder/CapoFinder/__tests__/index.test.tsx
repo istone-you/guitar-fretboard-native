@@ -121,7 +121,7 @@ describe("CapoFinder", () => {
     render(<CapoFinder {...defaultProps} />);
     fireEvent.press(screen.getByTestId("toggle-sound-to-form"));
     // Press both pickers → both become "A" (mock always returns "A")
-    const pickers = screen.getAllByTestId("note-picker-header.root");
+    const pickers = screen.getAllByTestId("note-picker-header.key");
     fireEvent.press(pickers[0]); // targetKey
     fireEvent.press(pickers[1]); // shapeKey
     // A === A → capoNeeded = 0 → shows noCapo key

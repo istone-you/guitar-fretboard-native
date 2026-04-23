@@ -6,8 +6,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import "../../../i18n";
 import type { Accidental, Theme, LayerConfig, ChordType } from "../../../types";
 import { createDefaultLayer, MAX_LAYERS } from "../../../types";
-import { getColors, pickNextLayerColor, BLACK } from "../../../themes/design";
-import { CHORD_SUFFIX_MAP, getRootIndex, getNotesByAccidental } from "../../../lib/fretboard";
+import { getColors, pickNextLayerColor } from "../../../themes/design";
+import { getRootIndex, getNotesByAccidental, CHORD_SUFFIX_MAP } from "../../../lib/fretboard";
 import {
   getSubstitutions,
   SUBSTITUTION_CHORD_TYPES,
@@ -16,7 +16,6 @@ import {
 } from "../../../lib/substitutions";
 import ChordDiagram, { getAllChordForms } from "../../../components/ui/ChordDiagram";
 import NotePickerButton from "../../../components/ui/NotePickerButton";
-import LayerDescription from "../../../components/LayerEditModal/LayerDescription";
 import Icon from "../../../components/ui/Icon";
 import PillButton from "../../../components/ui/PillButton";
 import NotePill from "../../../components/ui/NotePill";
@@ -163,9 +162,6 @@ export default function SubstitutionFinder({
             const subRootName = notes[sub.rootIndex];
             const subChordName = `${subRootName}${CHORD_SUFFIX_MAP[sub.chordType] ?? ""}`;
             const forms = getAllChordForms(sub.rootIndex, sub.chordType);
-            const descLayer = createDefaultLayer("chord", "sub-desc", BLACK);
-            descLayer.chordDisplayMode = "form";
-            descLayer.chordType = sub.chordType;
 
             return (
               <View
@@ -197,10 +193,6 @@ export default function SubstitutionFinder({
                     ))}
                   </View>
                 )}
-
-                <View style={[styles.descRow, { borderTopColor: borderColor }]}>
-                  <LayerDescription theme={theme} layer={descLayer} itemOnly />
-                </View>
 
                 <View style={styles.addRow}>
                   <PillButton
@@ -303,11 +295,6 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 14,
     paddingBottom: 10,
-  },
-  descRow: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderTopWidth: StyleSheet.hairlineWidth,
   },
   addRow: {
     paddingHorizontal: 14,

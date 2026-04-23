@@ -216,8 +216,8 @@ export default function ModulationFinder({
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setRootNoteA(note);
             }}
-            label={t("header.root")}
-            sheetTitle={t("header.root")}
+            label={t("header.key")}
+            sheetTitle={t("header.key")}
           />
           <SegmentedToggle
             theme={theme}
@@ -247,8 +247,8 @@ export default function ModulationFinder({
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setRootNoteB(note);
             }}
-            label={t("header.root")}
-            sheetTitle={t("header.root")}
+            label={t("header.key")}
+            sheetTitle={t("header.key")}
           />
           <SegmentedToggle
             theme={theme}

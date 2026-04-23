@@ -23,7 +23,8 @@ export type IconName =
   | "capo"
   | "arrows-lr"
   | "network"
-  | "rotate-cw";
+  | "rotate-cw"
+  | "info";
 
 interface IconProps {
   name: IconName;
@@ -268,6 +269,9 @@ export default function Icon({
             strokeLinecap="round"
           />
         </>
+      )}
+      {name === "info" && (
+        <Path d="M12 5h0M12 10v9" stroke={color} strokeWidth={sw} strokeLinecap="round" />
       )}
       {name === "rotate-cw" && (
         <>

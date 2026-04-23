@@ -77,6 +77,7 @@
     "note": "音名",
     "degree": "度数",
     "quiz": "クイズ",
+    "key": "キー",
     "perLayerRoot": "レイヤーごとのルート"
   },
   "degreeFilter": {
@@ -360,8 +361,8 @@
       "notes": "構成音"
     },
     "capo": {
-      "modeFormToSound": "形 → 実音",
-      "modeSoundToForm": "実音 → 形",
+      "modeFormToSound": "実音を調べる",
+      "modeSoundToForm": "カポ位置を調べる",
       "capoFret": "カポフレット",
       "formKey": "押さえる形のキー",
       "actualSound": "実際に鳴る音",

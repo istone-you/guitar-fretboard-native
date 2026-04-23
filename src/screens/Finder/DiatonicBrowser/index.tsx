@@ -195,8 +195,8 @@ export default function DiatonicBrowser({
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setRootNote(note);
             }}
-            label={t("header.root")}
-            sheetTitle={t("header.root")}
+            label={t("header.key")}
+            sheetTitle={t("header.key")}
           />
           <PillButton
             isDark={isDark}
