@@ -138,7 +138,7 @@ export default function LayerPane({
           />
         }
       >
-        <View>
+        <View style={{ marginTop: 12 }}>
           <LayerList
             theme={theme}
             rootNote={rootNote}

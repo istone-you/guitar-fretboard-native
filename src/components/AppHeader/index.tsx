@@ -10,6 +10,7 @@ import { getColors } from "../../themes/design";
 interface HeaderBarProps {
   theme: Theme;
   title?: string;
+  showRootStepper?: boolean;
   accidental: Accidental;
   onBack?: () => void;
   fretRange: [number, number];
@@ -23,6 +24,7 @@ interface HeaderBarProps {
 export default function HeaderBar({
   theme,
   title,
+  showRootStepper: _showRootStepper = true,
   accidental,
   onBack,
   fretRange,

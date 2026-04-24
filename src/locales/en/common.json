@@ -2,8 +2,36 @@
   "tabs": {
     "layer": "Layer",
     "finder": "Finder",
+    "circle": "Circle",
     "quiz": "Quiz",
     "templates": "Templates"
+  },
+  "circle": {
+    "title": "Circle of Fifths",
+    "major": "Major",
+    "minor": "Minor",
+    "keySignature": "Key Signature",
+    "sharps": "{{count}} ♯",
+    "flats": "{{count}} ♭",
+    "noAccidentals": "None",
+    "toggle": {
+      "relatedKeys": "Related Keys",
+      "diatonic": "Diatonic",
+      "dominants": "Sec.Dom + ♭II"
+    },
+    "relation": {
+      "tonic": "Tonic",
+      "dominant": "Dominant",
+      "subdominant": "Subdominant",
+      "parallel": "Relative"
+    },
+    "legend": {
+      "tonicFn": "T (Tonic)",
+      "subdominantFn": "SD (Subdominant)",
+      "dominantFn": "D (Dominant)",
+      "secondaryDominant": "Secondary Dominant (V/X)",
+      "tritoneSub": "Tritone Sub (♭II/X)"
+    }
   },
   "mode": {
     "normal": "Normal",
@@ -281,6 +309,7 @@
     "addToLayerFull": "You can have up to 3 layers. Remove an existing layer to add a new one.",
     "addToLayerAdd": "Add",
     "addToLayerClose": "Close",
+    "viewOnCircle": "View on Circle",
     "setNotes": "Set Notes",
     "setNotesAlreadySet": "These notes are already set on the fretboard.",
     "inputMode": "Input Method",

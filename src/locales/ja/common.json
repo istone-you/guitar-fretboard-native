@@ -2,8 +2,36 @@
   "tabs": {
     "layer": "レイヤー",
     "finder": "Finder",
+    "circle": "五度圏",
     "quiz": "クイズ",
     "templates": "テンプレート"
+  },
+  "circle": {
+    "title": "五度圏",
+    "major": "メジャー",
+    "minor": "マイナー",
+    "keySignature": "調号",
+    "sharps": "♯×{{count}}",
+    "flats": "♭×{{count}}",
+    "noAccidentals": "無し",
+    "toggle": {
+      "relatedKeys": "関連調",
+      "diatonic": "ダイアトニック",
+      "dominants": "セカドミ+裏コード"
+    },
+    "relation": {
+      "tonic": "主調",
+      "dominant": "属調",
+      "subdominant": "下属調",
+      "parallel": "平行調"
+    },
+    "legend": {
+      "tonicFn": "T (トニック)",
+      "subdominantFn": "SD (サブドミナント)",
+      "dominantFn": "D (ドミナント)",
+      "secondaryDominant": "セカンダリードミナント (V/X)",
+      "tritoneSub": "裏コード (♭II/X)"
+    }
   },
   "mode": {
     "normal": "通常",
@@ -281,6 +309,7 @@
     "addToLayerFull": "レイヤーは3つまでです。追加するには既存のレイヤーを削除してください。",
     "addToLayerAdd": "追加する",
     "addToLayerClose": "閉じる",
+    "viewOnCircle": "五度圏で表示",
     "setNotes": "構成音をセット",
     "setNotesAlreadySet": "この構成音はすでにセット済みです。",
     "inputMode": "入力方法",

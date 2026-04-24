@@ -31,6 +31,8 @@ import NotePickerButton from "../../../components/ui/NotePickerButton";
 import { SegmentedToggle } from "../../../components/ui/SegmentedToggle";
 import FinderDetailSheet from "../../../components/ui/FinderDetailSheet";
 import LayerDescription from "../../../components/LayerEditModal/LayerDescription";
+import PillButton from "../../../components/ui/PillButton";
+import type { ReflectToCirclePayload } from "../index";
 
 interface SecondaryDominantFinderProps {
   theme: Theme;
@@ -39,6 +41,7 @@ interface SecondaryDominantFinderProps {
   globalRootNote: string;
   onAddLayerAndNavigate: (layer: LayerConfig) => void;
   onEnablePerLayerRoot?: () => void;
+  onReflectToCircle?: (payload: ReflectToCirclePayload) => void;
 }
 
 export default function SecondaryDominantFinder({
@@ -48,6 +51,7 @@ export default function SecondaryDominantFinder({
   globalRootNote,
   onAddLayerAndNavigate,
   onEnablePerLayerRoot,
+  onReflectToCircle,
 }: SecondaryDominantFinderProps) {
   const { t } = useTranslation();
   const isDark = theme === "dark";
@@ -133,6 +137,12 @@ export default function SecondaryDominantFinder({
     [keyRootIndex, keyType],
   );
 
+  const handleReflectToCircle = useCallback(() => {
+    if (!onReflectToCircle) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onReflectToCircle({ rootSemitone: keyRootIndex, keyType, overlay: "dominants" });
+  }, [keyRootIndex, keyType, onReflectToCircle]);
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.pageBg }}>
       {/* Key picker row */}
@@ -163,6 +173,16 @@ export default function SecondaryDominantFinder({
           />
         </View>
       </View>
+
+      {onReflectToCircle ? (
+        <View style={styles.reflectRow}>
+          <PillButton isDark={isDark} onPress={handleReflectToCircle}>
+            <Text style={[styles.reflectLabel, { color: colors.textStrong }]}>
+              {t("finder.viewOnCircle")}
+            </Text>
+          </PillButton>
+        </View>
+      ) : null}
 
       <ScrollView
         contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 80 }]}
@@ -328,6 +348,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
+  },
+  reflectLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  reflectRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    paddingTop: 12,
+    paddingBottom: 4,
   },
   scrollContent: {
     paddingTop: 12,

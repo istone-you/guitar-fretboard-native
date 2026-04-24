@@ -7,6 +7,7 @@ import HeaderBar from "@/components/AppHeader";
 interface SceneHeaderProps {
   theme: Theme;
   title?: string;
+  showRootStepper?: boolean;
   accidental: Accidental;
   onBack?: () => void;
   fretRange: [number, number];

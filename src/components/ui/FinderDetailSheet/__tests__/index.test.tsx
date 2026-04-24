@@ -1,8 +1,34 @@
 import React from "react";
 import { render, fireEvent, screen } from "@testing-library/react-native";
-import { Alert } from "react-native";
+import { ActionSheetIOS, Alert } from "react-native";
 import { Text, View } from "react-native";
 import FinderDetailSheet from "..";
+
+type ActionSheetOptions = {
+  title?: string;
+  message?: string;
+  options: string[];
+  cancelButtonIndex?: number;
+  destructiveButtonIndex?: number;
+};
+type ActionSheetCallback = (idx: number) => void;
+
+function getLastActionSheet(spy: jest.SpyInstance) {
+  const [opts, cb] = spy.mock.calls[spy.mock.calls.length - 1] as unknown as [
+    ActionSheetOptions,
+    ActionSheetCallback,
+  ];
+  return {
+    pick(text: string) {
+      const idx = opts.options.indexOf(text);
+      if (idx < 0) throw new Error(`option not found: ${text}`);
+      cb(idx);
+    },
+    has(text: string) {
+      return opts.options.includes(text);
+    },
+  };
+}
 
 jest.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
@@ -11,7 +37,9 @@ jest.mock("../../../../i18n", () => ({}));
 
 jest.mock("expo-haptics", () => ({
   notificationAsync: jest.fn(),
+  impactAsync: jest.fn(),
   NotificationFeedbackType: { Error: "error" },
+  ImpactFeedbackStyle: { Light: "light" },
 }));
 
 jest.mock("../../../ui/BottomSheetModal", () => ({
@@ -160,7 +188,7 @@ describe("FinderDetailSheet", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it("shows Alert and triggers haptics when upload button pressed and isFull", async () => {
+  it("shows Alert and triggers haptics when upload button pressed and isFull", () => {
     const Haptics = require("expo-haptics");
     const alertSpy = jest.spyOn(Alert, "alert");
     const onAddLayer = jest.fn();

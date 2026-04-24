@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
 import {
+  Alert,
   View,
   Text,
   ScrollView,
@@ -59,6 +60,8 @@ const TEMPLATE_ID: Record<DiatonicMode, string> = {
 const DEGREE_FUNCTIONS_MAJOR: DiatonicFunction[] = ["T", "SD", "T", "SD", "D", "T", "D"];
 const DEGREE_FUNCTIONS_MINOR: DiatonicFunction[] = ["T", "SD", "T", "SD", "D", "SD", "T"];
 
+import type { ReflectToCirclePayload } from "../index";
+
 interface DiatonicBrowserProps {
   theme: Theme;
   accidental: Accidental;
@@ -66,6 +69,7 @@ interface DiatonicBrowserProps {
   globalRootNote: string;
   onAddLayerAndNavigate: (layer: LayerConfig) => void;
   onEnablePerLayerRoot?: () => void;
+  onReflectToCircle?: (payload: ReflectToCirclePayload) => void;
 }
 
 interface PendingEntry {
@@ -83,6 +87,7 @@ export default function DiatonicBrowser({
   globalRootNote,
   onAddLayerAndNavigate,
   onEnablePerLayerRoot,
+  onReflectToCircle,
 }: DiatonicBrowserProps) {
   const { t } = useTranslation();
   const isDark = theme === "dark";
@@ -160,8 +165,12 @@ export default function DiatonicBrowser({
     onEnablePerLayerRoot,
   ]);
 
-  const handleAddProgression = useCallback(() => {
-    if (isFull) return;
+  const runAddProgression = useCallback(() => {
+    if (isFull) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert(t("finder.addToLayerFullTitle"), t("finder.addToLayerFull"));
+      return;
+    }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     const color = pickNextLayerColor(layers);
     const layer = createDefaultLayer("progression", `layer-${Date.now()}`, color);
@@ -179,7 +188,14 @@ export default function DiatonicBrowser({
     globalRootNote,
     onAddLayerAndNavigate,
     onEnablePerLayerRoot,
+    t,
   ]);
+
+  const handleReflectToCircle = useCallback(() => {
+    if (!onReflectToCircle) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onReflectToCircle({ rootSemitone: rootIndex, keyType, overlay: "diatonic" });
+  }, [rootIndex, keyType, onReflectToCircle]);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.pageBg }}>
@@ -210,16 +226,21 @@ export default function DiatonicBrowser({
             </Text>
             <Icon name="chevron-down" size={12} color={colors.textSubtle} />
           </PillButton>
-          <PillButton
-            isDark={isDark}
-            onPress={handleAddProgression}
-            disabled={isFull}
-            style={styles.uploadBtn}
-          >
+          <PillButton isDark={isDark} onPress={runAddProgression} style={styles.uploadBtn}>
             <Icon name="upload" size={16} color={colors.textSubtle} />
           </PillButton>
         </View>
       </View>
+
+      {onReflectToCircle ? (
+        <View style={styles.reflectRow}>
+          <PillButton isDark={isDark} onPress={handleReflectToCircle}>
+            <Text style={[styles.reflectLabel, { color: colors.textStrong }]}>
+              {t("finder.viewOnCircle")}
+            </Text>
+          </PillButton>
+        </View>
+      ) : null}
 
       {/* Mode picker sheet */}
       <BottomSheetModal visible={modeSheetVisible} onClose={() => setModeSheetVisible(false)}>
@@ -411,6 +432,16 @@ const styles = StyleSheet.create({
   },
   uploadBtn: {
     paddingHorizontal: 8,
+  },
+  reflectLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  reflectRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    paddingTop: 12,
+    paddingBottom: 4,
   },
   modeBtn: {
     paddingHorizontal: 10,

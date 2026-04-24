@@ -27,6 +27,8 @@ import NotePickerButton from "../../../components/ui/NotePickerButton";
 import { SegmentedToggle } from "../../../components/ui/SegmentedToggle";
 import FinderDetailSheet from "../../../components/ui/FinderDetailSheet";
 import LayerDescription from "../../../components/LayerEditModal/LayerDescription";
+import PillButton from "../../../components/ui/PillButton";
+import type { ReflectToCirclePayload } from "../index";
 
 interface RelatedKeysBrowserProps {
   theme: Theme;
@@ -35,6 +37,7 @@ interface RelatedKeysBrowserProps {
   globalRootNote: string;
   onAddLayerAndNavigate: (layer: LayerConfig) => void;
   onEnablePerLayerRoot?: () => void;
+  onReflectToCircle?: (payload: ReflectToCirclePayload) => void;
 }
 
 type PendingChord = {
@@ -53,6 +56,7 @@ export default function RelatedKeysBrowser({
   globalRootNote,
   onAddLayerAndNavigate,
   onEnablePerLayerRoot,
+  onReflectToCircle,
 }: RelatedKeysBrowserProps) {
   const { t } = useTranslation();
   const isDark = theme === "dark";
@@ -119,6 +123,12 @@ export default function RelatedKeysBrowser({
     [isFull, layers, notes, globalRootNote, rootNote, onAddLayerAndNavigate, onEnablePerLayerRoot],
   );
 
+  const handleReflectToCircle = useCallback(() => {
+    if (!onReflectToCircle) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onReflectToCircle({ rootSemitone: rootIndex, keyType, overlay: "relatedKeys" });
+  }, [rootIndex, keyType, onReflectToCircle]);
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.pageBg }}>
       {/* Controls */}
@@ -146,6 +156,16 @@ export default function RelatedKeysBrowser({
           segmentWidth={60}
         />
       </View>
+
+      {onReflectToCircle ? (
+        <View style={styles.reflectRow}>
+          <PillButton isDark={isDark} onPress={handleReflectToCircle}>
+            <Text style={[styles.reflectLabel, { color: colors.textStrong }]}>
+              {t("finder.viewOnCircle")}
+            </Text>
+          </PillButton>
+        </View>
+      ) : null}
 
       <ScrollView
         contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 80 }]}
@@ -296,6 +316,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
+  },
+  reflectLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  reflectRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    paddingTop: 12,
+    paddingBottom: 4,
   },
   listContent: {
     paddingHorizontal: 16,

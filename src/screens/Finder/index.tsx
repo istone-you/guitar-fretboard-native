@@ -22,6 +22,14 @@ import KeyFromChordsFinder from "./KeyFromChordsFinder";
 import VoiceLeadingFinder from "./VoiceLeadingFinder";
 import TensionAvoidFinder from "./TensionAvoidFinder";
 import type { FinderMode } from "./types";
+import type { CircleOverlayKey } from "../CircleOfFifths/CircleWheel";
+import type { KeyType as CircleKeyType } from "../CircleOfFifths/lib/circleData";
+
+export interface ReflectToCirclePayload {
+  rootSemitone: number;
+  keyType: CircleKeyType;
+  overlay: CircleOverlayKey;
+}
 
 export interface FinderPaneProps {
   theme: Theme;
@@ -34,6 +42,7 @@ export interface FinderPaneProps {
   onAddLayerAndNavigate: (layer: LayerConfig) => void;
   onBaseLabelModeChange: (mode: BaseLabelMode) => void;
   onEnablePerLayerRoot?: () => void;
+  onReflectToCircle?: (payload: ReflectToCirclePayload) => void;
   // Header props
   onThemeChange: (theme: Theme) => void;
   onFretRangeChange: (range: [number, number]) => void;
@@ -52,6 +61,7 @@ export default function FinderPane({
   onAddLayerAndNavigate,
   onBaseLabelModeChange,
   onEnablePerLayerRoot,
+  onReflectToCircle,
   onThemeChange,
   onFretRangeChange,
   onAccidentalChange,
@@ -184,6 +194,7 @@ export default function FinderPane({
                 globalRootNote={rootNote}
                 onAddLayerAndNavigate={onAddLayerAndNavigate}
                 onEnablePerLayerRoot={onEnablePerLayerRoot}
+                onReflectToCircle={onReflectToCircle}
               />
             ) : selectedMode === "substitution" ? (
               <SubstitutionFinder
@@ -211,6 +222,7 @@ export default function FinderPane({
                 globalRootNote={rootNote}
                 onAddLayerAndNavigate={onAddLayerAndNavigate}
                 onEnablePerLayerRoot={onEnablePerLayerRoot}
+                onReflectToCircle={onReflectToCircle}
               />
             ) : selectedMode === "modes" ? (
               <ModeBrowser
@@ -240,6 +252,7 @@ export default function FinderPane({
                 globalRootNote={rootNote}
                 onAddLayerAndNavigate={onAddLayerAndNavigate}
                 onEnablePerLayerRoot={onEnablePerLayerRoot}
+                onReflectToCircle={onReflectToCircle}
               />
             ) : selectedMode === "key-from-chords" ? (
               <KeyFromChordsFinder
