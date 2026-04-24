@@ -27,7 +27,7 @@ import { SegmentedToggle } from "../../../components/ui/SegmentedToggle";
 import FinderDetailSheet from "../../../components/ui/FinderDetailSheet";
 import LayerDescription from "../../../components/LayerEditModal/LayerDescription";
 
-interface ModulationFinderProps {
+interface PivotChordFinderProps {
   theme: Theme;
   accidental: Accidental;
   layers: LayerConfig[];
@@ -36,14 +36,14 @@ interface ModulationFinderProps {
   onEnablePerLayerRoot?: () => void;
 }
 
-export default function ModulationFinder({
+export default function PivotChordFinder({
   theme,
   accidental,
   layers,
   globalRootNote,
   onAddLayerAndNavigate,
   onEnablePerLayerRoot,
-}: ModulationFinderProps) {
+}: PivotChordFinderProps) {
   const { t } = useTranslation();
   const isDark = theme === "dark";
   const colors = getColors(isDark);
@@ -94,7 +94,7 @@ export default function ModulationFinder({
 
   const pendingTmpLayer = useMemo(() => {
     if (!pendingChord) return null;
-    const layer = createDefaultLayer("chord", "modulation-tmp", BLACK);
+    const layer = createDefaultLayer("chord", "pivot-chord-tmp", BLACK);
     layer.chordDisplayMode = "form";
     layer.chordType = pendingChord.chordType;
     return layer;
@@ -205,7 +205,7 @@ export default function ModulationFinder({
       {/* Key A */}
       <View style={[styles.keyRow, { borderBottomColor: borderColor }]}>
         <Text style={[styles.keyLabel, { color: colors.textSubtle }]}>
-          {t("finder.modulation.keyA")}
+          {t("finder.pivotChord.keyA")}
         </Text>
         <View style={styles.keyControls}>
           <NotePickerButton
@@ -236,7 +236,7 @@ export default function ModulationFinder({
       {/* Key B */}
       <View style={[styles.keyRow, { borderBottomColor: borderColor }]}>
         <Text style={[styles.keyLabel, { color: colors.textSubtle }]}>
-          {t("finder.modulation.keyB")}
+          {t("finder.pivotChord.keyB")}
         </Text>
         <View style={styles.keyControls}>
           <NotePickerButton
@@ -281,7 +281,7 @@ export default function ModulationFinder({
           </View>
           {pivotChords.length === 0 ? (
             <Text style={[styles.emptyText, { color: colors.textSubtle }]}>
-              {t("finder.modulation.none")}
+              {t("finder.pivotChord.none")}
             </Text>
           ) : (
             <View style={styles.chipsRow}>

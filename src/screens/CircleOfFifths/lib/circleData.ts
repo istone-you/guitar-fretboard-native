@@ -1,9 +1,15 @@
-import { getSecondaryDominants } from "../../../lib/harmonyUtils";
+import {
+  getSecondaryDominants,
+  chordQualitySuffix,
+  MI_RING_TO_CHORD,
+  type KeyType,
+  type MiRing,
+} from "../../../lib/harmonyUtils";
 import type { Accidental } from "../../../types";
 
-export type KeyType = "major" | "minor";
+export type { KeyType };
 
-export type RingName = "major" | "minor" | "flat5";
+export type RingName = MiRing;
 
 export type DiatonicFn = "T" | "SD" | "D";
 
@@ -119,34 +125,31 @@ export interface DiatonicOverlayCell {
   degreeLabel: string;
 }
 
-const MAJOR_DIATONIC_CELLS: ReadonlyArray<{
+type DiatonicCellDef = {
   ring: RingName;
   positionDelta: -1 | 0 | 1;
   fn: DiatonicFn;
-  degreeLabel: string;
-}> = [
-  { ring: "major", positionDelta: 0, fn: "T", degreeLabel: "I" },
-  { ring: "minor", positionDelta: -1, fn: "SD", degreeLabel: "II" },
-  { ring: "minor", positionDelta: 1, fn: "T", degreeLabel: "III" },
-  { ring: "major", positionDelta: -1, fn: "SD", degreeLabel: "IV" },
-  { ring: "major", positionDelta: 1, fn: "D", degreeLabel: "V" },
-  { ring: "minor", positionDelta: 0, fn: "T", degreeLabel: "VI" },
-  { ring: "flat5", positionDelta: 0, fn: "D", degreeLabel: "VII°" },
+  baseDegree: string;
+};
+
+const MAJOR_DIATONIC_CELLS: ReadonlyArray<DiatonicCellDef> = [
+  { ring: "major", positionDelta: 0, fn: "T", baseDegree: "I" },
+  { ring: "minor", positionDelta: -1, fn: "SD", baseDegree: "II" },
+  { ring: "minor", positionDelta: 1, fn: "T", baseDegree: "III" },
+  { ring: "major", positionDelta: -1, fn: "SD", baseDegree: "IV" },
+  { ring: "major", positionDelta: 1, fn: "D", baseDegree: "V" },
+  { ring: "minor", positionDelta: 0, fn: "T", baseDegree: "VI" },
+  { ring: "flat5", positionDelta: 0, fn: "D", baseDegree: "VII" },
 ];
 
-const MINOR_DIATONIC_CELLS: ReadonlyArray<{
-  ring: RingName;
-  positionDelta: -1 | 0 | 1;
-  fn: DiatonicFn;
-  degreeLabel: string;
-}> = [
-  { ring: "minor", positionDelta: 0, fn: "T", degreeLabel: "I" },
-  { ring: "flat5", positionDelta: 0, fn: "SD", degreeLabel: "II°" },
-  { ring: "major", positionDelta: 0, fn: "T", degreeLabel: "bIII" },
-  { ring: "minor", positionDelta: -1, fn: "SD", degreeLabel: "IV" },
-  { ring: "minor", positionDelta: 1, fn: "D", degreeLabel: "V" },
-  { ring: "major", positionDelta: -1, fn: "SD", degreeLabel: "bVI" },
-  { ring: "major", positionDelta: 1, fn: "T", degreeLabel: "bVII" },
+const MINOR_DIATONIC_CELLS: ReadonlyArray<DiatonicCellDef> = [
+  { ring: "minor", positionDelta: 0, fn: "T", baseDegree: "I" },
+  { ring: "flat5", positionDelta: 0, fn: "SD", baseDegree: "II" },
+  { ring: "major", positionDelta: 0, fn: "T", baseDegree: "♭III" },
+  { ring: "minor", positionDelta: -1, fn: "SD", baseDegree: "IV" },
+  { ring: "minor", positionDelta: 1, fn: "D", baseDegree: "V" },
+  { ring: "major", positionDelta: -1, fn: "SD", baseDegree: "♭VI" },
+  { ring: "major", positionDelta: 1, fn: "T", baseDegree: "♭VII" },
 ];
 
 export function getDiatonicOverlayCells(
@@ -159,7 +162,7 @@ export function getDiatonicOverlayCells(
     ring: entry.ring,
     position: mod12(K + entry.positionDelta),
     fn: entry.fn,
-    degreeLabel: entry.degreeLabel,
+    degreeLabel: entry.baseDegree + chordQualitySuffix(MI_RING_TO_CHORD[entry.ring]),
   }));
 }
 
@@ -174,28 +177,22 @@ export interface ModalInterchangeCell {
   degreeLabel: string;
 }
 
-const MAJOR_MODAL_INTERCHANGE: ReadonlyArray<{
-  ring: RingName;
-  semitoneOffset: number;
-  degreeLabel: string;
-}> = [
-  { ring: "flat5", semitoneOffset: 2, degreeLabel: "II°" },
-  { ring: "major", semitoneOffset: 3, degreeLabel: "bIII" },
-  { ring: "minor", semitoneOffset: 5, degreeLabel: "IV" },
-  { ring: "major", semitoneOffset: 8, degreeLabel: "bVI" },
-  { ring: "major", semitoneOffset: 10, degreeLabel: "bVII" },
+type ModalInterchangeDef = { ring: RingName; semitoneOffset: number; baseDegree: string };
+
+const MAJOR_MODAL_INTERCHANGE: ReadonlyArray<ModalInterchangeDef> = [
+  { ring: "flat5", semitoneOffset: 2, baseDegree: "II" },
+  { ring: "major", semitoneOffset: 3, baseDegree: "♭III" },
+  { ring: "minor", semitoneOffset: 5, baseDegree: "IV" },
+  { ring: "major", semitoneOffset: 8, baseDegree: "♭VI" },
+  { ring: "major", semitoneOffset: 10, baseDegree: "♭VII" },
 ];
 
-const MINOR_MODAL_INTERCHANGE: ReadonlyArray<{
-  ring: RingName;
-  semitoneOffset: number;
-  degreeLabel: string;
-}> = [
-  { ring: "minor", semitoneOffset: 2, degreeLabel: "II" },
-  { ring: "minor", semitoneOffset: 4, degreeLabel: "III" },
-  { ring: "major", semitoneOffset: 7, degreeLabel: "V" },
-  { ring: "minor", semitoneOffset: 9, degreeLabel: "VI" },
-  { ring: "flat5", semitoneOffset: 11, degreeLabel: "VII°" },
+const MINOR_MODAL_INTERCHANGE: ReadonlyArray<ModalInterchangeDef> = [
+  { ring: "minor", semitoneOffset: 2, baseDegree: "II" },
+  { ring: "minor", semitoneOffset: 4, baseDegree: "III" },
+  { ring: "major", semitoneOffset: 7, baseDegree: "V" },
+  { ring: "minor", semitoneOffset: 9, baseDegree: "VI" },
+  { ring: "flat5", semitoneOffset: 11, baseDegree: "VII" },
 ];
 
 // How many semitones to add to a chord root before calling semitoneToCirclePosition,
@@ -216,7 +213,7 @@ export function getModalInterchangeCells(
     return {
       ring: entry.ring,
       position: semitoneToCirclePosition((chordRoot + RING_CIRCLE_OFFSET[entry.ring]) % 12),
-      degreeLabel: entry.degreeLabel,
+      degreeLabel: entry.baseDegree + chordQualitySuffix(MI_RING_TO_CHORD[entry.ring]),
     };
   });
 }

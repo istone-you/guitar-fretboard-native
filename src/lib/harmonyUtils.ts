@@ -3,11 +3,14 @@ import {
   DIATONIC_CHORDS,
   CHORD_SUFFIX_MAP,
   diatonicDegreeLabel,
+  chordQualitySuffix,
   CHORD_SEMITONES,
   SCALE_DEGREES,
   MAJOR_SCALE_DEGREES,
   NATURAL_MINOR_SCALE_DEGREES,
 } from "./fretboard";
+
+export { chordQualitySuffix };
 
 export type KeyType = "major" | "minor";
 
@@ -178,9 +181,7 @@ export interface AnalyzedChord {
   borrowedDegree?: string; // e.g. "♭VII", "iv" — display as "借用 ♭VII"
 }
 
-const DOMINANT_CHORD_TYPES = new Set<ChordType>(["Major", "7th"]);
-
-const CHROMATIC_NUMS: Record<number, string> = {
+const CHROMATIC_DEGREE_LABELS: Record<number, string> = {
   0: "I",
   1: "♭II",
   2: "II",
@@ -195,13 +196,7 @@ const CHROMATIC_NUMS: Record<number, string> = {
   11: "VII",
 };
 
-function chromaticDegreeLabel(offset: number, chordType: ChordType): string {
-  const num = CHROMATIC_NUMS[offset] ?? "?";
-  if (chordType === "Minor" || chordType === "m7" || chordType === "m7(b5)")
-    return num.toLowerCase();
-  if (chordType === "dim" || chordType === "dim7") return num.toLowerCase() + "°";
-  return num;
-}
+const DOMINANT_CHORD_TYPES = new Set<ChordType>(["Major", "7th"]);
 
 function findSecondaryDominantTarget(
   chordOffset: number,
@@ -227,7 +222,7 @@ function findBorrowedDegree(
 ): string | undefined {
   const match = parallelDiatonic.find((d) => d.offset === chordOffset && d.chordType === chordType);
   if (!match) return undefined;
-  return chromaticDegreeLabel(chordOffset, chordType);
+  return (CHROMATIC_DEGREE_LABELS[chordOffset] ?? "?") + chordQualitySuffix(chordType);
 }
 
 export interface KeyAnalysisResult {
@@ -382,22 +377,111 @@ export function getSecondaryDominants(
     });
 }
 
-// ── Find Key From Chords ──────────────────────────────────────────────────────
+// ── Modal Interchange ─────────────────────────────────────────────────────────
 
-const OFFSET_TO_CHROMATIC: Record<number, string> = {
-  0: "I",
-  1: "bII",
-  2: "II",
-  3: "bIII",
-  4: "III",
-  5: "IV",
-  6: "bV",
-  7: "V",
-  8: "bVI",
-  9: "VI",
-  10: "bVII",
-  11: "VII",
+export interface ModalInterchangeChord {
+  rootIndex: number;
+  chordType: ChordType;
+  degreeLabel: string;
+  sourceMode: string;
+}
+
+export type MiRing = "major" | "minor" | "flat5";
+
+export const MI_RING_TO_CHORD: Record<MiRing, ChordType> = {
+  major: "Major",
+  minor: "Minor",
+  flat5: "dim",
 };
+
+const MAJOR_MI_DEF: ReadonlyArray<{
+  semitoneOffset: number;
+  ring: MiRing;
+  baseDegree: string;
+  sourceMode: string;
+}> = [
+  { semitoneOffset: 2, ring: "flat5", baseDegree: "II", sourceMode: "Aeolian" },
+  { semitoneOffset: 3, ring: "major", baseDegree: "♭III", sourceMode: "Aeolian" },
+  { semitoneOffset: 5, ring: "minor", baseDegree: "IV", sourceMode: "Aeolian" },
+  { semitoneOffset: 8, ring: "major", baseDegree: "♭VI", sourceMode: "Aeolian" },
+  { semitoneOffset: 10, ring: "major", baseDegree: "♭VII", sourceMode: "Mixolydian" },
+];
+
+const MINOR_MI_DEF: ReadonlyArray<{
+  semitoneOffset: number;
+  ring: MiRing;
+  baseDegree: string;
+  sourceMode: string;
+}> = [
+  { semitoneOffset: 2, ring: "minor", baseDegree: "II", sourceMode: "Dorian" },
+  { semitoneOffset: 4, ring: "minor", baseDegree: "III", sourceMode: "Ionian" },
+  { semitoneOffset: 7, ring: "major", baseDegree: "V", sourceMode: "Ionian" },
+  { semitoneOffset: 9, ring: "minor", baseDegree: "VI", sourceMode: "Ionian" },
+  { semitoneOffset: 11, ring: "flat5", baseDegree: "VII", sourceMode: "Harmonic Minor" },
+];
+
+export function getModalInterchangeChords(
+  rootIndex: number,
+  keyType: KeyType,
+): ModalInterchangeChord[] {
+  const defs = keyType === "major" ? MAJOR_MI_DEF : MINOR_MI_DEF;
+  return defs.map((def) => ({
+    rootIndex: (rootIndex + def.semitoneOffset) % 12,
+    chordType: MI_RING_TO_CHORD[def.ring],
+    degreeLabel: def.baseDegree + chordQualitySuffix(MI_RING_TO_CHORD[def.ring]),
+    sourceMode: def.sourceMode,
+  }));
+}
+
+// ── Chords From Scale ─────────────────────────────────────────────────────────
+
+export interface ScaleDerivedChord {
+  degreeOffset: number;
+  rootIndex: number;
+  chordType: ChordType;
+  degreeLabel: string;
+}
+
+const TRIAD_PRIORITY: ReadonlyArray<ChordType> = ["Major", "Minor", "dim", "aug"];
+const SEVENTH_PRIORITY: ReadonlyArray<ChordType> = [
+  "maj7",
+  "7th",
+  "m7",
+  "m7(b5)",
+  "dim7",
+  "m(maj7)",
+];
+
+export function getChordsFromScale(
+  rootIndex: number,
+  scaleType: ScaleType,
+  chordSize: "triad" | "seventh" = "triad",
+): ScaleDerivedChord[] {
+  const scaleDegrees = SCALE_DEGREES[scaleType];
+  if (!scaleDegrees) return [];
+  const scaleSet = new Set([...scaleDegrees].map((d) => (rootIndex + d) % 12));
+  const types = chordSize === "triad" ? TRIAD_PRIORITY : SEVENTH_PRIORITY;
+  const results: ScaleDerivedChord[] = [];
+  for (const offset of [...scaleDegrees].sort((a, b) => a - b)) {
+    const chordRoot = (rootIndex + offset) % 12;
+    for (const chordType of types) {
+      const tones = CHORD_SEMITONES[chordType];
+      if (!tones) continue;
+      if ([...tones].every((t) => scaleSet.has((chordRoot + t) % 12))) {
+        results.push({
+          degreeOffset: offset,
+          rootIndex: chordRoot,
+          chordType,
+          degreeLabel: (CHROMATIC_DEGREE_LABELS[offset] ?? "?") + chordQualitySuffix(chordType),
+        });
+        break;
+      }
+    }
+  }
+  return results;
+}
+
+// ── Find Key From Chords ──────────────────────────────────────────────────────
 
 export interface KeyFromChordsMatch {
   rootIndex: number;
@@ -436,7 +520,7 @@ export function findKeyFromChords(
           matchedChords.push({
             rootIndex: chord.rootIndex,
             chordType: chord.chordType,
-            degree: OFFSET_TO_CHROMATIC[match.offset] ?? match.value,
+            degree: CHROMATIC_DEGREE_LABELS[match.offset] ?? match.value,
           });
         }
       }

@@ -23,26 +23,26 @@ describe("ModalInterchangePanel", () => {
 
   it("shows 5 borrowed chord chips for C major", () => {
     render(<ModalInterchangePanel {...defaultProps} />);
-    expect(screen.getByTestId("modal-interchange-panel-II°")).toBeTruthy();
-    expect(screen.getByTestId("modal-interchange-panel-bIII")).toBeTruthy();
-    expect(screen.getByTestId("modal-interchange-panel-IV")).toBeTruthy();
-    expect(screen.getByTestId("modal-interchange-panel-bVI")).toBeTruthy();
-    expect(screen.getByTestId("modal-interchange-panel-bVII")).toBeTruthy();
+    expect(screen.getByTestId("modal-interchange-panel-IIm(-5)")).toBeTruthy();
+    expect(screen.getByTestId("modal-interchange-panel-♭III")).toBeTruthy();
+    expect(screen.getByTestId("modal-interchange-panel-IVm")).toBeTruthy();
+    expect(screen.getByTestId("modal-interchange-panel-♭VI")).toBeTruthy();
+    expect(screen.getByTestId("modal-interchange-panel-♭VII")).toBeTruthy();
   });
 
   it("shows correct chord names for C major borrowed chords", () => {
     render(<ModalInterchangePanel {...defaultProps} />);
-    // bIII = E♭
-    const flatIII = screen.getByTestId("modal-interchange-panel-bIII");
+    // ♭III = E♭
+    const flatIII = screen.getByTestId("modal-interchange-panel-♭III");
     expect(flatIII.findByProps({ children: "E♭" })).toBeTruthy();
-    // IV = Fm
-    const iv = screen.getByTestId("modal-interchange-panel-IV");
+    // IVm = Fm
+    const iv = screen.getByTestId("modal-interchange-panel-IVm");
     expect(iv.findByProps({ children: "Fm" })).toBeTruthy();
-    // bVI = A♭
-    const flatVI = screen.getByTestId("modal-interchange-panel-bVI");
+    // ♭VI = A♭
+    const flatVI = screen.getByTestId("modal-interchange-panel-♭VI");
     expect(flatVI.findByProps({ children: "A♭" })).toBeTruthy();
-    // bVII = B♭
-    const flatVII = screen.getByTestId("modal-interchange-panel-bVII");
+    // ♭VII = B♭
+    const flatVII = screen.getByTestId("modal-interchange-panel-♭VII");
     expect(flatVII.findByProps({ children: "B♭" })).toBeTruthy();
   });
 

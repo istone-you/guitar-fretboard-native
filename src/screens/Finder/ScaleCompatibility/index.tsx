@@ -29,7 +29,11 @@ import {
   SCALE_DEGREES,
   CHORD_SEMITONES,
 } from "../../../lib/fretboard";
-import { getCompatibleScales } from "../../../lib/harmonyUtils";
+import {
+  getCompatibleScales,
+  getChordsFromScale,
+  chordDisplayName,
+} from "../../../lib/harmonyUtils";
 import {
   CHROMATIC_DEGREES,
   CHORD_TYPE_GROUPS,
@@ -94,6 +98,9 @@ export default function ScaleCompatibility({
   const { groups } = buildScaleOptions(t);
   const isFull = layers.length >= MAX_LAYERS;
 
+  const [directionMode, setDirectionMode] = useState<"chord-to-scale" | "scale-to-chord">(
+    "chord-to-scale",
+  );
   const [inputMode, setInputMode] = useState<"degree" | "note">("note");
   const [noteKey, setNoteKey] = useState("C");
   const [selectedDegree, setSelectedDegree] = useState<string | null>(null);
@@ -104,6 +111,13 @@ export default function ScaleCompatibility({
   const [chords, setChords] = useState<ProgressionChord[]>([]);
   const [step, setStep] = useState<"main" | "keySelect">("main");
   const [activeSheet, setActiveSheet] = useState<SheetState | null>(null);
+  const [selectedScaleType, setSelectedScaleType] = useState<ScaleType | null>(null);
+  const [scaleChordSize, setScaleChordSize] = useState<"triad" | "seventh">("triad");
+  const [pendingDerivedChord, setPendingDerivedChord] = useState<{
+    rootIndex: number;
+    chordType: ChordType;
+    degreeLabel: string;
+  } | null>(null);
 
   const calloutAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
@@ -239,6 +253,12 @@ export default function ScaleCompatibility({
     [chordsAbsolute, keyNoteIndex],
   );
 
+  const derivedChords = useMemo(
+    () =>
+      selectedScaleType ? getChordsFromScale(keyNoteIndex, selectedScaleType, scaleChordSize) : [],
+    [selectedScaleType, keyNoteIndex, scaleChordSize],
+  );
+
   const handleAddToLayer = (scaleType: ScaleType) => {
     if (isFull) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -266,6 +286,31 @@ export default function ScaleCompatibility({
     }
     onAddLayerAndNavigate(layer);
   };
+
+  const handleAddDerivedChordToLayer = (chordRootIndex: number, chordType: ChordType) => {
+    if (isFull) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const color = pickNextLayerColor(layers);
+    const layer = createDefaultLayer("chord", `layer-${Date.now()}`, color);
+    layer.chordDisplayMode = "form";
+    layer.chordType = chordType;
+    const chordRootName = notes[chordRootIndex];
+    if (chordRootName !== globalRootNote) {
+      layer.layerRoot = chordRootName;
+      onEnablePerLayerRoot?.();
+    }
+    onAddLayerAndNavigate(layer);
+  };
+
+  const directionOptions = [
+    { value: "chord-to-scale" as const, label: t("finder.scaleCompat.dirChordToScale") },
+    { value: "scale-to-chord" as const, label: t("finder.scaleCompat.dirScaleToChord") },
+  ];
+
+  const scaleChordSizeOptions = [
+    { value: "triad" as const, label: t("options.diatonicChordSize.triad") },
+    { value: "seventh" as const, label: t("options.diatonicChordSize.seventh") },
+  ];
 
   const chordGroupOptions = [
     { value: "triad" as const, label: t("options.diatonicChordSize.triad") },
@@ -311,17 +356,34 @@ export default function ScaleCompatibility({
       <Animated.View style={{ flex: 1, transform: [{ translateX: slideAnim }] }}>
         {step === "main" && (
           <>
-            <NoteDegreeModeToggle
-              theme={theme}
-              value={inputMode}
-              onChange={(mode) => {
-                setInputMode(mode);
-                hideCallout(() => {
-                  setSelectedDegree(null);
-                  setSelectedNote(null);
-                });
-              }}
-            />
+            {/* Direction toggle */}
+            <View style={[styles.directionRow, { borderBottomColor: borderColor }]}>
+              <SegmentedToggle
+                theme={theme}
+                value={directionMode}
+                onChange={(v) => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setDirectionMode(v as "chord-to-scale" | "scale-to-chord");
+                }}
+                options={directionOptions}
+                size="compact"
+                segmentWidth={140}
+              />
+            </View>
+
+            {directionMode === "chord-to-scale" && (
+              <NoteDegreeModeToggle
+                theme={theme}
+                value={inputMode}
+                onChange={(mode) => {
+                  setInputMode(mode);
+                  hideCallout(() => {
+                    setSelectedDegree(null);
+                    setSelectedNote(null);
+                  });
+                }}
+              />
+            )}
 
             <ScrollView
               contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 80 }]}
@@ -346,275 +408,438 @@ export default function ScaleCompatibility({
                 </TouchableOpacity>
               </View>
 
-              {/* Degree / note chips */}
-              <View style={[styles.chipsRow, { justifyContent: "center" }]}>
-                {inputMode === "degree"
-                  ? CHROMATIC_DEGREES.map(([deg, label]) => {
-                      const isActive = selectedDegree === deg;
-                      return (
-                        <TouchableOpacity
-                          key={deg}
-                          testID={`degree-chip-${deg}`}
-                          onPress={() => handleDegreePress(deg)}
-                          style={[
-                            styles.pickerChip,
-                            {
-                              backgroundColor: isActive ? colors.primaryBtn : colors.fillIdle,
-                              borderColor: isActive ? "transparent" : colors.borderStrong,
-                            },
-                          ]}
-                          activeOpacity={0.7}
-                          hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-                        >
-                          <Text
-                            style={[
-                              styles.pickerChipText,
-                              {
-                                color: isActive
-                                  ? colors.primaryBtnText
-                                  : isDark
-                                    ? colors.textStrong
-                                    : colors.textDim,
-                              },
-                            ]}
-                          >
-                            {label}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })
-                  : notes.map((note) => {
-                      const isActive = selectedNote === note;
-                      return (
-                        <TouchableOpacity
-                          key={note}
-                          testID={`note-chip-${note}`}
-                          onPress={() => handleNotePress(note)}
-                          style={[
-                            styles.pickerChip,
-                            {
-                              backgroundColor: isActive ? colors.primaryBtn : colors.fillIdle,
-                              borderColor: isActive ? "transparent" : colors.borderStrong,
-                            },
-                          ]}
-                          activeOpacity={0.7}
-                          hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-                        >
-                          <Text
-                            style={[
-                              styles.pickerChipText,
-                              {
-                                color: isActive
-                                  ? colors.primaryBtnText
-                                  : isDark
-                                    ? colors.textStrong
-                                    : colors.textDim,
-                              },
-                            ]}
-                          >
-                            {note}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-              </View>
-
-              {/* Chord type callout */}
-              <Animated.View
-                pointerEvents={selectedDegree ? "auto" : "none"}
-                style={{
-                  opacity: calloutAnim,
-                  maxHeight: calloutAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 300] }),
-                  overflow: "hidden",
-                  marginTop: 8,
-                }}
-              >
-                <View
-                  style={[
-                    styles.callout,
-                    { backgroundColor: colors.pageBg, borderColor: calloutBorder },
-                  ]}
-                >
-                  <SegmentedToggle
-                    theme={theme}
-                    value={selectedChordGroup}
-                    onChange={(v) => setSelectedChordGroup(v as "triad" | "seventh" | "tension")}
-                    options={chordGroupOptions}
-                    size="compact"
-                    segmentWidth={84}
-                  />
-                  <View style={[styles.chipsRow, { marginTop: 16, justifyContent: "center" }]}>
-                    {(
-                      CHORD_TYPE_GROUPS.find((g) => g.labelKey === selectedChordGroup)?.types ?? []
-                    ).map(([chordType, label]) => (
-                      <TouchableOpacity
-                        key={chordType}
-                        testID={`chord-type-${chordType}`}
-                        onPress={() => handleChordTypePress(chordType)}
-                        disabled={chords.length >= MAX_CHORDS}
-                        style={[
-                          styles.chordTypeChip,
-                          { backgroundColor: colors.pageBg, borderColor: colors.borderStrong },
-                        ]}
-                        activeOpacity={0.7}
-                        hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-                      >
-                        <Text
-                          style={[
-                            styles.pickerChipText,
-                            { color: isDark ? colors.textStrong : colors.textDim },
-                          ]}
-                        >
-                          {label}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </View>
-              </Animated.View>
-
-              {/* Added chords */}
-              {chords.length === 0 ? (
-                <Text style={[styles.emptyText, { color: colors.textSubtle }]}>
-                  {t("finder.scaleCompat.empty")}
-                </Text>
-              ) : (
+              {directionMode === "scale-to-chord" && (
                 <>
-                  <View style={styles.chipsRow}>
-                    {chords.map((chord, i) => (
-                      <View
-                        key={`${chord.degree}-${chord.chordType}-${i}`}
-                        style={styles.progressionItem}
-                      >
-                        {i > 0 && (
-                          <Text style={[styles.arrow, { color: colors.textSubtle }]}>+</Text>
-                        )}
-                        <TouchableOpacity
-                          testID={`chord-chip-${i}`}
-                          onPress={() => {
-                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                            setActiveSheet({ kind: "chord", chord, index: i });
-                          }}
-                          style={[styles.addedChip, { backgroundColor: colors.chipSelectedBg }]}
-                          activeOpacity={0.7}
-                        >
-                          <Text style={[styles.chipChordName, { color: colors.chipSelectedText }]}>
-                            {chordLabel(chord)}
-                          </Text>
-                          <Text style={[styles.chipNoteNames, { color: colors.chipSelectedText }]}>
-                            {getChordNoteNames(chord).join("  ")}
-                          </Text>
-                        </TouchableOpacity>
-                      </View>
-                    ))}
-                  </View>
-                  <View style={styles.resetRow}>
-                    <PillButton
-                      isDark={isDark}
-                      variant="danger"
-                      onPress={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        hideCallout(() => {
-                          setSelectedDegree(null);
-                          setSelectedNote(null);
-                        });
-                        setChords([]);
-                      }}
-                    >
-                      <Text style={[styles.addBtnText, { color: colors.textDanger }]}>
-                        {t("finder.scaleCompat.reset")}
+                  {/* Scale type picker */}
+                  {groups.map((group) => (
+                    <View key={group.title}>
+                      <Text style={[styles.groupTitle, { color: colors.textSubtle }]}>
+                        {group.title}
                       </Text>
-                    </PillButton>
-                  </View>
-                </>
-              )}
+                      <View style={[styles.chipsRow, { justifyContent: "flex-start" }]}>
+                        {group.options.map((opt) => {
+                          const isActive = selectedScaleType === opt.value;
+                          return (
+                            <TouchableOpacity
+                              key={opt.value}
+                              testID={`scale-type-chip-${opt.value}`}
+                              onPress={() => {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                setSelectedScaleType(isActive ? null : opt.value);
+                              }}
+                              style={[
+                                styles.pickerChip,
+                                {
+                                  backgroundColor: isActive ? colors.primaryBtn : colors.fillIdle,
+                                  borderColor: isActive ? "transparent" : colors.borderStrong,
+                                },
+                              ]}
+                              activeOpacity={0.7}
+                            >
+                              <Text
+                                style={[
+                                  styles.pickerChipText,
+                                  {
+                                    color: isActive
+                                      ? colors.primaryBtnText
+                                      : isDark
+                                        ? colors.textStrong
+                                        : colors.textDim,
+                                  },
+                                ]}
+                              >
+                                {opt.label}
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    </View>
+                  ))}
 
-              {/* Compatible scale results */}
-              {chords.length > 0 && (
-                <>
-                  {!hasAnyCompatible ? (
+                  {/* Derived chords */}
+                  {selectedScaleType === null ? (
                     <Text style={[styles.emptyText, { color: colors.textSubtle }]}>
-                      {t("finder.scaleCompat.noResult")}
+                      {t("finder.scaleCompat.derivedChordsEmpty")}
                     </Text>
                   ) : (
-                    groups.map((group) => {
-                      const compatibleOptions = group.options.filter((opt) =>
-                        compatibleScales.has(opt.value),
-                      );
-                      if (compatibleOptions.length === 0) return null;
-                      return (
-                        <View key={group.title} style={[styles.card, { borderColor }]}>
-                          <View style={styles.cardHeader}>
-                            <Text style={[styles.cardTitle, { color: colors.textStrong }]}>
-                              {group.title}
-                            </Text>
-                          </View>
-                          {compatibleOptions.map((opt) => {
-                            const scaleNotes = getScaleNoteNames(opt.value);
-                            return (
-                              <TouchableOpacity
-                                key={opt.value}
-                                testID={`scale-row-${opt.value}`}
-                                onPress={() => {
-                                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                  setActiveSheet({
-                                    kind: "scale",
-                                    scaleType: opt.value,
-                                    label: opt.label,
-                                  });
-                                }}
-                                style={[styles.scaleRow, { borderTopColor: borderColor }]}
-                                activeOpacity={0.7}
-                              >
-                                <View style={styles.scaleInfo}>
-                                  <Text style={[styles.scaleName, { color: colors.textStrong }]}>
-                                    {opt.label}
-                                  </Text>
-                                  <View style={styles.noteChipsRow}>
-                                    {scaleNotes.map((n) => {
-                                      const isChordTone = allChordTonePCs.has(
-                                        (notes as readonly string[]).indexOf(n),
-                                      );
-                                      return (
-                                        <View
-                                          key={n}
-                                          style={[
-                                            styles.noteChip,
-                                            {
-                                              backgroundColor: isChordTone
-                                                ? colors.primaryBtn
-                                                : colors.chipUnselectedBg,
-                                            },
-                                          ]}
-                                        >
-                                          <Text
-                                            style={[
-                                              styles.noteChipText,
-                                              {
-                                                color: isChordTone
-                                                  ? colors.primaryBtnText
-                                                  : colors.textDim,
-                                              },
-                                            ]}
-                                          >
-                                            {n}
-                                          </Text>
-                                        </View>
-                                      );
-                                    })}
+                    <View style={[styles.card, { borderColor }]}>
+                      <View
+                        style={[
+                          styles.cardHeader,
+                          {
+                            flexDirection: "row",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                          },
+                        ]}
+                      >
+                        <Text style={[styles.cardTitle, { color: colors.textStrong }]}>
+                          {noteKey}{" "}
+                          {groups
+                            .flatMap((g) => g.options)
+                            .find((o) => o.value === selectedScaleType)?.label ?? selectedScaleType}
+                        </Text>
+                        <SegmentedToggle
+                          theme={theme}
+                          value={scaleChordSize}
+                          onChange={(v) => setScaleChordSize(v as "triad" | "seventh")}
+                          options={scaleChordSizeOptions}
+                          size="compact"
+                          segmentWidth={60}
+                        />
+                      </View>
+                      {derivedChords.map((chord) => {
+                        const chordNotes = [
+                          ...(CHORD_SEMITONES[chord.chordType] ?? new Set<number>()),
+                        ]
+                          .sort((a, b) => a - b)
+                          .map((s) => notes[(chord.rootIndex + s) % 12]);
+                        return (
+                          <TouchableOpacity
+                            key={`${chord.degreeOffset}-${chord.chordType}`}
+                            testID={`derived-chord-${chord.degreeLabel}`}
+                            onPress={() => {
+                              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                              setPendingDerivedChord({
+                                rootIndex: chord.rootIndex,
+                                chordType: chord.chordType,
+                                degreeLabel: chord.degreeLabel,
+                              });
+                            }}
+                            style={[styles.scaleRow, { borderTopColor: borderColor }]}
+                            activeOpacity={0.7}
+                          >
+                            <View style={styles.scaleInfo}>
+                              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                                <Text
+                                  style={[styles.chipDegreeLabel, { color: colors.textSubtle }]}
+                                >
+                                  {chord.degreeLabel}
+                                </Text>
+                                <Text style={[styles.scaleName, { color: colors.textStrong }]}>
+                                  {chordDisplayName(chord.rootIndex, chord.chordType, notes)}
+                                </Text>
+                              </View>
+                              <View style={styles.noteChipsRow}>
+                                {chordNotes.map((n) => (
+                                  <View
+                                    key={n}
+                                    style={[
+                                      styles.noteChip,
+                                      { backgroundColor: colors.chipSelectedBg },
+                                    ]}
+                                  >
+                                    <Text
+                                      style={[
+                                        styles.noteChipText,
+                                        { color: colors.chipSelectedText },
+                                      ]}
+                                    >
+                                      {n}
+                                    </Text>
                                   </View>
-                                </View>
-                              </TouchableOpacity>
-                            );
-                          })}
-                        </View>
-                      );
-                    })
+                                ))}
+                              </View>
+                            </View>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
                   )}
                   {isFull && (
                     <Text style={[styles.fullText, { color: colors.textSubtle }]}>
                       {t("finder.addToLayerFull")}
                     </Text>
+                  )}
+                </>
+              )}
+
+              {directionMode === "chord-to-scale" && (
+                <>
+                  {/* Degree / note chips */}
+                  <View style={[styles.chipsRow, { justifyContent: "center" }]}>
+                    {inputMode === "degree"
+                      ? CHROMATIC_DEGREES.map(([deg, label]) => {
+                          const isActive = selectedDegree === deg;
+                          return (
+                            <TouchableOpacity
+                              key={deg}
+                              testID={`degree-chip-${deg}`}
+                              onPress={() => handleDegreePress(deg)}
+                              style={[
+                                styles.pickerChip,
+                                {
+                                  backgroundColor: isActive ? colors.primaryBtn : colors.fillIdle,
+                                  borderColor: isActive ? "transparent" : colors.borderStrong,
+                                },
+                              ]}
+                              activeOpacity={0.7}
+                              hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                            >
+                              <Text
+                                style={[
+                                  styles.pickerChipText,
+                                  {
+                                    color: isActive
+                                      ? colors.primaryBtnText
+                                      : isDark
+                                        ? colors.textStrong
+                                        : colors.textDim,
+                                  },
+                                ]}
+                              >
+                                {label}
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })
+                      : notes.map((note) => {
+                          const isActive = selectedNote === note;
+                          return (
+                            <TouchableOpacity
+                              key={note}
+                              testID={`note-chip-${note}`}
+                              onPress={() => handleNotePress(note)}
+                              style={[
+                                styles.pickerChip,
+                                {
+                                  backgroundColor: isActive ? colors.primaryBtn : colors.fillIdle,
+                                  borderColor: isActive ? "transparent" : colors.borderStrong,
+                                },
+                              ]}
+                              activeOpacity={0.7}
+                              hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                            >
+                              <Text
+                                style={[
+                                  styles.pickerChipText,
+                                  {
+                                    color: isActive
+                                      ? colors.primaryBtnText
+                                      : isDark
+                                        ? colors.textStrong
+                                        : colors.textDim,
+                                  },
+                                ]}
+                              >
+                                {note}
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                  </View>
+
+                  {/* Chord type callout */}
+                  <Animated.View
+                    pointerEvents={selectedDegree ? "auto" : "none"}
+                    style={{
+                      opacity: calloutAnim,
+                      maxHeight: calloutAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0, 300],
+                      }),
+                      overflow: "hidden",
+                      marginTop: 8,
+                    }}
+                  >
+                    <View
+                      style={[
+                        styles.callout,
+                        { backgroundColor: colors.pageBg, borderColor: calloutBorder },
+                      ]}
+                    >
+                      <SegmentedToggle
+                        theme={theme}
+                        value={selectedChordGroup}
+                        onChange={(v) =>
+                          setSelectedChordGroup(v as "triad" | "seventh" | "tension")
+                        }
+                        options={chordGroupOptions}
+                        size="compact"
+                        segmentWidth={84}
+                      />
+                      <View style={[styles.chipsRow, { marginTop: 16, justifyContent: "center" }]}>
+                        {(
+                          CHORD_TYPE_GROUPS.find((g) => g.labelKey === selectedChordGroup)?.types ??
+                          []
+                        ).map(([chordType, label]) => (
+                          <TouchableOpacity
+                            key={chordType}
+                            testID={`chord-type-${chordType}`}
+                            onPress={() => handleChordTypePress(chordType)}
+                            disabled={chords.length >= MAX_CHORDS}
+                            style={[
+                              styles.chordTypeChip,
+                              { backgroundColor: colors.pageBg, borderColor: colors.borderStrong },
+                            ]}
+                            activeOpacity={0.7}
+                            hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                          >
+                            <Text
+                              style={[
+                                styles.pickerChipText,
+                                { color: isDark ? colors.textStrong : colors.textDim },
+                              ]}
+                            >
+                              {label}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    </View>
+                  </Animated.View>
+
+                  {/* Added chords */}
+                  {chords.length === 0 ? (
+                    <Text style={[styles.emptyText, { color: colors.textSubtle }]}>
+                      {t("finder.scaleCompat.empty")}
+                    </Text>
+                  ) : (
+                    <>
+                      <View style={styles.chipsRow}>
+                        {chords.map((chord, i) => (
+                          <View
+                            key={`${chord.degree}-${chord.chordType}-${i}`}
+                            style={styles.progressionItem}
+                          >
+                            {i > 0 && (
+                              <Text style={[styles.arrow, { color: colors.textSubtle }]}>+</Text>
+                            )}
+                            <TouchableOpacity
+                              testID={`chord-chip-${i}`}
+                              onPress={() => {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                setActiveSheet({ kind: "chord", chord, index: i });
+                              }}
+                              style={[styles.addedChip, { backgroundColor: colors.chipSelectedBg }]}
+                              activeOpacity={0.7}
+                            >
+                              <Text
+                                style={[styles.chipChordName, { color: colors.chipSelectedText }]}
+                              >
+                                {chordLabel(chord)}
+                              </Text>
+                              <Text
+                                style={[styles.chipNoteNames, { color: colors.chipSelectedText }]}
+                              >
+                                {getChordNoteNames(chord).join("  ")}
+                              </Text>
+                            </TouchableOpacity>
+                          </View>
+                        ))}
+                      </View>
+                      <View style={styles.resetRow}>
+                        <PillButton
+                          isDark={isDark}
+                          variant="danger"
+                          onPress={() => {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            hideCallout(() => {
+                              setSelectedDegree(null);
+                              setSelectedNote(null);
+                            });
+                            setChords([]);
+                          }}
+                        >
+                          <Text style={[styles.addBtnText, { color: colors.textDanger }]}>
+                            {t("finder.scaleCompat.reset")}
+                          </Text>
+                        </PillButton>
+                      </View>
+                    </>
+                  )}
+
+                  {/* Compatible scale results */}
+                  {chords.length > 0 && (
+                    <>
+                      {!hasAnyCompatible ? (
+                        <Text style={[styles.emptyText, { color: colors.textSubtle }]}>
+                          {t("finder.scaleCompat.noResult")}
+                        </Text>
+                      ) : (
+                        groups.map((group) => {
+                          const compatibleOptions = group.options.filter((opt) =>
+                            compatibleScales.has(opt.value),
+                          );
+                          if (compatibleOptions.length === 0) return null;
+                          return (
+                            <View key={group.title} style={[styles.card, { borderColor }]}>
+                              <View style={styles.cardHeader}>
+                                <Text style={[styles.cardTitle, { color: colors.textStrong }]}>
+                                  {group.title}
+                                </Text>
+                              </View>
+                              {compatibleOptions.map((opt) => {
+                                const scaleNotes = getScaleNoteNames(opt.value);
+                                return (
+                                  <TouchableOpacity
+                                    key={opt.value}
+                                    testID={`scale-row-${opt.value}`}
+                                    onPress={() => {
+                                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                      setActiveSheet({
+                                        kind: "scale",
+                                        scaleType: opt.value,
+                                        label: opt.label,
+                                      });
+                                    }}
+                                    style={[styles.scaleRow, { borderTopColor: borderColor }]}
+                                    activeOpacity={0.7}
+                                  >
+                                    <View style={styles.scaleInfo}>
+                                      <Text
+                                        style={[styles.scaleName, { color: colors.textStrong }]}
+                                      >
+                                        {opt.label}
+                                      </Text>
+                                      <View style={styles.noteChipsRow}>
+                                        {scaleNotes.map((n) => {
+                                          const isChordTone = allChordTonePCs.has(
+                                            (notes as readonly string[]).indexOf(n),
+                                          );
+                                          return (
+                                            <View
+                                              key={n}
+                                              style={[
+                                                styles.noteChip,
+                                                {
+                                                  backgroundColor: isChordTone
+                                                    ? colors.primaryBtn
+                                                    : colors.chipUnselectedBg,
+                                                },
+                                              ]}
+                                            >
+                                              <Text
+                                                style={[
+                                                  styles.noteChipText,
+                                                  {
+                                                    color: isChordTone
+                                                      ? colors.primaryBtnText
+                                                      : colors.textDim,
+                                                  },
+                                                ]}
+                                              >
+                                                {n}
+                                              </Text>
+                                            </View>
+                                          );
+                                        })}
+                                      </View>
+                                    </View>
+                                  </TouchableOpacity>
+                                );
+                              })}
+                            </View>
+                          );
+                        })
+                      )}
+                      {isFull && (
+                        <Text style={[styles.fullText, { color: colors.textSubtle }]}>
+                          {t("finder.addToLayerFull")}
+                        </Text>
+                      )}
+                    </>
                   )}
                 </>
               )}
@@ -695,6 +920,65 @@ export default function ScaleCompatibility({
                 position: "after",
                 onPress: () => handleRemove(sheetDerivedData.index),
               }
+            : undefined
+        }
+      />
+
+      {/* Derived chord detail sheet (scale-to-chord mode) */}
+      <FinderDetailSheet
+        visible={pendingDerivedChord !== null}
+        onClose={() => setPendingDerivedChord(null)}
+        theme={theme}
+        title={
+          pendingDerivedChord
+            ? chordDisplayName(pendingDerivedChord.rootIndex, pendingDerivedChord.chordType, notes)
+            : ""
+        }
+        topContent={
+          pendingDerivedChord ? (
+            <View style={{ paddingTop: 4 }}>
+              <Text
+                style={{ fontSize: 13, fontWeight: "600", color: getColors(isDark).textSubtle }}
+              >
+                {pendingDerivedChord.degreeLabel}
+              </Text>
+            </View>
+          ) : null
+        }
+        mediaContent={
+          pendingDerivedChord &&
+          getAllChordForms(pendingDerivedChord.rootIndex, pendingDerivedChord.chordType).length >
+            0 ? (
+            <View style={styles.modalDiagrams}>
+              {getAllChordForms(pendingDerivedChord.rootIndex, pendingDerivedChord.chordType).map(
+                (cells, fi) => (
+                  <ChordDiagram
+                    key={fi}
+                    cells={cells}
+                    rootIndex={pendingDerivedChord.rootIndex}
+                    theme={theme}
+                    width={Math.floor((winWidth - 32 - 8 * 2) / 3)}
+                  />
+                ),
+              )}
+            </View>
+          ) : null
+        }
+        description={(() => {
+          if (!pendingDerivedChord) return null;
+          const tmp = createDefaultLayer("chord", "tmp", BLACK);
+          tmp.chordDisplayMode = "form";
+          tmp.chordType = pendingDerivedChord.chordType;
+          return <LayerDescription theme={theme} layer={tmp} itemOnly />;
+        })()}
+        isFull={isFull}
+        onAddLayer={
+          pendingDerivedChord
+            ? () =>
+                handleAddDerivedChordToLayer(
+                  pendingDerivedChord.rootIndex,
+                  pendingDerivedChord.chordType,
+                )
             : undefined
         }
       />
@@ -854,5 +1138,23 @@ const styles = StyleSheet.create({
   addBtnText: {},
   resetRow: {
     alignItems: "center",
+  },
+  directionRow: {
+    alignItems: "center",
+    paddingVertical: 8,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  groupTitle: {
+    fontSize: 11,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: 6,
+    marginTop: 4,
+  },
+  chipDegreeLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+    minWidth: 32,
   },
 });

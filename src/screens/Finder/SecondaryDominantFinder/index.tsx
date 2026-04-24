@@ -187,7 +187,7 @@ export default function SecondaryDominantFinder({
       >
         {entries.length === 0 ? (
           <Text style={[styles.emptyText, { color: colors.textSubtle }]}>
-            {t("finder.modulation.none")}
+            {t("finder.pivotChord.none")}
           </Text>
         ) : (
           <>

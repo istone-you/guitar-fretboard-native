@@ -31,7 +31,8 @@ export type IconName =
   | "key-unlock"
   | "tension-note"
   | "substitute"
-  | "mode-steps";
+  | "mode-steps"
+  | "modal-interchange";
 
 interface IconProps {
   name: IconName;
@@ -407,6 +408,25 @@ export default function Icon({
           <Circle cx="10" cy="12" r="2" fill={color} />
           <Path d="M 3 17 H 20" stroke={color} strokeWidth={sw} strokeLinecap="round" />
           <Circle cx="14" cy="17" r="2" fill={color} />
+        </>
+      )}
+      {name === "modal-interchange" && (
+        <>
+          <Path d="M3 7h18M3 17h18" stroke={color} strokeWidth={sw} strokeLinecap="round" />
+          <Path
+            d="M8 17 Q12 11 16 7"
+            stroke={color}
+            strokeWidth={sw}
+            strokeLinecap="round"
+            fill="none"
+          />
+          <Path
+            d="M13 8l3-1-1 3"
+            stroke={color}
+            strokeWidth={sw}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
         </>
       )}
     </Svg>

@@ -4,11 +4,12 @@ export type FinderMode =
   | "diatonic"
   | "substitution"
   | "capo"
-  | "modulation"
+  | "pivot-chord"
   | "related-keys"
   | "modes"
   | "progression-analysis"
   | "scale-compat"
   | "secondary-dominant"
   | "key-from-chords"
-  | "tension-avoid";
+  | "tension-avoid"
+  | "modal-interchange";

@@ -1,6 +1,6 @@
 import React from "react";
 import { render } from "@testing-library/react-native";
-import ModulationFinder from "..";
+import PivotChordFinder from "..";
 
 jest.mock("react-i18next", () => ({
   useTranslation: () => ({
@@ -41,14 +41,14 @@ const baseProps = {
   onEnablePerLayerRoot: jest.fn(),
 };
 
-describe("ModulationFinder", () => {
+describe("PivotChordFinder", () => {
   it("renders without crashing", () => {
-    const { getAllByTestId } = render(<ModulationFinder {...baseProps} />);
+    const { getAllByTestId } = render(<PivotChordFinder {...baseProps} />);
     expect(getAllByTestId("note-picker").length).toBeGreaterThan(0);
   });
 
   it("shows 7 diatonic chips for each key (14 total)", () => {
-    const { getAllByTestId } = render(<ModulationFinder {...baseProps} />);
+    const { getAllByTestId } = render(<PivotChordFinder {...baseProps} />);
     const chipsA = getAllByTestId(/^diatonic-chip-a-/);
     const chipsB = getAllByTestId(/^diatonic-chip-b-/);
     expect(chipsA).toHaveLength(7);

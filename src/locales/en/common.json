@@ -353,13 +353,13 @@
     },
     "homeCapoTitle": "Capo",
     "homeCapoDesc": "Convert between capo position and chord shapes",
-    "homeModulationTitle": "Modulation",
-    "homeModulationDesc": "Find common chords between two keys",
+    "homePivotChordTitle": "Pivot Chord",
+    "homePivotChordDesc": "Find common chords (pivot chords) between two keys",
     "homeRelatedKeysTitle": "Related Keys",
     "homeRelatedKeysDesc": "Explore relationships between keys",
     "homeModesTitle": "Modes",
     "homeModesDesc": "Explore the mode family of a scale",
-    "modulation": {
+    "pivotChord": {
       "keyA": "From Key",
       "keyB": "To Key",
       "pivotLabel": "Common chords: {{keyA}} → {{keyB}}",
@@ -459,7 +459,12 @@
       "noResult": "No compatible scales for this combination",
       "addToLayer": "Add to Layer",
       "removeChord": "Remove",
-      "reset": "Reset"
+      "reset": "Reset",
+      "dirChordToScale": "Chord → Scale",
+      "dirScaleToChord": "Scale → Chord",
+      "selectScale": "Select a scale",
+      "chordSize": "Chord Type",
+      "derivedChordsEmpty": "Select a scale above"
     },
     "secondaryDominant": {
       "secDomDesc": "A secondary dominant is a dominant 7th chord that temporarily resolves to a diatonic chord other than the tonic. By treating the target chord as a momentary tonic and playing its V7, it creates strong forward motion.",
@@ -477,6 +482,12 @@
     "homeKeyFromChordsDesc": "Identify the key from a set of chords",
     "homeTensionAvoidTitle": "Tensions & Avoids",
     "homeTensionAvoidDesc": "Find tensions and avoid notes for a chord in a key",
+    "homeModalInterchangeTitle": "Modal Interchange",
+    "homeModalInterchangeDesc": "Explore borrowed chords from parallel modes",
+    "modalInterchange": {
+      "borrowedFrom": "from {{mode}}",
+      "sectionTitle": "Borrowed Chords"
+    },
     "tensionAvoid": {
       "major": "Major",
       "minor": "Minor",

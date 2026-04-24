@@ -12,7 +12,7 @@ import ChordBrowser from "./ChordBrowser";
 import DiatonicBrowser from "./DiatonicBrowser";
 import SubstitutionFinder from "./SubstitutionFinder";
 import CapoFinder from "./CapoFinder";
-import ModulationFinder from "./ModulationFinder";
+import PivotChordFinder from "./PivotChordFinder";
 import RelatedKeysBrowser from "./RelatedKeysBrowser";
 import ModeBrowser from "./ModeBrowser";
 import ProgressionAnalyzer from "./ProgressionAnalyzer";
@@ -20,6 +20,7 @@ import ScaleCompatibility from "./ScaleCompatibility";
 import SecondaryDominantFinder from "./SecondaryDominantFinder";
 import KeyFromChordsFinder from "./KeyFromChordsFinder";
 import TensionAvoidFinder from "./TensionAvoidFinder";
+import ModalInterchangeBrowser from "./ModalInterchangeBrowser";
 import type { FinderMode } from "./types";
 import type { CircleOverlayKey } from "../CircleOfFifths/CircleWheel";
 import type { KeyType as CircleKeyType } from "../CircleOfFifths/lib/circleData";
@@ -204,8 +205,8 @@ export default function FinderPane({
                 onAddLayerAndNavigate={onAddLayerAndNavigate}
                 onEnablePerLayerRoot={onEnablePerLayerRoot}
               />
-            ) : selectedMode === "modulation" ? (
-              <ModulationFinder
+            ) : selectedMode === "pivot-chord" ? (
+              <PivotChordFinder
                 theme={theme}
                 accidental={accidental}
                 layers={layers}
@@ -264,6 +265,15 @@ export default function FinderPane({
               />
             ) : selectedMode === "tension-avoid" ? (
               <TensionAvoidFinder
+                theme={theme}
+                accidental={accidental}
+                layers={layers}
+                globalRootNote={rootNote}
+                onAddLayerAndNavigate={onAddLayerAndNavigate}
+                onEnablePerLayerRoot={onEnablePerLayerRoot}
+              />
+            ) : selectedMode === "modal-interchange" ? (
+              <ModalInterchangeBrowser
                 theme={theme}
                 accidental={accidental}
                 layers={layers}

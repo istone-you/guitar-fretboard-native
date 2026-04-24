@@ -2388,6 +2388,83 @@ export interface ProgressionTemplate {
   chords?: ProgressionChord[];
 }
 
+/** コード種別 → 表示サフィックス変換。全度数ラベル生成の共通基盤。 */
+export function chordQualitySuffix(chordType: ChordType): string {
+  if (chordType === "Minor") return "m";
+  if (chordType === "dim") return "m(-5)";
+  if (chordType === "aug") return "+";
+  if (chordType === "maj7") return "maj7";
+  if (chordType === "7th") return "7";
+  if (chordType === "m7") return "m7";
+  if (chordType === "m7(b5)") return "m7(-5)";
+  if (chordType === "dim7") return "dim7";
+  if (chordType === "m(maj7)") return "m(maj7)";
+  return "";
+}
+
+type DiatonicInfo = { base: string; type: ChordType };
+
+const DIATONIC_CHORD_INFO: Record<string, Record<string, DiatonicInfo>> = {
+  "major-triad": {
+    I: { base: "I", type: "Major" },
+    II: { base: "II", type: "Minor" },
+    ii: { base: "II", type: "Minor" },
+    III: { base: "III", type: "Minor" },
+    iii: { base: "III", type: "Minor" },
+    IV: { base: "IV", type: "Major" },
+    V: { base: "V", type: "Major" },
+    VI: { base: "VI", type: "Minor" },
+    vi: { base: "VI", type: "Minor" },
+    VII: { base: "VII", type: "dim" },
+    vii: { base: "VII", type: "dim" },
+  },
+  "major-seventh": {
+    I: { base: "I", type: "maj7" },
+    II: { base: "II", type: "m7" },
+    ii: { base: "II", type: "m7" },
+    III: { base: "III", type: "m7" },
+    iii: { base: "III", type: "m7" },
+    IV: { base: "IV", type: "maj7" },
+    V: { base: "V", type: "7th" },
+    VI: { base: "VI", type: "m7" },
+    vi: { base: "VI", type: "m7" },
+    VII: { base: "VII", type: "m7(b5)" },
+    vii: { base: "VII", type: "m7(b5)" },
+  },
+  "natural-minor-triad": {
+    I: { base: "I", type: "Minor" },
+    i: { base: "I", type: "Minor" },
+    II: { base: "II", type: "dim" },
+    ii: { base: "II", type: "dim" },
+    bIII: { base: "♭III", type: "Major" },
+    III: { base: "♭III", type: "Major" },
+    IV: { base: "IV", type: "Minor" },
+    iv: { base: "IV", type: "Minor" },
+    V: { base: "V", type: "Minor" },
+    v: { base: "V", type: "Minor" },
+    bVI: { base: "♭VI", type: "Major" },
+    VI: { base: "♭VI", type: "Major" },
+    bVII: { base: "♭VII", type: "Major" },
+    VII: { base: "♭VII", type: "Major" },
+  },
+  "natural-minor-seventh": {
+    I: { base: "I", type: "m7" },
+    i: { base: "I", type: "m7" },
+    II: { base: "II", type: "m7(b5)" },
+    ii: { base: "II", type: "m7(b5)" },
+    bIII: { base: "♭III", type: "maj7" },
+    III: { base: "♭III", type: "maj7" },
+    IV: { base: "IV", type: "m7" },
+    iv: { base: "IV", type: "m7" },
+    V: { base: "V", type: "m7" },
+    v: { base: "V", type: "m7" },
+    bVI: { base: "♭VI", type: "maj7" },
+    VI: { base: "♭VI", type: "maj7" },
+    bVII: { base: "♭VII", type: "7th" },
+    VII: { base: "♭VII", type: "7th" },
+  },
+};
+
 /**
  * ダイアトニック度数の内部値 → 表示ラベル変換。
  * chordSize を渡すと 4和音ラベル（maj7, m7, V7 等）になる。
@@ -2399,68 +2476,9 @@ export function diatonicDegreeLabel(
   const size = context?.chordSize ?? "triad";
   const key = context?.keyType ?? (degree === degree.toLowerCase() ? "minor" : "major");
   const scaleKey = `${key === "minor" ? "natural-minor" : "major"}-${size}`;
-
-  const MAPS: Record<string, Record<string, string>> = {
-    "major-triad": {
-      I: "I",
-      II: "IIm",
-      ii: "IIm",
-      III: "IIIm",
-      iii: "IIIm",
-      IV: "IV",
-      V: "V",
-      VI: "VIm",
-      vi: "VIm",
-      VII: "VIIm(-5)",
-      vii: "VIIm(-5)",
-    },
-    "major-seventh": {
-      I: "Imaj7",
-      II: "IIm7",
-      ii: "IIm7",
-      III: "IIIm7",
-      iii: "IIIm7",
-      IV: "IVmaj7",
-      V: "V7",
-      VI: "VIm7",
-      vi: "VIm7",
-      VII: "VIIm7(-5)",
-      vii: "VIIm7(-5)",
-    },
-    "natural-minor-triad": {
-      I: "Im",
-      i: "Im",
-      II: "IIm(-5)",
-      ii: "IIm(-5)",
-      bIII: "bIII",
-      III: "bIII",
-      IV: "IVm",
-      iv: "IVm",
-      V: "Vm",
-      v: "Vm",
-      bVI: "bVI",
-      VI: "bVI",
-      bVII: "bVII",
-      VII: "bVII",
-    },
-    "natural-minor-seventh": {
-      I: "Im7",
-      i: "Im7",
-      II: "IIm7(-5)",
-      ii: "IIm7(-5)",
-      bIII: "bIIImaj7",
-      III: "bIIImaj7",
-      IV: "IVm7",
-      iv: "IVm7",
-      V: "Vm7",
-      v: "Vm7",
-      bVI: "bVImaj7",
-      VI: "bVImaj7",
-      bVII: "bVII7",
-      VII: "bVII7",
-    },
-  };
-  return MAPS[scaleKey]?.[degree] ?? degree;
+  const info = DIATONIC_CHORD_INFO[scaleKey]?.[degree];
+  if (!info) return degree;
+  return info.base + chordQualitySuffix(info.type);
 }
 
 /**

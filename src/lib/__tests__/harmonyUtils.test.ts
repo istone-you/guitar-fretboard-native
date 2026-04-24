@@ -6,6 +6,8 @@ import {
   analyzeProgression,
   getCompatibleScales,
   getTensionsAndAvoids,
+  getModalInterchangeChords,
+  getChordsFromScale,
 } from "../harmonyUtils";
 
 describe("getDiatonicChordList", () => {
@@ -250,5 +252,78 @@ describe("getTensionsAndAvoids", () => {
     const result = getTensionsAndAvoids(0, "major", 0, "maj7");
     expect(result.avoidNotes).toHaveLength(1);
     expect(result.avoidNotes[0]).toMatchObject({ noteIndex: 5 });
+  });
+});
+
+describe("getModalInterchangeChords", () => {
+  it("C major returns 5 borrowed chords", () => {
+    const chords = getModalInterchangeChords(0, "major");
+    expect(chords).toHaveLength(5);
+  });
+
+  it("C major bVII is Bb major borrowed from Mixolydian", () => {
+    const chords = getModalInterchangeChords(0, "major");
+    const bVII = chords.find((c) => c.degreeLabel === "♭VII");
+    expect(bVII).toBeDefined();
+    expect(bVII?.rootIndex).toBe(10);
+    expect(bVII?.chordType).toBe("Major");
+    expect(bVII?.sourceMode).toBe("Mixolydian");
+  });
+
+  it("C major IIm(-5) is Ddim borrowed from Aeolian", () => {
+    const chords = getModalInterchangeChords(0, "major");
+    const dim = chords.find((c) => c.degreeLabel === "IIm(-5)");
+    expect(dim).toBeDefined();
+    expect(dim?.chordType).toBe("dim");
+    expect(dim?.sourceMode).toBe("Aeolian");
+  });
+
+  it("A minor returns 5 borrowed chords", () => {
+    const chords = getModalInterchangeChords(9, "minor");
+    expect(chords).toHaveLength(5);
+  });
+
+  it("A minor V is E major borrowed from Ionian", () => {
+    const chords = getModalInterchangeChords(9, "minor");
+    const V = chords.find((c) => c.degreeLabel === "V");
+    expect(V).toBeDefined();
+    expect(V?.rootIndex).toBe(4);
+    expect(V?.chordType).toBe("Major");
+    expect(V?.sourceMode).toBe("Ionian");
+  });
+});
+
+describe("getChordsFromScale", () => {
+  it("C major scale produces 7 triads", () => {
+    const chords = getChordsFromScale(0, "major");
+    expect(chords).toHaveLength(7);
+  });
+
+  it("C major I degree is C Major triad", () => {
+    const chords = getChordsFromScale(0, "major");
+    const I = chords.find((c) => c.degreeOffset === 0);
+    expect(I).toBeDefined();
+    expect(I?.chordType).toBe("Major");
+    expect(I?.degreeLabel).toBe("I");
+  });
+
+  it("C major VII degree is B dim triad", () => {
+    const chords = getChordsFromScale(0, "major");
+    const VII = chords.find((c) => c.degreeOffset === 11);
+    expect(VII).toBeDefined();
+    expect(VII?.chordType).toBe("dim");
+    expect(VII?.degreeLabel).toBe("VIIm(-5)");
+  });
+
+  it("C major scale with seventh chord size returns 7th chords", () => {
+    const chords = getChordsFromScale(0, "major", "seventh");
+    expect(chords).toHaveLength(7);
+    const I = chords.find((c) => c.degreeOffset === 0);
+    expect(I?.chordType).toBe("maj7");
+  });
+
+  it("C natural minor scale produces 7 triads", () => {
+    const chords = getChordsFromScale(0, "natural-minor");
+    expect(chords).toHaveLength(7);
   });
 });

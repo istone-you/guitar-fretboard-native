@@ -55,10 +55,10 @@ const MODES: {
     descKey: "finder.homeSubDesc",
   },
   {
-    mode: "modulation",
+    mode: "pivot-chord",
     icon: "arrows-lr",
-    titleKey: "finder.homeModulationTitle",
-    descKey: "finder.homeModulationDesc",
+    titleKey: "finder.homePivotChordTitle",
+    descKey: "finder.homePivotChordDesc",
   },
   {
     mode: "related-keys",
@@ -101,6 +101,12 @@ const MODES: {
     icon: "tension-note",
     titleKey: "finder.homeTensionAvoidTitle",
     descKey: "finder.homeTensionAvoidDesc",
+  },
+  {
+    mode: "modal-interchange",
+    icon: "modal-interchange",
+    titleKey: "finder.homeModalInterchangeTitle",
+    descKey: "finder.homeModalInterchangeDesc",
   },
 ];
 

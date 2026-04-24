@@ -103,25 +103,25 @@ describe("circleData", () => {
       const cells = getDiatonicOverlayCells(0, "major");
       expect(cells).toEqual([
         { ring: "major", position: 0, fn: "T", degreeLabel: "I" }, // C
-        { ring: "minor", position: 11, fn: "SD", degreeLabel: "II" }, // Dm
-        { ring: "minor", position: 1, fn: "T", degreeLabel: "III" }, // Em
+        { ring: "minor", position: 11, fn: "SD", degreeLabel: "IIm" }, // Dm
+        { ring: "minor", position: 1, fn: "T", degreeLabel: "IIIm" }, // Em
         { ring: "major", position: 11, fn: "SD", degreeLabel: "IV" }, // F
         { ring: "major", position: 1, fn: "D", degreeLabel: "V" }, // G
-        { ring: "minor", position: 0, fn: "T", degreeLabel: "VI" }, // Am
-        { ring: "flat5", position: 0, fn: "D", degreeLabel: "VII°" }, // Bm(♭5)
+        { ring: "minor", position: 0, fn: "T", degreeLabel: "VIm" }, // Am
+        { ring: "flat5", position: 0, fn: "D", degreeLabel: "VIIm(-5)" }, // Bm(♭5)
       ]);
     });
 
     it("returns A minor's 7 diatonic cells (natural minor)", () => {
       const cells = getDiatonicOverlayCells(0, "minor");
       expect(cells).toEqual([
-        { ring: "minor", position: 0, fn: "T", degreeLabel: "I" }, // Am
-        { ring: "flat5", position: 0, fn: "SD", degreeLabel: "II°" }, // Bm(♭5)
-        { ring: "major", position: 0, fn: "T", degreeLabel: "bIII" }, // C
-        { ring: "minor", position: 11, fn: "SD", degreeLabel: "IV" }, // Dm
-        { ring: "minor", position: 1, fn: "D", degreeLabel: "V" }, // Em
-        { ring: "major", position: 11, fn: "SD", degreeLabel: "bVI" }, // F
-        { ring: "major", position: 1, fn: "T", degreeLabel: "bVII" }, // G
+        { ring: "minor", position: 0, fn: "T", degreeLabel: "Im" }, // Am
+        { ring: "flat5", position: 0, fn: "SD", degreeLabel: "IIm(-5)" }, // Bm(♭5)
+        { ring: "major", position: 0, fn: "T", degreeLabel: "♭III" }, // C
+        { ring: "minor", position: 11, fn: "SD", degreeLabel: "IVm" }, // Dm
+        { ring: "minor", position: 1, fn: "D", degreeLabel: "Vm" }, // Em
+        { ring: "major", position: 11, fn: "SD", degreeLabel: "♭VI" }, // F
+        { ring: "major", position: 1, fn: "T", degreeLabel: "♭VII" }, // G
       ]);
     });
   });
@@ -130,35 +130,35 @@ describe("circleData", () => {
     it("returns C major's 5 borrowed chords from parallel minor", () => {
       const cells = getModalInterchangeCells(0, "major");
       expect(cells).toHaveLength(5);
-      // II° = Dm(♭5): root D(2), flat5 offset+1 → semitoneToCirclePosition(3)=9
-      expect(cells.find((c) => c.degreeLabel === "II°")).toEqual({
+      // IIm(-5) = Dm(♭5): root D(2), flat5 offset+1 → semitoneToCirclePosition(3)=9
+      expect(cells.find((c) => c.degreeLabel === "IIm(-5)")).toEqual({
         ring: "flat5",
         position: 9,
-        degreeLabel: "II°",
+        degreeLabel: "IIm(-5)",
       });
       // bIII = E♭: root Eb(3), major offset+0 → semitoneToCirclePosition(3)=9
-      expect(cells.find((c) => c.degreeLabel === "bIII")).toEqual({
+      expect(cells.find((c) => c.degreeLabel === "♭III")).toEqual({
         ring: "major",
         position: 9,
-        degreeLabel: "bIII",
+        degreeLabel: "♭III",
       });
-      // IV = Fm: root F(5), minor offset+3 → semitoneToCirclePosition(8)=8
-      expect(cells.find((c) => c.degreeLabel === "IV")).toEqual({
+      // IVm = Fm: root F(5), minor offset+3 → semitoneToCirclePosition(8)=8
+      expect(cells.find((c) => c.degreeLabel === "IVm")).toEqual({
         ring: "minor",
         position: 8,
-        degreeLabel: "IV",
+        degreeLabel: "IVm",
       });
       // bVI = A♭: root Ab(8), major offset+0 → semitoneToCirclePosition(8)=8
-      expect(cells.find((c) => c.degreeLabel === "bVI")).toEqual({
+      expect(cells.find((c) => c.degreeLabel === "♭VI")).toEqual({
         ring: "major",
         position: 8,
-        degreeLabel: "bVI",
+        degreeLabel: "♭VI",
       });
       // bVII = B♭: root Bb(10), major offset+0 → semitoneToCirclePosition(10)=10
-      expect(cells.find((c) => c.degreeLabel === "bVII")).toEqual({
+      expect(cells.find((c) => c.degreeLabel === "♭VII")).toEqual({
         ring: "major",
         position: 10,
-        degreeLabel: "bVII",
+        degreeLabel: "♭VII",
       });
     });
 

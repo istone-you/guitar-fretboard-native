@@ -353,13 +353,13 @@
     },
     "homeCapoTitle": "カポ",
     "homeCapoDesc": "カポタスト位置とコード形を変換する",
-    "homeModulationTitle": "転調",
-    "homeModulationDesc": "2つのキーを繋ぐ共通コードを見つける",
+    "homePivotChordTitle": "ピボットコード",
+    "homePivotChordDesc": "2つのキーを繋ぐ共通コード（ピボットコード）を見つける",
     "homeRelatedKeysTitle": "関係調",
     "homeRelatedKeysDesc": "キーと調性の関係を俯瞰する",
     "homeModesTitle": "モード",
     "homeModesDesc": "スケールとモードの親子関係を確認する",
-    "modulation": {
+    "pivotChord": {
       "keyA": "転調元キー",
       "keyB": "転調先キー",
       "pivotLabel": "{{keyA}} → {{keyB}} の共通コード",
@@ -459,7 +459,12 @@
       "noResult": "この組み合わせに対応するスケールなし",
       "addToLayer": "レイヤーに追加",
       "removeChord": "削除",
-      "reset": "リセット"
+      "reset": "リセット",
+      "dirChordToScale": "コード → スケール",
+      "dirScaleToChord": "スケール → コード",
+      "selectScale": "スケールを選択",
+      "chordSize": "コードサイズ",
+      "derivedChordsEmpty": "上でスケールを選択してください"
     },
     "secondaryDominant": {
       "secDomDesc": "セカンダリードミナントとは、トニック以外のダイアトニックコードへ一時的に解決するドミナント7thコードです。解決先コードを一時的なトニックとみなして、その V7 を鳴らすことで強い推進力を生み出します。",
@@ -477,6 +482,12 @@
     "homeKeyFromChordsDesc": "コードの組み合わせからキーを推定する",
     "homeTensionAvoidTitle": "テンション/アボイド",
     "homeTensionAvoidDesc": "コードに使えるテンションとアボイドノートを確認する",
+    "homeModalInterchangeTitle": "モーダルインターチェンジ",
+    "homeModalInterchangeDesc": "平行調のモードから借用できるコードを確認する",
+    "modalInterchange": {
+      "borrowedFrom": "{{mode}}から借用",
+      "sectionTitle": "借用コード"
+    },
     "tensionAvoid": {
       "major": "メジャー",
       "minor": "マイナー",
