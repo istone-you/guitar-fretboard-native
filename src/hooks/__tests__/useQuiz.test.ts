@@ -1755,9 +1755,9 @@ describe("useQuiz", () => {
       });
       const q = hook.result.current.quizQuestion!;
       expect(q.promptDiatonicKeyType).toBe("natural-minor");
-      // natural-minor-triad first degree should be minor
+      // natural-minor-triad first degree
       const firstDegree = q.diatonicAnswers![0];
-      expect(firstDegree.degree).toBe("i");
+      expect(firstDegree.degree).toBe("I");
     });
 
     it("diatonic seventh question has correct chord types", () => {

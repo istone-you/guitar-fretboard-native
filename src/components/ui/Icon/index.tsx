@@ -29,9 +29,9 @@ export type IconName =
   | "scale-overlap"
   | "secondary-dom"
   | "key-unlock"
-  | "voice-arrows"
   | "tension-note"
-  | "substitute";
+  | "substitute"
+  | "mode-steps";
 
 interface IconProps {
   name: IconName;
@@ -356,47 +356,28 @@ export default function Icon({
           <Path d="M17 10v3M20 10v2" stroke={color} strokeWidth={sw} strokeLinecap="round" />
         </>
       )}
-      {name === "voice-arrows" && (
-        <>
-          <Path d="M2 5L19 12" stroke={color} strokeWidth={sw} strokeLinecap="round" />
-          <Path d="M2 12L19 12" stroke={color} strokeWidth={sw} strokeLinecap="round" />
-          <Path d="M2 19L19 12" stroke={color} strokeWidth={sw} strokeLinecap="round" />
-          <Path
-            d="M17 9l3 3-3 3"
-            stroke={color}
-            strokeWidth={sw}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </>
-      )}
       {name === "substitute" && (
         <>
-          <Circle cx="5" cy="12" r="3.5" stroke={color} strokeWidth={sw} />
-          <Circle cx="19" cy="12" r="3.5" stroke={color} strokeWidth={sw} />
-          {/* Top arc: left → right */}
-          <Path d="M9.5 9.5 Q12 7 14.5 9.5" stroke={color} strokeWidth={sw} strokeLinecap="round" />
+          {/* Arc 1 (8→1 o'clock CW) joined directly into wing1 — round join at tip */}
           <Path
-            d="M14.5 7.5L14.5 9.5L12.5 9.5"
+            d="M 6 15.5 A 7 7 0 0 1 15.5 6 L 12.6 6.1"
             stroke={color}
             strokeWidth={sw}
             strokeLinecap="round"
             strokeLinejoin="round"
           />
-          {/* Bottom arc: right → left */}
+          {/* Wing2 at 1 o'clock tip */}
+          <Path d="M 15.5 6 L 14.1 3.5" stroke={color} strokeWidth={sw} strokeLinecap="round" />
+          {/* Arc 2 (2→7 o'clock CW) joined directly into wing1 — round join at tip */}
           <Path
-            d="M14.5 14.5 Q12 17 9.5 14.5"
-            stroke={color}
-            strokeWidth={sw}
-            strokeLinecap="round"
-          />
-          <Path
-            d="M9.5 16.5L9.5 14.5L11.5 14.5"
+            d="M 18 8.5 A 7 7 0 0 1 8.5 18 L 11.4 18"
             stroke={color}
             strokeWidth={sw}
             strokeLinecap="round"
             strokeLinejoin="round"
           />
+          {/* Wing2 at 7 o'clock tip */}
+          <Path d="M 8.5 18 L 9.9 20.5" stroke={color} strokeWidth={sw} strokeLinecap="round" />
         </>
       )}
       {name === "tension-note" && (
@@ -416,6 +397,16 @@ export default function Icon({
             strokeWidth={sw}
             strokeLinecap="round"
           />
+        </>
+      )}
+      {name === "mode-steps" && (
+        <>
+          <Path d="M 3 7 H 20" stroke={color} strokeWidth={sw} strokeLinecap="round" />
+          <Circle cx="6" cy="7" r="2" fill={color} />
+          <Path d="M 3 12 H 20" stroke={color} strokeWidth={sw} strokeLinecap="round" />
+          <Circle cx="10" cy="12" r="2" fill={color} />
+          <Path d="M 3 17 H 20" stroke={color} strokeWidth={sw} strokeLinecap="round" />
+          <Circle cx="14" cy="17" r="2" fill={color} />
         </>
       )}
     </Svg>

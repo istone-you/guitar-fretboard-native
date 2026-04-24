@@ -233,7 +233,12 @@ export default function DiatonicBrowser({
       </View>
 
       {onReflectToCircle ? (
-        <View style={styles.reflectRow}>
+        <View
+          style={[
+            styles.reflectRow,
+            { borderBottomColor: borderColor, borderBottomWidth: StyleSheet.hairlineWidth },
+          ]}
+        >
           <PillButton isDark={isDark} onPress={handleReflectToCircle}>
             <Text style={[styles.reflectLabel, { color: colors.textStrong }]}>
               {t("finder.viewOnCircle")}

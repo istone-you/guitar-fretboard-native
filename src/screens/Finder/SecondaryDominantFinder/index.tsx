@@ -32,6 +32,7 @@ import { SegmentedToggle } from "../../../components/ui/SegmentedToggle";
 import FinderDetailSheet from "../../../components/ui/FinderDetailSheet";
 import LayerDescription from "../../../components/LayerEditModal/LayerDescription";
 import PillButton from "../../../components/ui/PillButton";
+import Icon from "../../../components/ui/Icon";
 import type { ReflectToCirclePayload } from "../index";
 
 interface SecondaryDominantFinderProps {
@@ -59,7 +60,7 @@ export default function SecondaryDominantFinder({
   const insets = useSafeAreaInsets();
   const { width: screenWidth } = useWindowDimensions();
 
-  type TappedRole = "secDom" | "target" | "tritoneSub";
+  type TappedRole = "secDom" | "target";
   const [keyRoot, setKeyRoot] = useState("C");
   const [keyType, setKeyType] = useState<KeyType>("major");
   const [pending, setPending] = useState<{
@@ -69,7 +70,7 @@ export default function SecondaryDominantFinder({
 
   const notes = getNotesByAccidental(accidental);
   const borderColor = isDark ? colors.border : colors.border2;
-  const formWidth = Math.floor((screenWidth - 32 - 8 * 2) / 3);
+  const formWidth = Math.floor((screenWidth - 32 - 8) / 2);
 
   const keyTypeOptions: { value: KeyType; label: string }[] = [
     { value: "major", label: "Major" },
@@ -87,15 +88,6 @@ export default function SecondaryDominantFinder({
         roleLabel: t("finder.secondaryDominant.secDom"),
         degree: `V/${entry.targetDegree}`,
         roleColor: DIATONIC_FUNCTION_COLORS.D,
-      };
-    }
-    if (role === "tritoneSub") {
-      return {
-        rootIndex: entry.tritoneSubRootIndex,
-        chordType: "7th" as ChordType,
-        roleLabel: t("finder.secondaryDominant.tritoneSub"),
-        degree: `♭II/${entry.targetDegree}`,
-        roleColor: colors.textSubtle,
       };
     }
     return {
@@ -175,7 +167,12 @@ export default function SecondaryDominantFinder({
       </View>
 
       {onReflectToCircle ? (
-        <View style={styles.reflectRow}>
+        <View
+          style={[
+            styles.reflectRow,
+            { borderBottomColor: borderColor, borderBottomWidth: StyleSheet.hairlineWidth },
+          ]}
+        >
           <PillButton isDark={isDark} onPress={handleReflectToCircle}>
             <Text style={[styles.reflectLabel, { color: colors.textStrong }]}>
               {t("finder.viewOnCircle")}
@@ -202,9 +199,6 @@ export default function SecondaryDominantFinder({
               <Text style={[styles.headerLabel, { color: DIATONIC_FUNCTION_COLORS.D }]}>
                 {t("finder.secondaryDominant.secDom")}
               </Text>
-              <Text style={[styles.headerLabel, { color: colors.textSubtle }]}>
-                {t("finder.secondaryDominant.tritoneSub")}
-              </Text>
             </View>
 
             {entries.map((entry) => {
@@ -214,8 +208,6 @@ export default function SecondaryDominantFinder({
                 notes,
               );
               const secDomName = chordDisplayName(entry.secDomRootIndex, "7th", notes);
-              const tritoneSubName = chordDisplayName(entry.tritoneSubRootIndex, "7th", notes);
-
               const openDetail = (role: TappedRole) => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 setPending({ entry, role });
@@ -242,6 +234,8 @@ export default function SecondaryDominantFinder({
                     </Text>
                   </TouchableOpacity>
 
+                  <Icon name="chevron-right" size={14} color={colors.textSubtle} />
+
                   {/* Secondary dominant card */}
                   <TouchableOpacity
                     style={[styles.card, { borderColor, backgroundColor: colors.surface }]}
@@ -254,21 +248,6 @@ export default function SecondaryDominantFinder({
                     </Text>
                     <Text style={[styles.degreeLabel, { color: DIATONIC_FUNCTION_COLORS.D }]}>
                       {`V/${entry.targetDegree}`}
-                    </Text>
-                  </TouchableOpacity>
-
-                  {/* Tritone sub card */}
-                  <TouchableOpacity
-                    style={[styles.card, { borderColor, backgroundColor: colors.surface }]}
-                    activeOpacity={0.7}
-                    onPress={() => openDetail("tritoneSub")}
-                    testID={`sec-dom-cell-tritoneSub-${entry.targetDegree}`}
-                  >
-                    <Text style={[styles.chordName, { color: colors.textStrong }]}>
-                      {tritoneSubName}
-                    </Text>
-                    <Text style={[styles.degreeLabel, { color: colors.textSubtle }]}>
-                      {`♭II/${entry.targetDegree}`}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -310,11 +289,7 @@ export default function SecondaryDominantFinder({
                     {detail.roleLabel}
                   </Text>
                   <Text style={[styles.functionDesc, { color: colors.textSubtle }]}>
-                    {t(
-                      pending.role === "secDom"
-                        ? "finder.secondaryDominant.secDomDesc"
-                        : "finder.secondaryDominant.tritoneSubDesc",
-                    )}
+                    {t("finder.secondaryDominant.secDomDesc")}
                   </Text>
                 </>
               ) : null}

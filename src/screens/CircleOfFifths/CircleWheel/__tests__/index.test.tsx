@@ -148,7 +148,7 @@ describe("CircleWheel", () => {
     expect(queryByTestId("overlay-related-keys")).toBeNull();
   });
 
-  it("renders the dominants overlay (secdom + tritone) when it is active", () => {
+  it("renders the dominants overlay when it is active", () => {
     const { getByTestId } = render(
       <CircleWheel
         theme="light"
@@ -161,7 +161,22 @@ describe("CircleWheel", () => {
 
     expect(getByTestId("overlay-dominants")).toBeTruthy();
     expect(getByTestId("overlay-secdom-I")).toBeTruthy();
-    expect(getByTestId("overlay-tritone-I")).toBeTruthy();
+  });
+
+  it("renders the modal interchange overlay when it is active", () => {
+    const { getByTestId, queryByTestId } = render(
+      <CircleWheel
+        theme="light"
+        keyType="major"
+        selectedIndex={0}
+        activeOverlay="modalInterchange"
+        onSelect={jest.fn()}
+      />,
+    );
+
+    expect(getByTestId("overlay-modal-interchange")).toBeTruthy();
+    expect(queryByTestId("overlay-diatonic")).toBeNull();
+    expect(queryByTestId("overlay-dominants")).toBeNull();
   });
 
   it("renders no overlay when activeOverlay is null", () => {

@@ -16,6 +16,7 @@ const TOGGLE_ORDER: ReadonlyArray<{ key: CircleOverlayKey; labelKey: string }> =
   { key: "relatedKeys", labelKey: "circle.toggle.relatedKeys" },
   { key: "diatonic", labelKey: "circle.toggle.diatonic" },
   { key: "dominants", labelKey: "circle.toggle.dominants" },
+  { key: "modalInterchange", labelKey: "circle.toggle.modalInterchange" },
 ];
 
 interface TogglePillProps {

@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Animated } from "react-native";
 import { G, Path } from "react-native-svg";
 import {
@@ -8,6 +8,7 @@ import {
 } from "../../../themes/design";
 import {
   getDiatonicOverlayCells,
+  getModalInterchangeCells,
   getRelatedKeyCells,
   getSecondaryDominantCells,
   type KeyType,
@@ -125,24 +126,34 @@ export function DominantsOverlay({ geometry, selectedIndex, keyType }: OverlayPr
   return (
     <G testID="overlay-dominants" pointerEvents="none">
       {cells.map((cell) => (
-        <Fragment key={`dominants-${cell.targetDegreeLabel}`}>
-          <BounceCell
-            geometry={geometry}
-            ring="major"
-            position={cell.secDomPosition}
-            color={CIRCLE_OVERLAY_COLORS.secondaryDominant}
-            testID={`overlay-secdom-${cell.targetDegreeLabel}`}
-            bounceKey={`${selectedIndex}-${keyType}-secdom-${cell.targetDegreeLabel}`}
-          />
-          <BounceCell
-            geometry={geometry}
-            ring="major"
-            position={cell.tritoneSubPosition}
-            color={CIRCLE_OVERLAY_COLORS.tritoneSub}
-            testID={`overlay-tritone-${cell.targetDegreeLabel}`}
-            bounceKey={`${selectedIndex}-${keyType}-tritone-${cell.targetDegreeLabel}`}
-          />
-        </Fragment>
+        <BounceCell
+          key={`dominants-${cell.targetDegreeLabel}`}
+          geometry={geometry}
+          ring="major"
+          position={cell.secDomPosition}
+          color={CIRCLE_OVERLAY_COLORS.secondaryDominant}
+          testID={`overlay-secdom-${cell.targetDegreeLabel}`}
+          bounceKey={`${selectedIndex}-${keyType}-secdom-${cell.targetDegreeLabel}`}
+        />
+      ))}
+    </G>
+  );
+}
+
+export function ModalInterchangeOverlay({ geometry, selectedIndex, keyType }: OverlayProps) {
+  const cells = getModalInterchangeCells(selectedIndex, keyType);
+  return (
+    <G testID="overlay-modal-interchange" pointerEvents="none">
+      {cells.map((cell) => (
+        <BounceCell
+          key={`modal-interchange-${cell.degreeLabel}`}
+          geometry={geometry}
+          ring={cell.ring}
+          position={cell.position}
+          color={CIRCLE_OVERLAY_COLORS.modalInterchange}
+          testID={`overlay-modal-interchange-${cell.degreeLabel}`}
+          bounceKey={`${selectedIndex}-${keyType}-modal-${cell.degreeLabel}`}
+        />
       ))}
     </G>
   );

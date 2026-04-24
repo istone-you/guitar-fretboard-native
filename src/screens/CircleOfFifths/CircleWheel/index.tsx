@@ -13,9 +13,14 @@ import {
   type RingName,
 } from "../lib/circleData";
 import { SNAP_DEGREES, buildRingPath, polarToCartesian, type WheelGeometry } from "./geometry";
-import { DiatonicOverlay, DominantsOverlay, RelatedKeysOverlay } from "./overlays";
+import {
+  DiatonicOverlay,
+  DominantsOverlay,
+  ModalInterchangeOverlay,
+  RelatedKeysOverlay,
+} from "./overlays";
 
-export type CircleOverlayKey = "relatedKeys" | "diatonic" | "dominants";
+export type CircleOverlayKey = "relatedKeys" | "diatonic" | "dominants" | "modalInterchange";
 
 interface CircleWheelProps {
   theme: Theme;
@@ -222,6 +227,13 @@ export default function CircleWheel({
         )}
         {activeOverlay === "relatedKeys" && (
           <RelatedKeysOverlay geometry={geometry} selectedIndex={selectedIndex} keyType={keyType} />
+        )}
+        {activeOverlay === "modalInterchange" && (
+          <ModalInterchangeOverlay
+            geometry={geometry}
+            selectedIndex={selectedIndex}
+            keyType={keyType}
+          />
         )}
 
         {/* Transparent hitboxes on top so overlays don't steal taps */}

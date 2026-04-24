@@ -587,8 +587,8 @@ describe("QuizPanel", () => {
         promptDiatonicChordSize: "triad",
         diatonicAnswers: [
           { degree: "I", root: "C", chordType: "Major", label: "C" },
-          { degree: "ii", root: "D", chordType: "Minor", label: "Dm" },
-          { degree: "iii", root: "E", chordType: "Minor", label: "Em" },
+          { degree: "II", root: "D", chordType: "Minor", label: "Dm" },
+          { degree: "III", root: "E", chordType: "Minor", label: "Em" },
         ],
         diatonicChordTypeOptions: ["Major", "Minor"] as ChordType[],
       },
@@ -608,13 +608,13 @@ describe("QuizPanel", () => {
         promptDiatonicChordSize: "triad",
         diatonicAnswers: [
           { degree: "I", root: "C", chordType: "Major", label: "C" },
-          { degree: "ii", root: "D", chordType: "Minor", label: "Dm" },
+          { degree: "II", root: "D", chordType: "Minor", label: "Dm" },
         ],
         diatonicChordTypeOptions: ["Major", "Minor"] as ChordType[],
       },
     });
     expect(getByText("I")).toBeTruthy();
-    expect(getByText("ii")).toBeTruthy();
+    expect(getByText("II")).toBeTruthy();
   });
 
   it("shows root selection for current diatonic degree", () => {
@@ -702,14 +702,14 @@ describe("QuizPanel", () => {
         promptDiatonicChordSize: "triad",
         diatonicAnswers: [
           { degree: "I", root: "C", chordType: "Major", label: "C" },
-          { degree: "ii", root: "D", chordType: "Minor", label: "Dm" },
+          { degree: "II", root: "D", chordType: "Minor", label: "Dm" },
         ],
         diatonicChordTypeOptions: ["Major", "Minor"] as ChordType[],
       },
       onDiatonicDegreeCardClick,
     });
-    fireEvent.press(getByText("ii"));
-    expect(onDiatonicDegreeCardClick).toHaveBeenCalledWith("ii");
+    fireEvent.press(getByText("II"));
+    expect(onDiatonicDegreeCardClick).toHaveBeenCalledWith("II");
   });
 
   it("shows submit button when all diatonic answers are filled", () => {
@@ -876,13 +876,13 @@ describe("QuizPanel", () => {
         ...baseQuestion,
         promptDiatonicKeyType: "major",
         promptDiatonicChordSize: "triad",
-        diatonicAnswers: [{ degree: "ii", root: "D", chordType: "Minor", label: "Dm" }],
+        diatonicAnswers: [{ degree: "II", root: "D", chordType: "Minor", label: "Dm" }],
         diatonicChordTypeOptions: ["Major", "Minor"] as ChordType[],
       },
       diatonicAllAnswers: {
-        ii: { root: "D", chordType: "Minor" },
+        II: { root: "D", chordType: "Minor" },
       },
-      diatonicEditingDegree: "ii",
+      diatonicEditingDegree: "II",
       diatonicSelectedRoot: "D",
     });
     expect(getByText("Dm")).toBeTruthy();

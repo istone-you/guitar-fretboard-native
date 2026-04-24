@@ -288,66 +288,6 @@ export function getCompatibleScales(
     .map(([scaleType]) => scaleType);
 }
 
-// ── Voice Leading ─────────────────────────────────────────────────────────────
-
-export interface VoiceLeadingTone {
-  from: number; // absolute note index mod 12
-  to: number; // absolute note index mod 12
-  semitones: number; // signed: positive = up, negative = down, 0 = common tone
-}
-
-export interface VoiceLeadingResult {
-  notesA: number[]; // all absolute note indices of chord A
-  notesB: number[]; // all absolute note indices of chord B
-  commonTones: number[]; // shared note indices
-  movements: VoiceLeadingTone[]; // non-common tones in A paired to nearest note in B
-}
-
-export function getVoiceLeading(
-  rootAIndex: number,
-  chordTypeA: ChordType,
-  rootBIndex: number,
-  chordTypeB: ChordType,
-): VoiceLeadingResult {
-  const semitonesA = CHORD_SEMITONES[chordTypeA] ?? [];
-  const semitonesB = CHORD_SEMITONES[chordTypeB] ?? [];
-
-  const notesA = [...semitonesA].map((s) => (rootAIndex + s) % 12).sort((a, b) => a - b);
-  const notesB = [...semitonesB].map((s) => (rootBIndex + s) % 12).sort((a, b) => a - b);
-
-  const setB = new Set(notesB);
-  const commonTones = notesA.filter((n) => setB.has(n));
-  const commonSet = new Set(commonTones);
-
-  const movements: VoiceLeadingTone[] = notesA
-    .filter((n) => !commonSet.has(n))
-    .map((noteA) => {
-      let bestNote = notesB[0];
-      let bestUp = (notesB[0] - noteA + 12) % 12;
-      let bestDown = (noteA - notesB[0] + 12) % 12;
-      for (const noteB of notesB) {
-        const up = (noteB - noteA + 12) % 12;
-        const down = (noteA - noteB + 12) % 12;
-        const minDist = Math.min(up, down);
-        const bestMinDist = Math.min(bestUp, bestDown);
-        if (
-          minDist < bestMinDist ||
-          (minDist === bestMinDist && up <= down && !(bestUp <= bestDown))
-        ) {
-          bestNote = noteB;
-          bestUp = up;
-          bestDown = down;
-        }
-      }
-      const up = (bestNote - noteA + 12) % 12;
-      const down = (noteA - bestNote + 12) % 12;
-      const semitones = up <= down ? up : -down;
-      return { from: noteA, to: bestNote, semitones };
-    });
-
-  return { notesA, notesB, commonTones, movements };
-}
-
 // ── Tensions and Avoid Notes ──────────────────────────────────────────────────
 
 export interface TensionNote {

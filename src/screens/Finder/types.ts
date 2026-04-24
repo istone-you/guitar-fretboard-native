@@ -11,5 +11,4 @@ export type FinderMode =
   | "scale-compat"
   | "secondary-dominant"
   | "key-from-chords"
-  | "voice-leading"
   | "tension-avoid";

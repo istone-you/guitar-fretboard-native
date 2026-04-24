@@ -40,7 +40,13 @@ function getLegendItems(activeOverlay: CircleOverlayKey, t: (key: string) => str
           color: CIRCLE_OVERLAY_COLORS.secondaryDominant,
           label: t("circle.legend.secondaryDominant"),
         },
-        { color: CIRCLE_OVERLAY_COLORS.tritoneSub, label: t("circle.legend.tritoneSub") },
+      ];
+    case "modalInterchange":
+      return [
+        {
+          color: CIRCLE_OVERLAY_COLORS.modalInterchange,
+          label: t("circle.legend.modalInterchange"),
+        },
       ];
   }
 }

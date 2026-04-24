@@ -5,6 +5,7 @@ import {
   KEY_SIGNATURES,
   getCircleAccidental,
   getDiatonicOverlayCells,
+  getModalInterchangeCells,
   getRelatedKeyCells,
   getSecondaryDominantCells,
   keyRootSemitone,
@@ -102,46 +103,94 @@ describe("circleData", () => {
       const cells = getDiatonicOverlayCells(0, "major");
       expect(cells).toEqual([
         { ring: "major", position: 0, fn: "T", degreeLabel: "I" }, // C
-        { ring: "minor", position: 11, fn: "SD", degreeLabel: "ii" }, // Dm
-        { ring: "minor", position: 1, fn: "T", degreeLabel: "iii" }, // Em
+        { ring: "minor", position: 11, fn: "SD", degreeLabel: "II" }, // Dm
+        { ring: "minor", position: 1, fn: "T", degreeLabel: "III" }, // Em
         { ring: "major", position: 11, fn: "SD", degreeLabel: "IV" }, // F
         { ring: "major", position: 1, fn: "D", degreeLabel: "V" }, // G
-        { ring: "minor", position: 0, fn: "T", degreeLabel: "vi" }, // Am
-        { ring: "flat5", position: 0, fn: "D", degreeLabel: "vii°" }, // Bm(♭5)
+        { ring: "minor", position: 0, fn: "T", degreeLabel: "VI" }, // Am
+        { ring: "flat5", position: 0, fn: "D", degreeLabel: "VII°" }, // Bm(♭5)
       ]);
     });
 
     it("returns A minor's 7 diatonic cells (natural minor)", () => {
       const cells = getDiatonicOverlayCells(0, "minor");
       expect(cells).toEqual([
-        { ring: "minor", position: 0, fn: "T", degreeLabel: "i" }, // Am
-        { ring: "flat5", position: 0, fn: "SD", degreeLabel: "ii°" }, // Bm(♭5)
-        { ring: "major", position: 0, fn: "T", degreeLabel: "♭III" }, // C
-        { ring: "minor", position: 11, fn: "SD", degreeLabel: "iv" }, // Dm
-        { ring: "minor", position: 1, fn: "D", degreeLabel: "v" }, // Em
-        { ring: "major", position: 11, fn: "SD", degreeLabel: "♭VI" }, // F
-        { ring: "major", position: 1, fn: "T", degreeLabel: "♭VII" }, // G
+        { ring: "minor", position: 0, fn: "T", degreeLabel: "I" }, // Am
+        { ring: "flat5", position: 0, fn: "SD", degreeLabel: "II°" }, // Bm(♭5)
+        { ring: "major", position: 0, fn: "T", degreeLabel: "bIII" }, // C
+        { ring: "minor", position: 11, fn: "SD", degreeLabel: "IV" }, // Dm
+        { ring: "minor", position: 1, fn: "D", degreeLabel: "V" }, // Em
+        { ring: "major", position: 11, fn: "SD", degreeLabel: "bVI" }, // F
+        { ring: "major", position: 1, fn: "T", degreeLabel: "bVII" }, // G
       ]);
     });
   });
 
-  describe("getSecondaryDominantCells", () => {
-    it("maps C major's secondary dominants and tritone subs to circle positions", () => {
-      const cells = getSecondaryDominantCells(0, "major");
-      // V/I = G (pos 1), ♭II/I = D♭ (pos 7)
-      const vOfI = cells.find((c) => c.targetDegreeLabel === "I");
-      expect(vOfI).toEqual({ targetDegreeLabel: "I", secDomPosition: 1, tritoneSubPosition: 7 });
-      // V/ii = A (pos 3), ♭II/ii = E♭ (pos 9)
-      const vOfIi = cells.find((c) => c.targetDegreeLabel === "ii");
-      expect(vOfIi).toEqual({ targetDegreeLabel: "ii", secDomPosition: 3, tritoneSubPosition: 9 });
-      // V/V = D (pos 2), ♭II/V = A♭ (pos 8)
-      const vOfV = cells.find((c) => c.targetDegreeLabel === "V");
-      expect(vOfV).toEqual({ targetDegreeLabel: "V", secDomPosition: 2, tritoneSubPosition: 8 });
+  describe("getModalInterchangeCells", () => {
+    it("returns C major's 5 borrowed chords from parallel minor", () => {
+      const cells = getModalInterchangeCells(0, "major");
+      expect(cells).toHaveLength(5);
+      // II° = Dm(♭5): root D(2), flat5 offset+1 → semitoneToCirclePosition(3)=9
+      expect(cells.find((c) => c.degreeLabel === "II°")).toEqual({
+        ring: "flat5",
+        position: 9,
+        degreeLabel: "II°",
+      });
+      // bIII = E♭: root Eb(3), major offset+0 → semitoneToCirclePosition(3)=9
+      expect(cells.find((c) => c.degreeLabel === "bIII")).toEqual({
+        ring: "major",
+        position: 9,
+        degreeLabel: "bIII",
+      });
+      // IV = Fm: root F(5), minor offset+3 → semitoneToCirclePosition(8)=8
+      expect(cells.find((c) => c.degreeLabel === "IV")).toEqual({
+        ring: "minor",
+        position: 8,
+        degreeLabel: "IV",
+      });
+      // bVI = A♭: root Ab(8), major offset+0 → semitoneToCirclePosition(8)=8
+      expect(cells.find((c) => c.degreeLabel === "bVI")).toEqual({
+        ring: "major",
+        position: 8,
+        degreeLabel: "bVI",
+      });
+      // bVII = B♭: root Bb(10), major offset+0 → semitoneToCirclePosition(10)=10
+      expect(cells.find((c) => c.degreeLabel === "bVII")).toEqual({
+        ring: "major",
+        position: 10,
+        degreeLabel: "bVII",
+      });
     });
 
-    it("excludes diminished (vii°) target", () => {
+    it("returns A minor's 5 borrowed chords from parallel major", () => {
+      const cells = getModalInterchangeCells(0, "minor");
+      expect(cells).toHaveLength(5);
+      // V = E major: root E(4), major offset+0 → semitoneToCirclePosition(4)=4
+      expect(cells.find((c) => c.degreeLabel === "V")).toEqual({
+        ring: "major",
+        position: 4,
+        degreeLabel: "V",
+      });
+    });
+  });
+
+  describe("getSecondaryDominantCells", () => {
+    it("maps C major's secondary dominants to circle positions", () => {
       const cells = getSecondaryDominantCells(0, "major");
-      expect(cells.find((c) => c.targetDegreeLabel === "vii°")).toBeUndefined();
+      // V/I = G (pos 1)
+      const vOfI = cells.find((c) => c.targetDegreeLabel === "I");
+      expect(vOfI).toEqual({ targetDegreeLabel: "I", secDomPosition: 1 });
+      // V/II = A (pos 3)
+      const vOfIi = cells.find((c) => c.targetDegreeLabel === "II");
+      expect(vOfIi).toEqual({ targetDegreeLabel: "II", secDomPosition: 3 });
+      // V/V = D (pos 2)
+      const vOfV = cells.find((c) => c.targetDegreeLabel === "V");
+      expect(vOfV).toEqual({ targetDegreeLabel: "V", secDomPosition: 2 });
+    });
+
+    it("excludes diminished (VII°) target", () => {
+      const cells = getSecondaryDominantCells(0, "major");
+      expect(cells.find((c) => c.targetDegreeLabel === "VII")).toBeUndefined();
     });
   });
 });

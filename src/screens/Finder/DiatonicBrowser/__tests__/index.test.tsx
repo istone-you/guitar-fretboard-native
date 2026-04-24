@@ -169,7 +169,7 @@ describe("DiatonicBrowser", () => {
     fireEvent.press(screen.getByText("Maj"));
     fireEvent.press(screen.getByText("Minor Triad"));
     expect(screen.getByText("Im")).toBeTruthy();
-    expect(screen.getByText("♭III")).toBeTruthy();
+    expect(screen.getByText("bIII")).toBeTruthy();
   });
 
   it("renders chord diagrams for Major and Minor chords", () => {

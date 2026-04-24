@@ -19,7 +19,6 @@ import ProgressionAnalyzer from "./ProgressionAnalyzer";
 import ScaleCompatibility from "./ScaleCompatibility";
 import SecondaryDominantFinder from "./SecondaryDominantFinder";
 import KeyFromChordsFinder from "./KeyFromChordsFinder";
-import VoiceLeadingFinder from "./VoiceLeadingFinder";
 import TensionAvoidFinder from "./TensionAvoidFinder";
 import type { FinderMode } from "./types";
 import type { CircleOverlayKey } from "../CircleOfFifths/CircleWheel";
@@ -256,15 +255,6 @@ export default function FinderPane({
               />
             ) : selectedMode === "key-from-chords" ? (
               <KeyFromChordsFinder
-                theme={theme}
-                accidental={accidental}
-                layers={layers}
-                globalRootNote={rootNote}
-                onAddLayerAndNavigate={onAddLayerAndNavigate}
-                onEnablePerLayerRoot={onEnablePerLayerRoot}
-              />
-            ) : selectedMode === "voice-leading" ? (
-              <VoiceLeadingFinder
                 theme={theme}
                 accidental={accidental}
                 layers={layers}

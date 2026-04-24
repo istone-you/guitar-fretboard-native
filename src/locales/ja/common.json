@@ -14,10 +14,13 @@
     "sharps": "♯×{{count}}",
     "flats": "♭×{{count}}",
     "noAccidentals": "無し",
-    "toggle": {
+    "overlay": {
+      "label": "オーバーレイ",
+      "none": "なし",
       "relatedKeys": "関連調",
       "diatonic": "ダイアトニック",
-      "dominants": "セカドミ+裏コード"
+      "dominants": "セカンダリードミナント",
+      "modalInterchange": "モーダルインターチェンジ"
     },
     "relation": {
       "tonic": "主調",
@@ -30,7 +33,11 @@
       "subdominantFn": "SD (サブドミナント)",
       "dominantFn": "D (ドミナント)",
       "secondaryDominant": "セカンダリードミナント (V/X)",
-      "tritoneSub": "裏コード (♭II/X)"
+      "modalInterchange": "借用和音"
+    },
+    "keyInfo": {
+      "diatonicChords": "ダイアトニックコード",
+      "scaleNotes": "構成音"
     }
   },
   "mode": {
@@ -456,10 +463,8 @@
     },
     "secondaryDominant": {
       "secDomDesc": "セカンダリードミナントとは、トニック以外のダイアトニックコードへ一時的に解決するドミナント7thコードです。解決先コードを一時的なトニックとみなして、その V7 を鳴らすことで強い推進力を生み出します。",
-      "tritoneSubDesc": "裏コード（トライトーン代理）は、セカンダリードミナントをルート音が増4度（トライトーン）離れたドミナント7thコードで置き換える技法です。3度と7度のガイドトーンを共有するため、同じターゲットへスムーズに解決できます。",
       "target": "ターゲット",
-      "secDom": "セカンダリードミナント",
-      "tritoneSub": "裏コード"
+      "secDom": "セカンダリードミナント"
     },
     "keyFromChords": {
       "addChord": "コードを追加",
@@ -470,27 +475,8 @@
     "homeSecondaryDominantDesc": "各キーのセカンダリードミナントコードを確認する",
     "homeKeyFromChordsTitle": "コードからキーを特定",
     "homeKeyFromChordsDesc": "コードの組み合わせからキーを推定する",
-    "homeVoiceLeadingTitle": "ボイスリーディング",
-    "homeVoiceLeadingDesc": "2つのコード間の声部移動を確認する",
     "homeTensionAvoidTitle": "テンション/アボイド",
     "homeTensionAvoidDesc": "コードに使えるテンションとアボイドノートを確認する",
-    "voiceLeading": {
-      "commonTones": "コモントーン",
-      "movements": "声部移動",
-      "common": "共通",
-      "halfStep": "半音",
-      "wholeStep": "全音",
-      "large": "大きな移動",
-      "legendCommon": "コモントーン",
-      "legendHalf": "半音移動（最小）",
-      "legendWhole": "全音移動",
-      "legendLarge": "大きな移動",
-      "chord": "コード",
-      "from": "元コード",
-      "to": "先コード",
-      "notesA": "コードAの構成音",
-      "notesB": "コードBの構成音"
-    },
     "tensionAvoid": {
       "major": "メジャー",
       "minor": "マイナー",

@@ -50,7 +50,7 @@ const MODES: {
   { mode: "capo", icon: "capo", titleKey: "finder.homeCapoTitle", descKey: "finder.homeCapoDesc" },
   {
     mode: "substitution",
-    icon: "substitute",
+    icon: "rotate-cw",
     titleKey: "finder.homeSubTitle",
     descKey: "finder.homeSubDesc",
   },
@@ -68,13 +68,13 @@ const MODES: {
   },
   {
     mode: "modes",
-    icon: "rotate-cw",
+    icon: "mode-steps",
     titleKey: "finder.homeModesTitle",
     descKey: "finder.homeModesDesc",
   },
   {
     mode: "progression-analysis",
-    icon: "chord-sequence",
+    icon: "search",
     titleKey: "finder.homeProgressionAnalysisTitle",
     descKey: "finder.homeProgressionAnalysisDesc",
   },
@@ -95,12 +95,6 @@ const MODES: {
     icon: "key-unlock",
     titleKey: "finder.homeKeyFromChordsTitle",
     descKey: "finder.homeKeyFromChordsDesc",
-  },
-  {
-    mode: "voice-leading",
-    icon: "voice-arrows",
-    titleKey: "finder.homeVoiceLeadingTitle",
-    descKey: "finder.homeVoiceLeadingDesc",
   },
   {
     mode: "tension-avoid",

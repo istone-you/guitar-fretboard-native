@@ -21,6 +21,7 @@ const allIcons: IconName[] = [
   "search",
   "music-note",
   "ellipsis",
+  "mode-steps",
 ];
 
 describe("Icon", () => {

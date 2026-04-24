@@ -553,9 +553,9 @@ describe("DIATONIC_CHORDS", () => {
     expect(first.chordType).toBe("Major");
   });
 
-  it("major-triad vii is dim", () => {
+  it("major-triad VII is dim", () => {
     const last = DIATONIC_CHORDS["major-triad"][6];
-    expect(last.value).toBe("vii");
+    expect(last.value).toBe("VII");
     expect(last.chordType).toBe("dim");
   });
 });
@@ -567,8 +567,8 @@ describe("getDiatonicChord", () => {
     expect(result.chordType).toBe("Major");
   });
 
-  it("returns ii Minor for major-triad with root C", () => {
-    const result = getDiatonicChord(0, "major-triad", "ii");
+  it("returns II Minor for major-triad with root C", () => {
+    const result = getDiatonicChord(0, "major-triad", "II");
     expect(result.rootIndex).toBe(2); // D
     expect(result.chordType).toBe("Minor");
   });
@@ -593,8 +593,8 @@ describe("getDiatonicChord", () => {
   });
 
   it("works for natural-minor-seventh", () => {
-    // Key of A minor (9), i = m7
-    const result = getDiatonicChord(9, "natural-minor-seventh", "i");
+    // Key of A minor (9), I = m7
+    const result = getDiatonicChord(9, "natural-minor-seventh", "I");
     expect(result.rootIndex).toBe(9); // A
     expect(result.chordType).toBe("m7");
   });
@@ -613,9 +613,9 @@ describe("getDiatonicChordSemitones", () => {
     expect(semitones).toEqual(new Set([7, 11, 2]));
   });
 
-  it("returns semitones for C major ii chord", () => {
-    const semitones = getDiatonicChordSemitones(0, "major-triad", "ii");
-    // ii = D Minor at offset 2, chord tones {0,3,7} shifted by 2 = {2,5,9}
+  it("returns semitones for C major II chord", () => {
+    const semitones = getDiatonicChordSemitones(0, "major-triad", "II");
+    // II = D Minor at offset 2, chord tones {0,3,7} shifted by 2 = {2,5,9}
     expect(semitones).toEqual(new Set([2, 5, 9]));
   });
 });

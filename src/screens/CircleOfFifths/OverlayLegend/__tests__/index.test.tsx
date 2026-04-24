@@ -32,9 +32,8 @@ describe("OverlayLegend", () => {
     expect(getByText("circle.legend.dominantFn")).toBeTruthy();
   });
 
-  it("renders secondary dominant and tritone sub chips for dominants overlay", () => {
+  it("renders secondary dominant chip for dominants overlay", () => {
     const { getByText } = render(<OverlayLegend theme="light" activeOverlay="dominants" />);
     expect(getByText("circle.legend.secondaryDominant")).toBeTruthy();
-    expect(getByText("circle.legend.tritoneSub")).toBeTruthy();
   });
 });

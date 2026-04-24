@@ -126,12 +126,12 @@ const MAJOR_DIATONIC_CELLS: ReadonlyArray<{
   degreeLabel: string;
 }> = [
   { ring: "major", positionDelta: 0, fn: "T", degreeLabel: "I" },
-  { ring: "minor", positionDelta: -1, fn: "SD", degreeLabel: "ii" },
-  { ring: "minor", positionDelta: 1, fn: "T", degreeLabel: "iii" },
+  { ring: "minor", positionDelta: -1, fn: "SD", degreeLabel: "II" },
+  { ring: "minor", positionDelta: 1, fn: "T", degreeLabel: "III" },
   { ring: "major", positionDelta: -1, fn: "SD", degreeLabel: "IV" },
   { ring: "major", positionDelta: 1, fn: "D", degreeLabel: "V" },
-  { ring: "minor", positionDelta: 0, fn: "T", degreeLabel: "vi" },
-  { ring: "flat5", positionDelta: 0, fn: "D", degreeLabel: "vii°" },
+  { ring: "minor", positionDelta: 0, fn: "T", degreeLabel: "VI" },
+  { ring: "flat5", positionDelta: 0, fn: "D", degreeLabel: "VII°" },
 ];
 
 const MINOR_DIATONIC_CELLS: ReadonlyArray<{
@@ -140,13 +140,13 @@ const MINOR_DIATONIC_CELLS: ReadonlyArray<{
   fn: DiatonicFn;
   degreeLabel: string;
 }> = [
-  { ring: "minor", positionDelta: 0, fn: "T", degreeLabel: "i" },
-  { ring: "flat5", positionDelta: 0, fn: "SD", degreeLabel: "ii°" },
-  { ring: "major", positionDelta: 0, fn: "T", degreeLabel: "♭III" },
-  { ring: "minor", positionDelta: -1, fn: "SD", degreeLabel: "iv" },
-  { ring: "minor", positionDelta: 1, fn: "D", degreeLabel: "v" },
-  { ring: "major", positionDelta: -1, fn: "SD", degreeLabel: "♭VI" },
-  { ring: "major", positionDelta: 1, fn: "T", degreeLabel: "♭VII" },
+  { ring: "minor", positionDelta: 0, fn: "T", degreeLabel: "I" },
+  { ring: "flat5", positionDelta: 0, fn: "SD", degreeLabel: "II°" },
+  { ring: "major", positionDelta: 0, fn: "T", degreeLabel: "bIII" },
+  { ring: "minor", positionDelta: -1, fn: "SD", degreeLabel: "IV" },
+  { ring: "minor", positionDelta: 1, fn: "D", degreeLabel: "V" },
+  { ring: "major", positionDelta: -1, fn: "SD", degreeLabel: "bVI" },
+  { ring: "major", positionDelta: 1, fn: "T", degreeLabel: "bVII" },
 ];
 
 export function getDiatonicOverlayCells(
@@ -166,7 +166,59 @@ export function getDiatonicOverlayCells(
 export interface SecondaryDominantCell {
   targetDegreeLabel: string;
   secDomPosition: number;
-  tritoneSubPosition: number;
+}
+
+export interface ModalInterchangeCell {
+  ring: RingName;
+  position: number;
+  degreeLabel: string;
+}
+
+const MAJOR_MODAL_INTERCHANGE: ReadonlyArray<{
+  ring: RingName;
+  semitoneOffset: number;
+  degreeLabel: string;
+}> = [
+  { ring: "flat5", semitoneOffset: 2, degreeLabel: "II°" },
+  { ring: "major", semitoneOffset: 3, degreeLabel: "bIII" },
+  { ring: "minor", semitoneOffset: 5, degreeLabel: "IV" },
+  { ring: "major", semitoneOffset: 8, degreeLabel: "bVI" },
+  { ring: "major", semitoneOffset: 10, degreeLabel: "bVII" },
+];
+
+const MINOR_MODAL_INTERCHANGE: ReadonlyArray<{
+  ring: RingName;
+  semitoneOffset: number;
+  degreeLabel: string;
+}> = [
+  { ring: "minor", semitoneOffset: 2, degreeLabel: "II" },
+  { ring: "minor", semitoneOffset: 4, degreeLabel: "III" },
+  { ring: "major", semitoneOffset: 7, degreeLabel: "V" },
+  { ring: "minor", semitoneOffset: 9, degreeLabel: "VI" },
+  { ring: "flat5", semitoneOffset: 11, degreeLabel: "VII°" },
+];
+
+// How many semitones to add to a chord root before calling semitoneToCirclePosition,
+// so that the result maps to the correct ring slot in the circle layout.
+// major ring: the key root itself is used.
+// minor ring: the relative major is 3 semitones above the chord root.
+// flat5 ring: the hosting major key is 1 semitone above the chord root (vii° relationship).
+const RING_CIRCLE_OFFSET: Record<RingName, number> = { major: 0, minor: 3, flat5: 1 };
+
+export function getModalInterchangeCells(
+  selectedIndex: number,
+  keyType: KeyType,
+): ModalInterchangeCell[] {
+  const rootSemitone = keyRootSemitone(selectedIndex, keyType);
+  const template = keyType === "major" ? MAJOR_MODAL_INTERCHANGE : MINOR_MODAL_INTERCHANGE;
+  return template.map((entry) => {
+    const chordRoot = (rootSemitone + entry.semitoneOffset) % 12;
+    return {
+      ring: entry.ring,
+      position: semitoneToCirclePosition((chordRoot + RING_CIRCLE_OFFSET[entry.ring]) % 12),
+      degreeLabel: entry.degreeLabel,
+    };
+  });
 }
 
 export function getSecondaryDominantCells(
@@ -177,6 +229,5 @@ export function getSecondaryDominantCells(
   return getSecondaryDominants(rootSemitone, keyType).map((entry) => ({
     targetDegreeLabel: entry.targetDegree,
     secDomPosition: semitoneToCirclePosition(entry.secDomRootIndex),
-    tritoneSubPosition: semitoneToCirclePosition(entry.tritoneSubRootIndex),
   }));
 }

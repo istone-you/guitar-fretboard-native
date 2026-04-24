@@ -1,17 +1,30 @@
-import { useCallback } from "react";
-import { View, StyleSheet, ScrollView } from "react-native";
+import { useCallback, useState } from "react";
+import { View, StyleSheet, ScrollView, useWindowDimensions } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import SceneHeader from "../../components/AppHeader/SceneHeader";
-import type { Accidental, LayerConfig, Theme } from "../../types";
+import type { Accidental, ChordType, LayerConfig, Theme } from "../../types";
 import { createDefaultLayer } from "../../types";
 import { getRootIndex, getNotesByAccidental } from "../../lib/fretboard";
+import ChordDiagram, { getAllChordForms } from "../../components/ui/ChordDiagram";
+import FinderDetailSheet from "../../components/ui/FinderDetailSheet";
 import CircleWheel, { type CircleOverlayKey } from "./CircleWheel";
 import CircleHeader from "./CircleHeader";
+import DominantsPanel from "./DominantsPanel";
+import KeyInfoPanel from "./KeyInfoPanel";
+import ModalInterchangePanel from "./ModalInterchangePanel";
 import OverlayLegend from "./OverlayLegend";
+import RelatedKeysPanel from "./RelatedKeysPanel";
 import { MAJOR_KEYS, MINOR_KEYS, semitoneToCirclePosition, type KeyType } from "./lib/circleData";
 import { getColors, pickNextLayerColor } from "../../themes/design";
+
+export interface CircleChordDetail {
+  rootIndex: number;
+  chordType: ChordType;
+  chordName: string;
+  subtitle?: string;
+}
 
 const DIATONIC_TEMPLATE_ID: Record<KeyType, string> = {
   major: "diatonicMajorTriad",
@@ -63,6 +76,17 @@ export default function CirclePane({
   const insets = useSafeAreaInsets();
   const colors = getColors(theme === "dark");
   const notes = getNotesByAccidental(accidental);
+  const { width: screenWidth } = useWindowDimensions();
+
+  const FORM_GAP = 8;
+  const formWidth = Math.floor((screenWidth - 32 - FORM_GAP * 2) / 3);
+
+  const [pendingChord, setPendingChord] = useState<CircleChordDetail | null>(null);
+
+  const handleChordTap = useCallback((detail: CircleChordDetail) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setPendingChord(detail);
+  }, []);
 
   const handleSelectSegment = useCallback(
     (index: number, nextKeyType?: KeyType) => {
@@ -113,6 +137,20 @@ export default function CirclePane({
     onEnablePerLayerRoot,
   ]);
 
+  const handleAddChordLayer = useCallback(() => {
+    if (!pendingChord || !onAddLayerAndNavigate || !layers) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const color = pickNextLayerColor(layers);
+    const layer = createDefaultLayer("chord", `layer-${Date.now()}`, color);
+    layer.chordDisplayMode = "form";
+    layer.chordType = pendingChord.chordType;
+    if (notes[pendingChord.rootIndex] !== globalRootNote) {
+      layer.layerRoot = notes[pendingChord.rootIndex];
+      onEnablePerLayerRoot?.();
+    }
+    onAddLayerAndNavigate(layer);
+  }, [pendingChord, onAddLayerAndNavigate, layers, notes, globalRootNote, onEnablePerLayerRoot]);
+
   const isLayerFull = (layers?.length ?? 0) >= 3;
 
   return (
@@ -161,7 +199,70 @@ export default function CirclePane({
         </View>
 
         <OverlayLegend theme={theme} activeOverlay={activeOverlay} />
+
+        {activeOverlay === "relatedKeys" && (
+          <RelatedKeysPanel
+            theme={theme}
+            accidental={accidental}
+            selectedIndex={selectedIndex}
+            keyType={keyType}
+            onChordTap={handleChordTap}
+          />
+        )}
+        {activeOverlay === "diatonic" && (
+          <KeyInfoPanel
+            theme={theme}
+            accidental={accidental}
+            selectedIndex={selectedIndex}
+            keyType={keyType}
+            onChordTap={handleChordTap}
+          />
+        )}
+        {activeOverlay === "dominants" && (
+          <DominantsPanel
+            theme={theme}
+            accidental={accidental}
+            selectedIndex={selectedIndex}
+            keyType={keyType}
+            onChordTap={handleChordTap}
+          />
+        )}
+        {activeOverlay === "modalInterchange" && (
+          <ModalInterchangePanel
+            theme={theme}
+            accidental={accidental}
+            selectedIndex={selectedIndex}
+            keyType={keyType}
+            onChordTap={handleChordTap}
+          />
+        )}
       </ScrollView>
+
+      <FinderDetailSheet
+        visible={pendingChord !== null}
+        onClose={() => setPendingChord(null)}
+        theme={theme}
+        title={pendingChord?.chordName ?? ""}
+        subtitle={pendingChord?.subtitle}
+        mediaContent={
+          pendingChord &&
+          getAllChordForms(pendingChord.rootIndex, pendingChord.chordType).length > 0 ? (
+            <View style={styles.modalDiagrams}>
+              {getAllChordForms(pendingChord.rootIndex, pendingChord.chordType).map((cells, fi) => (
+                <ChordDiagram
+                  key={fi}
+                  cells={cells}
+                  rootIndex={pendingChord.rootIndex}
+                  theme={theme}
+                  width={formWidth}
+                />
+              ))}
+            </View>
+          ) : null
+        }
+        isFull={isLayerFull}
+        onAddLayer={onAddLayerAndNavigate ? handleAddChordLayer : undefined}
+      />
     </View>
   );
 }
@@ -176,5 +277,12 @@ const styles = StyleSheet.create({
   },
   wheelWrap: {
     marginBottom: 8,
+  },
+  modalDiagrams: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
   },
 });

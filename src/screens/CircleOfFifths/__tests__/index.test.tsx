@@ -50,6 +50,11 @@ jest.mock("../CircleHeader", () => {
   };
 });
 
+jest.mock("../../../components/ui/FinderDetailSheet", () => ({
+  __esModule: true,
+  default: () => null,
+}));
+
 describe("CirclePane", () => {
   const defaultProps = {
     theme: "light" as const,

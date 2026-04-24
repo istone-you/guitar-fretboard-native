@@ -338,4 +338,5 @@ export const RELATED_KEY_COLORS: Record<"tonic" | "dominant" | "subdominant" | "
 export const CIRCLE_OVERLAY_COLORS = {
   secondaryDominant: "#ff8c00",
   tritoneSub: "#40e0d0",
+  modalInterchange: "#c084fc",
 } as const;

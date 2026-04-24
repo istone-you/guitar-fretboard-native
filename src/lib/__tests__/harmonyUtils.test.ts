@@ -13,15 +13,15 @@ describe("getDiatonicChordList", () => {
     const chords = getDiatonicChordList(0, "major");
     expect(chords).toHaveLength(7);
     expect(chords[0]).toMatchObject({ rootIndex: 0, chordType: "Major", degree: "I" });
-    expect(chords[1]).toMatchObject({ rootIndex: 2, chordType: "Minor", degree: "ii" });
-    expect(chords[6]).toMatchObject({ rootIndex: 11, chordType: "dim", degree: "vii" });
+    expect(chords[1]).toMatchObject({ rootIndex: 2, chordType: "Minor", degree: "II" });
+    expect(chords[6]).toMatchObject({ rootIndex: 11, chordType: "dim", degree: "VII" });
   });
 
   it("A minor returns 7 chords starting from A", () => {
     const chords = getDiatonicChordList(9, "minor");
     expect(chords).toHaveLength(7);
-    expect(chords[0]).toMatchObject({ rootIndex: 9, chordType: "Minor", degree: "i" });
-    expect(chords[2]).toMatchObject({ rootIndex: 0, chordType: "Major", degree: "III" });
+    expect(chords[0]).toMatchObject({ rootIndex: 9, chordType: "Minor", degree: "I" });
+    expect(chords[2]).toMatchObject({ rootIndex: 0, chordType: "Major", degree: "bIII" });
   });
 });
 
