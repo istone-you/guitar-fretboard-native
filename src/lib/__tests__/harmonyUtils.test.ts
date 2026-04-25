@@ -8,6 +8,8 @@ import {
   getTensionsAndAvoids,
   getModalInterchangeChords,
   getChordsFromScale,
+  getChordSuggestions,
+  getDominantMotionPatterns,
 } from "../harmonyUtils";
 
 describe("getDiatonicChordList", () => {
@@ -325,5 +327,105 @@ describe("getChordsFromScale", () => {
   it("C natural minor scale produces 7 triads", () => {
     const chords = getChordsFromScale(0, "natural-minor");
     expect(chords).toHaveLength(7);
+  });
+});
+
+describe("getChordSuggestions", () => {
+  it("C Major returns entries in all 8 categories", () => {
+    const suggestions = getChordSuggestions(0, "Major");
+    const categories = new Set(suggestions.map((s) => s.category));
+    expect(categories.has("diatonic")).toBe(true);
+    expect(categories.has("two-five-entry")).toBe(true);
+    expect(categories.has("secondary-dominant")).toBe(true);
+    expect(categories.has("tritone-sub")).toBe(true);
+    expect(categories.has("cadence")).toBe(true);
+    expect(categories.has("backdoor")).toBe(true);
+    expect(categories.has("passing")).toBe(true);
+    expect(categories.has("borrowed")).toBe(true);
+  });
+
+  it("G7 tritone sub is D♭7 (rootIndex 1)", () => {
+    // G7: rootIndex=7, inferred key=C major (V7 → key 5th above = C)
+    const suggestions = getChordSuggestions(7, "7th");
+    const tritoneSubs = suggestions.filter((s) => s.category === "tritone-sub");
+    expect(tritoneSubs.length).toBeGreaterThan(0);
+    // tritone sub of V7(G) = Db7 → rootIndex 1
+    const vtritoneSub = tritoneSubs.find((s) => s.rootIndex === 1 && s.chordType === "7th");
+    expect(vtritoneSub).toBeDefined();
+  });
+
+  it("C Major diatonic suggestions exclude self", () => {
+    const suggestions = getChordSuggestions(0, "Major");
+    const diatonic = suggestions.filter((s) => s.category === "diatonic");
+    const hasSelf = diatonic.some((s) => s.rootIndex === 0 && s.chordType === "Major");
+    expect(hasSelf).toBe(false);
+  });
+
+  it("C Major has secondary dominant A7 (rootIndex 9) for ii", () => {
+    const suggestions = getChordSuggestions(0, "Major");
+    const secDom = suggestions.filter((s) => s.category === "secondary-dominant");
+    const a7 = secDom.find((s) => s.rootIndex === 9 && s.chordType === "7th");
+    expect(a7).toBeDefined();
+  });
+
+  it("A Minor returns borrowed chords", () => {
+    const suggestions = getChordSuggestions(9, "Minor");
+    const borrowed = suggestions.filter((s) => s.category === "borrowed");
+    expect(borrowed.length).toBeGreaterThan(0);
+  });
+});
+
+describe("getDominantMotionPatterns", () => {
+  it("C major returns all 7 pattern types", () => {
+    const patterns = getDominantMotionPatterns(0, "major");
+    const types = new Set(patterns.map((p) => p.type));
+    expect(types.has("basic-V-I")).toBe(true);
+    expect(types.has("two-five-one")).toBe(true);
+    expect(types.has("secondary-dominant")).toBe(true);
+    expect(types.has("tritone-sub")).toBe(true);
+    expect(types.has("backdoor")).toBe(true);
+    expect(types.has("dominant-chain")).toBe(true);
+    expect(types.has("dim-resolution")).toBe(true);
+  });
+
+  it("C major basic-V-I has G7 → C", () => {
+    const patterns = getDominantMotionPatterns(0, "major");
+    const basicVI = patterns.find((p) => p.type === "basic-V-I");
+    expect(basicVI).toBeDefined();
+    expect(basicVI?.chords[0].rootIndex).toBe(7); // G
+    expect(basicVI?.chords[0].chordType).toBe("7th");
+    expect(basicVI?.chords[1].rootIndex).toBe(0); // C
+    expect(basicVI?.chords[1].chordType).toBe("Major");
+  });
+
+  it("C major tritone-sub has Db7 (rootIndex 1) → C", () => {
+    const patterns = getDominantMotionPatterns(0, "major");
+    const tritoneSub = patterns.find((p) => p.type === "tritone-sub");
+    expect(tritoneSub?.chords[0].rootIndex).toBe(1); // Db
+    expect(tritoneSub?.chords[1].rootIndex).toBe(0); // C
+  });
+
+  it("C major backdoor has Bb7 (rootIndex 10) → C", () => {
+    const patterns = getDominantMotionPatterns(0, "major");
+    const backdoor = patterns.find((p) => p.type === "backdoor");
+    expect(backdoor?.chords[0].rootIndex).toBe(10); // Bb
+    expect(backdoor?.chords[1].rootIndex).toBe(0); // C
+  });
+
+  it("basic-V-I voice leading includes 3rd and 7th movements", () => {
+    const patterns = getDominantMotionPatterns(0, "major");
+    const basicVI = patterns.find((p) => p.type === "basic-V-I")!;
+    expect(basicVI.voiceLeading.length).toBeGreaterThan(0);
+    const roles = basicVI.voiceLeading.map((vl) => vl.role);
+    expect(roles).toContain("third");
+    expect(roles).toContain("seventh");
+  });
+
+  it("A minor basic-V-I has E7 → Am", () => {
+    const patterns = getDominantMotionPatterns(9, "minor");
+    const basicVI = patterns.find((p) => p.type === "basic-V-I");
+    expect(basicVI?.chords[0].rootIndex).toBe(4); // E
+    expect(basicVI?.chords[1].rootIndex).toBe(9); // A
+    expect(basicVI?.chords[1].chordType).toBe("Minor");
   });
 });

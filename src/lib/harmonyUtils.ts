@@ -546,3 +546,364 @@ export function findKeyFromChords(
     return 0;
   });
 }
+
+// ── Chord Suggestions ─────────────────────────────────────────────────────────
+
+export type ChordSuggestCategory =
+  | "diatonic"
+  | "two-five-entry"
+  | "secondary-dominant"
+  | "tritone-sub"
+  | "cadence"
+  | "backdoor"
+  | "passing"
+  | "borrowed";
+
+export interface ChordSuggestEntry {
+  category: ChordSuggestCategory;
+  rootIndex: number;
+  chordType: ChordType;
+  label: string;
+}
+
+function inferKeyFromChord(
+  rootIndex: number,
+  chordType: ChordType,
+): { keyRoot: number; keyType: KeyType } {
+  if (chordType === "Major" || chordType === "maj7") {
+    return { keyRoot: rootIndex, keyType: "major" };
+  }
+  if (chordType === "Minor" || chordType === "m7") {
+    return { keyRoot: rootIndex, keyType: "minor" };
+  }
+  if (chordType === "7th") {
+    // Dominant 7th → treat as V7, key is a perfect 4th above
+    return { keyRoot: (rootIndex + 5) % 12, keyType: "major" };
+  }
+  // Scan for diatonic match in major first, then minor
+  for (let k = 0; k < 12; k++) {
+    const off = (rootIndex - k + 12) % 12;
+    if (
+      MAJOR_DIATONIC.some(
+        (d) => d.offset === off && d.chordType === chordType && !d.degree.includes("7"),
+      )
+    ) {
+      return { keyRoot: k, keyType: "major" };
+    }
+  }
+  for (let k = 0; k < 12; k++) {
+    const off = (rootIndex - k + 12) % 12;
+    if (
+      MINOR_DIATONIC.some(
+        (d) => d.offset === off && d.chordType === chordType && !d.degree.includes("7"),
+      )
+    ) {
+      return { keyRoot: k, keyType: "minor" };
+    }
+  }
+  return { keyRoot: rootIndex, keyType: "major" };
+}
+
+export function getChordSuggestions(rootIndex: number, chordType: ChordType): ChordSuggestEntry[] {
+  const { keyRoot, keyType } = inferKeyFromChord(rootIndex, chordType);
+  const diatonicTable = keyType === "major" ? MAJOR_DIATONIC : MINOR_DIATONIC;
+  const iType: ChordType = keyType === "major" ? "Major" : "Minor";
+  const result: ChordSuggestEntry[] = [];
+
+  // 1. ダイアトニック遷移
+  for (const d of diatonicTable.filter((d) => !d.degree.includes("7"))) {
+    const r = (keyRoot + d.offset) % 12;
+    if (r === rootIndex && d.chordType === chordType) continue;
+    result.push({ category: "diatonic", rootIndex: r, chordType: d.chordType, label: d.degree });
+  }
+
+  // 2. ii-V 入口
+  const iiRoot = (keyRoot + 2) % 12;
+  const v7Root = (keyRoot + 7) % 12;
+  if (iiRoot !== rootIndex) {
+    result.push({ category: "two-five-entry", rootIndex: iiRoot, chordType: "m7", label: "ii" });
+  }
+  if (v7Root !== rootIndex) {
+    result.push({ category: "two-five-entry", rootIndex: v7Root, chordType: "7th", label: "V7" });
+  }
+
+  // 3. セカンダリードミナント候補
+  const secDoms = getSecondaryDominants(keyRoot, keyType);
+  for (const sd of secDoms) {
+    if (sd.secDomRootIndex === rootIndex) continue;
+    result.push({
+      category: "secondary-dominant",
+      rootIndex: sd.secDomRootIndex,
+      chordType: "7th",
+      label: `V/${sd.targetDegree}`,
+    });
+  }
+
+  // 4. 裏コード候補（tritone sub of each secondary dominant）
+  for (const sd of secDoms) {
+    if (sd.tritoneSubRootIndex === rootIndex) continue;
+    result.push({
+      category: "tritone-sub",
+      rootIndex: sd.tritoneSubRootIndex,
+      chordType: "7th",
+      label: `♭II7/${sd.targetDegree}`,
+    });
+  }
+
+  // 5. 終止方向
+  const domRoot = (keyRoot + 7) % 12;
+  const subdomRoot = (keyRoot + 5) % 12;
+  if (domRoot !== rootIndex) {
+    result.push({ category: "cadence", rootIndex: domRoot, chordType: "7th", label: "V7 → I" });
+  }
+  if (subdomRoot !== rootIndex) {
+    result.push({
+      category: "cadence",
+      rootIndex: subdomRoot,
+      chordType: iType,
+      label: keyType === "major" ? "IV → I" : "iv → i",
+    });
+  }
+  if (keyRoot !== rootIndex) {
+    result.push({
+      category: "cadence",
+      rootIndex: keyRoot,
+      chordType: iType,
+      label: keyType === "major" ? "I" : "i",
+    });
+  }
+
+  // 6. バックドア候補（♭VII7 → I）
+  const backdoorRoot = (keyRoot + 10) % 12;
+  if (backdoorRoot !== rootIndex) {
+    result.push({
+      category: "backdoor",
+      rootIndex: backdoorRoot,
+      chordType: "7th",
+      label: "♭VII7",
+    });
+  }
+  const ivMinorRoot = (keyRoot + 5) % 12;
+  if (ivMinorRoot !== rootIndex || iType !== "Minor") {
+    result.push({
+      category: "backdoor",
+      rootIndex: ivMinorRoot,
+      chordType: "Minor",
+      label: "iv → ♭VII7",
+    });
+  }
+
+  // 7. 経過和音候補（dim / クロマチック）
+  const chromUp = (rootIndex + 1) % 12;
+  const chromDown = (rootIndex - 1 + 12) % 12;
+  result.push({ category: "passing", rootIndex: chromUp, chordType: "dim7", label: "↑dim7" });
+  result.push({ category: "passing", rootIndex: chromDown, chordType: "dim7", label: "↓dim7" });
+  result.push({ category: "passing", rootIndex: chromUp, chordType: "m7(b5)", label: "↑m7(♭5)" });
+
+  // 8. 借用和音候補
+  for (const mi of getModalInterchangeChords(keyRoot, keyType)) {
+    if (mi.rootIndex === rootIndex && mi.chordType === chordType) continue;
+    result.push({
+      category: "borrowed",
+      rootIndex: mi.rootIndex,
+      chordType: mi.chordType,
+      label: mi.degreeLabel,
+    });
+  }
+
+  return result;
+}
+
+// ── Dominant Motion ───────────────────────────────────────────────────────────
+
+export type DomMotionPatternType =
+  | "basic-V-I"
+  | "two-five-one"
+  | "secondary-dominant"
+  | "tritone-sub"
+  | "backdoor"
+  | "dominant-chain"
+  | "dim-resolution";
+
+export interface VoiceLeadingNote {
+  role: "third" | "seventh";
+  interval: number;
+  movesTo: number;
+  moveType: "half" | "whole" | "tritone" | "stay";
+  direction: "up" | "down" | "none";
+}
+
+export interface DomMotionChord {
+  rootIndex: number;
+  chordType: ChordType;
+  label: string;
+}
+
+export interface DomMotionPattern {
+  type: DomMotionPatternType;
+  labelKey: string;
+  descriptionKey: string;
+  chords: DomMotionChord[];
+  voiceLeading: VoiceLeadingNote[];
+}
+
+function computeVoiceLeading(
+  domRootIndex: number,
+  domChordType: ChordType,
+  resRootIndex: number,
+  resChordType: ChordType,
+): VoiceLeadingNote[] {
+  const domTones = CHORD_SEMITONES[domChordType];
+  const resTones = CHORD_SEMITONES[resChordType];
+  if (!domTones || !resTones) return [];
+
+  const result: VoiceLeadingNote[] = [];
+  // Focus on 3rd (m3=3, M3=4) and 7th (m7=10, M7=11)
+  const focusMap: Record<number, VoiceLeadingNote["role"]> = {
+    3: "third",
+    4: "third",
+    10: "seventh",
+    11: "seventh",
+  };
+
+  for (const interval of [...domTones].sort((a, b) => a - b)) {
+    const role = focusMap[interval];
+    if (!role) continue;
+    const absNote = (domRootIndex + interval) % 12;
+
+    let bestMove = 13;
+    let bestTarget = 0;
+    for (const resInterval of resTones) {
+      const absRes = (resRootIndex + resInterval) % 12;
+      const up = (absRes - absNote + 12) % 12;
+      const down = (absNote - absRes + 12) % 12;
+      const move = Math.min(up, down);
+      if (move < bestMove) {
+        bestMove = move;
+        bestTarget = resInterval;
+      }
+    }
+
+    let moveType: VoiceLeadingNote["moveType"];
+    if (bestMove === 0) moveType = "stay";
+    else if (bestMove === 1) moveType = "half";
+    else if (bestMove === 2) moveType = "whole";
+    else if (bestMove === 6) moveType = "tritone";
+    else moveType = "whole";
+
+    const absRes = (resRootIndex + bestTarget) % 12;
+    const up = (absRes - absNote + 12) % 12;
+    const direction: VoiceLeadingNote["direction"] =
+      bestMove === 0 ? "none" : up <= 6 ? "up" : "down";
+
+    result.push({ role, interval, movesTo: bestTarget, moveType, direction });
+  }
+  return result;
+}
+
+export function getDominantMotionPatterns(
+  keyRootIndex: number,
+  keyType: KeyType,
+): DomMotionPattern[] {
+  const iType: ChordType = keyType === "major" ? "Major" : "Minor";
+  const iLabel = keyType === "major" ? "I" : "i";
+  const v7Root = (keyRootIndex + 7) % 12;
+  const iiRoot = (keyRootIndex + 2) % 12;
+  const tritoneSub = (v7Root + 6) % 12;
+  const backdoorRoot = (keyRootIndex + 10) % 12;
+  const vvRoot = (v7Root + 7) % 12;
+  const dimRoot = (keyRootIndex + 11) % 12;
+
+  const patterns: DomMotionPattern[] = [];
+
+  patterns.push({
+    type: "basic-V-I",
+    labelKey: "finder.dominantMotion.pattern.basicVI",
+    descriptionKey: "finder.dominantMotion.desc.basicVI",
+    chords: [
+      { rootIndex: v7Root, chordType: "7th", label: "V7" },
+      { rootIndex: keyRootIndex, chordType: iType, label: iLabel },
+    ],
+    voiceLeading: computeVoiceLeading(v7Root, "7th", keyRootIndex, iType),
+  });
+
+  patterns.push({
+    type: "two-five-one",
+    labelKey: "finder.dominantMotion.pattern.twoFiveOne",
+    descriptionKey: "finder.dominantMotion.desc.twoFiveOne",
+    chords: [
+      { rootIndex: iiRoot, chordType: "m7", label: "ii7" },
+      { rootIndex: v7Root, chordType: "7th", label: "V7" },
+      { rootIndex: keyRootIndex, chordType: iType, label: iLabel },
+    ],
+    voiceLeading: computeVoiceLeading(v7Root, "7th", keyRootIndex, iType),
+  });
+
+  // セカンダリードミナント（各ダイアトニックコードへ）
+  for (const sd of getSecondaryDominants(keyRootIndex, keyType)) {
+    const iiOfTarget = (sd.targetRootIndex + 2) % 12;
+    patterns.push({
+      type: "secondary-dominant",
+      labelKey: "finder.dominantMotion.pattern.secondaryDom",
+      descriptionKey: "finder.dominantMotion.desc.secondaryDom",
+      chords: [
+        { rootIndex: iiOfTarget, chordType: "m7", label: `ii/${sd.targetDegree}` },
+        { rootIndex: sd.secDomRootIndex, chordType: "7th", label: `V/${sd.targetDegree}` },
+        { rootIndex: sd.targetRootIndex, chordType: sd.targetChordType, label: sd.targetDegree },
+      ],
+      voiceLeading: computeVoiceLeading(
+        sd.secDomRootIndex,
+        "7th",
+        sd.targetRootIndex,
+        sd.targetChordType,
+      ),
+    });
+  }
+
+  patterns.push({
+    type: "tritone-sub",
+    labelKey: "finder.dominantMotion.pattern.tritoneSub",
+    descriptionKey: "finder.dominantMotion.desc.tritoneSub",
+    chords: [
+      { rootIndex: tritoneSub, chordType: "7th", label: "♭II7" },
+      { rootIndex: keyRootIndex, chordType: iType, label: iLabel },
+    ],
+    voiceLeading: computeVoiceLeading(tritoneSub, "7th", keyRootIndex, iType),
+  });
+
+  patterns.push({
+    type: "backdoor",
+    labelKey: "finder.dominantMotion.pattern.backdoor",
+    descriptionKey: "finder.dominantMotion.desc.backdoor",
+    chords: [
+      { rootIndex: backdoorRoot, chordType: "7th", label: "♭VII7" },
+      { rootIndex: keyRootIndex, chordType: iType, label: iLabel },
+    ],
+    voiceLeading: computeVoiceLeading(backdoorRoot, "7th", keyRootIndex, iType),
+  });
+
+  patterns.push({
+    type: "dominant-chain",
+    labelKey: "finder.dominantMotion.pattern.dominantChain",
+    descriptionKey: "finder.dominantMotion.desc.dominantChain",
+    chords: [
+      { rootIndex: vvRoot, chordType: "7th", label: "V/V" },
+      { rootIndex: v7Root, chordType: "7th", label: "V7" },
+      { rootIndex: keyRootIndex, chordType: iType, label: iLabel },
+    ],
+    voiceLeading: computeVoiceLeading(v7Root, "7th", keyRootIndex, iType),
+  });
+
+  patterns.push({
+    type: "dim-resolution",
+    labelKey: "finder.dominantMotion.pattern.dimResolution",
+    descriptionKey: "finder.dominantMotion.desc.dimResolution",
+    chords: [
+      { rootIndex: dimRoot, chordType: "dim7", label: "vii°7" },
+      { rootIndex: keyRootIndex, chordType: iType, label: iLabel },
+    ],
+    voiceLeading: computeVoiceLeading(dimRoot, "dim7", keyRootIndex, iType),
+  });
+
+  return patterns;
+}

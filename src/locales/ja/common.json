@@ -486,6 +486,56 @@
     "homeModalInterchangeDesc": "平行調のモードから借用できるコードを確認する",
     "homeCircleTitle": "五度圏",
     "homeCircleDesc": "キーの関係・ダイアトニック・セカンダリードミナントを視覚化する",
+    "homeChordSuggestTitle": "コードサジェスト",
+    "homeChordSuggestDesc": "あるコードから次に進める候補をカテゴリ別に表示する",
+    "homeDominantMotionTitle": "ドミナントモーション",
+    "homeDominantMotionDesc": "V→Iをはじめとするドミナント解決のパターンを一覧で確認する",
+    "chordSuggest": {
+      "inputLabel": "コード",
+      "chainHint": "→ 次のコードをタップして追加",
+      "addAsProgression": "コード進行として追加",
+      "category": {
+        "diatonic": "ダイアトニック遷移",
+        "two-five-entry": "Ⅱ–Ⅴの入口",
+        "secondary-dominant": "セカンダリードミナント候補",
+        "tritone-sub": "裏コード候補",
+        "cadence": "終止方向",
+        "backdoor": "バックドア候補",
+        "passing": "経過和音候補",
+        "borrowed": "借用和音候補"
+      }
+    },
+    "dominantMotion": {
+      "keyLabel": "キー",
+      "pattern": {
+        "basicVI": "V → I（基本）",
+        "twoFiveOne": "Ⅱ–Ⅴ–Ⅰ",
+        "secondaryDom": "セカンダリードミナント",
+        "tritoneSub": "裏コード（♭II7 → I）",
+        "backdoor": "バックドア（♭VII7 → I）",
+        "dominantChain": "ドミナント連鎖（V/V → V → I）",
+        "dimResolution": "ディミニッシュ解決"
+      },
+      "desc": {
+        "basicVI": "ドミナント7thコード（V7）がトニック（I）へ解決する最も基本的なドミナントモーション。V7の3rd（導音）が半音上に、7thが半音下にそれぞれ動くトライトーン解決が強力な引力を生む。",
+        "twoFiveOne": "ii7 → V7 → I の流れ。ii7がサブドミナントとして準備し、V7が緊張を生み、Iへ解決する。ジャズの基礎的な進行で、どのキーでも自然な流れを作る。",
+        "secondaryDom": "トニック以外のダイアトニックコードへ解決するV7コード。解決先を一時的なトニックとみなすことで、一時的な転調感と強い推進力を生む。",
+        "tritoneSub": "V7の代わりに、ルートが増4度（6半音）離れた♭II7を使う技法。3rdと7thが入れ替わる関係でありながら、ルート音が半音下降することで滑らかなバスラインが得られる。",
+        "backdoor": "♭VII7（サブドミナントマイナー領域）からトニックへ解決する進行。通常のV7解決と異なり、Fマジョールのサウンドがキャラクターをもたらす。",
+        "dominantChain": "V/V（属調のドミナント）→ V → I と連鎖する進行。二重ドミナントとも呼ばれ、Iへの解決に向けて段階的に緊張を高める。",
+        "dimResolution": "導音ディミニッシュ7thコード（vii°7）からトニックへ解決する進行。全音符が半音移動してトニックコードの構成音になる滑らかな声部導音が特徴。"
+      },
+      "voiceLeading": "ボイスリーディング",
+      "third": "3rd",
+      "seventh": "7th",
+      "halfStep": "半音",
+      "wholeStep": "全音",
+      "tritoneMove": "増4度",
+      "stay": "保留",
+      "up": "↑",
+      "down": "↓",
+      "viewProgressionAnalysis": "コード進行分析で確認"
+    },
     "modalInterchange": {
       "borrowedFrom": "{{mode}}から借用",
       "sectionTitle": "借用コード"

@@ -13,4 +13,6 @@ export type FinderMode =
   | "key-from-chords"
   | "tension-avoid"
   | "modal-interchange"
-  | "circle";
+  | "circle"
+  | "chord-suggest"
+  | "dominant-motion";

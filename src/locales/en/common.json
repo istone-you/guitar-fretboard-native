@@ -486,6 +486,56 @@
     "homeModalInterchangeDesc": "Explore borrowed chords from parallel modes",
     "homeCircleTitle": "Circle of Fifths",
     "homeCircleDesc": "Visualize key relationships, diatonic chords, and secondary dominants",
+    "homeChordSuggestTitle": "Chord Suggest",
+    "homeChordSuggestDesc": "Browse next-chord candidates by category for any chord",
+    "homeDominantMotionTitle": "Dominant Motion",
+    "homeDominantMotionDesc": "Explore dominant resolution patterns from V→I to backdoor cadences",
+    "chordSuggest": {
+      "inputLabel": "Chord",
+      "chainHint": "→ Tap a chord to add it",
+      "addAsProgression": "Add as Progression",
+      "category": {
+        "diatonic": "Diatonic Transitions",
+        "two-five-entry": "ii–V Entry",
+        "secondary-dominant": "Secondary Dominant",
+        "tritone-sub": "Tritone Sub",
+        "cadence": "Cadence Direction",
+        "backdoor": "Backdoor",
+        "passing": "Passing Chords",
+        "borrowed": "Borrowed Chords"
+      }
+    },
+    "dominantMotion": {
+      "keyLabel": "Key",
+      "pattern": {
+        "basicVI": "V → I (Basic)",
+        "twoFiveOne": "ii–V–I",
+        "secondaryDom": "Secondary Dominant",
+        "tritoneSub": "Tritone Sub (♭II7 → I)",
+        "backdoor": "Backdoor (♭VII7 → I)",
+        "dominantChain": "Dominant Chain (V/V → V → I)",
+        "dimResolution": "Diminished Resolution"
+      },
+      "desc": {
+        "basicVI": "The most fundamental dominant motion: V7 resolves to I. The tritone between the 3rd (leading tone) and 7th of V7 creates a strong pull — the leading tone rises a half step to the root, and the 7th falls a half step to the 3rd of I.",
+        "twoFiveOne": "The ii7 → V7 → I progression. ii7 acts as subdominant preparation, V7 creates tension, and I resolves it. The cornerstone of jazz harmony, it produces a natural flow in any key.",
+        "secondaryDom": "A V7 chord that resolves to a diatonic chord other than the tonic. By treating the target chord as a temporary tonic, it creates a sense of momentary modulation and strong forward motion.",
+        "tritoneSub": "A technique replacing V7 with a ♭II7 chord whose root is a tritone (6 semitones) away. Though their 3rds and 7ths are swapped, the bass descends by half step, creating smooth voice leading.",
+        "backdoor": "A resolution from ♭VII7 (subdominant minor region) to the tonic. Unlike the standard V7, this backdoor cadence brings a flatter, warmer character to the resolution.",
+        "dominantChain": "A chained progression V/V → V → I, also called the double dominant. Tension builds step by step toward the final resolution to I.",
+        "dimResolution": "The leading-tone diminished 7th chord (vii°7) resolving to I. Every voice moves by half step into a chord tone of the tonic, producing exceptionally smooth voice leading."
+      },
+      "voiceLeading": "Voice Leading",
+      "third": "3rd",
+      "seventh": "7th",
+      "halfStep": "half step",
+      "wholeStep": "whole step",
+      "tritoneMove": "tritone",
+      "stay": "stay",
+      "up": "↑",
+      "down": "↓",
+      "viewProgressionAnalysis": "View in Progression Analysis"
+    },
     "modalInterchange": {
       "borrowedFrom": "from {{mode}}",
       "sectionTitle": "Borrowed Chords"

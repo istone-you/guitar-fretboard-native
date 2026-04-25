@@ -49,8 +49,10 @@ export function useProgressionTemplates() {
     AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   };
 
-  const saveTemplate = (name: string, chords: ProgressionChord[]) => {
-    persist([...customTemplates, { id: `tpl-${Date.now()}`, name, chords, createdAt: Date.now() }]);
+  const saveTemplate = (name: string, chords: ProgressionChord[]): string => {
+    const id = `tpl-${Date.now()}`;
+    persist([...customTemplates, { id, name, chords, createdAt: Date.now() }]);
+    return id;
   };
 
   const updateTemplate = (id: string, name: string, chords: ProgressionChord[]) => {

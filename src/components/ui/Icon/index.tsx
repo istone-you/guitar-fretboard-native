@@ -33,7 +33,9 @@ export type IconName =
   | "substitute"
   | "mode-steps"
   | "modal-interchange"
-  | "circle-fifths";
+  | "circle-fifths"
+  | "chord-suggest"
+  | "dominant-motion";
 
 interface IconProps {
   name: IconName;
@@ -439,6 +441,46 @@ export default function Icon({
             stroke={color}
             strokeWidth={sw * 0.8}
             strokeLinecap="round"
+          />
+        </>
+      )}
+      {name === "chord-suggest" && (
+        <>
+          {/* bulb */}
+          <Path
+            d="M12 2a7 7 0 0 1 4 12.8V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.2A7 7 0 0 1 12 2z"
+            stroke={color}
+            strokeWidth={sw}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          {/* base lines */}
+          <Path d="M9 20h6" stroke={color} strokeWidth={sw} strokeLinecap="round" />
+          <Path d="M10 22h4" stroke={color} strokeWidth={sw} strokeLinecap="round" />
+          {/* filament */}
+          <Path
+            d="M10 13.5c0-1 .8-1.5 2-1.5s2 .5 2 1.5"
+            stroke={color}
+            strokeWidth={sw}
+            strokeLinecap="round"
+          />
+        </>
+      )}
+      {name === "dominant-motion" && (
+        <>
+          <Path
+            d="M5 6l7 12 7-12"
+            stroke={color}
+            strokeWidth={sw}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <Path
+            d="M9 18l3 3 3-3"
+            stroke={color}
+            strokeWidth={sw}
+            strokeLinecap="round"
+            strokeLinejoin="round"
           />
         </>
       )}

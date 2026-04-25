@@ -12,12 +12,14 @@ import { useTranslation } from "react-i18next";
 import "../../i18n";
 import SceneHeader from "../../components/AppHeader/SceneHeader";
 import { getColors } from "../../themes/design";
-import type { Theme, Accidental, BaseLabelMode, LayerConfig } from "../../types";
+import type { Theme, Accidental, BaseLabelMode, LayerConfig, ProgressionChord } from "../../types";
 import FinderSelection from "./Selection";
 import IdentifyPane from "./IdentifyPane";
 import ChordBrowser from "./ChordBrowser";
 import DiatonicBrowser from "./DiatonicBrowser";
 import SubstitutionFinder from "./SubstitutionFinder";
+import ChordSuggest from "./ChordSuggest";
+import DominantMotion from "./DominantMotion";
 import CapoFinder from "./CapoFinder";
 import PivotChordFinder from "./PivotChordFinder";
 import RelatedKeysBrowser from "./RelatedKeysBrowser";
@@ -90,6 +92,21 @@ export default function FinderPane({
   const handleBackRef = useRef(() => {});
   const selectionResetRef = useRef<(() => void) | null>(null);
 
+  const [progressionInitialChords, setProgressionInitialChords] = useState<
+    ProgressionChord[] | undefined
+  >(undefined);
+  const [progressionInitialNoteKey, setProgressionInitialNoteKey] = useState<string | undefined>(
+    undefined,
+  );
+
+  const handleNavigateTo = (mode: FinderMode, chords?: ProgressionChord[], noteKey?: string) => {
+    if (mode === "progression-analysis") {
+      setProgressionInitialChords(chords);
+      setProgressionInitialNoteKey(noteKey);
+    }
+    handleSelect(mode);
+  };
+
   const handleSelect = (mode: FinderMode) => {
     setSelectedMode(mode);
     if (mode === "circle") {
@@ -122,6 +139,8 @@ export default function FinderPane({
     }).start(() => {
       setSelectedMode(null);
       setContentMode(null);
+      setProgressionInitialChords(undefined);
+      setProgressionInitialNoteKey(undefined);
     });
   };
   handleBackRef.current = handleBack;
@@ -336,7 +355,12 @@ export default function FinderPane({
               onEnablePerLayerRoot={onEnablePerLayerRoot}
             />
           ) : contentMode === "progression-analysis" ? (
-            <ProgressionAnalyzer theme={theme} accidental={accidental} />
+            <ProgressionAnalyzer
+              theme={theme}
+              accidental={accidental}
+              initialChords={progressionInitialChords}
+              initialNoteKey={progressionInitialNoteKey}
+            />
           ) : contentMode === "scale-compat" ? (
             <ScaleCompatibility
               theme={theme}
@@ -391,6 +415,18 @@ export default function FinderPane({
               globalRootNote={rootNote}
               onAddLayerAndNavigate={onAddLayerAndNavigate}
               onEnablePerLayerRoot={onEnablePerLayerRoot}
+            />
+          ) : contentMode === "chord-suggest" ? (
+            <ChordSuggest theme={theme} accidental={accidental} />
+          ) : contentMode === "dominant-motion" ? (
+            <DominantMotion
+              theme={theme}
+              accidental={accidental}
+              layers={layers}
+              globalRootNote={rootNote}
+              onAddLayerAndNavigate={onAddLayerAndNavigate}
+              onEnablePerLayerRoot={onEnablePerLayerRoot}
+              onNavigateTo={handleNavigateTo}
             />
           ) : contentMode === "capo" ? (
             <CapoFinder

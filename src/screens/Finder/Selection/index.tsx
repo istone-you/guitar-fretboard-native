@@ -55,6 +55,18 @@ const MODES: {
     descKey: "finder.homeSubDesc",
   },
   {
+    mode: "chord-suggest",
+    icon: "chord-suggest",
+    titleKey: "finder.homeChordSuggestTitle",
+    descKey: "finder.homeChordSuggestDesc",
+  },
+  {
+    mode: "dominant-motion",
+    icon: "dominant-motion",
+    titleKey: "finder.homeDominantMotionTitle",
+    descKey: "finder.homeDominantMotionDesc",
+  },
+  {
     mode: "pivot-chord",
     icon: "arrows-lr",
     titleKey: "finder.homePivotChordTitle",
@@ -83,12 +95,6 @@ const MODES: {
     icon: "scale-overlap",
     titleKey: "finder.homeScaleCompatTitle",
     descKey: "finder.homeScaleCompatDesc",
-  },
-  {
-    mode: "secondary-dominant",
-    icon: "secondary-dom",
-    titleKey: "finder.homeSecondaryDominantTitle",
-    descKey: "finder.homeSecondaryDominantDesc",
   },
   {
     mode: "key-from-chords",

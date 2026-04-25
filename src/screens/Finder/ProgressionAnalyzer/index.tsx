@@ -65,9 +65,16 @@ const OFFSET_TO_DEGREE: Record<number, string> = {
 interface ProgressionAnalyzerProps {
   theme: Theme;
   accidental: Accidental;
+  initialChords?: ProgressionChord[];
+  initialNoteKey?: string;
 }
 
-export default function ProgressionAnalyzer({ theme, accidental }: ProgressionAnalyzerProps) {
+export default function ProgressionAnalyzer({
+  theme,
+  accidental,
+  initialChords,
+  initialNoteKey,
+}: ProgressionAnalyzerProps) {
   const { t } = useTranslation();
   const isDark = theme === "dark";
   const colors = getColors(isDark);
@@ -81,7 +88,7 @@ export default function ProgressionAnalyzer({ theme, accidental }: ProgressionAn
   const { customTemplates, saveTemplate } = useProgressionTemplates();
 
   const [inputMode, setInputMode] = useState<"degree" | "note">("note");
-  const [noteKey, setNoteKey] = useState("C");
+  const [noteKey, setNoteKey] = useState(initialNoteKey ?? "C");
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   const [showSaveSheet, setShowSaveSheet] = useState(false);
   const [selectedDegree, setSelectedDegree] = useState<string | null>(null);
@@ -89,7 +96,7 @@ export default function ProgressionAnalyzer({ theme, accidental }: ProgressionAn
   const [selectedChordGroup, setSelectedChordGroup] = useState<"triad" | "seventh" | "tension">(
     "triad",
   );
-  const [chords, setChords] = useState<ProgressionChord[]>([]);
+  const [chords, setChords] = useState<ProgressionChord[]>(initialChords ?? []);
   const [step, setStep] = useState<"main" | "keySelect">("main");
 
   const calloutAnim = useRef(new Animated.Value(0)).current;
