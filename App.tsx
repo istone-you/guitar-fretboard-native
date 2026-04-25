@@ -286,6 +286,8 @@ export default function App() {
             setTabIndex(0);
             setTimeout(() => handleAddLayer(layer), 0);
           }}
+          customTemplates={customTemplates}
+          onSaveTemplate={saveTemplate}
         />
       );
     }

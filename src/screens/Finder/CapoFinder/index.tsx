@@ -194,21 +194,31 @@ export default function CapoFinder({
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 setSheetVisible(true);
               }}
-              style={[styles.resultCard, { backgroundColor: colors.surface, borderColor }]}
+              style={[styles.soundCard, { backgroundColor: colors.surface, borderColor }]}
             >
-              <Text style={[styles.resultLabel, { color: colors.textSubtle }]}>
-                {t("finder.capo.actualSound")}
-              </Text>
-              <Text
-                testID="actual-sound-value"
-                style={[styles.resultNote, { color: colors.textStrong }]}
-              >
-                {`${actualSound}${CHORD_SUFFIX_MAP[chordType] || ""}`}
-              </Text>
-              {capoFret === 0 && (
-                <Text style={[styles.resultHint, { color: colors.textSubtle }]}>
-                  {t("finder.capo.noCapo")}
+              <View style={styles.resultInfo}>
+                <Text style={[styles.resultLabel, { color: colors.textSubtle }]}>
+                  {t("finder.capo.actualSound")}
                 </Text>
+                <Text
+                  testID="actual-sound-value"
+                  style={[styles.soundNote, { color: colors.textStrong }]}
+                >
+                  {`${actualSound}${CHORD_SUFFIX_MAP[chordType] || ""}`}
+                </Text>
+              </View>
+              {sheetForms.length > 0 && (
+                <View style={styles.inlineFormsRow}>
+                  {sheetForms.map((cells, fi) => (
+                    <ChordDiagram
+                      key={fi}
+                      cells={cells}
+                      rootIndex={actualSoundIndex}
+                      theme={theme}
+                      width={formWidth}
+                    />
+                  ))}
+                </View>
               )}
             </TouchableOpacity>
           </>
@@ -346,6 +356,27 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
   },
+  soundCard: {
+    marginTop: 24,
+    borderRadius: 20,
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: "hidden",
+  },
+  resultInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingTop: 14,
+    paddingBottom: 10,
+  },
+  inlineFormsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingBottom: 14,
+  },
   resultLabel: {
     fontSize: 13,
     fontWeight: "500",
@@ -354,6 +385,10 @@ const styles = StyleSheet.create({
     fontSize: 56,
     fontWeight: "700",
     letterSpacing: -1,
+  },
+  soundNote: {
+    fontSize: 17,
+    fontWeight: "700",
   },
   resultHint: {
     fontSize: 12,

@@ -507,6 +507,8 @@
     },
     "dominantMotion": {
       "keyLabel": "キー",
+      "tonicResolution": "I への解決",
+      "nonTonicResolution": "各ダイアトニックへの解決",
       "pattern": {
         "basicVI": "V → I（基本）",
         "twoFiveOne": "Ⅱ–Ⅴ–Ⅰ",

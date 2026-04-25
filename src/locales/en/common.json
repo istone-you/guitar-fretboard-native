@@ -507,6 +507,8 @@
     },
     "dominantMotion": {
       "keyLabel": "Key",
+      "tonicResolution": "Resolution to I",
+      "nonTonicResolution": "Resolution to Each Diatonic Chord",
       "pattern": {
         "basicVI": "V → I (Basic)",
         "twoFiveOne": "ii–V–I",

@@ -4,7 +4,7 @@ import type { CircleOverlayKey } from "../../CircleOfFifths/CircleWheel";
 import { semitoneToCirclePosition, type KeyType } from "../../CircleOfFifths/lib/circleData";
 import type { Theme, Accidental, LayerConfig } from "../../../types";
 
-export interface RelatedKeysCirclePageProps {
+export interface ModalInterchangeCirclePageProps {
   theme: Theme;
   accidental: Accidental;
   layers?: LayerConfig[];
@@ -15,15 +15,15 @@ export interface RelatedKeysCirclePageProps {
   initialKeyType: KeyType;
 }
 
-export default function RelatedKeysCirclePage({
+export default function ModalInterchangeCirclePage({
   rootSemitone,
   initialKeyType,
   ...rest
-}: RelatedKeysCirclePageProps) {
+}: ModalInterchangeCirclePageProps) {
   const relMajor = initialKeyType === "minor" ? (rootSemitone + 3) % 12 : rootSemitone;
   const [selectedIndex, setSelectedIndex] = useState(semitoneToCirclePosition(relMajor));
   const [keyType, setKeyType] = useState<KeyType>(initialKeyType);
-  const [activeOverlay, setActiveOverlay] = useState<CircleOverlayKey | null>("relatedKeys");
+  const [activeOverlay, setActiveOverlay] = useState<CircleOverlayKey | null>("modalInterchange");
 
   return (
     <CirclePane

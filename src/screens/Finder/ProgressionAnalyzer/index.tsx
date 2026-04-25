@@ -27,10 +27,7 @@ import TemplateFormSheet, {
   CHORD_TYPE_GROUPS,
   DEGREE_TO_OFFSET,
 } from "../../Templates/TemplateFormSheet";
-import {
-  useProgressionTemplates,
-  type CustomProgressionTemplate,
-} from "../../../hooks/useProgressionTemplates";
+import type { CustomProgressionTemplate } from "../../../hooks/useProgressionTemplates";
 import NoteDegreeModeToggle from "../../../components/ui/NoteDegreeModeToggle";
 import NoteSelectPage from "../../../components/ui/NoteSelectPage";
 import { SegmentedToggle } from "../../../components/ui/SegmentedToggle";
@@ -67,6 +64,8 @@ interface ProgressionAnalyzerProps {
   accidental: Accidental;
   initialChords?: ProgressionChord[];
   initialNoteKey?: string;
+  customTemplates: CustomProgressionTemplate[];
+  onSaveTemplate: (name: string, chords: ProgressionChord[]) => string;
 }
 
 export default function ProgressionAnalyzer({
@@ -74,6 +73,8 @@ export default function ProgressionAnalyzer({
   accidental,
   initialChords,
   initialNoteKey,
+  customTemplates,
+  onSaveTemplate,
 }: ProgressionAnalyzerProps) {
   const { t } = useTranslation();
   const isDark = theme === "dark";
@@ -85,7 +86,6 @@ export default function ProgressionAnalyzer({
 
   const notes = getNotesByAccidental(accidental);
   const sheetHeight = useSheetHeight();
-  const { customTemplates, saveTemplate } = useProgressionTemplates();
 
   const [inputMode, setInputMode] = useState<"degree" | "note">("note");
   const [noteKey, setNoteKey] = useState(initialNoteKey ?? "C");
@@ -798,7 +798,7 @@ export default function ProgressionAnalyzer({
         initialNoteKey={noteKey}
         onSave={(name, savedChords) => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          saveTemplate(name, savedChords);
+          onSaveTemplate(name, savedChords);
           setShowSaveSheet(false);
         }}
       />

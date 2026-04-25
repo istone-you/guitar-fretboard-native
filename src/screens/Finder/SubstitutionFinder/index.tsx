@@ -58,6 +58,7 @@ export default function SubstitutionFinder({
   const [rootNote, setRootNote] = useState("C");
   const [selectedChordType, setSelectedChordType] = useState<ChordType>("Major");
   const [pendingSub, setPendingSub] = useState<PendingSubstitution | null>(null);
+  const [sourceDetailVisible, setSourceDetailVisible] = useState(false);
   const rootIndex = getRootIndex(rootNote);
   const notes = getNotesByAccidental(accidental);
   const isFull = layers.length >= MAX_LAYERS;
@@ -154,7 +155,14 @@ export default function SubstitutionFinder({
         contentContainerStyle={[styles.resultContent, { paddingBottom: insets.bottom + 80 }]}
         showsVerticalScrollIndicator={false}
       >
-        <View style={[styles.sourceSection, { borderColor }]}>
+        <TouchableOpacity
+          style={[styles.sourceSection, { borderColor }]}
+          activeOpacity={0.7}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            setSourceDetailVisible(true);
+          }}
+        >
           <Text style={[styles.sourceChordName, { color: colors.textStrong }]}>
             {sourceChordName}
           </Text>
@@ -171,7 +179,7 @@ export default function SubstitutionFinder({
               ))}
             </View>
           )}
-        </View>
+        </TouchableOpacity>
 
         <Text style={[styles.sourceLabel, { color: colors.textSubtle }]}>
           {t("finder.substitution.sourceLabel", { chord: sourceChordName })}
@@ -267,6 +275,30 @@ export default function SubstitutionFinder({
         onAddLayer={
           pendingSub ? () => handleAdd(pendingSub.rootIndex, pendingSub.chordType) : undefined
         }
+      />
+
+      <FinderDetailSheet
+        visible={sourceDetailVisible}
+        onClose={() => setSourceDetailVisible(false)}
+        theme={theme}
+        title={sourceChordName}
+        mediaContent={
+          sourceForms.length > 0 ? (
+            <View style={styles.modalDiagrams}>
+              {sourceForms.map((cells, fi) => (
+                <ChordDiagram
+                  key={fi}
+                  cells={cells}
+                  rootIndex={rootIndex}
+                  theme={theme}
+                  width={formWidth}
+                />
+              ))}
+            </View>
+          ) : null
+        }
+        isFull={isFull}
+        onAddLayer={() => handleAdd(rootIndex, selectedChordType)}
       />
     </View>
   );

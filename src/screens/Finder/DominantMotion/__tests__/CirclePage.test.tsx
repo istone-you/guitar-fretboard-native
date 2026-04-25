@@ -1,6 +1,6 @@
 import React from "react";
 import { render } from "@testing-library/react-native";
-import SecondaryDominantCirclePage from "../CirclePage";
+import DominantMotionCirclePage from "../CirclePage";
 
 jest.mock("../../../CircleOfFifths", () => {
   const { View } = require("react-native");
@@ -14,8 +14,8 @@ const baseProps = {
   initialKeyType: "major" as const,
 };
 
-describe("SecondaryDominantCirclePage", () => {
+describe("DominantMotionCirclePage", () => {
   it("renders without crashing", () => {
-    expect(render(<SecondaryDominantCirclePage {...baseProps} />).toJSON()).toBeTruthy();
+    expect(render(<DominantMotionCirclePage {...baseProps} />).toJSON()).toBeTruthy();
   });
 });

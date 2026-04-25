@@ -25,6 +25,16 @@ import NotePickerButton from "../../../components/ui/NotePickerButton";
 import { SegmentedToggle } from "../../../components/ui/SegmentedToggle";
 import FinderDetailSheet from "../../../components/ui/FinderDetailSheet";
 import LayerDescription from "../../../components/LayerEditModal/LayerDescription";
+import PillButton from "../../../components/ui/PillButton";
+import Icon from "../../../components/ui/Icon";
+
+const SOURCE_MODE_I18N_KEY: Record<string, string> = {
+  Aeolian: "options.scale.aeolian",
+  Mixolydian: "options.scale.mixolydian",
+  Dorian: "options.scale.dorian",
+  Ionian: "options.scale.ionian",
+  "Harmonic Minor": "options.scale.harmonicMinor",
+};
 
 interface ModalInterchangeBrowserProps {
   theme: Theme;
@@ -33,6 +43,7 @@ interface ModalInterchangeBrowserProps {
   globalRootNote: string;
   onAddLayerAndNavigate: (layer: LayerConfig) => void;
   onEnablePerLayerRoot?: () => void;
+  onOpenCircle?: (rootSemitone: number, keyType: "major" | "minor") => void;
 }
 
 export default function ModalInterchangeBrowser({
@@ -42,6 +53,7 @@ export default function ModalInterchangeBrowser({
   globalRootNote,
   onAddLayerAndNavigate,
   onEnablePerLayerRoot,
+  onOpenCircle,
 }: ModalInterchangeBrowserProps) {
   const { t } = useTranslation();
   const isDark = theme === "dark";
@@ -74,6 +86,16 @@ export default function ModalInterchangeBrowser({
     () => getModalInterchangeChords(rootIndex, keyType),
     [rootIndex, keyType],
   );
+
+  const sections = useMemo(() => {
+    const map = new Map<string, typeof borrowedChords>();
+    for (const chord of borrowedChords) {
+      const group = map.get(chord.sourceMode) ?? [];
+      group.push(chord);
+      map.set(chord.sourceMode, group);
+    }
+    return Array.from(map.entries()).map(([mode, chords]) => ({ mode, chords }));
+  }, [borrowedChords]);
 
   const pendingTmpLayer = useMemo(() => {
     if (!pendingChord) return null;
@@ -131,42 +153,61 @@ export default function ModalInterchangeBrowser({
         </View>
       </View>
 
-      {/* Borrowed chords */}
+      {/* 五度圏で表示 */}
+      {onOpenCircle && (
+        <View
+          style={[
+            styles.circleRow,
+            { borderBottomColor: borderColor, borderBottomWidth: StyleSheet.hairlineWidth },
+          ]}
+        >
+          <PillButton
+            isDark={isDark}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              onOpenCircle(rootIndex, keyType);
+            }}
+          >
+            <Text style={[styles.circleBtnText, { color: colors.textStrong }]}>
+              {t("finder.viewOnCircle")}
+            </Text>
+          </PillButton>
+        </View>
+      )}
+
       <ScrollView
         contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 80 }]}
         showsVerticalScrollIndicator={false}
       >
-        <View style={[styles.card, { borderColor }]}>
-          <View style={styles.cardHeader}>
-            <Text style={[styles.cardTitle, { color: colors.textStrong }]}>
-              {t("finder.modalInterchange.sectionTitle")}
+        {sections.map(({ mode, chords }) => (
+          <View key={mode} style={styles.sectionGroup}>
+            <Text style={[styles.sectionHeader, { color: colors.textSubtle }]}>
+              {t(SOURCE_MODE_I18N_KEY[mode] ?? mode)}
             </Text>
-          </View>
-          <View style={styles.chipsRow}>
-            {borrowedChords.map((chord) => (
+            {chords.map((chord) => (
               <TouchableOpacity
                 key={`${chord.degreeLabel}-${chord.rootIndex}`}
                 testID={`mi-chip-${chord.degreeLabel}`}
+                style={[styles.chordRow, { borderColor, backgroundColor: colors.surface }]}
                 activeOpacity={0.7}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   setPendingChord(chord);
                 }}
-                style={[styles.chip, { backgroundColor: colors.surface2 }]}
               >
-                <Text style={[styles.chipDegree, { color: colors.textSubtle }]}>
-                  {chord.degreeLabel}
-                </Text>
-                <Text style={[styles.chipChordName, { color: colors.textStrong }]}>
-                  {chordDisplayName(chord.rootIndex, chord.chordType, notes)}
-                </Text>
-                <Text style={[styles.chipSource, { color: colors.textSubtle }]}>
-                  {t("finder.modalInterchange.borrowedFrom", { mode: chord.sourceMode })}
-                </Text>
+                <View style={styles.chordLeft}>
+                  <Text style={[styles.chordName, { color: colors.textStrong }]}>
+                    {chordDisplayName(chord.rootIndex, chord.chordType, notes)}
+                  </Text>
+                  <Text style={[styles.chordDegree, { color: colors.textSubtle }]}>
+                    {chord.degreeLabel}
+                  </Text>
+                </View>
+                <Icon name="chevron-right" size={14} color={colors.textSubtle} />
               </TouchableOpacity>
             ))}
           </View>
-        </View>
+        ))}
       </ScrollView>
 
       <FinderDetailSheet
@@ -188,7 +229,11 @@ export default function ModalInterchangeBrowser({
               </View>
               <View style={[styles.badge, { backgroundColor: colors.surface }]}>
                 <Text style={[styles.badgeLabel, { color: colors.textSubtle }]}>
-                  {t("finder.modalInterchange.borrowedFrom", { mode: pendingChord.sourceMode })}
+                  {t("finder.modalInterchange.borrowedFrom", {
+                    mode: t(
+                      SOURCE_MODE_I18N_KEY[pendingChord.sourceMode] ?? pendingChord.sourceMode,
+                    ),
+                  })}
                 </Text>
               </View>
             </View>
@@ -236,52 +281,52 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 10,
   },
-  scrollContent: {
-    paddingTop: 16,
-    paddingHorizontal: 16,
-    gap: 16,
-  },
-  card: {
-    borderRadius: 16,
-    borderWidth: StyleSheet.hairlineWidth,
-    overflow: "hidden",
-  },
-  cardHeader: {
-    paddingHorizontal: 14,
-    paddingTop: 12,
-    paddingBottom: 10,
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  chipsRow: {
+  circleRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    paddingHorizontal: 14,
-    paddingBottom: 14,
+    justifyContent: "center",
+    paddingTop: 12,
+    paddingBottom: 4,
   },
-  chip: {
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderRadius: 12,
-    alignItems: "center",
-    minWidth: 64,
-    gap: 2,
-  },
-  chipDegree: {
-    fontSize: 10,
+  circleBtnText: {
+    fontSize: 11,
     fontWeight: "600",
   },
-  chipChordName: {
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    gap: 8,
+  },
+  sectionGroup: {
+    gap: 8,
+    marginTop: 4,
+  },
+  sectionHeader: {
+    fontSize: 11,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  chordRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderRadius: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    gap: 8,
+  },
+  chordLeft: {
+    flex: 1,
+    gap: 2,
+  },
+  chordName: {
     fontSize: 14,
     fontWeight: "700",
   },
-  chipSource: {
-    fontSize: 9,
+  chordDegree: {
+    fontSize: 11,
     fontWeight: "500",
-    opacity: 0.8,
   },
   badgeRow: {
     flexDirection: "row",

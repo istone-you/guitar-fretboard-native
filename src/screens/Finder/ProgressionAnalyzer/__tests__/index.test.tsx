@@ -78,6 +78,8 @@ jest.mock("../../../../components/ui/NoteSelectPage", () => {
 const defaultProps = {
   theme: "light" as const,
   accidental: "sharp" as const,
+  customTemplates: [],
+  onSaveTemplate: jest.fn(),
 };
 
 describe("ProgressionAnalyzer", () => {

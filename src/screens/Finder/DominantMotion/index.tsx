@@ -1,19 +1,11 @@
-import { useState, useMemo, useCallback } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  useWindowDimensions,
-} from "react-native";
+import { useState, useMemo } from "react";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import "../../../i18n";
-import type { Accidental, Theme, LayerConfig, ProgressionChord } from "../../../types";
-import { createDefaultLayer, MAX_LAYERS } from "../../../types";
-import { getColors, pickNextLayerColor } from "../../../themes/design";
+import type { Accidental, Theme, ProgressionChord } from "../../../types";
+import { getColors } from "../../../themes/design";
 import { getRootIndex, getNotesByAccidental, CHORD_SUFFIX_MAP } from "../../../lib/fretboard";
 import {
   getDominantMotionPatterns,
@@ -21,11 +13,11 @@ import {
   type DomMotionPattern,
   type DomMotionPatternType,
 } from "../../../lib/harmonyUtils";
-import ChordDiagram, { getAllChordForms } from "../../../components/ui/ChordDiagram";
 import NotePickerButton from "../../../components/ui/NotePickerButton";
 import { SegmentedToggle } from "../../../components/ui/SegmentedToggle";
 import FinderDetailSheet from "../../../components/ui/FinderDetailSheet";
 import Icon from "../../../components/ui/Icon";
+import PillButton from "../../../components/ui/PillButton";
 import type { FinderMode } from "../types";
 
 const OFFSET_TO_DEGREE: Record<number, string> = {
@@ -55,27 +47,22 @@ const SECTION_TYPES: DomMotionPatternType[] = [
 interface DominantMotionProps {
   theme: Theme;
   accidental: Accidental;
-  layers: LayerConfig[];
   globalRootNote: string;
-  onAddLayerAndNavigate: (layer: LayerConfig) => void;
-  onEnablePerLayerRoot?: () => void;
   onNavigateTo: (mode: FinderMode, chords?: ProgressionChord[], noteKey?: string) => void;
+  onOpenCircle?: (rootSemitone: number, keyType: "major" | "minor") => void;
 }
 
 export default function DominantMotion({
   theme,
   accidental,
-  layers,
-  globalRootNote,
-  onAddLayerAndNavigate,
-  onEnablePerLayerRoot,
+  globalRootNote: _globalRootNote,
   onNavigateTo,
+  onOpenCircle,
 }: DominantMotionProps) {
   const { t } = useTranslation();
   const isDark = theme === "dark";
   const colors = getColors(isDark);
   const insets = useSafeAreaInsets();
-  const { width: screenWidth } = useWindowDimensions();
 
   const [keyRoot, setKeyRoot] = useState("C");
   const [keyType, setKeyType] = useState<KeyType>("major");
@@ -83,9 +70,7 @@ export default function DominantMotion({
 
   const keyRootIndex = getRootIndex(keyRoot);
   const notes = getNotesByAccidental(accidental);
-  const isFull = layers.length >= MAX_LAYERS;
   const borderColor = isDark ? colors.border : colors.border2;
-  const formWidth = Math.floor((screenWidth - 32 - 8) / 3);
 
   const keyTypeOptions: { value: KeyType; label: string }[] = [
     { value: "major", label: "Major" },
@@ -105,24 +90,6 @@ export default function DominantMotion({
   const secDomPatterns = useMemo(
     () => allPatterns.filter((p) => p.type === "secondary-dominant"),
     [allPatterns],
-  );
-
-  const handleAdd = useCallback(
-    (pattern: DomMotionPattern) => {
-      if (isFull || pattern.chords.length === 0) return;
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      const color = pickNextLayerColor(layers);
-      const last = pattern.chords[pattern.chords.length - 1];
-      const layer = createDefaultLayer("chord", `layer-${Date.now()}`, color);
-      layer.chordDisplayMode = "form";
-      layer.chordType = last.chordType;
-      if (notes[last.rootIndex] !== globalRootNote) {
-        layer.layerRoot = notes[last.rootIndex];
-        onEnablePerLayerRoot?.();
-      }
-      onAddLayerAndNavigate(layer);
-    },
-    [isFull, layers, notes, globalRootNote, onAddLayerAndNavigate, onEnablePerLayerRoot],
   );
 
   const patternTitle = (pattern: DomMotionPattern) =>
@@ -156,23 +123,6 @@ export default function DominantMotion({
       <Icon name="chevron-right" size={14} color={colors.textSubtle} />
     </TouchableOpacity>
   );
-
-  const pendingForms = useMemo(() => {
-    if (!pending) return [];
-    const dom = pending.chords[pending.chords.length - 2] ?? pending.chords[0];
-    return getAllChordForms(dom.rootIndex, dom.chordType).slice(0, 2);
-  }, [pending]);
-
-  const pendingResForms = useMemo(() => {
-    if (!pending) return [];
-    const res = pending.chords[pending.chords.length - 1];
-    return getAllChordForms(res.rootIndex, res.chordType).slice(0, 2);
-  }, [pending]);
-
-  const pendingDom = pending
-    ? (pending.chords[pending.chords.length - 2] ?? pending.chords[0])
-    : null;
-  const pendingRes = pending ? pending.chords[pending.chords.length - 1] : null;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.pageBg }}>
@@ -212,14 +162,34 @@ export default function DominantMotion({
         showsVerticalScrollIndicator={false}
       >
         {/* Basic patterns */}
-        {basicPatterns.map((p, i) => renderPatternRow(p, i))}
+        <View style={styles.sectionGroup}>
+          <Text style={[styles.sectionHeader, { color: colors.textSubtle }]}>
+            {t("finder.dominantMotion.tonicResolution")}
+          </Text>
+          {basicPatterns.map((p, i) => renderPatternRow(p, i))}
+        </View>
 
         {/* Secondary dominant section */}
         {secDomPatterns.length > 0 && (
           <View style={styles.sectionGroup}>
-            <Text style={[styles.sectionHeader, { color: colors.textSubtle }]}>
-              {t("finder.dominantMotion.pattern.secondaryDom")}
-            </Text>
+            <View style={styles.sectionHeaderRow}>
+              <Text style={[styles.sectionHeader, { color: colors.textSubtle }]}>
+                {t("finder.dominantMotion.nonTonicResolution")}
+              </Text>
+              {onOpenCircle && (
+                <PillButton
+                  isDark={isDark}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    onOpenCircle(getRootIndex(keyRoot), keyType);
+                  }}
+                >
+                  <Text style={[styles.circleBtnText, { color: colors.textStrong }]}>
+                    {t("finder.viewOnCircle")}
+                  </Text>
+                </PillButton>
+              )}
+            </View>
             {secDomPatterns.map((p, i) => renderPatternRow(p, i))}
           </View>
         )}
@@ -231,48 +201,12 @@ export default function DominantMotion({
         theme={theme}
         title={pending ? patternTitle(pending) : ""}
         subtitle={pending ? t(pending.labelKey) : undefined}
-        mediaContent={
-          pending && pendingDom && pendingRes ? (
-            <View style={styles.diagramsWrap}>
-              <View style={styles.diagramCol}>
-                <Text style={[styles.diagramLabel, { color: colors.textSubtle }]}>
-                  {`${notes[pendingDom.rootIndex]}${CHORD_SUFFIX_MAP[pendingDom.chordType] ?? ""}`}
-                </Text>
-                <View style={styles.formsRow}>
-                  {pendingForms.map((cells, fi) => (
-                    <ChordDiagram
-                      key={fi}
-                      cells={cells}
-                      rootIndex={pendingDom.rootIndex}
-                      theme={theme}
-                      width={formWidth}
-                    />
-                  ))}
-                </View>
-              </View>
-              <Icon name="chevron-right" size={20} color={colors.textSubtle} />
-              <View style={styles.diagramCol}>
-                <Text style={[styles.diagramLabel, { color: colors.textSubtle }]}>
-                  {`${notes[pendingRes.rootIndex]}${CHORD_SUFFIX_MAP[pendingRes.chordType] ?? ""}`}
-                </Text>
-                <View style={styles.formsRow}>
-                  {pendingResForms.map((cells, fi) => (
-                    <ChordDiagram
-                      key={fi}
-                      cells={cells}
-                      rootIndex={pendingRes.rootIndex}
-                      theme={theme}
-                      width={formWidth}
-                    />
-                  ))}
-                </View>
-              </View>
-            </View>
-          ) : null
-        }
         description={
           pending ? (
             <View style={styles.descWrap}>
+              <Text style={[styles.descTitle, { color: colors.textStrong }]}>
+                {t(pending.labelKey)}
+              </Text>
               <Text style={[styles.descText, { color: colors.textSubtle }]}>
                 {t(pending.descriptionKey)}
               </Text>
@@ -335,8 +269,7 @@ export default function DominantMotion({
           },
           position: "after",
         }}
-        isFull={isFull}
-        onAddLayer={pending ? () => handleAdd(pending) : undefined}
+        isFull={false}
       />
     </View>
   );
@@ -404,36 +337,27 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 4,
   },
+  sectionHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
   sectionHeader: {
     fontSize: 11,
     fontWeight: "700",
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
-  diagramsWrap: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-  },
-  diagramCol: {
-    flex: 1,
-    gap: 6,
-    alignItems: "center",
-  },
-  diagramLabel: {
-    fontSize: 13,
+  circleBtnText: {
+    fontSize: 11,
     fontWeight: "600",
-  },
-  formsRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 6,
-    justifyContent: "center",
   },
   descWrap: {
     gap: 12,
+  },
+  descTitle: {
+    fontSize: 13,
+    fontWeight: "600",
   },
   descText: {
     fontSize: 13,

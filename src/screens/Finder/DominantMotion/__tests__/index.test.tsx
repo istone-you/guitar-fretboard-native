@@ -37,7 +37,7 @@ jest.mock("../../../../components/ui/SegmentedToggle", () => {
   return {
     __esModule: true,
     SegmentedToggle: ({
-      value,
+      value: _value,
       onChange,
       options,
     }: {

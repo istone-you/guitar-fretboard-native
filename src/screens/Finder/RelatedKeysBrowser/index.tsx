@@ -27,7 +27,6 @@ import NotePickerButton from "../../../components/ui/NotePickerButton";
 import { SegmentedToggle } from "../../../components/ui/SegmentedToggle";
 import FinderDetailSheet from "../../../components/ui/FinderDetailSheet";
 import LayerDescription from "../../../components/LayerEditModal/LayerDescription";
-import PillButton from "../../../components/ui/PillButton";
 interface RelatedKeysBrowserProps {
   theme: Theme;
   accidental: Accidental;
@@ -35,7 +34,6 @@ interface RelatedKeysBrowserProps {
   globalRootNote: string;
   onAddLayerAndNavigate: (layer: LayerConfig) => void;
   onEnablePerLayerRoot?: () => void;
-  onOpenCircle: (rootSemitone: number, keyType: "major" | "minor") => void;
 }
 
 type PendingChord = {
@@ -54,7 +52,6 @@ export default function RelatedKeysBrowser({
   globalRootNote,
   onAddLayerAndNavigate,
   onEnablePerLayerRoot,
-  onOpenCircle,
 }: RelatedKeysBrowserProps) {
   const { t } = useTranslation();
   const isDark = theme === "dark";
@@ -121,11 +118,6 @@ export default function RelatedKeysBrowser({
     [isFull, layers, notes, globalRootNote, rootNote, onAddLayerAndNavigate, onEnablePerLayerRoot],
   );
 
-  const handleOpenCircle = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onOpenCircle(rootIndex, keyType);
-  }, [rootIndex, keyType, onOpenCircle]);
-
   return (
     <View style={{ flex: 1, backgroundColor: colors.pageBg }}>
       {/* Controls */}
@@ -152,19 +144,6 @@ export default function RelatedKeysBrowser({
           size="compact"
           segmentWidth={60}
         />
-      </View>
-
-      <View
-        style={[
-          styles.reflectRow,
-          { borderBottomColor: borderColor, borderBottomWidth: StyleSheet.hairlineWidth },
-        ]}
-      >
-        <PillButton isDark={isDark} onPress={handleOpenCircle}>
-          <Text style={[styles.reflectLabel, { color: colors.textStrong }]}>
-            {t("finder.viewOnCircle")}
-          </Text>
-        </PillButton>
       </View>
 
       <ScrollView
@@ -316,16 +295,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
-  },
-  reflectLabel: {
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  reflectRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    paddingTop: 12,
-    paddingBottom: 4,
   },
   listContent: {
     paddingHorizontal: 16,

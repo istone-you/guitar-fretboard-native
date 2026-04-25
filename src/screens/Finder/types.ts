@@ -9,7 +9,6 @@ export type FinderMode =
   | "modes"
   | "progression-analysis"
   | "scale-compat"
-  | "secondary-dominant"
   | "key-from-chords"
   | "tension-avoid"
   | "modal-interchange"

@@ -66,8 +66,6 @@ export default function ModeBrowser({
   );
 
   const parentRootName = notes[parentRootIndex];
-  const currentMode = CHURCH_MODES.find((m) => m.scaleType === modeType);
-
   const scaleName = (st: string) => t(`options.scale.${scaleI18nKey(st)}`);
 
   const handleAddMode = useCallback(
@@ -131,7 +129,7 @@ export default function ModeBrowser({
           style={styles.modeBtn}
         >
           <Text style={[styles.modeBtnText, { color: colors.textSubtle }]}>
-            {currentMode?.label ?? modeType}
+            {scaleName(modeType)}
           </Text>
           <Icon name="chevron-down" size={12} color={colors.textSubtle} />
         </PillButton>

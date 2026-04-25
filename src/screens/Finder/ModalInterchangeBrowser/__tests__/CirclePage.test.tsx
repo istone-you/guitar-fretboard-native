@@ -1,6 +1,6 @@
 import React from "react";
 import { render } from "@testing-library/react-native";
-import RelatedKeysCirclePage from "../CirclePage";
+import ModalInterchangeCirclePage from "../CirclePage";
 
 jest.mock("../../../CircleOfFifths", () => {
   const { View } = require("react-native");
@@ -14,8 +14,8 @@ const baseProps = {
   initialKeyType: "major" as const,
 };
 
-describe("RelatedKeysCirclePage", () => {
+describe("ModalInterchangeCirclePage", () => {
   it("renders without crashing", () => {
-    expect(render(<RelatedKeysCirclePage {...baseProps} />).toJSON()).toBeTruthy();
+    expect(render(<ModalInterchangeCirclePage {...baseProps} />).toJSON()).toBeTruthy();
   });
 });

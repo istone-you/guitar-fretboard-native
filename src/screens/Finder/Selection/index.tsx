@@ -29,6 +29,7 @@ const MODES: {
   titleKey: string;
   descKey: string;
 }[] = [
+  // 識別・検索
   {
     mode: "identify",
     icon: "music-note",
@@ -41,36 +42,19 @@ const MODES: {
     titleKey: "finder.homeChordListTitle",
     descKey: "finder.homeChordListDesc",
   },
+  { mode: "capo", icon: "capo", titleKey: "finder.homeCapoTitle", descKey: "finder.homeCapoDesc" },
+  // キー・調性・転調
+  {
+    mode: "circle",
+    icon: "circle-fifths",
+    titleKey: "finder.homeCircleTitle",
+    descKey: "finder.homeCircleDesc",
+  },
   {
     mode: "diatonic",
     icon: "bar-chart",
     titleKey: "finder.homeDiatonicTitle",
     descKey: "finder.homeDiatonicDesc",
-  },
-  { mode: "capo", icon: "capo", titleKey: "finder.homeCapoTitle", descKey: "finder.homeCapoDesc" },
-  {
-    mode: "substitution",
-    icon: "rotate-cw",
-    titleKey: "finder.homeSubTitle",
-    descKey: "finder.homeSubDesc",
-  },
-  {
-    mode: "chord-suggest",
-    icon: "chord-suggest",
-    titleKey: "finder.homeChordSuggestTitle",
-    descKey: "finder.homeChordSuggestDesc",
-  },
-  {
-    mode: "dominant-motion",
-    icon: "dominant-motion",
-    titleKey: "finder.homeDominantMotionTitle",
-    descKey: "finder.homeDominantMotionDesc",
-  },
-  {
-    mode: "pivot-chord",
-    icon: "arrows-lr",
-    titleKey: "finder.homePivotChordTitle",
-    descKey: "finder.homePivotChordDesc",
   },
   {
     mode: "related-keys",
@@ -79,17 +63,18 @@ const MODES: {
     descKey: "finder.homeRelatedKeysDesc",
   },
   {
-    mode: "modes",
-    icon: "mode-steps",
-    titleKey: "finder.homeModesTitle",
-    descKey: "finder.homeModesDesc",
+    mode: "pivot-chord",
+    icon: "arrows-lr",
+    titleKey: "finder.homePivotChordTitle",
+    descKey: "finder.homePivotChordDesc",
   },
   {
-    mode: "progression-analysis",
-    icon: "search",
-    titleKey: "finder.homeProgressionAnalysisTitle",
-    descKey: "finder.homeProgressionAnalysisDesc",
+    mode: "key-from-chords",
+    icon: "key-unlock",
+    titleKey: "finder.homeKeyFromChordsTitle",
+    descKey: "finder.homeKeyFromChordsDesc",
   },
+  // スケール・モード
   {
     mode: "scale-compat",
     icon: "scale-overlap",
@@ -97,10 +82,17 @@ const MODES: {
     descKey: "finder.homeScaleCompatDesc",
   },
   {
-    mode: "key-from-chords",
-    icon: "key-unlock",
-    titleKey: "finder.homeKeyFromChordsTitle",
-    descKey: "finder.homeKeyFromChordsDesc",
+    mode: "modes",
+    icon: "mode-steps",
+    titleKey: "finder.homeModesTitle",
+    descKey: "finder.homeModesDesc",
+  },
+  // コード理論
+  {
+    mode: "substitution",
+    icon: "rotate-cw",
+    titleKey: "finder.homeSubTitle",
+    descKey: "finder.homeSubDesc",
   },
   {
     mode: "tension-avoid",
@@ -114,11 +106,24 @@ const MODES: {
     titleKey: "finder.homeModalInterchangeTitle",
     descKey: "finder.homeModalInterchangeDesc",
   },
+  // コード進行
   {
-    mode: "circle",
-    icon: "circle-fifths",
-    titleKey: "finder.homeCircleTitle",
-    descKey: "finder.homeCircleDesc",
+    mode: "dominant-motion",
+    icon: "dominant-motion",
+    titleKey: "finder.homeDominantMotionTitle",
+    descKey: "finder.homeDominantMotionDesc",
+  },
+  {
+    mode: "progression-analysis",
+    icon: "search",
+    titleKey: "finder.homeProgressionAnalysisTitle",
+    descKey: "finder.homeProgressionAnalysisDesc",
+  },
+  {
+    mode: "chord-suggest",
+    icon: "chord-suggest",
+    titleKey: "finder.homeChordSuggestTitle",
+    descKey: "finder.homeChordSuggestDesc",
   },
 ];
 

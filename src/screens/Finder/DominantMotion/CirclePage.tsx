@@ -4,7 +4,7 @@ import type { CircleOverlayKey } from "../../CircleOfFifths/CircleWheel";
 import { semitoneToCirclePosition, type KeyType } from "../../CircleOfFifths/lib/circleData";
 import type { Theme, Accidental, LayerConfig } from "../../../types";
 
-export interface SecondaryDominantCirclePageProps {
+export interface DominantMotionCirclePageProps {
   theme: Theme;
   accidental: Accidental;
   layers?: LayerConfig[];
@@ -15,11 +15,11 @@ export interface SecondaryDominantCirclePageProps {
   initialKeyType: KeyType;
 }
 
-export default function SecondaryDominantCirclePage({
+export default function DominantMotionCirclePage({
   rootSemitone,
   initialKeyType,
   ...rest
-}: SecondaryDominantCirclePageProps) {
+}: DominantMotionCirclePageProps) {
   const relMajor = initialKeyType === "minor" ? (rootSemitone + 3) % 12 : rootSemitone;
   const [selectedIndex, setSelectedIndex] = useState(semitoneToCirclePosition(relMajor));
   const [keyType, setKeyType] = useState<KeyType>(initialKeyType);

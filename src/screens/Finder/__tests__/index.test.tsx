@@ -81,12 +81,6 @@ jest.mock("../../../hooks/useProgressionTemplates", () => ({
 
 jest.mock("../CirclePage", () => ({ __esModule: true, default: () => null }));
 jest.mock("../DiatonicBrowser/CirclePage", () => ({ __esModule: true, default: () => null }));
-jest.mock("../RelatedKeysBrowser/CirclePage", () => ({ __esModule: true, default: () => null }));
-jest.mock("../SecondaryDominantFinder/CirclePage", () => ({
-  __esModule: true,
-  default: () => null,
-}));
-
 const defaultProps = {
   theme: "dark" as Theme,
   accidental: "sharp" as Accidental,
@@ -100,6 +94,8 @@ const defaultProps = {
   onFretRangeChange: jest.fn(),
   onAccidentalChange: jest.fn(),
   onLeftHandedChange: jest.fn(),
+  customTemplates: [],
+  onSaveTemplate: jest.fn(),
 };
 
 describe("FinderPane (parent wrapper)", () => {

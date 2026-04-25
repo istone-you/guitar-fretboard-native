@@ -13,6 +13,7 @@ import "../../i18n";
 import SceneHeader from "../../components/AppHeader/SceneHeader";
 import { getColors } from "../../themes/design";
 import type { Theme, Accidental, BaseLabelMode, LayerConfig, ProgressionChord } from "../../types";
+import type { CustomProgressionTemplate } from "../../hooks/useProgressionTemplates";
 import FinderSelection from "./Selection";
 import IdentifyPane from "./IdentifyPane";
 import ChordBrowser from "./ChordBrowser";
@@ -26,17 +27,16 @@ import RelatedKeysBrowser from "./RelatedKeysBrowser";
 import ModeBrowser from "./ModeBrowser";
 import ProgressionAnalyzer from "./ProgressionAnalyzer";
 import ScaleCompatibility from "./ScaleCompatibility";
-import SecondaryDominantFinder from "./SecondaryDominantFinder";
 import KeyFromChordsFinder from "./KeyFromChordsFinder";
 import TensionAvoidFinder from "./TensionAvoidFinder";
 import ModalInterchangeBrowser from "./ModalInterchangeBrowser";
 import FinderCirclePage from "./CirclePage";
 import DiatonicCirclePage from "./DiatonicBrowser/CirclePage";
-import RelatedKeysCirclePage from "./RelatedKeysBrowser/CirclePage";
-import SecondaryDominantCirclePage from "./SecondaryDominantFinder/CirclePage";
+import DominantMotionCirclePage from "./DominantMotion/CirclePage";
+import ModalInterchangeCirclePage from "./ModalInterchangeBrowser/CirclePage";
 import type { FinderMode } from "./types";
 
-type CircleSubPageType = "diatonic" | "related-keys" | "secondary-dominant";
+type CircleSubPageType = "diatonic" | "dominant-motion" | "modal-interchange";
 
 interface CircleSubPage {
   type: CircleSubPageType;
@@ -59,6 +59,8 @@ export interface FinderPaneProps {
   onFretRangeChange: (range: [number, number]) => void;
   onAccidentalChange: (accidental: Accidental) => void;
   onLeftHandedChange: (value: boolean) => void;
+  customTemplates: CustomProgressionTemplate[];
+  onSaveTemplate: (name: string, chords: ProgressionChord[]) => string;
 }
 
 export default function FinderPane({
@@ -76,6 +78,8 @@ export default function FinderPane({
   onFretRangeChange,
   onAccidentalChange,
   onLeftHandedChange,
+  customTemplates,
+  onSaveTemplate,
 }: FinderPaneProps) {
   const { t } = useTranslation();
   const { width: screenWidth } = useWindowDimensions();
@@ -92,17 +96,10 @@ export default function FinderPane({
   const handleBackRef = useRef(() => {});
   const selectionResetRef = useRef<(() => void) | null>(null);
 
-  const [progressionInitialChords, setProgressionInitialChords] = useState<
-    ProgressionChord[] | undefined
-  >(undefined);
-  const [progressionInitialNoteKey, setProgressionInitialNoteKey] = useState<string | undefined>(
-    undefined,
-  );
-
   const handleNavigateTo = (mode: FinderMode, chords?: ProgressionChord[], noteKey?: string) => {
     if (mode === "progression-analysis") {
-      setProgressionInitialChords(chords);
-      setProgressionInitialNoteKey(noteKey);
+      handleOpenProgSub(chords, noteKey);
+      return;
     }
     handleSelect(mode);
   };
@@ -139,8 +136,6 @@ export default function FinderPane({
     }).start(() => {
       setSelectedMode(null);
       setContentMode(null);
-      setProgressionInitialChords(undefined);
-      setProgressionInitialNoteKey(undefined);
     });
   };
   handleBackRef.current = handleBack;
@@ -150,6 +145,7 @@ export default function FinderPane({
       onMoveShouldSetPanResponder: (_, g) =>
         selectedModeRef.current !== null &&
         !circleSubActiveRef.current &&
+        !progSubActiveRef.current &&
         g.dx > 10 &&
         Math.abs(g.dx) > Math.abs(g.dy),
       onPanResponderMove: (_, g) => {
@@ -170,6 +166,71 @@ export default function FinderPane({
       },
       onPanResponderTerminate: () => {
         Animated.spring(slideAnim, {
+          toValue: 0,
+          friction: 9,
+          tension: 160,
+          useNativeDriver: true,
+        }).start();
+      },
+    }),
+  ).current;
+
+  // ── コード進行分析サブページ（ツール内から開く）──────────────
+  const [progSubActive, setProgSubActive] = useState(false);
+  const [progSubContent, setProgSubContent] = useState<{
+    chords?: ProgressionChord[];
+    noteKey?: string;
+  } | null>(null);
+  const progSubAnim = useRef(new Animated.Value(Dimensions.get("window").width)).current;
+  const progSubActiveRef = useRef(false);
+  const progSubBackRef = useRef(() => {});
+
+  const handleOpenProgSub = (chords?: ProgressionChord[], noteKey?: string) => {
+    setProgSubContent({ chords, noteKey });
+    setProgSubActive(true);
+    progSubActiveRef.current = true;
+    Animated.timing(progSubAnim, {
+      toValue: 0,
+      duration: 220,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handleProgSubBack = () => {
+    Animated.timing(progSubAnim, {
+      toValue: screenWidth,
+      duration: 220,
+      useNativeDriver: true,
+    }).start(() => {
+      setProgSubActive(false);
+      progSubActiveRef.current = false;
+      setProgSubContent(null);
+    });
+  };
+  progSubBackRef.current = handleProgSubBack;
+
+  const progSubPanResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, g) =>
+        progSubActiveRef.current && g.dx > 10 && Math.abs(g.dx) > Math.abs(g.dy),
+      onPanResponderMove: (_, g) => {
+        if (g.dx > 0) progSubAnim.setValue(g.dx);
+      },
+      onPanResponderRelease: (_, g) => {
+        if (g.dx > 80 || (g.dx > 30 && g.vx > 0.5)) {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          progSubBackRef.current();
+        } else {
+          Animated.spring(progSubAnim, {
+            toValue: 0,
+            friction: 9,
+            tension: 160,
+            useNativeDriver: true,
+          }).start();
+        }
+      },
+      onPanResponderTerminate: () => {
+        Animated.spring(progSubAnim, {
           toValue: 0,
           friction: 9,
           tension: 160,
@@ -248,12 +309,14 @@ export default function FinderPane({
     }),
   ).current;
 
-  // SceneHeader の onBack: 円サブページ中 → 元ツールへ戻る / ツール中 → ホームへ戻る
-  const headerOnBack = circleSubActive
-    ? handleCircleSubBack
-    : selectedMode
-      ? handleBack
-      : undefined;
+  // SceneHeader の onBack: 進行分析サブページ → 元ツールへ戻る / 円サブページ → 元ツールへ戻る / ツール中 → ホームへ戻る
+  const headerOnBack = progSubActive
+    ? handleProgSubBack
+    : circleSubActive
+      ? handleCircleSubBack
+      : selectedMode
+        ? handleBack
+        : undefined;
 
   return (
     <View style={styles.root}>
@@ -343,7 +406,6 @@ export default function FinderPane({
               globalRootNote={rootNote}
               onAddLayerAndNavigate={onAddLayerAndNavigate}
               onEnablePerLayerRoot={onEnablePerLayerRoot}
-              onOpenCircle={(r, k) => handleOpenCircle("related-keys", r, k)}
             />
           ) : contentMode === "modes" ? (
             <ModeBrowser
@@ -358,8 +420,8 @@ export default function FinderPane({
             <ProgressionAnalyzer
               theme={theme}
               accidental={accidental}
-              initialChords={progressionInitialChords}
-              initialNoteKey={progressionInitialNoteKey}
+              customTemplates={customTemplates}
+              onSaveTemplate={onSaveTemplate}
             />
           ) : contentMode === "scale-compat" ? (
             <ScaleCompatibility
@@ -369,16 +431,6 @@ export default function FinderPane({
               globalRootNote={rootNote}
               onAddLayerAndNavigate={onAddLayerAndNavigate}
               onEnablePerLayerRoot={onEnablePerLayerRoot}
-            />
-          ) : contentMode === "secondary-dominant" ? (
-            <SecondaryDominantFinder
-              theme={theme}
-              accidental={accidental}
-              layers={layers}
-              globalRootNote={rootNote}
-              onAddLayerAndNavigate={onAddLayerAndNavigate}
-              onEnablePerLayerRoot={onEnablePerLayerRoot}
-              onOpenCircle={(r, k) => handleOpenCircle("secondary-dominant", r, k)}
             />
           ) : contentMode === "key-from-chords" ? (
             <KeyFromChordsFinder
@@ -406,6 +458,7 @@ export default function FinderPane({
               globalRootNote={rootNote}
               onAddLayerAndNavigate={onAddLayerAndNavigate}
               onEnablePerLayerRoot={onEnablePerLayerRoot}
+              onOpenCircle={(r, k) => handleOpenCircle("modal-interchange", r, k)}
             />
           ) : contentMode === "circle" ? (
             <FinderCirclePage
@@ -422,11 +475,9 @@ export default function FinderPane({
             <DominantMotion
               theme={theme}
               accidental={accidental}
-              layers={layers}
               globalRootNote={rootNote}
-              onAddLayerAndNavigate={onAddLayerAndNavigate}
-              onEnablePerLayerRoot={onEnablePerLayerRoot}
               onNavigateTo={handleNavigateTo}
+              onOpenCircle={(r, k) => handleOpenCircle("dominant-motion", r, k)}
             />
           ) : contentMode === "capo" ? (
             <CapoFinder
@@ -466,8 +517,8 @@ export default function FinderPane({
               rootSemitone={circleSubPage.rootSemitone}
               initialKeyType={circleSubPage.keyType}
             />
-          ) : circleSubPage?.type === "related-keys" ? (
-            <RelatedKeysCirclePage
+          ) : circleSubPage?.type === "dominant-motion" ? (
+            <DominantMotionCirclePage
               theme={theme}
               accidental={accidental}
               layers={layers}
@@ -477,8 +528,8 @@ export default function FinderPane({
               rootSemitone={circleSubPage.rootSemitone}
               initialKeyType={circleSubPage.keyType}
             />
-          ) : circleSubPage?.type === "secondary-dominant" ? (
-            <SecondaryDominantCirclePage
+          ) : circleSubPage?.type === "modal-interchange" ? (
+            <ModalInterchangeCirclePage
               theme={theme}
               accidental={accidental}
               layers={layers}
@@ -489,6 +540,34 @@ export default function FinderPane({
               initialKeyType={circleSubPage.keyType}
             />
           ) : null}
+        </Animated.View>
+
+        {/* コード進行分析サブページ（circleSubPage の上に重ねる） */}
+        <Animated.View
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              backgroundColor: bgColor,
+              transform: [{ translateX: progSubAnim }],
+              borderTopLeftRadius: 28,
+              borderBottomLeftRadius: 28,
+              overflow: "hidden",
+              zIndex: 35,
+            },
+          ]}
+          pointerEvents={progSubActive ? "auto" : "none"}
+          {...progSubPanResponder.panHandlers}
+        >
+          {progSubContent !== null && (
+            <ProgressionAnalyzer
+              theme={theme}
+              accidental={accidental}
+              initialChords={progSubContent.chords}
+              initialNoteKey={progSubContent.noteKey}
+              customTemplates={customTemplates}
+              onSaveTemplate={onSaveTemplate}
+            />
+          )}
         </Animated.View>
       </View>
     </View>
