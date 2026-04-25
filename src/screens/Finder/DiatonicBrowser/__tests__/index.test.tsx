@@ -135,6 +135,7 @@ const defaultProps = {
   layers: [],
   globalRootNote: "C",
   onAddLayerAndNavigate: jest.fn(),
+  onOpenCircle: jest.fn(),
 };
 
 describe("DiatonicBrowser", () => {

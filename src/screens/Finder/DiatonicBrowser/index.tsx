@@ -60,8 +60,6 @@ const TEMPLATE_ID: Record<DiatonicMode, string> = {
 const DEGREE_FUNCTIONS_MAJOR: DiatonicFunction[] = ["T", "SD", "T", "SD", "D", "T", "D"];
 const DEGREE_FUNCTIONS_MINOR: DiatonicFunction[] = ["T", "SD", "T", "SD", "D", "SD", "T"];
 
-import type { ReflectToCirclePayload } from "../index";
-
 interface DiatonicBrowserProps {
   theme: Theme;
   accidental: Accidental;
@@ -69,7 +67,7 @@ interface DiatonicBrowserProps {
   globalRootNote: string;
   onAddLayerAndNavigate: (layer: LayerConfig) => void;
   onEnablePerLayerRoot?: () => void;
-  onReflectToCircle?: (payload: ReflectToCirclePayload) => void;
+  onOpenCircle: (rootSemitone: number, keyType: "major" | "minor") => void;
 }
 
 interface PendingEntry {
@@ -87,7 +85,7 @@ export default function DiatonicBrowser({
   globalRootNote,
   onAddLayerAndNavigate,
   onEnablePerLayerRoot,
-  onReflectToCircle,
+  onOpenCircle,
 }: DiatonicBrowserProps) {
   const { t } = useTranslation();
   const isDark = theme === "dark";
@@ -191,11 +189,10 @@ export default function DiatonicBrowser({
     t,
   ]);
 
-  const handleReflectToCircle = useCallback(() => {
-    if (!onReflectToCircle) return;
+  const handleOpenCircle = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onReflectToCircle({ rootSemitone: rootIndex, keyType, overlay: "diatonic" });
-  }, [rootIndex, keyType, onReflectToCircle]);
+    onOpenCircle(rootIndex, keyType);
+  }, [rootIndex, keyType, onOpenCircle]);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.pageBg }}>
@@ -232,20 +229,18 @@ export default function DiatonicBrowser({
         </View>
       </View>
 
-      {onReflectToCircle ? (
-        <View
-          style={[
-            styles.reflectRow,
-            { borderBottomColor: borderColor, borderBottomWidth: StyleSheet.hairlineWidth },
-          ]}
-        >
-          <PillButton isDark={isDark} onPress={handleReflectToCircle}>
-            <Text style={[styles.reflectLabel, { color: colors.textStrong }]}>
-              {t("finder.viewOnCircle")}
-            </Text>
-          </PillButton>
-        </View>
-      ) : null}
+      <View
+        style={[
+          styles.reflectRow,
+          { borderBottomColor: borderColor, borderBottomWidth: StyleSheet.hairlineWidth },
+        ]}
+      >
+        <PillButton isDark={isDark} onPress={handleOpenCircle}>
+          <Text style={[styles.reflectLabel, { color: colors.textStrong }]}>
+            {t("finder.viewOnCircle")}
+          </Text>
+        </PillButton>
+      </View>
 
       {/* Mode picker sheet */}
       <BottomSheetModal visible={modeSheetVisible} onClose={() => setModeSheetVisible(false)}>

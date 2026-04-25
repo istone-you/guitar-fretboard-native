@@ -484,6 +484,8 @@
     "homeTensionAvoidDesc": "コードに使えるテンションとアボイドノートを確認する",
     "homeModalInterchangeTitle": "モーダルインターチェンジ",
     "homeModalInterchangeDesc": "平行調のモードから借用できるコードを確認する",
+    "homeCircleTitle": "五度圏",
+    "homeCircleDesc": "キーの関係・ダイアトニック・セカンダリードミナントを視覚化する",
     "modalInterchange": {
       "borrowedFrom": "{{mode}}から借用",
       "sectionTitle": "借用コード"

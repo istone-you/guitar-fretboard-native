@@ -108,6 +108,12 @@ const MODES: {
     titleKey: "finder.homeModalInterchangeTitle",
     descKey: "finder.homeModalInterchangeDesc",
   },
+  {
+    mode: "circle",
+    icon: "circle-fifths",
+    titleKey: "finder.homeCircleTitle",
+    descKey: "finder.homeCircleDesc",
+  },
 ];
 
 export default function FinderSelection({ theme, onSelect, resetDescRef }: SelectionProps) {

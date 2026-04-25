@@ -32,7 +32,8 @@ export type IconName =
   | "tension-note"
   | "substitute"
   | "mode-steps"
-  | "modal-interchange";
+  | "modal-interchange"
+  | "circle-fifths";
 
 interface IconProps {
   name: IconName;
@@ -426,6 +427,18 @@ export default function Icon({
             strokeWidth={sw}
             strokeLinecap="round"
             strokeLinejoin="round"
+          />
+        </>
+      )}
+      {name === "circle-fifths" && (
+        <>
+          <Circle cx="12" cy="12" r="9" stroke={color} strokeWidth={sw} />
+          <Circle cx="12" cy="12" r="4" stroke={color} strokeWidth={sw} />
+          <Path
+            d="M12 3v3M12 18v3M3 12h3M18 12h3"
+            stroke={color}
+            strokeWidth={sw * 0.8}
+            strokeLinecap="round"
           />
         </>
       )}

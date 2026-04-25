@@ -33,8 +33,6 @@ import FinderDetailSheet from "../../../components/ui/FinderDetailSheet";
 import LayerDescription from "../../../components/LayerEditModal/LayerDescription";
 import PillButton from "../../../components/ui/PillButton";
 import Icon from "../../../components/ui/Icon";
-import type { ReflectToCirclePayload } from "../index";
-
 interface SecondaryDominantFinderProps {
   theme: Theme;
   accidental: Accidental;
@@ -42,7 +40,7 @@ interface SecondaryDominantFinderProps {
   globalRootNote: string;
   onAddLayerAndNavigate: (layer: LayerConfig) => void;
   onEnablePerLayerRoot?: () => void;
-  onReflectToCircle?: (payload: ReflectToCirclePayload) => void;
+  onOpenCircle: (rootSemitone: number, keyType: "major" | "minor") => void;
 }
 
 export default function SecondaryDominantFinder({
@@ -52,7 +50,7 @@ export default function SecondaryDominantFinder({
   globalRootNote,
   onAddLayerAndNavigate,
   onEnablePerLayerRoot,
-  onReflectToCircle,
+  onOpenCircle,
 }: SecondaryDominantFinderProps) {
   const { t } = useTranslation();
   const isDark = theme === "dark";
@@ -129,11 +127,10 @@ export default function SecondaryDominantFinder({
     [keyRootIndex, keyType],
   );
 
-  const handleReflectToCircle = useCallback(() => {
-    if (!onReflectToCircle) return;
+  const handleOpenCircle = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onReflectToCircle({ rootSemitone: keyRootIndex, keyType, overlay: "dominants" });
-  }, [keyRootIndex, keyType, onReflectToCircle]);
+    onOpenCircle(keyRootIndex, keyType);
+  }, [keyRootIndex, keyType, onOpenCircle]);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.pageBg }}>
@@ -166,20 +163,18 @@ export default function SecondaryDominantFinder({
         </View>
       </View>
 
-      {onReflectToCircle ? (
-        <View
-          style={[
-            styles.reflectRow,
-            { borderBottomColor: borderColor, borderBottomWidth: StyleSheet.hairlineWidth },
-          ]}
-        >
-          <PillButton isDark={isDark} onPress={handleReflectToCircle}>
-            <Text style={[styles.reflectLabel, { color: colors.textStrong }]}>
-              {t("finder.viewOnCircle")}
-            </Text>
-          </PillButton>
-        </View>
-      ) : null}
+      <View
+        style={[
+          styles.reflectRow,
+          { borderBottomColor: borderColor, borderBottomWidth: StyleSheet.hairlineWidth },
+        ]}
+      >
+        <PillButton isDark={isDark} onPress={handleOpenCircle}>
+          <Text style={[styles.reflectLabel, { color: colors.textStrong }]}>
+            {t("finder.viewOnCircle")}
+          </Text>
+        </PillButton>
+      </View>
 
       <ScrollView
         contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 80 }]}

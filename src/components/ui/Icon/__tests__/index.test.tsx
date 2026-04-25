@@ -22,6 +22,7 @@ const allIcons: IconName[] = [
   "music-note",
   "ellipsis",
   "mode-steps",
+  "circle-fifths",
 ];
 
 describe("Icon", () => {

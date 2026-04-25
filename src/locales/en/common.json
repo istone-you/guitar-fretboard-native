@@ -484,6 +484,8 @@
     "homeTensionAvoidDesc": "Find tensions and avoid notes for a chord in a key",
     "homeModalInterchangeTitle": "Modal Interchange",
     "homeModalInterchangeDesc": "Explore borrowed chords from parallel modes",
+    "homeCircleTitle": "Circle of Fifths",
+    "homeCircleDesc": "Visualize key relationships, diatonic chords, and secondary dominants",
     "modalInterchange": {
       "borrowedFrom": "from {{mode}}",
       "sectionTitle": "Borrowed Chords"

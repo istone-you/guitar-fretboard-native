@@ -1,5 +1,12 @@
 import { useRef, useState } from "react";
-import { View, Animated, PanResponder, StyleSheet, useWindowDimensions } from "react-native";
+import {
+  View,
+  Animated,
+  PanResponder,
+  StyleSheet,
+  Dimensions,
+  useWindowDimensions,
+} from "react-native";
 import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 import "../../i18n";
@@ -21,14 +28,18 @@ import SecondaryDominantFinder from "./SecondaryDominantFinder";
 import KeyFromChordsFinder from "./KeyFromChordsFinder";
 import TensionAvoidFinder from "./TensionAvoidFinder";
 import ModalInterchangeBrowser from "./ModalInterchangeBrowser";
+import FinderCirclePage from "./CirclePage";
+import DiatonicCirclePage from "./DiatonicBrowser/CirclePage";
+import RelatedKeysCirclePage from "./RelatedKeysBrowser/CirclePage";
+import SecondaryDominantCirclePage from "./SecondaryDominantFinder/CirclePage";
 import type { FinderMode } from "./types";
-import type { CircleOverlayKey } from "../CircleOfFifths/CircleWheel";
-import type { KeyType as CircleKeyType } from "../CircleOfFifths/lib/circleData";
 
-export interface ReflectToCirclePayload {
+type CircleSubPageType = "diatonic" | "related-keys" | "secondary-dominant";
+
+interface CircleSubPage {
+  type: CircleSubPageType;
   rootSemitone: number;
-  keyType: CircleKeyType;
-  overlay: CircleOverlayKey;
+  keyType: "major" | "minor";
 }
 
 export interface FinderPaneProps {
@@ -42,8 +53,6 @@ export interface FinderPaneProps {
   onAddLayerAndNavigate: (layer: LayerConfig) => void;
   onBaseLabelModeChange: (mode: BaseLabelMode) => void;
   onEnablePerLayerRoot?: () => void;
-  onReflectToCircle?: (payload: ReflectToCirclePayload) => void;
-  // Header props
   onThemeChange: (theme: Theme) => void;
   onFretRangeChange: (range: [number, number]) => void;
   onAccidentalChange: (accidental: Accidental) => void;
@@ -61,7 +70,6 @@ export default function FinderPane({
   onAddLayerAndNavigate,
   onBaseLabelModeChange,
   onEnablePerLayerRoot,
-  onReflectToCircle,
   onThemeChange,
   onFretRangeChange,
   onAccidentalChange,
@@ -72,9 +80,11 @@ export default function FinderPane({
   const isDark = theme === "dark";
   const bgColor = getColors(isDark).pageBg;
 
+  // ── ツールページのスライドナビ ──────────────────────────
   const [selectedMode, setSelectedMode] = useState<FinderMode | null>(null);
-  const slideAnim = useRef(new Animated.Value(0)).current;
-
+  // contentMode はコンテンツ描画専用。SVGが重い "circle" のみアニメーション完了後に更新してかくつきを防止
+  const [contentMode, setContentMode] = useState<FinderMode | null>(null);
+  const slideAnim = useRef(new Animated.Value(Dimensions.get("window").width)).current;
   const selectedModeRef = useRef(selectedMode);
   selectedModeRef.current = selectedMode;
   const handleBackRef = useRef(() => {});
@@ -82,31 +92,47 @@ export default function FinderPane({
 
   const handleSelect = (mode: FinderMode) => {
     setSelectedMode(mode);
-    slideAnim.setValue(screenWidth);
-    setTimeout(() => {
+    if (mode === "circle") {
+      // SVG マウントをアニメーション完了後に遅らせてかくつきを防止
       Animated.timing(slideAnim, {
         toValue: 0,
-        duration: 120,
+        duration: 220,
+        useNativeDriver: true,
+      }).start(() => {
+        setContentMode(mode);
+        selectionResetRef.current?.();
+      });
+    } else {
+      setContentMode(mode);
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 220,
         useNativeDriver: true,
       }).start(() => {
         selectionResetRef.current?.();
       });
-    }, 0);
+    }
   };
 
   const handleBack = () => {
     Animated.timing(slideAnim, {
       toValue: screenWidth,
-      duration: 120,
+      duration: 220,
       useNativeDriver: true,
-    }).start(() => setSelectedMode(null));
+    }).start(() => {
+      setSelectedMode(null);
+      setContentMode(null);
+    });
   };
   handleBackRef.current = handleBack;
 
   const swipePanResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_, g) =>
-        selectedModeRef.current !== null && g.dx > 10 && Math.abs(g.dx) > Math.abs(g.dy),
+        selectedModeRef.current !== null &&
+        !circleSubActiveRef.current &&
+        g.dx > 10 &&
+        Math.abs(g.dx) > Math.abs(g.dy),
       onPanResponderMove: (_, g) => {
         if (g.dx > 0) slideAnim.setValue(g.dx);
       },
@@ -134,6 +160,82 @@ export default function FinderPane({
     }),
   ).current;
 
+  // ── 円グラフサブページ（ツール内から開く）──────────────────
+  // circleSubActive: レイヤー表示制御（アニメーション中も true）
+  // circleSubPage: コンテンツ制御（SVG マウントをアニメーション完了後に遅らせてかくつきを防止）
+  const [circleSubActive, setCircleSubActive] = useState(false);
+  const [circleSubPage, setCircleSubPage] = useState<CircleSubPage | null>(null);
+  const circleSubAnim = useRef(new Animated.Value(Dimensions.get("window").width)).current;
+  const circleSubActiveRef = useRef(false);
+  const circleSubBackRef = useRef(() => {});
+
+  const handleOpenCircle = (
+    type: CircleSubPageType,
+    rootSemitone: number,
+    keyType: "major" | "minor",
+  ) => {
+    setCircleSubActive(true);
+    circleSubActiveRef.current = true;
+    Animated.timing(circleSubAnim, {
+      toValue: 0,
+      duration: 220,
+      useNativeDriver: true,
+    }).start(() => {
+      setCircleSubPage({ type, rootSemitone, keyType });
+    });
+  };
+
+  const handleCircleSubBack = () => {
+    Animated.timing(circleSubAnim, {
+      toValue: screenWidth,
+      duration: 220,
+      useNativeDriver: true,
+    }).start(() => {
+      setCircleSubActive(false);
+      circleSubActiveRef.current = false;
+      setCircleSubPage(null);
+    });
+  };
+  circleSubBackRef.current = handleCircleSubBack;
+
+  const circleSubPanResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, g) =>
+        circleSubActiveRef.current && g.dx > 10 && Math.abs(g.dx) > Math.abs(g.dy),
+      onPanResponderMove: (_, g) => {
+        if (g.dx > 0) circleSubAnim.setValue(g.dx);
+      },
+      onPanResponderRelease: (_, g) => {
+        if (g.dx > 80 || (g.dx > 30 && g.vx > 0.5)) {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          circleSubBackRef.current();
+        } else {
+          Animated.spring(circleSubAnim, {
+            toValue: 0,
+            friction: 9,
+            tension: 160,
+            useNativeDriver: true,
+          }).start();
+        }
+      },
+      onPanResponderTerminate: () => {
+        Animated.spring(circleSubAnim, {
+          toValue: 0,
+          friction: 9,
+          tension: 160,
+          useNativeDriver: true,
+        }).start();
+      },
+    }),
+  ).current;
+
+  // SceneHeader の onBack: 円サブページ中 → 元ツールへ戻る / ツール中 → ホームへ戻る
+  const headerOnBack = circleSubActive
+    ? handleCircleSubBack
+    : selectedMode
+      ? handleBack
+      : undefined;
+
   return (
     <View style={styles.root}>
       <SceneHeader
@@ -142,7 +244,7 @@ export default function FinderPane({
         accidental={accidental}
         fretRange={fretRange}
         leftHanded={leftHanded}
-        onBack={selectedMode ? handleBack : undefined}
+        onBack={headerOnBack}
         onThemeChange={onThemeChange}
         onFretRangeChange={onFretRangeChange}
         onAccidentalChange={onAccidentalChange}
@@ -150,148 +252,208 @@ export default function FinderPane({
       />
       <View style={styles.content}>
         <FinderSelection theme={theme} onSelect={handleSelect} resetDescRef={selectionResetRef} />
-        {selectedMode !== null && (
-          <Animated.View
-            style={[
-              StyleSheet.absoluteFill,
-              {
-                backgroundColor: bgColor,
-                transform: [{ translateX: slideAnim }],
-                borderTopLeftRadius: 28,
-                borderBottomLeftRadius: 28,
-                overflow: "hidden",
-                zIndex: 20,
-              },
-            ]}
-            {...swipePanResponder.panHandlers}
-          >
-            {selectedMode === "identify" ? (
-              <IdentifyPane
-                theme={theme}
-                accidental={accidental}
-                baseLabelMode={baseLabelMode}
-                fretRange={fretRange}
-                rootNote={rootNote}
-                leftHanded={leftHanded}
-                layers={layers}
-                onAddLayerAndNavigate={onAddLayerAndNavigate}
-                onBaseLabelModeChange={onBaseLabelModeChange}
-              />
-            ) : selectedMode === "chord-list" ? (
-              <ChordBrowser
-                theme={theme}
-                accidental={accidental}
-                layers={layers}
-                globalRootNote={rootNote}
-                onAddLayerAndNavigate={onAddLayerAndNavigate}
-                onEnablePerLayerRoot={onEnablePerLayerRoot}
-              />
-            ) : selectedMode === "diatonic" ? (
-              <DiatonicBrowser
-                theme={theme}
-                accidental={accidental}
-                layers={layers}
-                globalRootNote={rootNote}
-                onAddLayerAndNavigate={onAddLayerAndNavigate}
-                onEnablePerLayerRoot={onEnablePerLayerRoot}
-                onReflectToCircle={onReflectToCircle}
-              />
-            ) : selectedMode === "substitution" ? (
-              <SubstitutionFinder
-                theme={theme}
-                accidental={accidental}
-                layers={layers}
-                globalRootNote={rootNote}
-                onAddLayerAndNavigate={onAddLayerAndNavigate}
-                onEnablePerLayerRoot={onEnablePerLayerRoot}
-              />
-            ) : selectedMode === "pivot-chord" ? (
-              <PivotChordFinder
-                theme={theme}
-                accidental={accidental}
-                layers={layers}
-                globalRootNote={rootNote}
-                onAddLayerAndNavigate={onAddLayerAndNavigate}
-                onEnablePerLayerRoot={onEnablePerLayerRoot}
-              />
-            ) : selectedMode === "related-keys" ? (
-              <RelatedKeysBrowser
-                theme={theme}
-                accidental={accidental}
-                layers={layers}
-                globalRootNote={rootNote}
-                onAddLayerAndNavigate={onAddLayerAndNavigate}
-                onEnablePerLayerRoot={onEnablePerLayerRoot}
-                onReflectToCircle={onReflectToCircle}
-              />
-            ) : selectedMode === "modes" ? (
-              <ModeBrowser
-                theme={theme}
-                accidental={accidental}
-                layers={layers}
-                globalRootNote={rootNote}
-                onAddLayerAndNavigate={onAddLayerAndNavigate}
-                onEnablePerLayerRoot={onEnablePerLayerRoot}
-              />
-            ) : selectedMode === "progression-analysis" ? (
-              <ProgressionAnalyzer theme={theme} accidental={accidental} />
-            ) : selectedMode === "scale-compat" ? (
-              <ScaleCompatibility
-                theme={theme}
-                accidental={accidental}
-                layers={layers}
-                globalRootNote={rootNote}
-                onAddLayerAndNavigate={onAddLayerAndNavigate}
-                onEnablePerLayerRoot={onEnablePerLayerRoot}
-              />
-            ) : selectedMode === "secondary-dominant" ? (
-              <SecondaryDominantFinder
-                theme={theme}
-                accidental={accidental}
-                layers={layers}
-                globalRootNote={rootNote}
-                onAddLayerAndNavigate={onAddLayerAndNavigate}
-                onEnablePerLayerRoot={onEnablePerLayerRoot}
-                onReflectToCircle={onReflectToCircle}
-              />
-            ) : selectedMode === "key-from-chords" ? (
-              <KeyFromChordsFinder
-                theme={theme}
-                accidental={accidental}
-                layers={layers}
-                globalRootNote={rootNote}
-                onAddLayerAndNavigate={onAddLayerAndNavigate}
-                onEnablePerLayerRoot={onEnablePerLayerRoot}
-              />
-            ) : selectedMode === "tension-avoid" ? (
-              <TensionAvoidFinder
-                theme={theme}
-                accidental={accidental}
-                layers={layers}
-                globalRootNote={rootNote}
-                onAddLayerAndNavigate={onAddLayerAndNavigate}
-                onEnablePerLayerRoot={onEnablePerLayerRoot}
-              />
-            ) : selectedMode === "modal-interchange" ? (
-              <ModalInterchangeBrowser
-                theme={theme}
-                accidental={accidental}
-                layers={layers}
-                globalRootNote={rootNote}
-                onAddLayerAndNavigate={onAddLayerAndNavigate}
-                onEnablePerLayerRoot={onEnablePerLayerRoot}
-              />
-            ) : (
-              <CapoFinder
-                theme={theme}
-                accidental={accidental}
-                layers={layers}
-                onAddLayerAndNavigate={onAddLayerAndNavigate}
-                onEnablePerLayerRoot={onEnablePerLayerRoot}
-              />
-            )}
-          </Animated.View>
-        )}
+        <Animated.View
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              backgroundColor: bgColor,
+              transform: [{ translateX: slideAnim }],
+              borderTopLeftRadius: 28,
+              borderBottomLeftRadius: 28,
+              overflow: "hidden",
+              zIndex: 20,
+            },
+          ]}
+          pointerEvents={selectedMode !== null ? "auto" : "none"}
+          {...swipePanResponder.panHandlers}
+        >
+          {contentMode === "identify" ? (
+            <IdentifyPane
+              theme={theme}
+              accidental={accidental}
+              baseLabelMode={baseLabelMode}
+              fretRange={fretRange}
+              rootNote={rootNote}
+              leftHanded={leftHanded}
+              layers={layers}
+              onAddLayerAndNavigate={onAddLayerAndNavigate}
+              onBaseLabelModeChange={onBaseLabelModeChange}
+            />
+          ) : contentMode === "chord-list" ? (
+            <ChordBrowser
+              theme={theme}
+              accidental={accidental}
+              layers={layers}
+              globalRootNote={rootNote}
+              onAddLayerAndNavigate={onAddLayerAndNavigate}
+              onEnablePerLayerRoot={onEnablePerLayerRoot}
+            />
+          ) : contentMode === "diatonic" ? (
+            <DiatonicBrowser
+              theme={theme}
+              accidental={accidental}
+              layers={layers}
+              globalRootNote={rootNote}
+              onAddLayerAndNavigate={onAddLayerAndNavigate}
+              onEnablePerLayerRoot={onEnablePerLayerRoot}
+              onOpenCircle={(r, k) => handleOpenCircle("diatonic", r, k)}
+            />
+          ) : contentMode === "substitution" ? (
+            <SubstitutionFinder
+              theme={theme}
+              accidental={accidental}
+              layers={layers}
+              globalRootNote={rootNote}
+              onAddLayerAndNavigate={onAddLayerAndNavigate}
+              onEnablePerLayerRoot={onEnablePerLayerRoot}
+            />
+          ) : contentMode === "pivot-chord" ? (
+            <PivotChordFinder
+              theme={theme}
+              accidental={accidental}
+              layers={layers}
+              globalRootNote={rootNote}
+              onAddLayerAndNavigate={onAddLayerAndNavigate}
+              onEnablePerLayerRoot={onEnablePerLayerRoot}
+            />
+          ) : contentMode === "related-keys" ? (
+            <RelatedKeysBrowser
+              theme={theme}
+              accidental={accidental}
+              layers={layers}
+              globalRootNote={rootNote}
+              onAddLayerAndNavigate={onAddLayerAndNavigate}
+              onEnablePerLayerRoot={onEnablePerLayerRoot}
+              onOpenCircle={(r, k) => handleOpenCircle("related-keys", r, k)}
+            />
+          ) : contentMode === "modes" ? (
+            <ModeBrowser
+              theme={theme}
+              accidental={accidental}
+              layers={layers}
+              globalRootNote={rootNote}
+              onAddLayerAndNavigate={onAddLayerAndNavigate}
+              onEnablePerLayerRoot={onEnablePerLayerRoot}
+            />
+          ) : contentMode === "progression-analysis" ? (
+            <ProgressionAnalyzer theme={theme} accidental={accidental} />
+          ) : contentMode === "scale-compat" ? (
+            <ScaleCompatibility
+              theme={theme}
+              accidental={accidental}
+              layers={layers}
+              globalRootNote={rootNote}
+              onAddLayerAndNavigate={onAddLayerAndNavigate}
+              onEnablePerLayerRoot={onEnablePerLayerRoot}
+            />
+          ) : contentMode === "secondary-dominant" ? (
+            <SecondaryDominantFinder
+              theme={theme}
+              accidental={accidental}
+              layers={layers}
+              globalRootNote={rootNote}
+              onAddLayerAndNavigate={onAddLayerAndNavigate}
+              onEnablePerLayerRoot={onEnablePerLayerRoot}
+              onOpenCircle={(r, k) => handleOpenCircle("secondary-dominant", r, k)}
+            />
+          ) : contentMode === "key-from-chords" ? (
+            <KeyFromChordsFinder
+              theme={theme}
+              accidental={accidental}
+              layers={layers}
+              globalRootNote={rootNote}
+              onAddLayerAndNavigate={onAddLayerAndNavigate}
+              onEnablePerLayerRoot={onEnablePerLayerRoot}
+            />
+          ) : contentMode === "tension-avoid" ? (
+            <TensionAvoidFinder
+              theme={theme}
+              accidental={accidental}
+              layers={layers}
+              globalRootNote={rootNote}
+              onAddLayerAndNavigate={onAddLayerAndNavigate}
+              onEnablePerLayerRoot={onEnablePerLayerRoot}
+            />
+          ) : contentMode === "modal-interchange" ? (
+            <ModalInterchangeBrowser
+              theme={theme}
+              accidental={accidental}
+              layers={layers}
+              globalRootNote={rootNote}
+              onAddLayerAndNavigate={onAddLayerAndNavigate}
+              onEnablePerLayerRoot={onEnablePerLayerRoot}
+            />
+          ) : contentMode === "circle" ? (
+            <FinderCirclePage
+              theme={theme}
+              accidental={accidental}
+              layers={layers}
+              globalRootNote={rootNote}
+              onAddLayerAndNavigate={onAddLayerAndNavigate}
+              onEnablePerLayerRoot={onEnablePerLayerRoot}
+            />
+          ) : contentMode === "capo" ? (
+            <CapoFinder
+              theme={theme}
+              accidental={accidental}
+              layers={layers}
+              onAddLayerAndNavigate={onAddLayerAndNavigate}
+              onEnablePerLayerRoot={onEnablePerLayerRoot}
+            />
+          ) : null}
+        </Animated.View>
+
+        {/* ツール内から開く円グラフサブページ（コンテンツエリア全体を覆う） */}
+        <Animated.View
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              backgroundColor: bgColor,
+              transform: [{ translateX: circleSubAnim }],
+              borderTopLeftRadius: 28,
+              borderBottomLeftRadius: 28,
+              overflow: "hidden",
+              zIndex: 30,
+            },
+          ]}
+          pointerEvents={circleSubActive ? "auto" : "none"}
+          {...circleSubPanResponder.panHandlers}
+        >
+          {circleSubPage?.type === "diatonic" ? (
+            <DiatonicCirclePage
+              theme={theme}
+              accidental={accidental}
+              layers={layers}
+              globalRootNote={rootNote}
+              onAddLayerAndNavigate={onAddLayerAndNavigate}
+              onEnablePerLayerRoot={onEnablePerLayerRoot}
+              rootSemitone={circleSubPage.rootSemitone}
+              initialKeyType={circleSubPage.keyType}
+            />
+          ) : circleSubPage?.type === "related-keys" ? (
+            <RelatedKeysCirclePage
+              theme={theme}
+              accidental={accidental}
+              layers={layers}
+              globalRootNote={rootNote}
+              onAddLayerAndNavigate={onAddLayerAndNavigate}
+              onEnablePerLayerRoot={onEnablePerLayerRoot}
+              rootSemitone={circleSubPage.rootSemitone}
+              initialKeyType={circleSubPage.keyType}
+            />
+          ) : circleSubPage?.type === "secondary-dominant" ? (
+            <SecondaryDominantCirclePage
+              theme={theme}
+              accidental={accidental}
+              layers={layers}
+              globalRootNote={rootNote}
+              onAddLayerAndNavigate={onAddLayerAndNavigate}
+              onEnablePerLayerRoot={onEnablePerLayerRoot}
+              rootSemitone={circleSubPage.rootSemitone}
+              initialKeyType={circleSubPage.keyType}
+            />
+          ) : null}
+        </Animated.View>
       </View>
     </View>
   );

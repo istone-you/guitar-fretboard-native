@@ -28,8 +28,6 @@ import { SegmentedToggle } from "../../../components/ui/SegmentedToggle";
 import FinderDetailSheet from "../../../components/ui/FinderDetailSheet";
 import LayerDescription from "../../../components/LayerEditModal/LayerDescription";
 import PillButton from "../../../components/ui/PillButton";
-import type { ReflectToCirclePayload } from "../index";
-
 interface RelatedKeysBrowserProps {
   theme: Theme;
   accidental: Accidental;
@@ -37,7 +35,7 @@ interface RelatedKeysBrowserProps {
   globalRootNote: string;
   onAddLayerAndNavigate: (layer: LayerConfig) => void;
   onEnablePerLayerRoot?: () => void;
-  onReflectToCircle?: (payload: ReflectToCirclePayload) => void;
+  onOpenCircle: (rootSemitone: number, keyType: "major" | "minor") => void;
 }
 
 type PendingChord = {
@@ -56,7 +54,7 @@ export default function RelatedKeysBrowser({
   globalRootNote,
   onAddLayerAndNavigate,
   onEnablePerLayerRoot,
-  onReflectToCircle,
+  onOpenCircle,
 }: RelatedKeysBrowserProps) {
   const { t } = useTranslation();
   const isDark = theme === "dark";
@@ -123,11 +121,10 @@ export default function RelatedKeysBrowser({
     [isFull, layers, notes, globalRootNote, rootNote, onAddLayerAndNavigate, onEnablePerLayerRoot],
   );
 
-  const handleReflectToCircle = useCallback(() => {
-    if (!onReflectToCircle) return;
+  const handleOpenCircle = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onReflectToCircle({ rootSemitone: rootIndex, keyType, overlay: "relatedKeys" });
-  }, [rootIndex, keyType, onReflectToCircle]);
+    onOpenCircle(rootIndex, keyType);
+  }, [rootIndex, keyType, onOpenCircle]);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.pageBg }}>
@@ -157,20 +154,18 @@ export default function RelatedKeysBrowser({
         />
       </View>
 
-      {onReflectToCircle ? (
-        <View
-          style={[
-            styles.reflectRow,
-            { borderBottomColor: borderColor, borderBottomWidth: StyleSheet.hairlineWidth },
-          ]}
-        >
-          <PillButton isDark={isDark} onPress={handleReflectToCircle}>
-            <Text style={[styles.reflectLabel, { color: colors.textStrong }]}>
-              {t("finder.viewOnCircle")}
-            </Text>
-          </PillButton>
-        </View>
-      ) : null}
+      <View
+        style={[
+          styles.reflectRow,
+          { borderBottomColor: borderColor, borderBottomWidth: StyleSheet.hairlineWidth },
+        ]}
+      >
+        <PillButton isDark={isDark} onPress={handleOpenCircle}>
+          <Text style={[styles.reflectLabel, { color: colors.textStrong }]}>
+            {t("finder.viewOnCircle")}
+          </Text>
+        </PillButton>
+      </View>
 
       <ScrollView
         contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 80 }]}

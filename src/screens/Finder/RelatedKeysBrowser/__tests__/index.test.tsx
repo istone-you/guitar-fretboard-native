@@ -39,6 +39,7 @@ const baseProps = {
   globalRootNote: "C",
   onAddLayerAndNavigate: jest.fn(),
   onEnablePerLayerRoot: jest.fn(),
+  onOpenCircle: jest.fn(),
 };
 
 describe("RelatedKeysBrowser", () => {

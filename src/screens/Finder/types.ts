@@ -12,4 +12,5 @@ export type FinderMode =
   | "secondary-dominant"
   | "key-from-chords"
   | "tension-avoid"
-  | "modal-interchange";
+  | "modal-interchange"
+  | "circle";

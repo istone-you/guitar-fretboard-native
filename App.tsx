@@ -18,12 +18,6 @@ import LayerPane from "@/screens/Layer";
 import QuizScreen, { type QuizScreenHandle } from "@/screens/Quiz";
 import FinderPane from "@/screens/Finder";
 import TemplatesPane from "@/screens/Templates";
-import CirclePane from "@/screens/CircleOfFifths";
-import type { CircleOverlayKey } from "@/screens/CircleOfFifths/CircleWheel";
-import {
-  semitoneToCirclePosition,
-  type KeyType as CircleKeyType,
-} from "@/screens/CircleOfFifths/lib/circleData";
 import { useLayerPresets } from "@/hooks/useLayerPresets";
 import { useProgressionTemplates } from "@/hooks/useProgressionTemplates";
 
@@ -40,9 +34,8 @@ const STORAGE_KEYS = {
 const TAB_INDEX = {
   layer: 0,
   finder: 1,
-  circle: 2,
-  templates: 3,
-  quiz: 4,
+  templates: 2,
+  quiz: 3,
 } as const;
 
 export default function App() {
@@ -137,23 +130,6 @@ export default function App() {
   const [tabIndex, setTabIndex] = useState(0);
   const quizScreenRef = useRef<QuizScreenHandle>(null);
 
-  // Circle of Fifths state (lifted so Finder can reflect selections here)
-  const [circleSelectedIndex, setCircleSelectedIndex] = useState(0);
-  const [circleKeyType, setCircleKeyType] = useState<CircleKeyType>("major");
-  const [circleActiveOverlay, setCircleActiveOverlay] = useState<CircleOverlayKey | null>(null);
-
-  const handleReflectToCircle = useCallback(
-    (payload: { rootSemitone: number; keyType: CircleKeyType; overlay: CircleOverlayKey }) => {
-      const relMajor =
-        payload.keyType === "minor" ? (payload.rootSemitone + 3) % 12 : payload.rootSemitone;
-      setCircleSelectedIndex(semitoneToCirclePosition(relMajor));
-      setCircleKeyType(payload.keyType);
-      setCircleActiveOverlay(payload.overlay);
-      setTabIndex(TAB_INDEX.circle);
-    },
-    [],
-  );
-
   const handlePerLayerRootChange = useCallback(
     (v: boolean) => {
       setPerLayerRoot(v);
@@ -180,7 +156,7 @@ export default function App() {
 
   const lastTapRef = useRef(0);
   const handleFretboardDoubleTap = useCallback(() => {
-    if (tabIndex === TAB_INDEX.quiz || tabIndex === TAB_INDEX.circle) return;
+    if (tabIndex === TAB_INDEX.quiz) return;
     const now = Date.now();
     if (now - lastTapRef.current < 300) {
       toggleLayout();
@@ -225,12 +201,6 @@ export default function App() {
         title: t("tabs.finder"),
         focusedIcon: { sfSymbol: "magnifyingglass" } as const,
         unfocusedIcon: { sfSymbol: "magnifyingglass" } as const,
-      },
-      {
-        key: "circle",
-        title: t("tabs.circle"),
-        focusedIcon: require("./public/circle.png"),
-        unfocusedIcon: require("./public/circle.png"),
       },
       {
         key: "templates",
@@ -316,7 +286,6 @@ export default function App() {
             setTabIndex(0);
             setTimeout(() => handleAddLayer(layer), 0);
           }}
-          onReflectToCircle={handleReflectToCircle}
         />
       );
     }
@@ -330,26 +299,6 @@ export default function App() {
           onUpdateTemplate={updateTemplate}
           onDeleteTemplate={deleteTemplate}
           onReorderTemplates={reorderTemplates}
-          onAddLayerAndNavigate={(layer) => {
-            setTabIndex(0);
-            setTimeout(() => handleAddLayer(layer), 0);
-          }}
-        />
-      );
-    }
-    if (route.key === "circle") {
-      return (
-        <CirclePane
-          {...sharedHeaderProps}
-          selectedIndex={circleSelectedIndex}
-          keyType={circleKeyType}
-          activeOverlay={circleActiveOverlay}
-          onSelectedIndexChange={setCircleSelectedIndex}
-          onKeyTypeChange={setCircleKeyType}
-          onActiveOverlayChange={setCircleActiveOverlay}
-          layers={layers}
-          globalRootNote={rootNote}
-          onEnablePerLayerRoot={() => setPerLayerRoot(true)}
           onAddLayerAndNavigate={(layer) => {
             setTabIndex(0);
             setTimeout(() => handleAddLayer(layer), 0);

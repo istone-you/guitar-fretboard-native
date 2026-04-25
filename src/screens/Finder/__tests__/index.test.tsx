@@ -79,6 +79,14 @@ jest.mock("../../../hooks/useProgressionTemplates", () => ({
   }),
 }));
 
+jest.mock("../CirclePage", () => ({ __esModule: true, default: () => null }));
+jest.mock("../DiatonicBrowser/CirclePage", () => ({ __esModule: true, default: () => null }));
+jest.mock("../RelatedKeysBrowser/CirclePage", () => ({ __esModule: true, default: () => null }));
+jest.mock("../SecondaryDominantFinder/CirclePage", () => ({
+  __esModule: true,
+  default: () => null,
+}));
+
 const defaultProps = {
   theme: "dark" as Theme,
   accidental: "sharp" as Accidental,

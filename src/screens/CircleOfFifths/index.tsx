@@ -1,9 +1,7 @@
 import { useCallback, useState } from "react";
 import { View, StyleSheet, ScrollView, useWindowDimensions } from "react-native";
 import * as Haptics from "expo-haptics";
-import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import SceneHeader from "../../components/AppHeader/SceneHeader";
 import type { Accidental, ChordType, LayerConfig, Theme } from "../../types";
 import { createDefaultLayer } from "../../types";
 import { getRootIndex, getNotesByAccidental } from "../../lib/fretboard";
@@ -34,12 +32,6 @@ const DIATONIC_TEMPLATE_ID: Record<KeyType, string> = {
 export interface CirclePaneProps {
   theme: Theme;
   accidental: Accidental;
-  fretRange: [number, number];
-  leftHanded?: boolean;
-  onThemeChange: (theme: Theme) => void;
-  onFretRangeChange: (range: [number, number]) => void;
-  onAccidentalChange: (accidental: Accidental) => void;
-  onLeftHandedChange: (value: boolean) => void;
   selectedIndex: number;
   keyType: KeyType;
   activeOverlay: CircleOverlayKey | null;
@@ -55,12 +47,6 @@ export interface CirclePaneProps {
 export default function CirclePane({
   theme,
   accidental,
-  fretRange,
-  leftHanded,
-  onThemeChange,
-  onFretRangeChange,
-  onAccidentalChange,
-  onLeftHandedChange,
   selectedIndex,
   keyType,
   activeOverlay,
@@ -72,7 +58,6 @@ export default function CirclePane({
   onAddLayerAndNavigate,
   onEnablePerLayerRoot,
 }: CirclePaneProps) {
-  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const colors = getColors(theme === "dark");
   const notes = getNotesByAccidental(accidental);
@@ -155,18 +140,6 @@ export default function CirclePane({
 
   return (
     <View style={[styles.container, { backgroundColor: colors.pageBg }]}>
-      <SceneHeader
-        theme={theme}
-        title={t("circle.title")}
-        accidental={accidental}
-        fretRange={fretRange}
-        leftHanded={leftHanded}
-        onThemeChange={onThemeChange}
-        onFretRangeChange={onFretRangeChange}
-        onAccidentalChange={onAccidentalChange}
-        onLeftHandedChange={onLeftHandedChange}
-      />
-
       <CircleHeader
         theme={theme}
         accidental={accidental}

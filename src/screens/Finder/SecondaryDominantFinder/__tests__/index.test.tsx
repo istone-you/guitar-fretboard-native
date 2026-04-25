@@ -143,6 +143,7 @@ const defaultProps = {
   globalRootNote: "C",
   onAddLayerAndNavigate: jest.fn(),
   onEnablePerLayerRoot: jest.fn(),
+  onOpenCircle: jest.fn(),
 };
 
 describe("SecondaryDominantFinder", () => {
