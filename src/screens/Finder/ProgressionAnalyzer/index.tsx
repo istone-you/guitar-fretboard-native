@@ -521,7 +521,55 @@ export default function ProgressionAnalyzer({
                   <Text style={[styles.sectionLabel, { color: colors.textSubtle }]}>
                     {t("finder.progressionAnalysis.result")}
                   </Text>
-                  {analysisResults.slice(0, 3).map((result, ri) => {
+
+                  {/* Legend */}
+                  <View style={[styles.legend, { borderColor }]}>
+                    {(
+                      [
+                        {
+                          badge: "T",
+                          bg: DIATONIC_FUNCTION_COLORS.T,
+                          text: "#ffffff",
+                          label: t("finder.progressionAnalysis.legendT"),
+                        },
+                        {
+                          badge: "SD",
+                          bg: DIATONIC_FUNCTION_COLORS.SD,
+                          text: "#ffffff",
+                          label: t("finder.progressionAnalysis.legendSD"),
+                        },
+                        {
+                          badge: "D",
+                          bg: DIATONIC_FUNCTION_COLORS.D,
+                          text: "#ffffff",
+                          label: t("finder.progressionAnalysis.legendD"),
+                        },
+                        {
+                          badge: "V/x",
+                          bg: colors.secDomBadgeBg,
+                          text: colors.secDomBadgeText,
+                          label: t("finder.progressionAnalysis.legendSecDom"),
+                        },
+                        {
+                          badge: t("finder.progressionAnalysis.borrowed", { degree: "x" }),
+                          bg: colors.borrowedBadgeBg,
+                          text: colors.borrowedBadgeText,
+                          label: t("finder.progressionAnalysis.legendBorrowed"),
+                        },
+                      ] as const
+                    ).map(({ badge, bg, text, label }) => (
+                      <View key={badge} style={styles.legendRow}>
+                        <View style={[styles.fnBadge, { backgroundColor: bg }]}>
+                          <Text style={[styles.fnText, { color: text }]}>{badge}</Text>
+                        </View>
+                        <Text style={[styles.legendLabel, { color: colors.textSubtle }]}>
+                          {label}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+
+                  {analysisResults.map((result, ri) => {
                     const keyName = `${notes[result.rootIndex]} ${result.keyType === "major" ? "Major" : "Minor"}`;
                     const matched = result.chords.filter((c) => c.isDiatonic).length;
                     const total = result.chords.length;
@@ -613,53 +661,6 @@ export default function ProgressionAnalyzer({
                       </View>
                     );
                   })}
-
-                  {/* Legend */}
-                  <View style={[styles.legend, { borderColor }]}>
-                    {(
-                      [
-                        {
-                          badge: "T",
-                          bg: DIATONIC_FUNCTION_COLORS.T,
-                          text: "#ffffff",
-                          label: t("finder.progressionAnalysis.legendT"),
-                        },
-                        {
-                          badge: "SD",
-                          bg: DIATONIC_FUNCTION_COLORS.SD,
-                          text: "#ffffff",
-                          label: t("finder.progressionAnalysis.legendSD"),
-                        },
-                        {
-                          badge: "D",
-                          bg: DIATONIC_FUNCTION_COLORS.D,
-                          text: "#ffffff",
-                          label: t("finder.progressionAnalysis.legendD"),
-                        },
-                        {
-                          badge: "V/x",
-                          bg: colors.secDomBadgeBg,
-                          text: colors.secDomBadgeText,
-                          label: t("finder.progressionAnalysis.legendSecDom"),
-                        },
-                        {
-                          badge: t("finder.progressionAnalysis.borrowed", { degree: "x" }),
-                          bg: colors.borrowedBadgeBg,
-                          text: colors.borrowedBadgeText,
-                          label: t("finder.progressionAnalysis.legendBorrowed"),
-                        },
-                      ] as const
-                    ).map(({ badge, bg, text, label }) => (
-                      <View key={badge} style={styles.legendRow}>
-                        <View style={[styles.fnBadge, { backgroundColor: bg }]}>
-                          <Text style={[styles.fnText, { color: text }]}>{badge}</Text>
-                        </View>
-                        <Text style={[styles.legendLabel, { color: colors.textSubtle }]}>
-                          {label}
-                        </Text>
-                      </View>
-                    ))}
-                  </View>
                 </>
               )}
             </ScrollView>

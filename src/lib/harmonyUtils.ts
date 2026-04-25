@@ -907,3 +907,191 @@ export function getDominantMotionPatterns(
 
   return patterns;
 }
+
+// ─── Common Notes ─────────────────────────────────────────────────────────────
+
+export type HarmonizeRole =
+  | "root"
+  | "M3"
+  | "m3"
+  | "P5"
+  | "M7"
+  | "b7"
+  | "#9"
+  | "b9"
+  | "9"
+  | "11"
+  | "#11"
+  | "b13"
+  | "13";
+
+// semitone → role for each chord type that has a non-obvious mapping
+const CHORD_ROLE_MAP: Record<string, Record<number, HarmonizeRole>> = {
+  default: {
+    0: "root",
+    1: "b9",
+    2: "9",
+    3: "m3",
+    4: "M3",
+    5: "11",
+    6: "#11",
+    7: "P5",
+    8: "b13",
+    9: "13",
+    10: "b7",
+    11: "M7",
+  },
+};
+// chords where semitone 3 means ♯9 not m3
+const SHARP9_TYPES = new Set<string>(["7(#9)", "7(b9,#9)", "13(#9)"]);
+
+function getHarmonizeRole(interval: number, chordType: string): HarmonizeRole {
+  if (interval === 3 && SHARP9_TYPES.has(chordType)) return "#9";
+  return (CHORD_ROLE_MAP.default[interval] ?? "root") as HarmonizeRole;
+}
+
+export interface CommonNotePerChord {
+  rootIndex: number;
+  chordType: ChordType;
+  role: HarmonizeRole;
+}
+
+export interface CommonNoteEntry {
+  noteIndex: number;
+  perChord: CommonNotePerChord[];
+}
+
+export function getCommonNotes(
+  chords: { rootIndex: number; chordType: ChordType }[],
+): CommonNoteEntry[] {
+  if (chords.length < 2) return [];
+
+  const noteSets = chords.map(({ rootIndex, chordType }) => {
+    const semitones = CHORD_SEMITONES[chordType];
+    if (!semitones) return new Set<number>();
+    return new Set([...semitones].map((s) => (rootIndex + s) % 12));
+  });
+
+  let common = noteSets[0];
+  for (let i = 1; i < noteSets.length; i++) {
+    common = new Set([...common].filter((n) => noteSets[i].has(n)));
+  }
+
+  return [...common]
+    .sort((a, b) => a - b)
+    .map((noteIndex) => ({
+      noteIndex,
+      perChord: chords.map(({ rootIndex, chordType }) => {
+        const interval = (noteIndex - rootIndex + 12) % 12;
+        return { rootIndex, chordType, role: getHarmonizeRole(interval, chordType) };
+      }),
+    }));
+}
+
+// ─── Modulation ───────────────────────────────────────────────────────────────
+
+export type ChromaticMediantRelation = "M3up" | "m3up" | "M3down" | "m3down";
+
+export interface ChromaticMediant {
+  rootIndex: number;
+  keyType: KeyType;
+  relation: ChromaticMediantRelation;
+}
+
+export function getChromaticMediants(rootIndex: number, _keyType: KeyType): ChromaticMediant[] {
+  const offsets: { offset: number; relation: ChromaticMediantRelation }[] = [
+    { offset: 4, relation: "M3up" },
+    { offset: 3, relation: "m3up" },
+    { offset: 8, relation: "M3down" },
+    { offset: 9, relation: "m3down" },
+  ];
+  return offsets.flatMap(({ offset, relation }) => [
+    { rootIndex: (rootIndex + offset) % 12, keyType: "major" as KeyType, relation },
+    { rootIndex: (rootIndex + offset) % 12, keyType: "minor" as KeyType, relation },
+  ]);
+}
+
+export type EnharmonicMechanism = "dim7";
+
+export interface EnharmonicModulation {
+  mechanism: EnharmonicMechanism;
+  pivotRootIndex: number;
+  pivotChordType: "dim7";
+  destRootIndex: number;
+  destKeyType: KeyType;
+}
+
+export function getEnharmonicModulations(
+  rootIndex: number,
+  _keyType: KeyType,
+): EnharmonicModulation[] {
+  const pivotRootIndex = (rootIndex + 11) % 12;
+  return ([3, 6, 9] as const).map((offset) => ({
+    mechanism: "dim7" as const,
+    pivotRootIndex,
+    pivotChordType: "dim7" as const,
+    destRootIndex: (rootIndex + offset) % 12,
+    destKeyType: "minor" as KeyType,
+  }));
+}
+
+export type ModalModulationName =
+  | "ionian"
+  | "dorian"
+  | "phrygian"
+  | "lydian"
+  | "mixolydian"
+  | "aeolian"
+  | "locrian";
+
+export interface ModalModulation {
+  rootIndex: number;
+  modeName: ModalModulationName;
+}
+
+const ALL_MODE_NAMES: ModalModulationName[] = [
+  "ionian",
+  "dorian",
+  "phrygian",
+  "lydian",
+  "mixolydian",
+  "aeolian",
+  "locrian",
+];
+
+export function getModalModulations(rootIndex: number, fromKeyType: KeyType): ModalModulation[] {
+  const exclude: ModalModulationName = fromKeyType === "major" ? "ionian" : "aeolian";
+  return ALL_MODE_NAMES.filter((m) => m !== exclude).map((modeName) => ({ rootIndex, modeName }));
+}
+
+export interface ModulationMeans {
+  pivots: PivotChord[];
+  enharmonic: EnharmonicModulation[];
+  chromatic: ChromaticMediant | null;
+  modal: ModalModulation | null;
+}
+
+export function getModulationMeans(
+  rootAIndex: number,
+  keyTypeA: KeyType,
+  rootBIndex: number,
+  keyTypeB: KeyType,
+): ModulationMeans {
+  const pivots = getPivotChords(rootAIndex, keyTypeA, rootBIndex, keyTypeB);
+
+  const enharmonic = getEnharmonicModulations(rootAIndex, keyTypeA).filter(
+    (e) => e.destRootIndex === rootBIndex,
+  );
+
+  const chromatic =
+    getChromaticMediants(rootAIndex, keyTypeA).find(
+      (c) => c.rootIndex === rootBIndex && c.keyType === keyTypeB,
+    ) ?? null;
+
+  let modal: ModalModulation | null = null;
+  if (rootAIndex === rootBIndex && keyTypeA !== keyTypeB) {
+    modal = { rootIndex: rootAIndex, modeName: keyTypeB === "major" ? "ionian" : "aeolian" };
+  }
+
+  return { pivots, enharmonic, chromatic, modal };
+}

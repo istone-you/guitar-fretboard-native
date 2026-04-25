@@ -478,8 +478,8 @@
     },
     "homeSecondaryDominantTitle": "Secondary Dominants",
     "homeSecondaryDominantDesc": "Find secondary dominant chords for any key",
-    "homeKeyFromChordsTitle": "Key from Chords",
-    "homeKeyFromChordsDesc": "Identify the key from a set of chords",
+    "homeKeyFinderTitle": "Key Finder",
+    "homeKeyFinderDesc": "Identify the key from a set of chords",
     "homeTensionAvoidTitle": "Tensions & Avoids",
     "homeTensionAvoidDesc": "Find tensions and avoid notes for a chord in a key",
     "homeModalInterchangeTitle": "Modal Interchange",
@@ -490,6 +490,33 @@
     "homeChordSuggestDesc": "Browse next-chord candidates by category for any chord",
     "homeDominantMotionTitle": "Dominant Motion",
     "homeDominantMotionDesc": "Explore dominant resolution patterns from V→I to backdoor cadences",
+    "homeCommonTitle": "Common",
+    "homeCommonDesc": "Find common notes between chords or common chords between keys",
+    "homeModulationTitle": "Modulation",
+    "homeModulationDesc": "Explore modulation destinations or means between two keys",
+    "common": {
+      "modeNotes": "Common Notes",
+      "modeChords": "Common Chords",
+      "addChord": "+ Add Chord",
+      "needMoreChords": "Add at least one more chord",
+      "none": "No common notes"
+    },
+    "modulation": {
+      "modeExplore": "Explore",
+      "modeMeans": "Means",
+      "sectionChromatic": "Chromatic Mediant",
+      "sectionEnharmonic": "Enharmonic",
+      "sectionModal": "Modal",
+      "sectionPivot": "Pivot Chords",
+      "viaChord": "Via: {{chord}}",
+      "none": "None",
+      "relation": {
+        "M3up": "M3 up",
+        "m3up": "m3 up",
+        "M3down": "M3 down",
+        "m3down": "m3 down"
+      }
+    },
     "chordSuggest": {
       "inputLabel": "Chord",
       "chainHint": "→ Tap a chord to add it",

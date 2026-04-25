@@ -478,8 +478,8 @@
     },
     "homeSecondaryDominantTitle": "セカンダリードミナント",
     "homeSecondaryDominantDesc": "各キーのセカンダリードミナントコードを確認する",
-    "homeKeyFromChordsTitle": "コードからキーを特定",
-    "homeKeyFromChordsDesc": "コードの組み合わせからキーを推定する",
+    "homeKeyFinderTitle": "キー特定",
+    "homeKeyFinderDesc": "コードの組み合わせからキーを推定する",
     "homeTensionAvoidTitle": "テンション/アボイド",
     "homeTensionAvoidDesc": "コードに使えるテンションとアボイドノートを確認する",
     "homeModalInterchangeTitle": "モーダルインターチェンジ",
@@ -490,6 +490,33 @@
     "homeChordSuggestDesc": "あるコードから次に進める候補をカテゴリ別に表示する",
     "homeDominantMotionTitle": "ドミナントモーション",
     "homeDominantMotionDesc": "V→Iをはじめとするドミナント解決のパターンを一覧で確認する",
+    "homeCommonTitle": "共通",
+    "homeCommonDesc": "コードの共通音、またはキーの共通コードを調べる",
+    "homeModulationTitle": "転調",
+    "homeModulationDesc": "転調先の探索や2つのキー間の転調手段を確認する",
+    "common": {
+      "modeNotes": "共通音",
+      "modeChords": "共通コード",
+      "addChord": "+ コードを追加",
+      "needMoreChords": "コードをもう1つ以上追加してください",
+      "none": "共通音なし"
+    },
+    "modulation": {
+      "modeExplore": "探索",
+      "modeMeans": "手段",
+      "sectionChromatic": "クロマチックメディアント",
+      "sectionEnharmonic": "エンハーモニック",
+      "sectionModal": "モーダル",
+      "sectionPivot": "ピボットコード",
+      "viaChord": "経由: {{chord}}",
+      "none": "該当なし",
+      "relation": {
+        "M3up": "長3度上",
+        "m3up": "短3度上",
+        "M3down": "長3度下",
+        "m3down": "短3度下"
+      }
+    },
     "chordSuggest": {
       "inputLabel": "コード",
       "chainHint": "→ 次のコードをタップして追加",

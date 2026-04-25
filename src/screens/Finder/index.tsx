@@ -22,12 +22,12 @@ import SubstitutionFinder from "./SubstitutionFinder";
 import ChordSuggest from "./ChordSuggest";
 import DominantMotion from "./DominantMotion";
 import CapoFinder from "./CapoFinder";
-import PivotChordFinder from "./PivotChordFinder";
+import CommonFinder from "./CommonFinder";
+import ModulationFinder from "./ModulationFinder";
 import RelatedKeysBrowser from "./RelatedKeysBrowser";
 import ModeBrowser from "./ModeBrowser";
 import ProgressionAnalyzer from "./ProgressionAnalyzer";
 import ScaleCompatibility from "./ScaleCompatibility";
-import KeyFromChordsFinder from "./KeyFromChordsFinder";
 import TensionAvoidFinder from "./TensionAvoidFinder";
 import ModalInterchangeBrowser from "./ModalInterchangeBrowser";
 import FinderCirclePage from "./CirclePage";
@@ -389,15 +389,6 @@ export default function FinderPane({
               onAddLayerAndNavigate={onAddLayerAndNavigate}
               onEnablePerLayerRoot={onEnablePerLayerRoot}
             />
-          ) : contentMode === "pivot-chord" ? (
-            <PivotChordFinder
-              theme={theme}
-              accidental={accidental}
-              layers={layers}
-              globalRootNote={rootNote}
-              onAddLayerAndNavigate={onAddLayerAndNavigate}
-              onEnablePerLayerRoot={onEnablePerLayerRoot}
-            />
           ) : contentMode === "related-keys" ? (
             <RelatedKeysBrowser
               theme={theme}
@@ -425,15 +416,6 @@ export default function FinderPane({
             />
           ) : contentMode === "scale-compat" ? (
             <ScaleCompatibility
-              theme={theme}
-              accidental={accidental}
-              layers={layers}
-              globalRootNote={rootNote}
-              onAddLayerAndNavigate={onAddLayerAndNavigate}
-              onEnablePerLayerRoot={onEnablePerLayerRoot}
-            />
-          ) : contentMode === "key-from-chords" ? (
-            <KeyFromChordsFinder
               theme={theme}
               accidental={accidental}
               layers={layers}
@@ -484,6 +466,24 @@ export default function FinderPane({
               theme={theme}
               accidental={accidental}
               layers={layers}
+              onAddLayerAndNavigate={onAddLayerAndNavigate}
+              onEnablePerLayerRoot={onEnablePerLayerRoot}
+            />
+          ) : contentMode === "common" ? (
+            <CommonFinder
+              theme={theme}
+              accidental={accidental}
+              layers={layers}
+              globalRootNote={rootNote}
+              onAddLayerAndNavigate={onAddLayerAndNavigate}
+              onEnablePerLayerRoot={onEnablePerLayerRoot}
+            />
+          ) : contentMode === "modulation" ? (
+            <ModulationFinder
+              theme={theme}
+              accidental={accidental}
+              layers={layers}
+              globalRootNote={rootNote}
               onAddLayerAndNavigate={onAddLayerAndNavigate}
               onEnablePerLayerRoot={onEnablePerLayerRoot}
             />

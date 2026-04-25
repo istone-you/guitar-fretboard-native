@@ -43,7 +43,7 @@ const MODES: {
     descKey: "finder.homeChordListDesc",
   },
   { mode: "capo", icon: "capo", titleKey: "finder.homeCapoTitle", descKey: "finder.homeCapoDesc" },
-  // キー・調性・転調
+  // キー・調性
   {
     mode: "circle",
     icon: "circle-fifths",
@@ -55,24 +55,6 @@ const MODES: {
     icon: "bar-chart",
     titleKey: "finder.homeDiatonicTitle",
     descKey: "finder.homeDiatonicDesc",
-  },
-  {
-    mode: "related-keys",
-    icon: "network",
-    titleKey: "finder.homeRelatedKeysTitle",
-    descKey: "finder.homeRelatedKeysDesc",
-  },
-  {
-    mode: "pivot-chord",
-    icon: "arrows-lr",
-    titleKey: "finder.homePivotChordTitle",
-    descKey: "finder.homePivotChordDesc",
-  },
-  {
-    mode: "key-from-chords",
-    icon: "key-unlock",
-    titleKey: "finder.homeKeyFromChordsTitle",
-    descKey: "finder.homeKeyFromChordsDesc",
   },
   // スケール・モード
   {
@@ -87,6 +69,12 @@ const MODES: {
     titleKey: "finder.homeModesTitle",
     descKey: "finder.homeModesDesc",
   },
+  {
+    mode: "modal-interchange",
+    icon: "modal-interchange",
+    titleKey: "finder.homeModalInterchangeTitle",
+    descKey: "finder.homeModalInterchangeDesc",
+  },
   // コード理論
   {
     mode: "substitution",
@@ -100,11 +88,24 @@ const MODES: {
     titleKey: "finder.homeTensionAvoidTitle",
     descKey: "finder.homeTensionAvoidDesc",
   },
+  // 転調
   {
-    mode: "modal-interchange",
-    icon: "modal-interchange",
-    titleKey: "finder.homeModalInterchangeTitle",
-    descKey: "finder.homeModalInterchangeDesc",
+    mode: "related-keys",
+    icon: "network",
+    titleKey: "finder.homeRelatedKeysTitle",
+    descKey: "finder.homeRelatedKeysDesc",
+  },
+  {
+    mode: "common",
+    icon: "scale-overlap",
+    titleKey: "finder.homeCommonTitle",
+    descKey: "finder.homeCommonDesc",
+  },
+  {
+    mode: "modulation",
+    icon: "arrows-lr",
+    titleKey: "finder.homeModulationTitle",
+    descKey: "finder.homeModulationDesc",
   },
   // コード進行
   {
