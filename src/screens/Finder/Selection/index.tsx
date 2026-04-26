@@ -82,6 +82,12 @@ const MODES: {
     titleKey: "finder.homeTensionAvoidTitle",
     descKey: "finder.homeTensionAvoidDesc",
   },
+  {
+    mode: "on-chord",
+    icon: "substitute",
+    titleKey: "finder.homeOnChordTitle",
+    descKey: "finder.homeOnChordDesc",
+  },
   // 転調
   {
     mode: "common",

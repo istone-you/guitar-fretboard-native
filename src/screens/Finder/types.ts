@@ -13,4 +13,5 @@ export type FinderMode =
   | "dominant-motion"
   | "common"
   | "modulation-target"
-  | "modulation-means";
+  | "modulation-means"
+  | "on-chord";

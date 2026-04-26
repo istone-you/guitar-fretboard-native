@@ -489,6 +489,8 @@
     "homeKeyFinderDesc": "Identify the key from a set of chords",
     "homeTensionAvoidTitle": "Tensions & Avoids",
     "homeTensionAvoidDesc": "Find tensions and avoid notes for a chord in a key",
+    "homeOnChordTitle": "On-Chord",
+    "homeOnChordDesc": "Filter slash chord voicings by root note and type",
     "homeCircleTitle": "Circle of Fifths",
     "homeCircleDesc": "Visualize key relationships, diatonic chords, and secondary dominants",
     "homeChordSuggestTitle": "Chord Suggest",
@@ -585,6 +587,12 @@
       "tensions": "Tensions",
       "avoidNotes": "Avoid Notes",
       "none": "None"
+    },
+    "onChord": {
+      "chordRoot": "Chord Root",
+      "all": "All",
+      "bassNote": "Bass Note",
+      "none": "No matching on-chords"
     }
   },
   "stats": {

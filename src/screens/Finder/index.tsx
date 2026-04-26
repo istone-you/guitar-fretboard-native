@@ -29,6 +29,7 @@ import ModeBrowser from "./ModeBrowser";
 import ProgressionAnalyzer from "./ProgressionAnalyzer";
 import ScaleCompatibility from "./ScaleCompatibility";
 import TensionAvoidFinder from "./TensionAvoidFinder";
+import OnChordFinder from "./OnChordFinder";
 import FinderCirclePage from "./CirclePage";
 import DiatonicCirclePage from "./DiatonicBrowser/CirclePage";
 import DominantMotionCirclePage from "./DominantMotion/CirclePage";
@@ -468,6 +469,15 @@ export default function FinderPane({
             />
           ) : contentMode === "modulation-means" ? (
             <ModulationMeansFinder
+              theme={theme}
+              accidental={accidental}
+              layers={layers}
+              globalRootNote={rootNote}
+              onAddLayerAndNavigate={onAddLayerAndNavigate}
+              onEnablePerLayerRoot={onEnablePerLayerRoot}
+            />
+          ) : contentMode === "on-chord" ? (
+            <OnChordFinder
               theme={theme}
               accidental={accidental}
               layers={layers}
