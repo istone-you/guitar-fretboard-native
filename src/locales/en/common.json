@@ -351,8 +351,6 @@
       "diatonicDesc": "A technique that substitutes a chord with another diatonic chord sharing at least two common tones. It preserves the harmonic function (tonic, subdominant, or dominant) while adding color or variety. Common examples include the relative key (VIm for major / ♭III for minor) and same-function substitutes (IIIm for major / ♭VI for minor).",
       "tritoneDesc": "A technique that replaces a dominant 7th chord with a 7th chord whose root is a tritone (6 semitones) away. Both chords share the same guide tones — the 3rd and 7th swap roles — allowing smooth half-step voice leading in the bass. Example: G7 → D♭7."
     },
-    "homeCapoTitle": "Capo",
-    "homeCapoDesc": "Convert between capo position and chord shapes",
     "homePivotChordTitle": "Pivot Chord",
     "homePivotChordDesc": "Find common chords (pivot chords) between two keys",
     "homeModesTitle": "Modes",
@@ -423,18 +421,6 @@
       "sharedWithKey": "Shared with key",
       "allShared": "No borrowed chords from this mode"
     },
-    "capo": {
-      "modeFormToSound": "Find Actual Sound",
-      "modeSoundToForm": "Find Capo Position",
-      "capoFret": "Capo Fret",
-      "formKey": "Shape Key",
-      "actualSound": "Actual Sound",
-      "targetKey": "Target Key",
-      "shapeKey": "Shape Key",
-      "capoPosition": "Capo Position",
-      "noCapo": "No Capo",
-      "highFret": "High fret (may be impractical)"
-    },
     "homeProgressionAnalysisTitle": "Progression Analysis",
     "homeProgressionAnalysisDesc": "Analyze key and chord functions from a progression",
     "homeScaleCompatTitle": "Scale Compat",
@@ -497,18 +483,11 @@
     "homeChordSuggestDesc": "Browse next-chord candidates by category for any chord",
     "homeDominantMotionTitle": "Dominant Motion",
     "homeDominantMotionDesc": "Explore dominant resolution patterns from V→I to backdoor cadences",
-    "homeCommonTitle": "Common Notes",
-    "homeCommonDesc": "Find common notes across chords",
+
     "homeModulationTargetTitle": "Modulation Targets",
     "homeModulationTargetDesc": "Browse near and distant modulation targets",
     "homeModulationMeansTitle": "Modulation Means",
     "homeModulationMeansDesc": "Find modulation methods between two keys",
-    "common": {
-      "modeNotes": "Common Notes",
-      "addChord": "+ Add Chord",
-      "needMoreChords": "Add at least one more chord",
-      "none": "No common notes"
-    },
     "modulationTarget": {
       "sectionNear": "Related Keys",
       "sectionFar": "Distant Keys"

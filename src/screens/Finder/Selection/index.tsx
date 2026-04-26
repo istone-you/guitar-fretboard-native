@@ -42,7 +42,6 @@ const MODES: {
     titleKey: "finder.homeChordListTitle",
     descKey: "finder.homeChordListDesc",
   },
-  { mode: "capo", icon: "capo", titleKey: "finder.homeCapoTitle", descKey: "finder.homeCapoDesc" },
   // キー・調性
   {
     mode: "circle",
@@ -89,12 +88,7 @@ const MODES: {
     descKey: "finder.homeOnChordDesc",
   },
   // 転調
-  {
-    mode: "common",
-    icon: "scale-overlap",
-    titleKey: "finder.homeCommonTitle",
-    descKey: "finder.homeCommonDesc",
-  },
+
   {
     mode: "modulation-target",
     icon: "network",

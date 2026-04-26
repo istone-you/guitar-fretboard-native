@@ -21,8 +21,7 @@ import DiatonicBrowser from "./DiatonicBrowser";
 import SubstitutionFinder from "./SubstitutionFinder";
 import ChordSuggest from "./ChordSuggest";
 import DominantMotion from "./DominantMotion";
-import CapoFinder from "./CapoFinder";
-import CommonNotesFinder from "./CommonNotesFinder";
+
 import ModulationTargetBrowser from "./ModulationTargetBrowser";
 import ModulationMeansFinder from "./ModulationMeansFinder";
 import ModeBrowser from "./ModeBrowser";
@@ -440,23 +439,6 @@ export default function FinderPane({
               globalRootNote={rootNote}
               onNavigateTo={handleNavigateTo}
               onOpenCircle={(r, k) => handleOpenCircle("dominant-motion", r, k)}
-            />
-          ) : contentMode === "capo" ? (
-            <CapoFinder
-              theme={theme}
-              accidental={accidental}
-              layers={layers}
-              onAddLayerAndNavigate={onAddLayerAndNavigate}
-              onEnablePerLayerRoot={onEnablePerLayerRoot}
-            />
-          ) : contentMode === "common" ? (
-            <CommonNotesFinder
-              theme={theme}
-              accidental={accidental}
-              layers={layers}
-              globalRootNote={rootNote}
-              onAddLayerAndNavigate={onAddLayerAndNavigate}
-              onEnablePerLayerRoot={onEnablePerLayerRoot}
             />
           ) : contentMode === "modulation-target" ? (
             <ModulationTargetBrowser

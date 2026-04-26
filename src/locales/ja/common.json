@@ -351,8 +351,6 @@
       "diatonicDesc": "元のコードと共通音を2つ以上持つダイアトニックコードを代理として使う技法。コードの機能（トニック・サブドミナント・ドミナント）を保ちながら、色彩感や意外性を加えられる。平行調（メジャーならVIm / マイナーなら♭III）や同機能代理（メジャーならIIIm / マイナーなら♭VI）が代表的。",
       "tritoneDesc": "ドミナント7thコードを、ルート音が増4度（トライトーン＝6半音）離れた7thコードで置き換える技法。両コードは3rdと7thが入れ替わる関係で共有されており、ルート音の半音進行により滑らかな声部導音が得られる。例：G7 → D♭7。"
     },
-    "homeCapoTitle": "カポ",
-    "homeCapoDesc": "カポタスト位置とコード形を変換する",
     "homePivotChordTitle": "ピボットコード",
     "homePivotChordDesc": "2つのキーを繋ぐ共通コード（ピボットコード）を見つける",
     "homeModesTitle": "モード",
@@ -423,18 +421,6 @@
       "sharedWithKey": "親キーと共通",
       "allShared": "このモードからの借用和音はありません"
     },
-    "capo": {
-      "modeFormToSound": "実音を調べる",
-      "modeSoundToForm": "カポ位置を調べる",
-      "capoFret": "カポフレット",
-      "formKey": "押さえる形のキー",
-      "actualSound": "実際に鳴る音",
-      "targetKey": "出したい音のキー",
-      "shapeKey": "使うフォームのキー",
-      "capoPosition": "カポ位置",
-      "noCapo": "カポなし",
-      "highFret": "高フレット（実用外の可能性あり）"
-    },
     "homeProgressionAnalysisTitle": "コード進行分析",
     "homeProgressionAnalysisDesc": "コード進行からキーと機能を分析",
     "homeScaleCompatTitle": "スケール互換",
@@ -497,18 +483,11 @@
     "homeChordSuggestDesc": "あるコードから次に進める候補をカテゴリ別に表示する",
     "homeDominantMotionTitle": "ドミナントモーション",
     "homeDominantMotionDesc": "V→Iをはじめとするドミナント解決のパターンを一覧で確認する",
-    "homeCommonTitle": "共通音",
-    "homeCommonDesc": "複数コード間の共通音を調べる",
+
     "homeModulationTargetTitle": "転調先",
     "homeModulationTargetDesc": "近親調と遠隔調の転調先を一覧する",
     "homeModulationMeansTitle": "転調手段",
     "homeModulationMeansDesc": "2つのキー間の転調方法を確認する",
-    "common": {
-      "modeNotes": "共通音",
-      "addChord": "+ コードを追加",
-      "needMoreChords": "コードをもう1つ以上追加してください",
-      "none": "共通音なし"
-    },
     "modulationTarget": {
       "sectionNear": "近親調",
       "sectionFar": "遠隔調"

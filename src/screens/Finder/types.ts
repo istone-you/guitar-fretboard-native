@@ -3,7 +3,6 @@ export type FinderMode =
   | "chord-list"
   | "diatonic"
   | "substitution"
-  | "capo"
   | "modes"
   | "progression-analysis"
   | "scale-compat"
@@ -11,7 +10,6 @@ export type FinderMode =
   | "circle"
   | "chord-suggest"
   | "dominant-motion"
-  | "common"
   | "modulation-target"
   | "modulation-means"
   | "on-chord";
