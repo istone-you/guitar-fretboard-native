@@ -54,6 +54,11 @@ describe("FinderSelection (mode selection page)", () => {
     expect(defaultProps.onSelect).toHaveBeenCalledWith("chord-list");
   });
 
+  it("does not show modal-interchange card", () => {
+    render(<FinderSelection {...defaultProps} />);
+    expect(screen.queryByText("finder.homeModalInterchangeTitle")).toBeNull();
+  });
+
   it("renders in light theme without crashing", () => {
     const { toJSON } = render(<FinderSelection {...defaultProps} theme="light" />);
     expect(toJSON()).toBeTruthy();

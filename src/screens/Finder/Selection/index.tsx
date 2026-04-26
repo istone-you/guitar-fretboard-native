@@ -69,12 +69,6 @@ const MODES: {
     titleKey: "finder.homeModesTitle",
     descKey: "finder.homeModesDesc",
   },
-  {
-    mode: "modal-interchange",
-    icon: "modal-interchange",
-    titleKey: "finder.homeModalInterchangeTitle",
-    descKey: "finder.homeModalInterchangeDesc",
-  },
   // コード理論
   {
     mode: "substitution",

@@ -356,7 +356,7 @@
     "homePivotChordTitle": "ピボットコード",
     "homePivotChordDesc": "2つのキーを繋ぐ共通コード（ピボットコード）を見つける",
     "homeModesTitle": "モード",
-    "homeModesDesc": "スケールとモードの親子関係を確認する",
+    "homeModesDesc": "モードファミリーと平行調モードからの借用和音を探索する",
     "pivotChord": {
       "keyA": "転調元キー",
       "keyB": "転調先キー",
@@ -412,7 +412,16 @@
       "parentScale": "親スケール",
       "parentScaleValue": "{{root}} {{scale}}",
       "current": "選択中",
-      "notes": "構成音"
+      "notes": "構成音",
+      "tab": {
+        "family": "ファミリー",
+        "modalInterchange": "インターチェンジ"
+      },
+      "sourceMode": "ソースモード",
+      "borrowed": "借用",
+      "borrowedFromMode": "{{mode}}から借用",
+      "sharedWithKey": "親キーと共通",
+      "allShared": "このモードからの借用和音はありません"
     },
     "capo": {
       "modeFormToSound": "実音を調べる",
@@ -480,8 +489,6 @@
     "homeKeyFinderDesc": "コードの組み合わせからキーを推定する",
     "homeTensionAvoidTitle": "テンション/アボイド",
     "homeTensionAvoidDesc": "コードに使えるテンションとアボイドノートを確認する",
-    "homeModalInterchangeTitle": "モーダルインターチェンジ",
-    "homeModalInterchangeDesc": "平行調のモードから借用できるコードを確認する",
     "homeCircleTitle": "五度圏",
     "homeCircleDesc": "キーの関係・ダイアトニック・セカンダリードミナントを視覚化する",
     "homeChordSuggestTitle": "コードサジェスト",
@@ -565,10 +572,6 @@
       "up": "↑",
       "down": "↓",
       "viewProgressionAnalysis": "コード進行分析で確認"
-    },
-    "modalInterchange": {
-      "borrowedFrom": "{{mode}}から借用",
-      "sectionTitle": "借用コード"
     },
     "tensionAvoid": {
       "major": "メジャー",

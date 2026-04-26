@@ -1,5 +1,6 @@
 import React from "react";
-import { render } from "@testing-library/react-native";
+import { render, fireEvent } from "@testing-library/react-native";
+import * as ReactNative from "react-native";
 import ModeBrowser from "..";
 
 jest.mock("react-i18next", () => ({
@@ -26,6 +27,39 @@ jest.mock("../../../../components/ui/BottomSheetModal", () => ({
   SHEET_HANDLE_CLEARANCE: 32,
   useSheetHeight: () => 400,
 }));
+jest.mock("../../../../components/ui/SegmentedToggle", () => ({
+  SegmentedToggle: ({
+    _value,
+    onChange,
+    options,
+  }: {
+    _value: string;
+    onChange: (v: string) => void;
+    options: { value: string; label: string }[];
+  }) => {
+    const { View, TouchableOpacity, Text } = require("react-native");
+    return (
+      <View testID="segmented-toggle">
+        {options.map((opt: { value: string; label: string }) => (
+          <TouchableOpacity
+            key={opt.value}
+            testID={`toggle-${opt.value}`}
+            onPress={() => onChange(opt.value)}
+          >
+            <Text>{opt.label}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    );
+  },
+}));
+jest.mock("../../../../components/ui/FinderDetailSheet", () => () => null);
+jest.mock("../../../../components/ui/ChordDiagram", () => ({
+  __esModule: true,
+  default: () => null,
+  getAllChordForms: () => [],
+}));
+jest.mock("../../../../components/LayerEditModal/LayerDescription", () => () => null);
 
 const baseProps = {
   theme: "dark" as const,
@@ -36,21 +70,32 @@ const baseProps = {
   onEnablePerLayerRoot: jest.fn(),
 };
 
-describe("ModeBrowser", () => {
+describe("ModeBrowser (shell)", () => {
+  beforeEach(() => {
+    jest
+      .spyOn(ReactNative, "useWindowDimensions")
+      .mockReturnValue({ width: 390, height: 844, scale: 1, fontScale: 1 });
+  });
   it("renders without crashing", () => {
     const { getByTestId } = render(<ModeBrowser {...baseProps} />);
-    expect(getByTestId("note-picker")).toBeTruthy();
+    expect(getByTestId("segmented-toggle")).toBeTruthy();
   });
 
-  it("shows 7 mode rows", () => {
+  it("shows mode family view by default with 7 mode rows", () => {
     const { getAllByTestId } = render(<ModeBrowser {...baseProps} />);
     expect(getAllByTestId(/^mode-row-/)).toHaveLength(7);
   });
 
-  it("renders all 7 church modes", () => {
-    const { getByTestId } = render(<ModeBrowser {...baseProps} />);
-    ["ionian", "dorian", "phrygian", "lydian", "mixolydian", "aeolian", "locrian"].forEach((mode) =>
-      expect(getByTestId(`mode-row-${mode}`)).toBeTruthy(),
-    );
+  it("switches to modal interchange view on toggle", () => {
+    const { getByTestId, queryAllByTestId } = render(<ModeBrowser {...baseProps} />);
+    fireEvent.press(getByTestId("toggle-modal-interchange"));
+    expect(queryAllByTestId(/^mode-row-/).length).toBe(0);
+  });
+
+  it("switches back to family view", () => {
+    const { getByTestId, getAllByTestId } = render(<ModeBrowser {...baseProps} />);
+    fireEvent.press(getByTestId("toggle-modal-interchange"));
+    fireEvent.press(getByTestId("toggle-family"));
+    expect(getAllByTestId(/^mode-row-/)).toHaveLength(7);
   });
 });

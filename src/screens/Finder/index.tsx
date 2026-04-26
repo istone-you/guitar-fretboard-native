@@ -29,14 +29,12 @@ import ModeBrowser from "./ModeBrowser";
 import ProgressionAnalyzer from "./ProgressionAnalyzer";
 import ScaleCompatibility from "./ScaleCompatibility";
 import TensionAvoidFinder from "./TensionAvoidFinder";
-import ModalInterchangeBrowser from "./ModalInterchangeBrowser";
 import FinderCirclePage from "./CirclePage";
 import DiatonicCirclePage from "./DiatonicBrowser/CirclePage";
 import DominantMotionCirclePage from "./DominantMotion/CirclePage";
-import ModalInterchangeCirclePage from "./ModalInterchangeBrowser/CirclePage";
 import type { FinderMode } from "./types";
 
-type CircleSubPageType = "diatonic" | "dominant-motion" | "modal-interchange";
+type CircleSubPageType = "diatonic" | "dominant-motion";
 
 interface CircleSubPage {
   type: CircleSubPageType;
@@ -423,16 +421,6 @@ export default function FinderPane({
               onAddLayerAndNavigate={onAddLayerAndNavigate}
               onEnablePerLayerRoot={onEnablePerLayerRoot}
             />
-          ) : contentMode === "modal-interchange" ? (
-            <ModalInterchangeBrowser
-              theme={theme}
-              accidental={accidental}
-              layers={layers}
-              globalRootNote={rootNote}
-              onAddLayerAndNavigate={onAddLayerAndNavigate}
-              onEnablePerLayerRoot={onEnablePerLayerRoot}
-              onOpenCircle={(r, k) => handleOpenCircle("modal-interchange", r, k)}
-            />
           ) : contentMode === "circle" ? (
             <FinderCirclePage
               theme={theme}
@@ -519,17 +507,6 @@ export default function FinderPane({
             />
           ) : circleSubPage?.type === "dominant-motion" ? (
             <DominantMotionCirclePage
-              theme={theme}
-              accidental={accidental}
-              layers={layers}
-              globalRootNote={rootNote}
-              onAddLayerAndNavigate={onAddLayerAndNavigate}
-              onEnablePerLayerRoot={onEnablePerLayerRoot}
-              rootSemitone={circleSubPage.rootSemitone}
-              initialKeyType={circleSubPage.keyType}
-            />
-          ) : circleSubPage?.type === "modal-interchange" ? (
-            <ModalInterchangeCirclePage
               theme={theme}
               accidental={accidental}
               layers={layers}

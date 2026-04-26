@@ -356,7 +356,7 @@
     "homePivotChordTitle": "Pivot Chord",
     "homePivotChordDesc": "Find common chords (pivot chords) between two keys",
     "homeModesTitle": "Modes",
-    "homeModesDesc": "Explore the mode family of a scale",
+    "homeModesDesc": "Explore mode families and modal interchange chords",
     "pivotChord": {
       "keyA": "From Key",
       "keyB": "To Key",
@@ -412,7 +412,16 @@
       "parentScale": "Parent Scale",
       "parentScaleValue": "{{root}} {{scale}}",
       "current": "Selected",
-      "notes": "Notes"
+      "notes": "Notes",
+      "tab": {
+        "family": "Family",
+        "modalInterchange": "Interchange"
+      },
+      "sourceMode": "Source Mode",
+      "borrowed": "Borrowed",
+      "borrowedFromMode": "Borrowed from {{mode}}",
+      "sharedWithKey": "Shared with key",
+      "allShared": "No borrowed chords from this mode"
     },
     "capo": {
       "modeFormToSound": "Find Actual Sound",
@@ -480,8 +489,6 @@
     "homeKeyFinderDesc": "Identify the key from a set of chords",
     "homeTensionAvoidTitle": "Tensions & Avoids",
     "homeTensionAvoidDesc": "Find tensions and avoid notes for a chord in a key",
-    "homeModalInterchangeTitle": "Modal Interchange",
-    "homeModalInterchangeDesc": "Explore borrowed chords from parallel modes",
     "homeCircleTitle": "Circle of Fifths",
     "homeCircleDesc": "Visualize key relationships, diatonic chords, and secondary dominants",
     "homeChordSuggestTitle": "Chord Suggest",
@@ -565,10 +572,6 @@
       "up": "↑",
       "down": "↓",
       "viewProgressionAnalysis": "View in Progression Analysis"
-    },
-    "modalInterchange": {
-      "borrowedFrom": "from {{mode}}",
-      "sectionTitle": "Borrowed Chords"
     },
     "tensionAvoid": {
       "major": "Major",

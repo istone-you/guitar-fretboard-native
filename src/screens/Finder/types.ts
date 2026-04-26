@@ -8,7 +8,6 @@ export type FinderMode =
   | "progression-analysis"
   | "scale-compat"
   | "tension-avoid"
-  | "modal-interchange"
   | "circle"
   | "chord-suggest"
   | "dominant-motion"
