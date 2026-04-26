@@ -57,14 +57,14 @@ function TogglePill({ active, theme, label, testID, onPress }: TogglePillProps) 
         style={[
           styles.pill,
           {
-            borderColor: active ? colors.accent : colors.borderStrong,
-            backgroundColor: active ? `${colors.accent}22` : colors.surface,
+            borderColor: active ? colors.chipSelectedBg : colors.borderStrong,
+            backgroundColor: active ? `${colors.chipSelectedBg}22` : colors.surface,
           },
         ]}
         onPress={onPress}
       >
         <Text
-          style={[styles.label, { color: active ? colors.accent : colors.textSubtle }]}
+          style={[styles.label, { color: active ? colors.chipSelectedBg : colors.textSubtle }]}
           numberOfLines={1}
         >
           {label}

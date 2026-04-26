@@ -202,7 +202,9 @@ export default function CircleHeader({
                 <Text style={[styles.listLabel, { color: colors.text }]}>
                   {t("circle.overlay.none")}
                 </Text>
-                {activeOverlay === null && <Icon name="check" size={16} color={colors.accent} />}
+                {activeOverlay === null && (
+                  <Icon name="check" size={16} color={colors.chipSelectedBg} />
+                )}
               </TouchableOpacity>
 
               {OVERLAY_OPTIONS.map((option) => (
@@ -222,7 +224,7 @@ export default function CircleHeader({
                     {t(option.labelKey)}
                   </Text>
                   {activeOverlay === option.key && (
-                    <Icon name="check" size={16} color={colors.accent} />
+                    <Icon name="check" size={16} color={colors.chipSelectedBg} />
                   )}
                 </TouchableOpacity>
               ))}

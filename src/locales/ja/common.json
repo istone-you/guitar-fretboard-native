@@ -17,7 +17,7 @@
     "overlay": {
       "label": "オーバーレイ",
       "none": "なし",
-      "relatedKeys": "関連調",
+      "relatedKeys": "関係調",
       "diatonic": "ダイアトニック",
       "dominants": "セカンダリードミナント",
       "modalInterchange": "モーダルインターチェンジ"
@@ -345,11 +345,13 @@
     "substitution": {
       "sourceLabel": "{{chord}} の代理コード",
       "typeLabel": "代理タイプ",
-      "diatonic": "ダイアトニック代理",
-      "tritone": "トライトーン代理",
+      "tonic": "トニック代理",
+      "subdominant": "サブドミナント代理",
+      "dominant": "ドミナント代理",
       "none": "この和音の代理コードはありません",
-      "diatonicDesc": "元のコードと共通音を2つ以上持つダイアトニックコードを代理として使う技法。コードの機能（トニック・サブドミナント・ドミナント）を保ちながら、色彩感や意外性を加えられる。平行調（メジャーならVIm / マイナーなら♭III）や同機能代理（メジャーならIIIm / マイナーなら♭VI）が代表的。",
-      "tritoneDesc": "ドミナント7thコードを、ルート音が増4度（トライトーン＝6半音）離れた7thコードで置き換える技法。両コードは3rdと7thが入れ替わる関係で共有されており、ルート音の半音進行により滑らかな声部導音が得られる。例：G7 → D♭7。"
+      "tonicDesc": "元のコードと共通音を2つ持つコードをトニック代理として使う技法。VIm（平行短調）とIIIm（中音）が代表例。例：C → Am または Em。",
+      "subdominantDesc": "IIm（またはIIm7）をIV（またはIVmaj7）に置き換える技法。両コードは共通音2つを持ち、サブドミナント機能を保ったまま色彩を変えられる。例：Dm → F。",
+      "dominantDesc": "ドミナント7thコードを、ルート音が増4度（トライトーン＝6半音）離れた7thコードで置き換える技法。両コードは3rdと7thが共通（入れ替わる関係）で、ベースの半音進行により滑らかな声部導音が得られる。例：G7 → D♭7。"
     },
     "homePivotChordTitle": "ピボットコード",
     "homePivotChordDesc": "2つのキーを繋ぐ共通コード（ピボットコード）を見つける",
@@ -484,14 +486,10 @@
     "homeDominantMotionTitle": "ドミナントモーション",
     "homeDominantMotionDesc": "V→Iをはじめとするドミナント解決のパターンを一覧で確認する",
 
-    "homeModulationTargetTitle": "転調先",
-    "homeModulationTargetDesc": "近親調と遠隔調の転調先を一覧する",
+    "homeModulationTargetTitle": "関係調",
+    "homeModulationTargetDesc": "基準キーの近親調と共通コードを確認する",
     "homeModulationMeansTitle": "転調手段",
     "homeModulationMeansDesc": "2つのキー間の転調方法を確認する",
-    "modulationTarget": {
-      "sectionNear": "近親調",
-      "sectionFar": "遠隔調"
-    },
     "modulation": {
       "sectionChromatic": "クロマチックメディアント",
       "sectionEnharmonic": "エンハーモニック",

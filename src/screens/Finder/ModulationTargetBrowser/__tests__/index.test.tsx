@@ -83,34 +83,9 @@ describe("ModulationTargetBrowser", () => {
     expect(screen.getByTestId("related-section-subdominant")).toBeTruthy();
   });
 
-  it("shows near and far section headers", () => {
+  it("shows 7 diatonic chips per section", () => {
     render(<ModulationTargetBrowser {...baseProps} />);
-    expect(screen.getByText("finder.modulationTarget.sectionNear")).toBeTruthy();
-    expect(screen.getByText("finder.modulationTarget.sectionFar")).toBeTruthy();
-  });
-
-  it("shows chromatic mediant section header", () => {
-    render(<ModulationTargetBrowser {...baseProps} />);
-    expect(screen.getByText("finder.modulation.sectionChromatic")).toBeTruthy();
-  });
-
-  it("shows enharmonic section header", () => {
-    render(<ModulationTargetBrowser {...baseProps} />);
-    expect(screen.getByText("finder.modulation.sectionEnharmonic")).toBeTruthy();
-  });
-
-  it("shows modal section header", () => {
-    render(<ModulationTargetBrowser {...baseProps} />);
-    expect(screen.getByText("finder.modulation.sectionModal")).toBeTruthy();
-  });
-
-  it("shows 8 chromatic mediant rows", () => {
-    render(<ModulationTargetBrowser {...baseProps} />);
-    expect(screen.getAllByTestId(/^chromatic-/).length).toBe(8);
-  });
-
-  it("shows 3 enharmonic rows", () => {
-    render(<ModulationTargetBrowser {...baseProps} />);
-    expect(screen.getAllByTestId(/^enharmonic-/).length).toBe(3);
+    const relativeChips = screen.getAllByTestId(/^related-chip-relative-/);
+    expect(relativeChips).toHaveLength(7);
   });
 });

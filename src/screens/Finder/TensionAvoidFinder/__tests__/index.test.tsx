@@ -248,8 +248,8 @@ describe("TensionAvoidFinder", () => {
 
   it("shows detail sheet when tension note is pressed", () => {
     render(<TensionAvoidFinder {...defaultProps} />);
-    // C Major in C Major key: D (9) is a tension note
-    fireEvent.press(screen.getByTestId("note-pill-D (9)"));
+    // C Major in C Major key: D (9) is a tension note at noteIndex 2
+    fireEvent.press(screen.getByTestId("tension-2"));
     expect(screen.getByTestId("layer-description")).toBeTruthy();
   });
 

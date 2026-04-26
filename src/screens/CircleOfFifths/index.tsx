@@ -1,11 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
-import {
-  InteractionManager,
-  View,
-  StyleSheet,
-  ScrollView,
-  useWindowDimensions,
-} from "react-native";
+import { useCallback, useState } from "react";
+import { View, StyleSheet, ScrollView, useWindowDimensions } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { Accidental, ChordType, LayerConfig, Theme } from "../../types";
@@ -71,16 +65,6 @@ export default function CirclePane({
 
   const FORM_GAP = 8;
   const formWidth = Math.floor((screenWidth - 32 - FORM_GAP * 2) / 3);
-
-  const outerDiameter = Math.min(screenWidth * 0.85, 420);
-  const signaturePadding = 24;
-  const canvasSize = outerDiameter + signaturePadding * 2;
-
-  const [wheelReady, setWheelReady] = useState(false);
-  useEffect(() => {
-    const task = InteractionManager.runAfterInteractions(() => setWheelReady(true));
-    return () => task.cancel();
-  }, []);
 
   const [pendingChord, setPendingChord] = useState<CircleChordDetail | null>(null);
 
@@ -178,30 +162,13 @@ export default function CirclePane({
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.wheelWrap}>
-          {wheelReady ? (
-            <CircleWheel
-              theme={theme}
-              keyType={keyType}
-              selectedIndex={selectedIndex}
-              activeOverlay={activeOverlay}
-              onSelect={handleSelectSegment}
-            />
-          ) : (
-            <View style={[styles.wheelSkeleton, { width: canvasSize, height: canvasSize }]}>
-              <View
-                style={[
-                  styles.wheelSkeletonCircle,
-                  {
-                    width: outerDiameter,
-                    height: outerDiameter,
-                    borderRadius: outerDiameter / 2,
-                    borderWidth: 1,
-                    borderColor: colors.border,
-                  },
-                ]}
-              />
-            </View>
-          )}
+          <CircleWheel
+            theme={theme}
+            keyType={keyType}
+            selectedIndex={selectedIndex}
+            activeOverlay={activeOverlay}
+            onSelect={handleSelectSegment}
+          />
         </View>
 
         <OverlayLegend theme={theme} activeOverlay={activeOverlay} />
@@ -284,12 +251,6 @@ const styles = StyleSheet.create({
   wheelWrap: {
     marginBottom: 8,
   },
-  wheelSkeleton: {
-    alignSelf: "center",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  wheelSkeletonCircle: {},
   modalDiagrams: {
     flexDirection: "row",
     flexWrap: "wrap",

@@ -87,7 +87,7 @@ export default function OnChordFinder({
   const formWidth = Math.floor((screenWidth - 32 - FORM_GAP * 2) / 3);
 
   const [chordRoot, setChordRoot] = useState("C");
-  const [selectedType, setSelectedType] = useState<string | null>(null);
+  const [selectedType, setSelectedType] = useState<string>(ALL_TYPES[0] ?? "Major");
   const [selectedOnChord, setSelectedOnChord] = useState<string | null>(null);
 
   const byRoot = useMemo(() => getOnChordListForRoot(chordRoot), [chordRoot]);
@@ -101,8 +101,10 @@ export default function OnChordFinder({
     return types;
   }, [byRoot]);
 
-  const effectiveType =
-    selectedType !== null && availableTypesForRoot.has(selectedType) ? selectedType : null;
+  const effectiveType = useMemo(() => {
+    if (availableTypesForRoot.has(selectedType)) return selectedType;
+    return ALL_TYPES.find((t) => availableTypesForRoot.has(t)) ?? null;
+  }, [selectedType, availableTypesForRoot]);
 
   const filtered = useMemo(() => {
     if (effectiveType === null) return byRoot;
@@ -155,18 +157,6 @@ export default function OnChordFinder({
       </View>
 
       <View style={[styles.chipsRow, { borderBottomColor: borderColor }]}>
-        <NotePill
-          label={t("finder.onChord.all", "すべて")}
-          selected={effectiveType === null}
-          activeBg={colors.chipSelectedBg}
-          activeText={colors.chipSelectedText}
-          inactiveBg={colors.chipUnselectedBg}
-          inactiveText={colors.text}
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            setSelectedType(null);
-          }}
-        />
         {ALL_TYPES.filter((t) => availableTypesForRoot.has(t)).map((ct) => (
           <NotePill
             key={ct}

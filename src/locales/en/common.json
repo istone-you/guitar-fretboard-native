@@ -345,11 +345,13 @@
     "substitution": {
       "sourceLabel": "Substitutes for {{chord}}",
       "typeLabel": "Substitute Type",
-      "diatonic": "Diatonic Sub.",
-      "tritone": "Tritone Sub.",
+      "tonic": "Tonic Sub.",
+      "subdominant": "Subdominant Sub.",
+      "dominant": "Dominant Sub.",
       "none": "No substitutions for this chord type",
-      "diatonicDesc": "A technique that substitutes a chord with another diatonic chord sharing at least two common tones. It preserves the harmonic function (tonic, subdominant, or dominant) while adding color or variety. Common examples include the relative key (VIm for major / ♭III for minor) and same-function substitutes (IIIm for major / ♭VI for minor).",
-      "tritoneDesc": "A technique that replaces a dominant 7th chord with a 7th chord whose root is a tritone (6 semitones) away. Both chords share the same guide tones — the 3rd and 7th swap roles — allowing smooth half-step voice leading in the bass. Example: G7 → D♭7."
+      "tonicDesc": "A technique that uses a chord sharing two common tones as a tonic substitute. VIm (relative minor) and IIIm (mediant) are the classic examples. E.g., C → Am or Em.",
+      "subdominantDesc": "A technique that replaces IIm (or IIm7) with IV (or IVmaj7). Both chords share two common tones and preserve the subdominant function while adding color. E.g., Dm → F.",
+      "dominantDesc": "A technique that replaces a dominant 7th chord with a 7th chord whose root is a tritone (6 semitones) away. Both chords share the same guide tones — the 3rd and 7th swap roles — allowing smooth half-step voice leading in the bass. E.g., G7 → D♭7."
     },
     "homePivotChordTitle": "Pivot Chord",
     "homePivotChordDesc": "Find common chords (pivot chords) between two keys",
@@ -484,14 +486,10 @@
     "homeDominantMotionTitle": "Dominant Motion",
     "homeDominantMotionDesc": "Explore dominant resolution patterns from V→I to backdoor cadences",
 
-    "homeModulationTargetTitle": "Modulation Targets",
-    "homeModulationTargetDesc": "Browse near and distant modulation targets",
+    "homeModulationTargetTitle": "Related Keys",
+    "homeModulationTargetDesc": "Browse closely related keys and their shared chords",
     "homeModulationMeansTitle": "Modulation Means",
     "homeModulationMeansDesc": "Find modulation methods between two keys",
-    "modulationTarget": {
-      "sectionNear": "Related Keys",
-      "sectionFar": "Distant Keys"
-    },
     "modulation": {
       "sectionChromatic": "Chromatic Mediant",
       "sectionEnharmonic": "Enharmonic",

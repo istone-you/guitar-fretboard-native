@@ -159,11 +159,6 @@ describe("OnChordFinder", () => {
     expect(screen.getByTestId("note-picker-コードルート")).toBeTruthy();
   });
 
-  it("shows 'All' chip as first chip", () => {
-    render(<OnChordFinder {...defaultProps} />);
-    expect(screen.getByTestId("note-pill-すべて")).toBeTruthy();
-  });
-
   it("shows chord type chips for types present in C root", () => {
     render(<OnChordFinder {...defaultProps} />);
     expect(screen.getByTestId("note-pill-M")).toBeTruthy();

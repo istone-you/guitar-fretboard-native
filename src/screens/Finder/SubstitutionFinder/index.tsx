@@ -98,8 +98,15 @@ export default function SubstitutionFinder({
   );
 
   const subTypeLabel = (type: SubstitutionType): string => {
-    if (type === "diatonic") return t("finder.substitution.diatonic");
-    return t("finder.substitution.tritone");
+    if (type === "tonic") return t("finder.substitution.tonic");
+    if (type === "subdominant") return t("finder.substitution.subdominant");
+    return t("finder.substitution.dominant");
+  };
+
+  const descKeyMap: Record<SubstitutionType, string> = {
+    tonic: "finder.substitution.tonicDesc",
+    subdominant: "finder.substitution.subdominantDesc",
+    dominant: "finder.substitution.dominantDesc",
   };
 
   const pendingSubData = useMemo(() => {
@@ -107,10 +114,7 @@ export default function SubstitutionFinder({
     const subRootName = notes[pendingSub.rootIndex];
     const subChordName = `${subRootName}${CHORD_SUFFIX_MAP[pendingSub.chordType] ?? ""}`;
     const forms = getAllChordForms(pendingSub.rootIndex, pendingSub.chordType);
-    const descKey =
-      pendingSub.type === "diatonic"
-        ? "finder.substitution.diatonicDesc"
-        : "finder.substitution.tritoneDesc";
+    const descKey = descKeyMap[pendingSub.type];
     return { subChordName, forms, descKey };
   }, [pendingSub, notes]);
 

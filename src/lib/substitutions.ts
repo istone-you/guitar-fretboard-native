@@ -1,6 +1,6 @@
 import type { ChordType } from "../types";
 
-export type SubstitutionType = "diatonic" | "tritone";
+export type SubstitutionType = "tonic" | "subdominant" | "dominant";
 
 export interface SubstitutionResult {
   type: SubstitutionType;
@@ -8,24 +8,28 @@ export interface SubstitutionResult {
   chordType: ChordType;
 }
 
-// 平行調 (VIm / ♭III): 共通音2つ、最も使われるダイアトニック代理
-const RELATIVE_MAP: Partial<Record<ChordType, { semitoneOffset: number; chordType: ChordType }>> = {
-  Major: { semitoneOffset: 9, chordType: "Minor" },
-  Minor: { semitoneOffset: 3, chordType: "Major" },
-  maj7: { semitoneOffset: 9, chordType: "m7" },
-  m7: { semitoneOffset: 3, chordType: "maj7" },
+// トニック代理: Major / maj7 → VIm（+9）・IIIm（+4）
+const TONIC_MAP: Partial<Record<ChordType, { semitoneOffset: number; chordType: ChordType }[]>> = {
+  Major: [
+    { semitoneOffset: 9, chordType: "Minor" }, // VIm（平行短調）
+    { semitoneOffset: 4, chordType: "Minor" }, // IIIm（中音）
+  ],
+  maj7: [
+    { semitoneOffset: 9, chordType: "m7" }, // VIm7
+    { semitoneOffset: 4, chordType: "m7" }, // IIIm7
+  ],
 };
 
-// 同機能代理 (IIIm / ♭VI): 共通音2つ、トニック/サブドミナント機能の代理
-const DIATONIC_MAP: Partial<Record<ChordType, { semitoneOffset: number; chordType: ChordType }>> = {
-  Major: { semitoneOffset: 4, chordType: "Minor" },
-  Minor: { semitoneOffset: 8, chordType: "Major" },
-  maj7: { semitoneOffset: 4, chordType: "m7" },
-  m7: { semitoneOffset: 8, chordType: "maj7" },
+// サブドミナント代理: Minor / m7 → IVmaj（+3）
+const SUBDOMINANT_MAP: Partial<
+  Record<ChordType, { semitoneOffset: number; chordType: ChordType }>
+> = {
+  Minor: { semitoneOffset: 3, chordType: "Major" }, // IIm → IV
+  m7: { semitoneOffset: 3, chordType: "maj7" }, // IIm7 → IVmaj7
 };
 
-// トライトーン代理の対象コードタイプ（ドミナント7th系のみ）
-const TRITONE_TYPES = new Set<ChordType>(["7th"]);
+// ドミナント代理: 7th → ♭II7（+6, トライトーン代理）
+const DOMINANT_TYPES = new Set<ChordType>(["7th"]);
 
 export const SUBSTITUTION_CHORD_TYPES: ChordType[] = ["Major", "Minor", "maj7", "m7", "7th"];
 
@@ -40,26 +44,28 @@ export const SUBSTITUTION_CHORD_LABELS: Partial<Record<ChordType, string>> = {
 export function getSubstitutions(rootIndex: number, chordType: ChordType): SubstitutionResult[] {
   const results: SubstitutionResult[] = [];
 
-  const relative = RELATIVE_MAP[chordType];
-  if (relative) {
+  const tonicSubs = TONIC_MAP[chordType];
+  if (tonicSubs) {
+    for (const sub of tonicSubs) {
+      results.push({
+        type: "tonic",
+        rootIndex: (rootIndex + sub.semitoneOffset) % 12,
+        chordType: sub.chordType,
+      });
+    }
+  }
+
+  const subdominantSub = SUBDOMINANT_MAP[chordType];
+  if (subdominantSub) {
     results.push({
-      type: "diatonic",
-      rootIndex: (rootIndex + relative.semitoneOffset) % 12,
-      chordType: relative.chordType,
+      type: "subdominant",
+      rootIndex: (rootIndex + subdominantSub.semitoneOffset) % 12,
+      chordType: subdominantSub.chordType,
     });
   }
 
-  const diatonic = DIATONIC_MAP[chordType];
-  if (diatonic) {
-    results.push({
-      type: "diatonic",
-      rootIndex: (rootIndex + diatonic.semitoneOffset) % 12,
-      chordType: diatonic.chordType,
-    });
-  }
-
-  if (TRITONE_TYPES.has(chordType)) {
-    results.push({ type: "tritone", rootIndex: (rootIndex + 6) % 12, chordType: "7th" });
+  if (DOMINANT_TYPES.has(chordType)) {
+    results.push({ type: "dominant", rootIndex: (rootIndex + 6) % 12, chordType: "7th" });
   }
 
   return results;

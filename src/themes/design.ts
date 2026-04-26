@@ -1,6 +1,7 @@
 import type { LayerConfig } from "../types";
 
 // ── Theme (Light / Dark) ──────────────────────────────────────────────────────
+// 色トークンは追加しないこと。
 
 const lightPalette = {
   bg: "#f9f9f9",
@@ -13,7 +14,6 @@ const lightPalette = {
   text: "#1c1917",
   textStrong: "#1c1917",
   textSubtle: "#78716c",
-  accent: "#007AFF",
   textMuted: "#a8a29e",
   textDim: "#44403c",
   textDanger: "#ef4444",
@@ -83,7 +83,6 @@ const darkPalette = {
   text: "#f9fafb",
   textStrong: "#e5e7eb",
   textSubtle: "#9ca3af",
-  accent: "#5AA9FF",
   textMuted: "#6b7280",
   textDim: "#d1d5db",
   textDanger: "#f87171",
@@ -153,7 +152,6 @@ export type ThemeColors = {
   text: string;
   textStrong: string;
   textSubtle: string;
-  accent: string;
   textMuted: string;
   textDim: string;
   textDanger: string;

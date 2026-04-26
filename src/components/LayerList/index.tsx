@@ -1033,10 +1033,19 @@ export default function LayerList({
                       />
                       <View style={styles.summaryTouchable}>
                         <View style={styles.summaryArea}>
-                          <View style={[styles.typeBadge, { borderColor: colors.border }]}>
-                            <Text style={[styles.layerType, { color: colors.textSubtle }]}>
-                              {getTypeLabel(floatingLayer)}
-                            </Text>
+                          <View style={styles.badgeRow}>
+                            <View style={[styles.typeBadge, { borderColor: colors.border }]}>
+                              <Text style={[styles.layerType, { color: colors.textSubtle }]}>
+                                {getTypeLabel(floatingLayer)}
+                              </Text>
+                            </View>
+                            {perLayerRoot && (
+                              <View style={[styles.typeBadge, { borderColor: colors.border }]}>
+                                <Text style={[styles.layerType, { color: colors.textSubtle }]}>
+                                  {floatingLayer.layerRoot ?? rootNote}
+                                </Text>
+                              </View>
+                            )}
                           </View>
                           <Text
                             style={[styles.layerSummary, { color: colors.text }]}

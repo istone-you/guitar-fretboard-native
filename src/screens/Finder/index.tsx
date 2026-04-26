@@ -23,6 +23,7 @@ import ChordSuggest from "./ChordSuggest";
 import DominantMotion from "./DominantMotion";
 
 import ModulationTargetBrowser from "./ModulationTargetBrowser";
+import RelatedKeysCirclePage from "./ModulationTargetBrowser/CirclePage";
 import ModulationMeansFinder from "./ModulationMeansFinder";
 import ModeBrowser from "./ModeBrowser";
 import ProgressionAnalyzer from "./ProgressionAnalyzer";
@@ -34,7 +35,7 @@ import DiatonicCirclePage from "./DiatonicBrowser/CirclePage";
 import DominantMotionCirclePage from "./DominantMotion/CirclePage";
 import type { FinderMode } from "./types";
 
-type CircleSubPageType = "diatonic" | "dominant-motion";
+type CircleSubPageType = "diatonic" | "dominant-motion" | "related-keys";
 
 interface CircleSubPage {
   type: CircleSubPageType;
@@ -448,6 +449,7 @@ export default function FinderPane({
               globalRootNote={rootNote}
               onAddLayerAndNavigate={onAddLayerAndNavigate}
               onEnablePerLayerRoot={onEnablePerLayerRoot}
+              onOpenCircle={(r, k) => handleOpenCircle("related-keys", r, k)}
             />
           ) : contentMode === "modulation-means" ? (
             <ModulationMeansFinder
@@ -499,6 +501,17 @@ export default function FinderPane({
             />
           ) : circleSubPage?.type === "dominant-motion" ? (
             <DominantMotionCirclePage
+              theme={theme}
+              accidental={accidental}
+              layers={layers}
+              globalRootNote={rootNote}
+              onAddLayerAndNavigate={onAddLayerAndNavigate}
+              onEnablePerLayerRoot={onEnablePerLayerRoot}
+              rootSemitone={circleSubPage.rootSemitone}
+              initialKeyType={circleSubPage.keyType}
+            />
+          ) : circleSubPage?.type === "related-keys" ? (
+            <RelatedKeysCirclePage
               theme={theme}
               accidental={accidental}
               layers={layers}

@@ -129,16 +129,16 @@ describe("SubstitutionFinder", () => {
     expect(screen.getByText("7")).toBeTruthy();
   });
 
-  it("shows two diatonic substitutions for Major (Am and Em)", () => {
+  it("shows two tonic substitutions for Major (Am and Em)", () => {
     render(<SubstitutionFinder {...defaultProps} />);
-    expect(screen.getByTestId("sub-section-diatonic-9")).toBeTruthy();
-    expect(screen.getByTestId("sub-section-diatonic-4")).toBeTruthy();
+    expect(screen.getByTestId("sub-section-tonic-9")).toBeTruthy();
+    expect(screen.getByTestId("sub-section-tonic-4")).toBeTruthy();
   });
 
-  it("shows tritone substitution when 7 chip is selected", () => {
+  it("shows dominant substitution when 7 chip is selected", () => {
     render(<SubstitutionFinder {...defaultProps} />);
     fireEvent.press(screen.getByText("7"));
-    expect(screen.getByTestId("sub-section-tritone-6")).toBeTruthy();
+    expect(screen.getByTestId("sub-section-dominant-6")).toBeTruthy();
   });
 
   it("updates root note when NotePickerButton changes", () => {
@@ -150,14 +150,14 @@ describe("SubstitutionFinder", () => {
   it("opens bottom sheet when tapping a sub-section card", () => {
     render(<SubstitutionFinder {...defaultProps} />);
     expect(screen.queryByTestId("bottom-sheet")).toBeNull();
-    fireEvent.press(screen.getByTestId("sub-section-diatonic-9"));
+    fireEvent.press(screen.getByTestId("sub-section-tonic-9"));
     expect(screen.getByTestId("bottom-sheet")).toBeTruthy();
   });
 
   it("calls onAddLayerAndNavigate when add button is pressed in sheet", () => {
     const onAdd = jest.fn();
     render(<SubstitutionFinder {...defaultProps} onAddLayerAndNavigate={onAdd} />);
-    fireEvent.press(screen.getByTestId("sub-section-diatonic-9"));
+    fireEvent.press(screen.getByTestId("sub-section-tonic-9"));
     fireEvent.press(screen.getByTestId("glass-btn-upload"));
     expect(onAdd).toHaveBeenCalled();
   });
@@ -171,7 +171,7 @@ describe("SubstitutionFinder", () => {
     render(
       <SubstitutionFinder {...defaultProps} layers={fullLayers} onAddLayerAndNavigate={onAdd} />,
     );
-    fireEvent.press(screen.getByTestId("sub-section-diatonic-9"));
+    fireEvent.press(screen.getByTestId("sub-section-tonic-9"));
     fireEvent.press(screen.getByTestId("glass-btn-upload"));
     expect(Haptics.notificationAsync).toHaveBeenCalledWith("error");
     expect(alertSpy).toHaveBeenCalled();

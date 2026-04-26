@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import "../../../i18n";
 import type { Accidental, Theme, LayerConfig, ChordType } from "../../../types";
 import { createDefaultLayer, MAX_LAYERS } from "../../../types";
-import { getColors, pickNextLayerColor, BLACK } from "../../../themes/design";
+import { getColors, pickNextLayerColor, BLACK, TOGGLE_COLORS, WHITE } from "../../../themes/design";
 import { getRootIndex, getNotesByAccidental, CHORD_SUFFIX_MAP } from "../../../lib/fretboard";
 import { getTensionsAndAvoids } from "../../../lib/harmonyUtils";
 import type { KeyType, TensionNote } from "../../../lib/harmonyUtils";
@@ -352,9 +352,19 @@ export default function TensionAvoidFinder({
         >
           <View style={styles.sourceHeader}>
             <Text style={[styles.sourceChordName, { color: colors.textStrong }]}>{chordName}</Text>
-            <View style={[styles.typeBadge, { backgroundColor: colors.surface }]}>
-              <Text style={[styles.typeLabel, { color: colors.textSubtle }]}>{keyLabel}</Text>
-            </View>
+          </View>
+          <View style={styles.badgesRow}>
+            {result.chordTones.map((tn) => (
+              <View
+                key={tn.noteIndex}
+                testID={`chord-tone-${tn.noteIndex}`}
+                style={[styles.toneBadge, { backgroundColor: colors.surface, borderColor }]}
+              >
+                <Text style={[styles.toneBadgeText, { color: colors.text }]}>
+                  {notes[tn.noteIndex]} ({INTERVAL_NAMES[tn.interval] ?? tn.interval})
+                </Text>
+              </View>
+            ))}
           </View>
           {forms.length > 0 && (
             <View style={styles.cardFormsRow}>
@@ -371,62 +381,90 @@ export default function TensionAvoidFinder({
           )}
         </TouchableOpacity>
 
-        {/* Chord tones */}
-        <View style={[styles.groupCard, { borderColor }]}>
-          <Text style={[styles.groupLabel, { color: colors.textSubtle }]}>
-            {t("finder.tensionAvoid.chordTones", "コードトーン")}
-          </Text>
-          <View style={styles.pillsRow}>
-            {result.chordTones.map((tn) => (
-              <View key={tn.noteIndex} testID={`chord-tone-${tn.noteIndex}`}>
-                <NotePill
-                  label={`${notes[tn.noteIndex]} (${INTERVAL_NAMES[tn.interval] ?? tn.interval})`}
-                  selected={true}
-                  activeBg={colors.chipSelectedBg}
-                  activeText={colors.chipSelectedText}
-                  inactiveBg={colors.chipUnselectedBg}
-                  inactiveText={colors.text}
-                  onPress={() => {}}
-                />
-              </View>
-            ))}
-          </View>
-        </View>
-
         {/* Tensions */}
-        <View style={[styles.groupCard, { borderColor }]}>
-          <Text style={[styles.groupLabel, { color: colors.textSubtle }]}>
-            {t("finder.tensionAvoid.tensions", "テンション")}
-          </Text>
-          {result.tensions.length === 0 ? (
+        {result.tensions.length === 0 ? (
+          <View style={[styles.groupCard, { borderColor }]}>
+            <Text style={[styles.groupLabel, { color: colors.textSubtle }]}>
+              {t("finder.tensionAvoid.tensions", "テンション")}
+            </Text>
             <Text style={[styles.emptyText, { color: colors.textSubtle }]}>
               {t("finder.tensionAvoid.none", "なし")}
             </Text>
-          ) : (
-            <View style={styles.pillsRow}>
-              {result.tensions.map((tn) => {
-                const mappable = getTensionChordType(chordType, tn.interval) !== null;
-                return (
-                  <View key={tn.noteIndex} testID={`tension-${tn.noteIndex}`}>
-                    <NotePill
-                      label={`${notes[tn.noteIndex]} (${getTensionLabel(chordType, tn.interval)})`}
-                      selected={false}
-                      activeBg={colors.chipSelectedBg}
-                      activeText={colors.chipSelectedText}
-                      inactiveBg={colors.chipUnselectedBg}
-                      inactiveText={colors.text}
-                      onPress={() => {
-                        if (!mappable) return;
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        setSelectedTension(tn);
-                      }}
-                    />
+          </View>
+        ) : (
+          <>
+            <Text style={[styles.sectionLabel, { color: colors.textSubtle }]}>
+              {t("finder.tensionAvoid.tensions", "テンション")}
+            </Text>
+            {result.tensions.map((tn) => {
+              const tensionChord = getTensionChordType(chordType, tn.interval);
+              const tensionLabel = getTensionLabel(chordType, tn.interval);
+              const tensionChordName = tensionChord
+                ? `${chordRoot}${CHORD_SUFFIX_MAP[tensionChord] ?? ""}`
+                : `${chordRoot}${CHORD_SUFFIX_MAP[chordType] ?? ""}(${tensionLabel})`;
+              const cardForms = tensionChord ? getAllChordForms(chordRootIndex, tensionChord) : [];
+              return (
+                <TouchableOpacity
+                  key={tn.noteIndex}
+                  testID={`tension-${tn.noteIndex}`}
+                  style={[styles.subSection, { borderColor }]}
+                  activeOpacity={tensionChord ? 0.7 : 1}
+                  onPress={() => {
+                    if (!tensionChord) return;
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setSelectedTension(tn);
+                  }}
+                >
+                  {tensionChord && (
+                    <View style={styles.subHeader}>
+                      <Text style={[styles.subChordName, { color: colors.textStrong }]}>
+                        {tensionChordName}
+                      </Text>
+                    </View>
+                  )}
+                  <View
+                    style={[
+                      styles.badgesRow,
+                      styles.cardBadgesRow,
+                      !tensionChord && styles.cardBadgesRowNoHeader,
+                    ]}
+                  >
+                    {result.chordTones.map((ct) => (
+                      <View
+                        key={ct.noteIndex}
+                        style={[styles.toneBadge, { backgroundColor: colors.surface, borderColor }]}
+                      >
+                        <Text style={[styles.toneBadgeText, { color: colors.text }]}>
+                          {notes[ct.noteIndex]} ({INTERVAL_NAMES[ct.interval] ?? ct.interval})
+                        </Text>
+                      </View>
+                    ))}
+                    <View
+                      style={[styles.toneBadge, { backgroundColor: TOGGLE_COLORS.on, borderColor }]}
+                    >
+                      <Text style={[styles.toneBadgeText, { color: WHITE }]}>
+                        {notes[tn.noteIndex]} ({tensionLabel})
+                      </Text>
+                    </View>
                   </View>
-                );
-              })}
-            </View>
-          )}
-        </View>
+                  {cardForms.length > 0 && (
+                    <View style={styles.cardFormsRow}>
+                      {cardForms.map((cells, fi) => (
+                        <ChordDiagram
+                          key={fi}
+                          cells={cells}
+                          rootIndex={chordRootIndex}
+                          theme={theme}
+                          width={formWidth}
+                        />
+                      ))}
+                    </View>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </>
+        )}
 
         {/* Avoid notes */}
         <View style={[styles.groupCard, { borderColor }]}>
@@ -438,18 +476,19 @@ export default function TensionAvoidFinder({
               {t("finder.tensionAvoid.none", "なし")}
             </Text>
           ) : (
-            <View style={styles.pillsRow}>
+            <View style={styles.badgesRow}>
               {result.avoidNotes.map((tn) => (
-                <View key={tn.noteIndex} testID={`avoid-${tn.noteIndex}`}>
-                  <NotePill
-                    label={`${notes[tn.noteIndex]} (${TENSION_NAMES[tn.interval] ?? tn.interval})`}
-                    selected={false}
-                    activeBg={colors.chipSelectedBg}
-                    activeText={colors.chipSelectedText}
-                    inactiveBg={colors.chipUnselectedBg}
-                    inactiveText={colors.text}
-                    onPress={() => {}}
-                  />
+                <View
+                  key={tn.noteIndex}
+                  testID={`avoid-${tn.noteIndex}`}
+                  style={[
+                    styles.toneBadge,
+                    { backgroundColor: colors.pillDangerBg, borderColor: colors.pillDangerBorder },
+                  ]}
+                >
+                  <Text style={[styles.toneBadgeText, { color: colors.textDanger }]}>
+                    {notes[tn.noteIndex]} ({TENSION_NAMES[tn.interval] ?? tn.interval})
+                  </Text>
                 </View>
               ))}
             </View>
@@ -577,6 +616,23 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: 8,
   },
+  subSection: {
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: "hidden",
+  },
+  subHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingTop: 14,
+    paddingBottom: 10,
+  },
+  subChordName: {
+    fontSize: 17,
+    fontWeight: "700",
+  },
   groupCard: {
     borderRadius: 16,
     borderWidth: StyleSheet.hairlineWidth,
@@ -590,10 +646,34 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
-  pillsRow: {
+  sectionLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    paddingHorizontal: 2,
+  },
+  badgesRow: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
+  },
+  cardBadgesRow: {
+    paddingHorizontal: 14,
+    paddingBottom: 10,
+  },
+  cardBadgesRowNoHeader: {
+    paddingTop: 14,
+  },
+  toneBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  toneBadgeText: {
+    fontSize: 13,
+    fontWeight: "600",
   },
   emptyText: {
     fontSize: 13,
