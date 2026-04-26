@@ -1,6 +1,6 @@
 import React from "react";
-import { render, fireEvent, screen } from "@testing-library/react-native";
-import ModulationFinder from "..";
+import { render, screen } from "@testing-library/react-native";
+import ModulationMeansFinder from "..";
 
 jest.mock("react-i18next", () => ({
   useTranslation: () => ({
@@ -52,6 +52,10 @@ jest.mock("../../../../components/ui/ChordDiagram", () => ({
 }));
 jest.mock("../../../../components/ui/FinderDetailSheet", () => () => null);
 jest.mock("../../../../components/LayerEditModal/LayerDescription", () => () => null);
+jest.mock("../../../../components/ui/Icon", () => {
+  const { View } = require("react-native");
+  return { __esModule: true, default: () => <View /> };
+});
 
 const baseProps = {
   theme: "dark" as const,
@@ -62,38 +66,24 @@ const baseProps = {
   onEnablePerLayerRoot: jest.fn(),
 };
 
-describe("ModulationFinder", () => {
+describe("ModulationMeansFinder", () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it("renders explore mode without crashing", () => {
-    render(<ModulationFinder {...baseProps} />);
-    expect(screen.getByTestId("note-picker")).toBeTruthy();
-    expect(screen.getByText("finder.modulation.sectionChromatic")).toBeTruthy();
-    expect(screen.getByText("finder.modulation.sectionEnharmonic")).toBeTruthy();
-    expect(screen.getByText("finder.modulation.sectionModal")).toBeTruthy();
+  it("renders without crashing", () => {
+    render(<ModulationMeansFinder {...baseProps} />);
+    expect(screen.getAllByTestId("note-picker").length).toBe(2);
   });
 
-  it("shows 8 chromatic mediant rows in explore mode", () => {
-    render(<ModulationFinder {...baseProps} />);
-    expect(screen.getAllByTestId(/^chromatic-/).length).toBe(8);
-  });
-
-  it("shows 3 enharmonic rows in explore mode", () => {
-    render(<ModulationFinder {...baseProps} />);
-    expect(screen.getAllByTestId(/^enharmonic-/).length).toBe(3);
-  });
-
-  it("shows 6 modal rows in explore mode for major key", () => {
-    render(<ModulationFinder {...baseProps} />);
-    expect(screen.getAllByTestId(/^modal-/).length).toBe(6);
-  });
-
-  it("switches to means mode and shows all 4 sections", () => {
-    render(<ModulationFinder {...baseProps} />);
-    fireEvent.press(screen.getByTestId("seg-means"));
+  it("shows all 4 section headers", () => {
+    render(<ModulationMeansFinder {...baseProps} />);
     expect(screen.getByText("finder.modulation.sectionPivot")).toBeTruthy();
     expect(screen.getByText("finder.modulation.sectionEnharmonic")).toBeTruthy();
     expect(screen.getByText("finder.modulation.sectionChromatic")).toBeTruthy();
     expect(screen.getByText("finder.modulation.sectionModal")).toBeTruthy();
+  });
+
+  it("shows pivot chord rows for C major to G major", () => {
+    render(<ModulationMeansFinder {...baseProps} />);
+    expect(screen.getAllByTestId(/^pivot-chip-/).length).toBeGreaterThan(0);
   });
 });

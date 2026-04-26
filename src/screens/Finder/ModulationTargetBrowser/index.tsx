@@ -19,22 +19,35 @@ import {
   getRelatedKeys,
   getPivotChords,
   getDiatonicChordList,
+  getChromaticMediants,
+  getEnharmonicModulations,
+  getModalModulations,
   chordDisplayName,
   type KeyType,
+  type ChromaticMediantRelation,
 } from "../../../lib/harmonyUtils";
 import ChordDiagram, { getAllChordForms } from "../../../components/ui/ChordDiagram";
 import NotePickerButton from "../../../components/ui/NotePickerButton";
 import { SegmentedToggle } from "../../../components/ui/SegmentedToggle";
 import FinderDetailSheet from "../../../components/ui/FinderDetailSheet";
 import LayerDescription from "../../../components/LayerEditModal/LayerDescription";
-interface RelatedKeysBrowserProps {
-  theme: Theme;
-  accidental: Accidental;
-  layers: LayerConfig[];
-  globalRootNote: string;
-  onAddLayerAndNavigate: (layer: LayerConfig) => void;
-  onEnablePerLayerRoot?: () => void;
-}
+
+const RELATION_I18N: Record<ChromaticMediantRelation, string> = {
+  M3up: "finder.modulation.relation.M3up",
+  m3up: "finder.modulation.relation.m3up",
+  M3down: "finder.modulation.relation.M3down",
+  m3down: "finder.modulation.relation.m3down",
+};
+
+const MODE_I18N: Record<string, string> = {
+  ionian: "options.scale.ionian",
+  dorian: "options.scale.dorian",
+  phrygian: "options.scale.phrygian",
+  lydian: "options.scale.lydian",
+  mixolydian: "options.scale.mixolydian",
+  aeolian: "options.scale.aeolian",
+  locrian: "options.scale.locrian",
+};
 
 type PendingChord = {
   rootIndex: number;
@@ -45,14 +58,23 @@ type PendingChord = {
   relatedKeyName: string;
 };
 
-export default function RelatedKeysBrowser({
+interface ModulationTargetBrowserProps {
+  theme: Theme;
+  accidental: Accidental;
+  layers: LayerConfig[];
+  globalRootNote: string;
+  onAddLayerAndNavigate: (layer: LayerConfig) => void;
+  onEnablePerLayerRoot?: () => void;
+}
+
+export default function ModulationTargetBrowser({
   theme,
   accidental,
   layers,
   globalRootNote,
   onAddLayerAndNavigate,
   onEnablePerLayerRoot,
-}: RelatedKeysBrowserProps) {
+}: ModulationTargetBrowserProps) {
   const { t } = useTranslation();
   const isDark = theme === "dark";
   const colors = getColors(isDark);
@@ -78,7 +100,6 @@ export default function RelatedKeysBrowser({
   ];
 
   const relatedKeys = useMemo(() => getRelatedKeys(rootIndex, keyType), [rootIndex, keyType]);
-
   const sections = useMemo(
     () =>
       relatedKeys.map((rk) => {
@@ -90,9 +111,19 @@ export default function RelatedKeysBrowser({
     [relatedKeys, rootIndex, keyType],
   );
 
+  const chromaticMediants = useMemo(
+    () => getChromaticMediants(rootIndex, keyType),
+    [rootIndex, keyType],
+  );
+  const enharmonicMods = useMemo(
+    () => getEnharmonicModulations(rootIndex, keyType),
+    [rootIndex, keyType],
+  );
+  const modalMods = useMemo(() => getModalModulations(rootIndex, keyType), [rootIndex, keyType]);
+
   const pendingTmpLayer = useMemo(() => {
     if (!pendingChord) return null;
-    const layer = createDefaultLayer("chord", "related-tmp", BLACK);
+    const layer = createDefaultLayer("chord", "modulation-target-tmp", BLACK);
     layer.chordDisplayMode = "form";
     layer.chordType = pendingChord.chordType;
     return layer;
@@ -118,9 +149,11 @@ export default function RelatedKeysBrowser({
     [isFull, layers, notes, globalRootNote, rootNote, onAddLayerAndNavigate, onEnablePerLayerRoot],
   );
 
+  const keyName = (rIndex: number, kt: KeyType) =>
+    `${notes[rIndex]} ${kt === "major" ? "Major" : "Minor"}`;
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.pageBg }}>
-      {/* Controls */}
       <View style={[styles.controlRow, { borderBottomColor: borderColor }]}>
         <NotePickerButton
           theme={theme}
@@ -150,6 +183,10 @@ export default function RelatedKeysBrowser({
         contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 80 }]}
         showsVerticalScrollIndicator={false}
       >
+        {/* 近親調 */}
+        <Text style={[styles.bigSectionHeader, { color: colors.textSubtle }]}>
+          {t("finder.modulationTarget.sectionNear")}
+        </Text>
         <Text style={[styles.baseKeyLabel, { color: colors.textSubtle }]}>
           {t("finder.relatedKeys.baseKey", { key: keyLabel(rootIndex, keyType) })}
         </Text>
@@ -221,6 +258,76 @@ export default function RelatedKeysBrowser({
             </View>
           );
         })}
+
+        {/* 遠隔調 */}
+        <Text style={[styles.bigSectionHeader, { color: colors.textSubtle }]}>
+          {t("finder.modulationTarget.sectionFar")}
+        </Text>
+
+        <View style={styles.sectionGroup}>
+          <Text style={[styles.sectionSubHeader, { color: colors.textSubtle }]}>
+            {t("finder.modulation.sectionChromatic")}
+          </Text>
+          {chromaticMediants.map((c, i) => (
+            <View
+              key={i}
+              testID={`chromatic-${c.rootIndex}-${c.keyType}`}
+              style={[styles.chordRow, { borderColor, backgroundColor: colors.surface }]}
+            >
+              <View style={styles.chordLeft}>
+                <Text style={[styles.chordName, { color: colors.textStrong }]}>
+                  {keyName(c.rootIndex, c.keyType)}
+                </Text>
+                <Text style={[styles.chordDegree, { color: colors.textSubtle }]}>
+                  {t(RELATION_I18N[c.relation])}
+                </Text>
+              </View>
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.sectionGroup}>
+          <Text style={[styles.sectionSubHeader, { color: colors.textSubtle }]}>
+            {t("finder.modulation.sectionEnharmonic")}
+          </Text>
+          {enharmonicMods.map((e, i) => (
+            <View
+              key={i}
+              testID={`enharmonic-${e.destRootIndex}`}
+              style={[styles.chordRow, { borderColor, backgroundColor: colors.surface }]}
+            >
+              <View style={styles.chordLeft}>
+                <Text style={[styles.chordName, { color: colors.textStrong }]}>
+                  {keyName(e.destRootIndex, e.destKeyType)}
+                </Text>
+                <Text style={[styles.chordDegree, { color: colors.textSubtle }]}>
+                  {t("finder.modulation.viaChord", {
+                    chord: `${notes[e.pivotRootIndex]}dim7`,
+                  })}
+                </Text>
+              </View>
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.sectionGroup}>
+          <Text style={[styles.sectionSubHeader, { color: colors.textSubtle }]}>
+            {t("finder.modulation.sectionModal")}
+          </Text>
+          {modalMods.map((m, i) => (
+            <View
+              key={i}
+              testID={`modal-${m.modeName}`}
+              style={[styles.chordRow, { borderColor, backgroundColor: colors.surface }]}
+            >
+              <View style={styles.chordLeft}>
+                <Text style={[styles.chordName, { color: colors.textStrong }]}>
+                  {`${notes[m.rootIndex]} ${t(MODE_I18N[m.modeName] ?? m.modeName)}`}
+                </Text>
+              </View>
+            </View>
+          ))}
+        </View>
       </ScrollView>
 
       <FinderDetailSheet
@@ -301,6 +408,13 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     gap: 16,
   },
+  bigSectionHeader: {
+    fontSize: 11,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginTop: 8,
+  },
   baseKeyLabel: {
     fontSize: 13,
     fontWeight: "500",
@@ -355,6 +469,38 @@ const styles = StyleSheet.create({
   chipChordName: {
     fontSize: 14,
     fontWeight: "700",
+  },
+  sectionGroup: {
+    gap: 8,
+    marginTop: 4,
+  },
+  sectionSubHeader: {
+    fontSize: 11,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  chordRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderRadius: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    gap: 8,
+  },
+  chordLeft: {
+    flex: 1,
+    gap: 2,
+  },
+  chordName: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  chordDegree: {
+    fontSize: 11,
+    fontWeight: "500",
   },
   degreeBadges: {
     flexDirection: "row",

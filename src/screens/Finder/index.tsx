@@ -22,9 +22,9 @@ import SubstitutionFinder from "./SubstitutionFinder";
 import ChordSuggest from "./ChordSuggest";
 import DominantMotion from "./DominantMotion";
 import CapoFinder from "./CapoFinder";
-import CommonFinder from "./CommonFinder";
-import ModulationFinder from "./ModulationFinder";
-import RelatedKeysBrowser from "./RelatedKeysBrowser";
+import CommonNotesFinder from "./CommonNotesFinder";
+import ModulationTargetBrowser from "./ModulationTargetBrowser";
+import ModulationMeansFinder from "./ModulationMeansFinder";
 import ModeBrowser from "./ModeBrowser";
 import ProgressionAnalyzer from "./ProgressionAnalyzer";
 import ScaleCompatibility from "./ScaleCompatibility";
@@ -389,15 +389,6 @@ export default function FinderPane({
               onAddLayerAndNavigate={onAddLayerAndNavigate}
               onEnablePerLayerRoot={onEnablePerLayerRoot}
             />
-          ) : contentMode === "related-keys" ? (
-            <RelatedKeysBrowser
-              theme={theme}
-              accidental={accidental}
-              layers={layers}
-              globalRootNote={rootNote}
-              onAddLayerAndNavigate={onAddLayerAndNavigate}
-              onEnablePerLayerRoot={onEnablePerLayerRoot}
-            />
           ) : contentMode === "modes" ? (
             <ModeBrowser
               theme={theme}
@@ -470,7 +461,7 @@ export default function FinderPane({
               onEnablePerLayerRoot={onEnablePerLayerRoot}
             />
           ) : contentMode === "common" ? (
-            <CommonFinder
+            <CommonNotesFinder
               theme={theme}
               accidental={accidental}
               layers={layers}
@@ -478,8 +469,17 @@ export default function FinderPane({
               onAddLayerAndNavigate={onAddLayerAndNavigate}
               onEnablePerLayerRoot={onEnablePerLayerRoot}
             />
-          ) : contentMode === "modulation" ? (
-            <ModulationFinder
+          ) : contentMode === "modulation-target" ? (
+            <ModulationTargetBrowser
+              theme={theme}
+              accidental={accidental}
+              layers={layers}
+              globalRootNote={rootNote}
+              onAddLayerAndNavigate={onAddLayerAndNavigate}
+              onEnablePerLayerRoot={onEnablePerLayerRoot}
+            />
+          ) : contentMode === "modulation-means" ? (
+            <ModulationMeansFinder
               theme={theme}
               accidental={accidental}
               layers={layers}

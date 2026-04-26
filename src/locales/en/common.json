@@ -355,8 +355,6 @@
     "homeCapoDesc": "Convert between capo position and chord shapes",
     "homePivotChordTitle": "Pivot Chord",
     "homePivotChordDesc": "Find common chords (pivot chords) between two keys",
-    "homeRelatedKeysTitle": "Related Keys",
-    "homeRelatedKeysDesc": "Explore relationships between keys",
     "homeModesTitle": "Modes",
     "homeModesDesc": "Explore the mode family of a scale",
     "pivotChord": {
@@ -490,20 +488,23 @@
     "homeChordSuggestDesc": "Browse next-chord candidates by category for any chord",
     "homeDominantMotionTitle": "Dominant Motion",
     "homeDominantMotionDesc": "Explore dominant resolution patterns from V→I to backdoor cadences",
-    "homeCommonTitle": "Common",
-    "homeCommonDesc": "Find common notes between chords or common chords between keys",
-    "homeModulationTitle": "Modulation",
-    "homeModulationDesc": "Explore modulation destinations or means between two keys",
+    "homeCommonTitle": "Common Notes",
+    "homeCommonDesc": "Find common notes across chords",
+    "homeModulationTargetTitle": "Modulation Targets",
+    "homeModulationTargetDesc": "Browse near and distant modulation targets",
+    "homeModulationMeansTitle": "Modulation Means",
+    "homeModulationMeansDesc": "Find modulation methods between two keys",
     "common": {
       "modeNotes": "Common Notes",
-      "modeChords": "Common Chords",
       "addChord": "+ Add Chord",
       "needMoreChords": "Add at least one more chord",
       "none": "No common notes"
     },
+    "modulationTarget": {
+      "sectionNear": "Related Keys",
+      "sectionFar": "Distant Keys"
+    },
     "modulation": {
-      "modeExplore": "Explore",
-      "modeMeans": "Means",
       "sectionChromatic": "Chromatic Mediant",
       "sectionEnharmonic": "Enharmonic",
       "sectionModal": "Modal",

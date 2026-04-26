@@ -4,7 +4,6 @@ export type FinderMode =
   | "diatonic"
   | "substitution"
   | "capo"
-  | "related-keys"
   | "modes"
   | "progression-analysis"
   | "scale-compat"
@@ -14,4 +13,5 @@ export type FinderMode =
   | "chord-suggest"
   | "dominant-motion"
   | "common"
-  | "modulation";
+  | "modulation-target"
+  | "modulation-means";

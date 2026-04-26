@@ -1,6 +1,6 @@
 import React from "react";
 import { render, fireEvent, screen } from "@testing-library/react-native";
-import CommonFinder from "..";
+import CommonNotesFinder from "..";
 
 jest.mock("react-i18next", () => ({
   useTranslation: () => ({
@@ -16,10 +16,6 @@ jest.mock("expo-haptics", () => ({
 jest.mock("react-native-safe-area-context", () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
 }));
-jest.mock("../../../../components/ui/NotePickerButton", () => {
-  const { Text } = require("react-native");
-  return ({ value }: { value: string }) => <Text testID="note-picker">{value}</Text>;
-});
 jest.mock("../../../../components/ui/SegmentedToggle", () => {
   const { TouchableOpacity, Text } = require("react-native");
   return {
@@ -45,13 +41,6 @@ jest.mock("../../../../components/ui/SegmentedToggle", () => {
     ),
   };
 });
-jest.mock("../../../../components/ui/ChordDiagram", () => ({
-  __esModule: true,
-  default: () => null,
-  getAllChordForms: () => [],
-}));
-jest.mock("../../../../components/ui/FinderDetailSheet", () => () => null);
-jest.mock("../../../../components/LayerEditModal/LayerDescription", () => () => null);
 jest.mock("../../../Templates/TemplateFormSheet", () => ({
   CHORD_TYPE_GROUPS: [
     {
@@ -75,16 +64,22 @@ const baseProps = {
   onEnablePerLayerRoot: jest.fn(),
 };
 
-describe("CommonFinder", () => {
+describe("CommonNotesFinder", () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it("renders without crashing in notes mode", () => {
-    render(<CommonFinder {...baseProps} />);
+  it("renders without crashing", () => {
+    render(<CommonNotesFinder {...baseProps} />);
     expect(screen.getAllByTestId(/^note-chip-/).length).toBe(12);
   });
 
+  it("does not show mode toggle", () => {
+    render(<CommonNotesFinder {...baseProps} />);
+    expect(screen.queryByTestId("seg-notes")).toBeNull();
+    expect(screen.queryByTestId("seg-chords")).toBeNull();
+  });
+
   it("shows chord chip and needMoreChords message with 1 chord added", () => {
-    render(<CommonFinder {...baseProps} />);
+    render(<CommonNotesFinder {...baseProps} />);
     fireEvent.press(screen.getByTestId("note-chip-C"));
     fireEvent.press(screen.getByTestId("chord-type-major"));
     expect(screen.getByTestId("chord-chip-0")).toBeTruthy();
@@ -92,18 +87,11 @@ describe("CommonFinder", () => {
   });
 
   it("shows common notes section when 2 chords are added", () => {
-    render(<CommonFinder {...baseProps} />);
+    render(<CommonNotesFinder {...baseProps} />);
     fireEvent.press(screen.getByTestId("note-chip-C"));
     fireEvent.press(screen.getByTestId("chord-type-major"));
     fireEvent.press(screen.getByTestId("note-chip-A"));
     fireEvent.press(screen.getByTestId("chord-type-minor"));
-    expect(screen.getAllByText("finder.common.modeNotes").length).toBeGreaterThanOrEqual(2);
-  });
-
-  it("shows pivot chord list in chords mode", () => {
-    render(<CommonFinder {...baseProps} />);
-    fireEvent.press(screen.getByTestId("seg-chords"));
-    expect(screen.getAllByTestId("note-picker").length).toBeGreaterThan(0);
-    expect(screen.getByText("finder.relatedKeys.pivotChords")).toBeTruthy();
+    expect(screen.getAllByText("finder.common.modeNotes").length).toBeGreaterThanOrEqual(1);
   });
 });

@@ -90,22 +90,22 @@ const MODES: {
   },
   // 転調
   {
-    mode: "related-keys",
-    icon: "network",
-    titleKey: "finder.homeRelatedKeysTitle",
-    descKey: "finder.homeRelatedKeysDesc",
-  },
-  {
     mode: "common",
     icon: "scale-overlap",
     titleKey: "finder.homeCommonTitle",
     descKey: "finder.homeCommonDesc",
   },
   {
-    mode: "modulation",
+    mode: "modulation-target",
+    icon: "network",
+    titleKey: "finder.homeModulationTargetTitle",
+    descKey: "finder.homeModulationTargetDesc",
+  },
+  {
+    mode: "modulation-means",
     icon: "arrows-lr",
-    titleKey: "finder.homeModulationTitle",
-    descKey: "finder.homeModulationDesc",
+    titleKey: "finder.homeModulationMeansTitle",
+    descKey: "finder.homeModulationMeansDesc",
   },
   // コード進行
   {

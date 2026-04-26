@@ -355,8 +355,6 @@
     "homeCapoDesc": "カポタスト位置とコード形を変換する",
     "homePivotChordTitle": "ピボットコード",
     "homePivotChordDesc": "2つのキーを繋ぐ共通コード（ピボットコード）を見つける",
-    "homeRelatedKeysTitle": "関係調",
-    "homeRelatedKeysDesc": "キーと調性の関係を俯瞰する",
     "homeModesTitle": "モード",
     "homeModesDesc": "スケールとモードの親子関係を確認する",
     "pivotChord": {
@@ -490,20 +488,23 @@
     "homeChordSuggestDesc": "あるコードから次に進める候補をカテゴリ別に表示する",
     "homeDominantMotionTitle": "ドミナントモーション",
     "homeDominantMotionDesc": "V→Iをはじめとするドミナント解決のパターンを一覧で確認する",
-    "homeCommonTitle": "共通",
-    "homeCommonDesc": "コードの共通音、またはキーの共通コードを調べる",
-    "homeModulationTitle": "転調",
-    "homeModulationDesc": "転調先の探索や2つのキー間の転調手段を確認する",
+    "homeCommonTitle": "共通音",
+    "homeCommonDesc": "複数コード間の共通音を調べる",
+    "homeModulationTargetTitle": "転調先",
+    "homeModulationTargetDesc": "近親調と遠隔調の転調先を一覧する",
+    "homeModulationMeansTitle": "転調手段",
+    "homeModulationMeansDesc": "2つのキー間の転調方法を確認する",
     "common": {
       "modeNotes": "共通音",
-      "modeChords": "共通コード",
       "addChord": "+ コードを追加",
       "needMoreChords": "コードをもう1つ以上追加してください",
       "none": "共通音なし"
     },
+    "modulationTarget": {
+      "sectionNear": "近親調",
+      "sectionFar": "遠隔調"
+    },
     "modulation": {
-      "modeExplore": "探索",
-      "modeMeans": "手段",
       "sectionChromatic": "クロマチックメディアント",
       "sectionEnharmonic": "エンハーモニック",
       "sectionModal": "モーダル",
