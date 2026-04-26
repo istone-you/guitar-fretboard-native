@@ -1,5 +1,6 @@
 import React from "react";
 import { render, screen } from "@testing-library/react-native";
+import { InteractionManager } from "react-native";
 import CirclePane from "..";
 
 jest.mock("react-i18next", () => ({
@@ -33,6 +34,17 @@ jest.mock("../../../components/ui/FinderDetailSheet", () => ({
 }));
 
 describe("CirclePane", () => {
+  beforeEach(() => {
+    jest.spyOn(InteractionManager, "runAfterInteractions").mockImplementation((cb) => {
+      if (typeof cb === "function") cb();
+      return { cancel: jest.fn(), done: jest.fn() } as any;
+    });
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   const defaultProps = {
     theme: "light" as const,
     accidental: "flat" as const,

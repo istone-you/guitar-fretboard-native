@@ -1,5 +1,5 @@
 import React from "react";
-import { render, fireEvent, screen, act } from "@testing-library/react-native";
+import { render, fireEvent, screen } from "@testing-library/react-native";
 import ProgressionAnalyzer from "..";
 
 jest.mock("../../../../hooks/useProgressionTemplates", () => ({
@@ -11,7 +11,6 @@ jest.mock("../../../../hooks/useProgressionTemplates", () => ({
   }),
 }));
 jest.mock("../../../../components/ui/BottomSheetModal", () => {
-  const { View } = require("react-native");
   return {
     __esModule: true,
     default: ({ visible, children }: any) =>
