@@ -19,11 +19,13 @@ import {
   getSubstitutions,
   SUBSTITUTION_CHORD_TYPES,
   SUBSTITUTION_CHORD_LABELS,
+  type KeyType,
   type SubstitutionType,
 } from "../../../lib/substitutions";
 import ChordDiagram, { getAllChordForms } from "../../../components/ui/ChordDiagram";
 import NotePickerButton from "../../../components/ui/NotePickerButton";
 import NotePill from "../../../components/ui/NotePill";
+import { SegmentedToggle } from "../../../components/ui/SegmentedToggle";
 import FinderDetailSheet from "../../../components/ui/FinderDetailSheet";
 
 interface SubstitutionFinderProps {
@@ -41,6 +43,11 @@ type PendingSubstitution = {
   chordType: ChordType;
 };
 
+const KEY_TYPE_OPTIONS: { value: KeyType; label: string }[] = [
+  { value: "major", label: "Major" },
+  { value: "minor", label: "Minor" },
+];
+
 export default function SubstitutionFinder({
   theme,
   accidental,
@@ -55,10 +62,14 @@ export default function SubstitutionFinder({
   const insets = useSafeAreaInsets();
   const { width: screenWidth } = useWindowDimensions();
 
+  const [keyRoot, setKeyRoot] = useState("C");
+  const [keyType, setKeyType] = useState<KeyType>("major");
   const [rootNote, setRootNote] = useState("C");
   const [selectedChordType, setSelectedChordType] = useState<ChordType>("Major");
   const [pendingSub, setPendingSub] = useState<PendingSubstitution | null>(null);
   const [sourceDetailVisible, setSourceDetailVisible] = useState(false);
+
+  const keyRootIndex = getRootIndex(keyRoot);
   const rootIndex = getRootIndex(rootNote);
   const notes = getNotesByAccidental(accidental);
   const isFull = layers.length >= MAX_LAYERS;
@@ -74,8 +85,8 @@ export default function SubstitutionFinder({
   );
 
   const substitutions = useMemo(
-    () => getSubstitutions(rootIndex, selectedChordType),
-    [rootIndex, selectedChordType],
+    () => getSubstitutions(keyRootIndex, keyType, rootIndex, selectedChordType),
+    [keyRootIndex, keyType, rootIndex, selectedChordType],
   );
 
   const handleAdd = useCallback(
@@ -120,8 +131,35 @@ export default function SubstitutionFinder({
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.pageBg }}>
-      {/* Root picker */}
-      <View style={[styles.rootRow, { borderBottomColor: borderColor }]}>
+      {/* Key picker */}
+      <View style={[styles.pickerRow, { borderBottomColor: borderColor }]}>
+        <View style={styles.keyRow}>
+          <NotePickerButton
+            theme={theme}
+            accidental={accidental}
+            value={keyRoot}
+            onChange={(note) => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setKeyRoot(note);
+            }}
+            label={t("finder.substitution.keyRoot")}
+            sheetTitle={t("finder.substitution.keyRoot")}
+          />
+          <SegmentedToggle
+            theme={theme}
+            value={keyType}
+            onChange={(v) => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setKeyType(v as KeyType);
+            }}
+            options={KEY_TYPE_OPTIONS}
+            size="compact"
+          />
+        </View>
+      </View>
+
+      {/* Chord root picker */}
+      <View style={[styles.pickerRow, { borderBottomColor: borderColor }]}>
         <NotePickerButton
           theme={theme}
           accidental={accidental}
@@ -133,25 +171,23 @@ export default function SubstitutionFinder({
           label={t("header.root")}
           sheetTitle={t("header.root")}
         />
-      </View>
-
-      {/* Chord type chips */}
-      <View style={[styles.chipsRow, { borderBottomColor: borderColor }]}>
-        {SUBSTITUTION_CHORD_TYPES.map((ct) => (
-          <NotePill
-            key={ct}
-            label={SUBSTITUTION_CHORD_LABELS[ct] ?? ct}
-            selected={selectedChordType === ct}
-            activeBg={colors.chipSelectedBg}
-            activeText={colors.chipSelectedText}
-            inactiveBg={colors.chipUnselectedBg}
-            inactiveText={colors.text}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setSelectedChordType(ct);
-            }}
-          />
-        ))}
+        <View style={styles.chipsRow}>
+          {SUBSTITUTION_CHORD_TYPES.map((ct) => (
+            <NotePill
+              key={ct}
+              label={SUBSTITUTION_CHORD_LABELS[ct] ?? ct}
+              selected={selectedChordType === ct}
+              activeBg={colors.chipSelectedBg}
+              activeText={colors.chipSelectedText}
+              inactiveBg={colors.chipUnselectedBg}
+              inactiveText={colors.text}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setSelectedChordType(ct);
+              }}
+            />
+          ))}
+        </View>
       </View>
 
       {/* Results */}
@@ -309,20 +345,25 @@ export default function SubstitutionFinder({
 }
 
 const styles = StyleSheet.create({
-  rootRow: {
+  pickerRow: {
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
+    gap: 10,
     alignItems: "center",
+  },
+  keyRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    flexWrap: "wrap",
+    justifyContent: "center",
   },
   chipsRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10,
+    gap: 8,
     justifyContent: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   resultContent: {
     paddingHorizontal: 16,

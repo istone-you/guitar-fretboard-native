@@ -1,5 +1,7 @@
 import type { ChordType } from "../types";
+import type { KeyType } from "./harmonyUtils";
 
+export type { KeyType };
 export type SubstitutionType = "tonic" | "subdominant" | "dominant";
 
 export interface SubstitutionResult {
@@ -7,29 +9,6 @@ export interface SubstitutionResult {
   rootIndex: number;
   chordType: ChordType;
 }
-
-// トニック代理: Major / maj7 → VIm（+9）・IIIm（+4）
-const TONIC_MAP: Partial<Record<ChordType, { semitoneOffset: number; chordType: ChordType }[]>> = {
-  Major: [
-    { semitoneOffset: 9, chordType: "Minor" }, // VIm（平行短調）
-    { semitoneOffset: 4, chordType: "Minor" }, // IIIm（中音）
-  ],
-  maj7: [
-    { semitoneOffset: 9, chordType: "m7" }, // VIm7
-    { semitoneOffset: 4, chordType: "m7" }, // IIIm7
-  ],
-};
-
-// サブドミナント代理: Minor / m7 → IVmaj（+3）
-const SUBDOMINANT_MAP: Partial<
-  Record<ChordType, { semitoneOffset: number; chordType: ChordType }>
-> = {
-  Minor: { semitoneOffset: 3, chordType: "Major" }, // IIm → IV
-  m7: { semitoneOffset: 3, chordType: "maj7" }, // IIm7 → IVmaj7
-};
-
-// ドミナント代理: 7th → ♭II7（+6, トライトーン代理）
-const DOMINANT_TYPES = new Set<ChordType>(["7th"]);
 
 export const SUBSTITUTION_CHORD_TYPES: ChordType[] = ["Major", "Minor", "maj7", "m7", "7th"];
 
@@ -41,31 +20,65 @@ export const SUBSTITUTION_CHORD_LABELS: Partial<Record<ChordType, string>> = {
   "7th": "7",
 };
 
-export function getSubstitutions(rootIndex: number, chordType: ChordType): SubstitutionResult[] {
+export function getSubstitutions(
+  keyRootIndex: number,
+  keyType: KeyType,
+  chordRootIndex: number,
+  chordType: ChordType,
+): SubstitutionResult[] {
   const results: SubstitutionResult[] = [];
+  const degree = (chordRootIndex - keyRootIndex + 12) % 12;
 
-  const tonicSubs = TONIC_MAP[chordType];
-  if (tonicSubs) {
-    for (const sub of tonicSubs) {
-      results.push({
-        type: "tonic",
-        rootIndex: (rootIndex + sub.semitoneOffset) % 12,
-        chordType: sub.chordType,
-      });
+  if (keyType === "major") {
+    if (degree === 0 && chordType === "Major") {
+      results.push({ type: "tonic", rootIndex: (keyRootIndex + 9) % 12, chordType: "Minor" });
+      results.push({ type: "tonic", rootIndex: (keyRootIndex + 4) % 12, chordType: "Minor" });
+    } else if (degree === 0 && chordType === "maj7") {
+      results.push({ type: "tonic", rootIndex: (keyRootIndex + 9) % 12, chordType: "m7" });
+      results.push({ type: "tonic", rootIndex: (keyRootIndex + 4) % 12, chordType: "m7" });
+    } else if (degree === 9 && chordType === "Minor") {
+      results.push({ type: "tonic", rootIndex: keyRootIndex, chordType: "Major" });
+    } else if (degree === 9 && chordType === "m7") {
+      results.push({ type: "tonic", rootIndex: keyRootIndex, chordType: "maj7" });
+    } else if (degree === 4 && chordType === "Minor") {
+      results.push({ type: "tonic", rootIndex: keyRootIndex, chordType: "Major" });
+    } else if (degree === 4 && chordType === "m7") {
+      results.push({ type: "tonic", rootIndex: keyRootIndex, chordType: "maj7" });
+    } else if (degree === 2 && chordType === "Minor") {
+      results.push({ type: "subdominant", rootIndex: (keyRootIndex + 5) % 12, chordType: "Major" });
+    } else if (degree === 2 && chordType === "m7") {
+      results.push({ type: "subdominant", rootIndex: (keyRootIndex + 5) % 12, chordType: "maj7" });
+    } else if (degree === 5 && chordType === "Major") {
+      results.push({ type: "subdominant", rootIndex: (keyRootIndex + 2) % 12, chordType: "Minor" });
+    } else if (degree === 5 && chordType === "maj7") {
+      results.push({ type: "subdominant", rootIndex: (keyRootIndex + 2) % 12, chordType: "m7" });
+    } else if (degree === 7 && chordType === "7th") {
+      results.push({ type: "dominant", rootIndex: (chordRootIndex + 6) % 12, chordType: "7th" });
+    } else if (degree === 1 && chordType === "7th") {
+      results.push({ type: "dominant", rootIndex: (keyRootIndex + 7) % 12, chordType: "7th" });
     }
-  }
-
-  const subdominantSub = SUBDOMINANT_MAP[chordType];
-  if (subdominantSub) {
-    results.push({
-      type: "subdominant",
-      rootIndex: (rootIndex + subdominantSub.semitoneOffset) % 12,
-      chordType: subdominantSub.chordType,
-    });
-  }
-
-  if (DOMINANT_TYPES.has(chordType)) {
-    results.push({ type: "dominant", rootIndex: (rootIndex + 6) % 12, chordType: "7th" });
+  } else {
+    if (degree === 0 && chordType === "Minor") {
+      results.push({ type: "tonic", rootIndex: (keyRootIndex + 3) % 12, chordType: "Major" });
+    } else if (degree === 0 && chordType === "m7") {
+      results.push({ type: "tonic", rootIndex: (keyRootIndex + 3) % 12, chordType: "maj7" });
+    } else if (degree === 3 && chordType === "Major") {
+      results.push({ type: "tonic", rootIndex: keyRootIndex, chordType: "Minor" });
+    } else if (degree === 3 && chordType === "maj7") {
+      results.push({ type: "tonic", rootIndex: keyRootIndex, chordType: "m7" });
+    } else if (degree === 5 && chordType === "Minor") {
+      results.push({ type: "subdominant", rootIndex: (keyRootIndex + 8) % 12, chordType: "Major" });
+    } else if (degree === 5 && chordType === "m7") {
+      results.push({ type: "subdominant", rootIndex: (keyRootIndex + 8) % 12, chordType: "maj7" });
+    } else if (degree === 8 && chordType === "Major") {
+      results.push({ type: "subdominant", rootIndex: (keyRootIndex + 5) % 12, chordType: "Minor" });
+    } else if (degree === 8 && chordType === "maj7") {
+      results.push({ type: "subdominant", rootIndex: (keyRootIndex + 5) % 12, chordType: "m7" });
+    } else if (degree === 7 && chordType === "7th") {
+      results.push({ type: "dominant", rootIndex: (chordRootIndex + 6) % 12, chordType: "7th" });
+    } else if (degree === 1 && chordType === "7th") {
+      results.push({ type: "dominant", rootIndex: (keyRootIndex + 7) % 12, chordType: "7th" });
+    }
   }
 
   return results;

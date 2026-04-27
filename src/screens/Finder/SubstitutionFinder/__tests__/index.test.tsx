@@ -27,14 +27,42 @@ jest.mock("../../../../components/ui/NotePickerButton", () => {
     default: ({
       value,
       onChange,
+      label = "",
     }: {
       value: string;
       onChange: (n: string) => void;
-      label: string;
+      label?: string;
     }) => (
-      <TouchableOpacity testID="note-picker" onPress={() => onChange("G")}>
-        <Text testID="note-value">{value}</Text>
+      <TouchableOpacity testID={`note-picker-${label}`} onPress={() => onChange("G")}>
+        <Text testID={`note-value-${label}`}>{value}</Text>
       </TouchableOpacity>
+    ),
+  };
+});
+
+jest.mock("../../../../components/ui/SegmentedToggle", () => {
+  const { TouchableOpacity, Text } = require("react-native");
+  return {
+    __esModule: true,
+    SegmentedToggle: ({
+      onChange,
+      options,
+    }: {
+      value: string;
+      onChange: (v: string) => void;
+      options: { value: string; label: string }[];
+    }) => (
+      <>
+        {options.map((o) => (
+          <TouchableOpacity
+            key={o.value}
+            testID={`segmented-${o.value}`}
+            onPress={() => onChange(o.value)}
+          >
+            <Text>{o.label}</Text>
+          </TouchableOpacity>
+        ))}
+      </>
     ),
   };
 });
@@ -115,9 +143,14 @@ describe("SubstitutionFinder", () => {
     expect(render(<SubstitutionFinder {...defaultProps} />).toJSON()).toBeTruthy();
   });
 
-  it("shows note picker with default root C", () => {
+  it("shows chord root picker with default value C", () => {
     render(<SubstitutionFinder {...defaultProps} />);
-    expect(screen.getByTestId("note-value").props.children).toBe("C");
+    expect(screen.getByTestId("note-value-header.root").props.children).toBe("C");
+  });
+
+  it("shows key root picker with default value C", () => {
+    render(<SubstitutionFinder {...defaultProps} />);
+    expect(screen.getByTestId("note-value-finder.substitution.keyRoot").props.children).toBe("C");
   });
 
   it("renders chord type chips", () => {
@@ -129,22 +162,39 @@ describe("SubstitutionFinder", () => {
     expect(screen.getByText("7")).toBeTruthy();
   });
 
-  it("shows two tonic substitutions for Major (Am and Em)", () => {
+  it("shows two tonic substitutions for I (C Major in C major)", () => {
     render(<SubstitutionFinder {...defaultProps} />);
     expect(screen.getByTestId("sub-section-tonic-9")).toBeTruthy();
     expect(screen.getByTestId("sub-section-tonic-4")).toBeTruthy();
   });
 
-  it("shows dominant substitution when 7 chip is selected", () => {
+  it("shows dominant substitution for V7 (G7 in C major)", () => {
     render(<SubstitutionFinder {...defaultProps} />);
+    fireEvent.press(screen.getByTestId("note-picker-header.root"));
     fireEvent.press(screen.getByText("7"));
-    expect(screen.getByTestId("sub-section-dominant-6")).toBeTruthy();
+    expect(screen.getByTestId("sub-section-dominant-1")).toBeTruthy();
   });
 
-  it("updates root note when NotePickerButton changes", () => {
+  it("shows subdominant substitution for IV (F in C major)", () => {
     render(<SubstitutionFinder {...defaultProps} />);
-    fireEvent.press(screen.getByTestId("note-picker"));
-    expect(screen.getByTestId("note-value").props.children).toBe("G");
+    fireEvent.press(screen.getByTestId("note-picker-header.root"));
+    expect(screen.queryByTestId("sub-section-subdominant-2")).toBeNull();
+  });
+
+  it("shows no substitution for non-diatonic chord", () => {
+    render(<SubstitutionFinder {...defaultProps} />);
+    expect(screen.queryByText("finder.substitution.none")).toBeNull();
+  });
+
+  it("updates chord root when NotePickerButton changes", () => {
+    render(<SubstitutionFinder {...defaultProps} />);
+    fireEvent.press(screen.getByTestId("note-picker-header.root"));
+    expect(screen.getByTestId("note-value-header.root").props.children).toBe("G");
+  });
+
+  it("switches to minor key when minor toggle is pressed", () => {
+    render(<SubstitutionFinder {...defaultProps} />);
+    fireEvent.press(screen.getByTestId("segmented-minor"));
   });
 
   it("opens bottom sheet when tapping a sub-section card", () => {

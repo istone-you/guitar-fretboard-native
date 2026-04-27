@@ -345,13 +345,14 @@
     "substitution": {
       "sourceLabel": "Substitutes for {{chord}}",
       "typeLabel": "Substitute Type",
+      "keyRoot": "Key",
       "tonic": "Tonic Sub.",
       "subdominant": "Subdominant Sub.",
       "dominant": "Dominant Sub.",
-      "none": "No substitutions for this chord type",
-      "tonicDesc": "A technique that uses a chord sharing two common tones as a tonic substitute. VIm (relative minor) and IIIm (mediant) are the classic examples. E.g., C → Am or Em.",
-      "subdominantDesc": "A technique that replaces IIm (or IIm7) with IV (or IVmaj7). Both chords share two common tones and preserve the subdominant function while adding color. E.g., Dm → F.",
-      "dominantDesc": "A technique that replaces a dominant 7th chord with a 7th chord whose root is a tritone (6 semitones) away. Both chords share the same guide tones — the 3rd and 7th swap roles — allowing smooth half-step voice leading in the bass. E.g., G7 → D♭7."
+      "none": "No substitutions for this chord in this key",
+      "tonicDesc": "Chords sharing two common tones are interchangeable as tonic substitutes. I, VIm (relative minor), and IIIm (mediant) can substitute for each other. E.g., C ↔ Am ↔ Em.",
+      "subdominantDesc": "IIm (IIm7) and IV (IVmaj7) are interchangeable subdominant function chords that share two common tones. Substitution works in both directions. E.g., Dm ↔ F.",
+      "dominantDesc": "A dominant 7th chord and the 7th chord a tritone (6 semitones) away are interchangeable. Both share the same guide tones — the 3rd and 7th swap roles — allowing smooth half-step voice leading in the bass. E.g., G7 ↔ D♭7."
     },
     "homePivotChordTitle": "Pivot Chord",
     "homePivotChordDesc": "Find common chords (pivot chords) between two keys",
