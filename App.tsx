@@ -133,7 +133,9 @@ export default function App() {
   const handlePerLayerRootChange = useCallback(
     (v: boolean) => {
       setPerLayerRoot(v);
-      if (!v) {
+      if (v) {
+        setBaseLabelMode("note");
+      } else {
         layers.forEach((layer) => {
           if (layer.layerRoot) {
             handleUpdateLayer(layer.id, { ...layer, layerRoot: undefined });
@@ -175,15 +177,9 @@ export default function App() {
     [rootNote, effectiveLayers],
   );
 
-  const handleTabIndexChange = useCallback(
-    (index: number) => {
-      if (tabIndex === TAB_INDEX.quiz && index !== TAB_INDEX.quiz) {
-        quizScreenRef.current?.onLeave();
-      }
-      setTabIndex(index);
-    },
-    [tabIndex],
-  );
+  const handleTabIndexChange = useCallback((index: number) => {
+    setTabIndex(index);
+  }, []);
 
   const isDark = theme === "dark";
   const bgColor = isDark ? BLACK : WHITE;
@@ -318,6 +314,13 @@ export default function App() {
           isLandscape={isLandscape}
           winWidth={winWidth}
           onFretboardDoubleTap={handleFretboardDoubleTap}
+          layers={layers}
+          layersFull={layers.length >= 3}
+          onAddLayerAndNavigate={(layer) => {
+            setTabIndex(0);
+            setTimeout(() => handleAddLayer(layer), 0);
+          }}
+          onEnablePerLayerRoot={() => handlePerLayerRootChange(true)}
         />
       );
     }

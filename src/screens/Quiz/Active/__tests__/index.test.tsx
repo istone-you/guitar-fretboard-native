@@ -95,6 +95,8 @@ const defaultProps = {
   onNextQuestion: jest.fn(),
   onRetryQuestion: jest.fn(),
   onQuizStringsChange: jest.fn(),
+  layersFull: false,
+  onAddLayer: jest.fn(),
 };
 
 describe("QuizActivePracticePane", () => {

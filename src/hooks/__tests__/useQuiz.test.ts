@@ -593,42 +593,6 @@ describe("useQuiz", () => {
       expect(hook.result.current.quizSelectedCells).toEqual([{ stringIdx: 1, fret: 5 }]);
     });
 
-    it("toggles cells for scale fretboard quiz (multi-cell)", () => {
-      const hook = startedQuiz();
-      act(() => {
-        hook.result.current.handleQuizKindChange("scale", "fretboard");
-      });
-      act(() => {
-        hook.result.current.handleFretboardQuizAnswer(0, 3);
-      });
-      act(() => {
-        hook.result.current.handleFretboardQuizAnswer(1, 5);
-      });
-      expect(hook.result.current.quizSelectedCells).toEqual([
-        { stringIdx: 0, fret: 3 },
-        { stringIdx: 1, fret: 5 },
-      ]);
-      // Toggle off
-      act(() => {
-        hook.result.current.handleFretboardQuizAnswer(0, 3);
-      });
-      expect(hook.result.current.quizSelectedCells).toEqual([{ stringIdx: 1, fret: 5 }]);
-    });
-
-    it("toggles cells for chord fretboard quiz (multi-cell)", () => {
-      const hook = startedQuiz();
-      act(() => {
-        hook.result.current.handleQuizKindChange("chord", "fretboard");
-      });
-      act(() => {
-        hook.result.current.handleFretboardQuizAnswer(0, 0);
-      });
-      act(() => {
-        hook.result.current.handleFretboardQuizAnswer(1, 2);
-      });
-      expect(hook.result.current.quizSelectedCells.length).toBe(2);
-    });
-
     it("toggles cells for note fretboard with allStrings", () => {
       const hook = startedQuiz();
       act(() => {
@@ -964,175 +928,6 @@ describe("useQuiz", () => {
         });
         expect(hook.result.current.quizScore.correct).toBe(1);
         expect(hook.result.current.quizRevealNoteNames).toEqual([targetNote]);
-      });
-    });
-
-    describe("scale fretboard", () => {
-      it("judges correct scale fretboard answer", () => {
-        const hook = startedQuiz();
-        act(() => {
-          hook.result.current.handleQuizKindChange("scale", "fretboard");
-        });
-        const q = hook.result.current.quizQuestion!;
-        const correctNoteNames = q.correctNoteNames!;
-        const notes = [...NOTES_SHARP] as string[];
-
-        // Select all correct cells in fret range
-        for (let s = 0; s < 6; s++) {
-          for (let f = 0; f <= 14; f++) {
-            if (correctNoteNames.includes(notes[getNoteIndex(s, f)])) {
-              act(() => {
-                hook.result.current.handleFretboardQuizAnswer(s, f);
-              });
-            }
-          }
-        }
-
-        act(() => {
-          hook.result.current.handleSubmitFretboard();
-        });
-        expect(hook.result.current.quizScore).toEqual({
-          correct: 1,
-          total: 1,
-        });
-        expect(hook.result.current.quizRevealNoteNames).toEqual(correctNoteNames);
-      });
-
-      it("judges wrong when scale cells are incomplete", () => {
-        const hook = startedQuiz();
-        act(() => {
-          hook.result.current.handleQuizKindChange("scale", "fretboard");
-        });
-        const q = hook.result.current.quizQuestion!;
-        const correctNoteNames = q.correctNoteNames!;
-        const notes = [...NOTES_SHARP] as string[];
-
-        // Select only one correct cell
-        for (let s = 0; s < 6; s++) {
-          for (let f = 0; f <= 14; f++) {
-            if (correctNoteNames.includes(notes[getNoteIndex(s, f)])) {
-              act(() => {
-                hook.result.current.handleFretboardQuizAnswer(s, f);
-              });
-              break; // Only one
-            }
-          }
-          break;
-        }
-
-        act(() => {
-          hook.result.current.handleSubmitFretboard();
-        });
-        expect(hook.result.current.quizScore.correct).toBe(0);
-      });
-    });
-
-    describe("chord fretboard", () => {
-      it("judges correct chord fretboard answer when all chord tones selected", () => {
-        const hook = startedQuiz();
-        act(() => {
-          hook.result.current.handleQuizKindChange("chord", "fretboard");
-        });
-        const q = hook.result.current.quizQuestion!;
-        const correctNoteNames = q.correctNoteNames!;
-        const notes = [...NOTES_SHARP] as string[];
-
-        // Select exactly the unique chord tones (one cell per unique note)
-        const selectedNotes = new Set<string>();
-        for (let s = 0; s < 6; s++) {
-          for (let f = 0; f <= 14; f++) {
-            const noteName = notes[getNoteIndex(s, f)];
-            if (correctNoteNames.includes(noteName) && !selectedNotes.has(noteName)) {
-              selectedNotes.add(noteName);
-              act(() => {
-                hook.result.current.handleFretboardQuizAnswer(s, f);
-              });
-            }
-          }
-          if (selectedNotes.size === correctNoteNames.length) break;
-        }
-
-        act(() => {
-          hook.result.current.handleSubmitFretboard();
-        });
-        expect(hook.result.current.quizScore.correct).toBe(1);
-        expect(hook.result.current.quizRevealNoteNames).toEqual(correctNoteNames);
-      });
-
-      it("judges wrong chord fretboard when a wrong note is included", () => {
-        const hook = startedQuiz();
-        act(() => {
-          hook.result.current.handleQuizKindChange("chord", "fretboard");
-        });
-        const q = hook.result.current.quizQuestion!;
-        const correctNoteNames = q.correctNoteNames!;
-        const notes = [...NOTES_SHARP] as string[];
-
-        // Select all correct notes
-        const selectedNotes = new Set<string>();
-        for (let s = 0; s < 6; s++) {
-          for (let f = 0; f <= 14; f++) {
-            const noteName = notes[getNoteIndex(s, f)];
-            if (correctNoteNames.includes(noteName) && !selectedNotes.has(noteName)) {
-              selectedNotes.add(noteName);
-              act(() => {
-                hook.result.current.handleFretboardQuizAnswer(s, f);
-              });
-            }
-          }
-          if (selectedNotes.size === correctNoteNames.length) break;
-        }
-
-        // Add a wrong note
-        for (let s = 0; s < 6; s++) {
-          for (let f = 0; f <= 14; f++) {
-            const noteName = notes[getNoteIndex(s, f)];
-            if (!correctNoteNames.includes(noteName)) {
-              act(() => {
-                hook.result.current.handleFretboardQuizAnswer(s, f);
-              });
-              break;
-            }
-          }
-          break;
-        }
-
-        act(() => {
-          hook.result.current.handleSubmitFretboard();
-        });
-        expect(hook.result.current.quizScore.correct).toBe(0);
-      });
-
-      it("judges wrong chord fretboard when a chord tone is missing", () => {
-        const hook = startedQuiz();
-        act(() => {
-          hook.result.current.handleQuizKindChange("chord", "fretboard");
-        });
-        const q = hook.result.current.quizQuestion!;
-        const correctNoteNames = q.correctNoteNames!;
-        const notes = [...NOTES_SHARP] as string[];
-
-        // Select only the first chord tone (missing others)
-        for (let s = 0; s < 6; s++) {
-          for (let f = 0; f <= 14; f++) {
-            const noteName = notes[getNoteIndex(s, f)];
-            if (noteName === correctNoteNames[0]) {
-              act(() => {
-                hook.result.current.handleFretboardQuizAnswer(s, f);
-              });
-              break;
-            }
-          }
-          break;
-        }
-
-        act(() => {
-          hook.result.current.handleSubmitFretboard();
-        });
-        // Only correct if chord has 1 unique tone (unlikely), otherwise wrong
-        if (correctNoteNames.length > 1) {
-          expect(hook.result.current.quizScore.correct).toBe(0);
-        }
       });
     });
 
@@ -1682,16 +1477,6 @@ describe("useQuiz", () => {
       expect(q.choices).toEqual([]);
     });
 
-    it("chord fretboard question has correctNoteNames", () => {
-      const hook = startedQuiz();
-      act(() => {
-        hook.result.current.handleQuizKindChange("chord", "fretboard");
-      });
-      const q = hook.result.current.quizQuestion!;
-      expect(q.correctNoteNames).toBeDefined();
-      expect(q.correctNoteNames!.length).toBeGreaterThan(0);
-    });
-
     it("scale choice question has correctNoteNames", () => {
       const hook = startedQuiz();
       act(() => {
@@ -1721,15 +1506,6 @@ describe("useQuiz", () => {
       });
       act(() => {
         hook.result.current.handleQuizKindChange("degree", "fretboard");
-      });
-      const q = hook.result.current.quizQuestion!;
-      expect(q.correctNoteNames).toBeDefined();
-    });
-
-    it("scale fretboard question has correctNoteNames", () => {
-      const hook = startedQuiz();
-      act(() => {
-        hook.result.current.handleQuizKindChange("scale", "fretboard");
       });
       const q = hook.result.current.quizQuestion!;
       expect(q.correctNoteNames).toBeDefined();
@@ -1983,26 +1759,6 @@ describe("useQuiz", () => {
       expect(record.degreeLabel).toBe(q.correct);
       expect(record.stringIdx).toBe(q.stringIdx);
       expect(record.fret).toBe(q.fret);
-    });
-
-    // ── handleSubmitFretboard: scale ────────────────────────────────────────
-    it("calls onRecord with scaleType on fretboard submit (scale mode)", () => {
-      const { hook, onRecord } = setupWithRecord();
-      act(() => {
-        hook.result.current.handleQuizKindChange("scale", "fretboard");
-      });
-      // Select one cell (may be wrong, but onRecord is called regardless)
-      act(() => {
-        hook.result.current.handleFretboardQuizAnswer(0, 0);
-      });
-      act(() => {
-        hook.result.current.handleSubmitFretboard();
-      });
-
-      expect(onRecord).toHaveBeenCalledTimes(1);
-      const record = onRecord.mock.calls[0][0];
-      expect(record.mode).toBe("scale");
-      expect(record.scaleType).toBeDefined();
     });
 
     // ── handleSubmitFretboard: all-strings note (no stringIdx/fret) ─────────

@@ -19,7 +19,7 @@ import type { Accidental, QuizMode, QuizRecord, ScaleType, Theme } from "../../t
 import { getColors, STATS_RATE_COLORS, BLACK } from "../../themes/design";
 import PillButton from "../ui/PillButton";
 
-const MIN_SAMPLES = 5;
+const MIN_SAMPLES = 3;
 const FRET_COUNT = 15;
 
 const ALL_SCALE_TYPES: ScaleType[] = [

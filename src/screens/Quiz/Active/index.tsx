@@ -72,6 +72,8 @@ interface QuizActivePracticePaneProps {
   onNextQuestion: () => void;
   onRetryQuestion: () => void;
   onQuizStringsChange: (value: number[]) => void;
+  layersFull: boolean;
+  onAddLayer: () => void;
 }
 
 export default function QuizActivePracticePane({
@@ -131,6 +133,8 @@ export default function QuizActivePracticePane({
   onNextQuestion,
   onRetryQuestion,
   onQuizStringsChange,
+  layersFull,
+  onAddLayer,
 }: QuizActivePracticePaneProps) {
   if (quizQuestion == null) return null;
 
@@ -221,6 +225,8 @@ export default function QuizActivePracticePane({
         onQuizKeysChange={onQuizKeysChange}
         quizNoteNames={quizNoteNames}
         onQuizNoteNamesChange={onQuizNoteNamesChange}
+        layersFull={layersFull}
+        onAddLayer={onAddLayer}
       />
     </PracticePane>
   );

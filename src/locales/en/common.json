@@ -113,7 +113,8 @@
     "degree": "Degrees",
     "quiz": "Quiz",
     "key": "Key",
-    "perLayerRoot": "Per-Layer Root"
+    "perLayerRoot": "Per-Layer Root",
+    "degreeUnavailable": "Degree display is unavailable\nwhile Per-Layer Root is on"
   },
   "degreeFilter": {
     "title": "Degrees"
@@ -648,10 +649,8 @@
       "noteFretboard": "Note / Fretboard",
       "degreeFretboard": "Degree / Fretboard",
       "scaleChoice": "Scale / Note Select",
-      "scaleFretboard": "Scale / Fretboard",
       "diatonicAll": "Diatonic / Full",
-      "chordChoice": "Chord / Identify",
-      "chordFretboard": "Chord / Fretboard"
+      "chordChoice": "Chord / Identify"
     },
     "filterAll": "All",
     "desc": {
@@ -665,9 +664,7 @@
       "degreeChoice": "Choose the scale degree from 12 options",
       "degreeFretboard": "Tap the correct fret on the fretboard",
       "chordIdentify": "Identify the chord name from a fretboard voicing",
-      "chordFretboard": "Tap all chord tones on the fretboard",
       "scaleNoteSelect": "Select all notes that belong to the scale",
-      "scaleFretboard": "Tap all scale tones on the fretboard",
       "diatonicAll": "Name every diatonic chord in the key"
     },
     "quizNoteNames": {

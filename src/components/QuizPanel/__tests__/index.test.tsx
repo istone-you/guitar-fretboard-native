@@ -76,6 +76,8 @@ const defaultProps = {
   onQuizKeysChange: jest.fn(),
   quizNoteNames: ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"],
   onQuizNoteNamesChange: jest.fn(),
+  layersFull: false,
+  onAddLayer: jest.fn(),
 };
 
 function renderPanel(overrides: Partial<typeof defaultProps> = {}) {
@@ -170,31 +172,6 @@ describe("QuizPanel", () => {
     expect(getByText("quiz.questionDegreeAllStrings")).toBeTruthy();
   });
 
-  it("displays scale fretboard question", () => {
-    const { getByText } = renderPanel({
-      quizType: "fretboard",
-      mode: "scale",
-      question: {
-        ...baseQuestion,
-        promptScaleRoot: "C",
-        promptScaleType: "major",
-      },
-    });
-    expect(getByText("quiz.questionScaleFretboard")).toBeTruthy();
-  });
-
-  it("displays chord fretboard question", () => {
-    const { getByText } = renderPanel({
-      quizType: "fretboard",
-      mode: "chord",
-      question: {
-        ...baseQuestion,
-        promptChordLabel: "C Major",
-      },
-    });
-    expect(getByText("quiz.questionChordFretboard")).toBeTruthy();
-  });
-
   it("displays empty question for diatonic fretboard", () => {
     const { queryByText } = renderPanel({
       quizType: "fretboard",
@@ -259,9 +236,9 @@ describe("QuizPanel", () => {
   });
 
   // ── Chord quiz: root + type selection + submit ────────────────────
-  it("shows root selection buttons for chord quiz", () => {
+  it("shows root selection buttons for chord quiz (all 12 notes)", () => {
     const { getByText } = renderPanel({ mode: "chord" });
-    ["A", "B", "C", "D", "E", "F", "G"].forEach((note) => {
+    ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"].forEach((note) => {
       expect(getByText(note)).toBeTruthy();
     });
   });
@@ -925,18 +902,6 @@ describe("QuizPanel", () => {
     });
     fireEvent.press(getByTestId("quiz-settings-button"));
     expect(getByText("quiz.quizStrings.label")).toBeTruthy();
-  });
-
-  it("does not show string selection for chord fretboard quiz", () => {
-    const { queryByText } = renderPanel({
-      quizType: "fretboard",
-      mode: "chord",
-      question: {
-        ...baseQuestion,
-        promptChordLabel: "C Major",
-      },
-    });
-    expect(queryByText("quiz.quizStrings.label")).toBeNull();
   });
 
   // ── Diatonic key type and chord size settings ────────────────────

@@ -1,10 +1,11 @@
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, Animated, Text, TouchableOpacity } from "react-native";
 import { useTranslation } from "react-i18next";
 import * as Haptics from "expo-haptics";
+import { useRef, useCallback } from "react";
 import "../../i18n";
 import type { Accidental, BaseLabelMode, Theme } from "../../types";
 import { SegmentedToggle } from "../ui/SegmentedToggle";
-import { getColors } from "../../themes/design";
+import { getColors, TOOLTIP_COLORS, fontSize, radius } from "../../themes/design";
 import PillButton from "../ui/PillButton";
 import Icon from "../ui/Icon";
 import NotePickerButton from "../ui/NotePickerButton";
@@ -36,20 +37,55 @@ export default function FretboardControls({
   const isDark = theme === "dark";
   const colors = getColors(isDark);
 
+  const tooltipOpacity = useRef(new Animated.Value(0)).current;
+  const tooltipTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showTooltip = useCallback(() => {
+    if (tooltipTimer.current) clearTimeout(tooltipTimer.current);
+    Animated.timing(tooltipOpacity, {
+      toValue: 1,
+      duration: 150,
+      useNativeDriver: true,
+    }).start();
+    tooltipTimer.current = setTimeout(() => {
+      Animated.timing(tooltipOpacity, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }, 2500);
+  }, [tooltipOpacity]);
+
   return (
-    <View style={[styles.container, { position: "relative" }]}>
+    <View style={styles.container}>
       <View style={styles.left}>
-        <SegmentedToggle
-          theme={theme}
-          value={baseLabelMode}
-          onChange={onBaseLabelModeChange}
-          options={[
-            { value: "note" as BaseLabelMode, label: t("header.note") },
-            { value: "degree" as BaseLabelMode, label: t("header.degree") },
-          ]}
-          size="compact"
-          segmentWidth={i18n.language === "en" ? 72 : 56}
-        />
+        <View>
+          <SegmentedToggle
+            theme={theme}
+            value={baseLabelMode}
+            onChange={onBaseLabelModeChange}
+            options={[
+              { value: "note" as BaseLabelMode, label: t("header.note") },
+              { value: "degree" as BaseLabelMode, label: t("header.degree") },
+            ]}
+            size="compact"
+            segmentWidth={i18n.language === "en" ? 72 : 56}
+            enabled={!perLayerRoot}
+          />
+          {perLayerRoot && (
+            <TouchableOpacity
+              style={StyleSheet.absoluteFill}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                showTooltip();
+              }}
+              activeOpacity={1}
+            />
+          )}
+          <Animated.View style={[styles.tooltip, { opacity: tooltipOpacity }]} pointerEvents="none">
+            <Text style={styles.tooltipText}>{t("header.degreeUnavailable")}</Text>
+          </Animated.View>
+        </View>
       </View>
 
       <View style={styles.right}>
@@ -98,5 +134,20 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
+  },
+  tooltip: {
+    position: "absolute",
+    top: "100%",
+    left: 0,
+    marginTop: 6,
+    backgroundColor: TOOLTIP_COLORS.bg,
+    borderRadius: radius.sm,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    zIndex: 100,
+  },
+  tooltipText: {
+    color: TOOLTIP_COLORS.text,
+    fontSize: fontSize.xs,
   },
 });

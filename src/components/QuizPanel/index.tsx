@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Animated } from "react-native";
+import { Alert, View, Text, TouchableOpacity, StyleSheet, Animated } from "react-native";
 import * as Haptics from "expo-haptics";
 import Icon from "../ui/Icon";
 import { useTranslation } from "react-i18next";
@@ -94,6 +94,8 @@ interface QuizPanelProps {
   onQuizKeysChange: (value: string[]) => void;
   quizNoteNames: string[];
   onQuizNoteNamesChange: (value: string[]) => void;
+  layersFull: boolean;
+  onAddLayer: () => void;
 }
 
 export default function QuizPanel({
@@ -140,6 +142,8 @@ export default function QuizPanel({
   onQuizKeysChange,
   quizNoteNames,
   onQuizNoteNamesChange,
+  layersFull,
+  onAddLayer,
 }: QuizPanelProps) {
   const { t } = useTranslation();
   const isDark = theme === "dark";
@@ -236,14 +240,6 @@ export default function QuizPanel({
               root: degreeRoot,
             });
       }
-      if (mode === "scale") {
-        return t("quiz.questionScaleFretboard", {
-          root: question.promptScaleRoot,
-          scale: t(`options.scale.${scaleTypeKey(question.promptScaleType ?? "")}`),
-        });
-      }
-      if (mode === "chord")
-        return t("quiz.questionChordFretboard", { chord: question.promptChordLabel });
       if (mode === "diatonic") return "";
       return quizStrings.length > 1
         ? t("quiz.questionNoteAllStrings", { note: question.correct })
@@ -411,22 +407,40 @@ export default function QuizPanel({
 
   return (
     <View style={styles.card}>
-      {/* Score + settings button */}
+      {/* Score + buttons */}
       <View style={styles.headerRow}>
         <Text style={[styles.score, { color: colors.textSubtle }]}>
           ✓ {score.correct} / {score.total}
         </Text>
-        <PillButton
-          isDark={isDark}
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            setSettingsVisible(true);
-          }}
-          testID="quiz-settings-button"
-          style={{ paddingHorizontal: 8 }}
-        >
-          <Icon name="ellipsis" size={16} color={colors.textSubtle} />
-        </PillButton>
+        <View style={styles.headerBtns}>
+          <PillButton
+            isDark={isDark}
+            onPress={() => {
+              if (layersFull) {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+                Alert.alert(t("finder.addToLayerFullTitle"), t("finder.addToLayerFull"));
+              } else {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                onAddLayer();
+              }
+            }}
+            testID="quiz-add-layer-button"
+            style={{ paddingHorizontal: 8 }}
+          >
+            <Icon name="upload" size={16} color={colors.textSubtle} />
+          </PillButton>
+          <PillButton
+            isDark={isDark}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setSettingsVisible(true);
+            }}
+            testID="quiz-settings-button"
+            style={{ paddingHorizontal: 8 }}
+          >
+            <Icon name="ellipsis" size={16} color={colors.textSubtle} />
+          </PillButton>
+        </View>
       </View>
 
       {/* Settings modal */}
@@ -466,6 +480,7 @@ export default function QuizPanel({
           quizSelectedChordRoot={quizSelectedChordRoot}
           quizSelectedChordType={quizSelectedChordType}
           chordQuizTypes={chordQuizTypes}
+          noteOptions={noteOptions}
           onChordQuizRootSelect={onChordQuizRootSelect}
           onChordQuizTypeSelect={onChordQuizTypeSelect}
           onSubmitChordChoice={onSubmitChordChoice}
@@ -587,6 +602,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: "monospace",
     flexShrink: 0,
+  },
+  headerBtns: {
+    flexDirection: "row",
+    gap: 6,
   },
   settingsBtn: {
     padding: 6,

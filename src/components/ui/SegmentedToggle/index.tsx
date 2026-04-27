@@ -14,6 +14,7 @@ interface SegmentedToggleProps<T extends string | boolean> {
   options: SegmentedToggleOption<T>[];
   size?: "default" | "compact";
   segmentWidth?: number;
+  enabled?: boolean;
 }
 
 export function SegmentedToggle<T extends string | boolean>({
@@ -23,6 +24,7 @@ export function SegmentedToggle<T extends string | boolean>({
   options,
   size = "default",
   segmentWidth,
+  enabled = true,
 }: SegmentedToggleProps<T>) {
   const isDark = theme === "dark";
   const selectedIndex = options.findIndex((o) => o.value === value);
@@ -38,6 +40,7 @@ export function SegmentedToggle<T extends string | boolean>({
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         onChange(options[e.nativeEvent.selectedSegmentIndex].value);
       }}
+      enabled={enabled}
       appearance={isDark ? "dark" : "light"}
       style={{ width: containerWidth, height }}
     />

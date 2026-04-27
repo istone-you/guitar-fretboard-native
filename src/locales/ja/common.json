@@ -113,7 +113,8 @@
     "degree": "度数",
     "quiz": "クイズ",
     "key": "キー",
-    "perLayerRoot": "レイヤーごとのルート"
+    "perLayerRoot": "レイヤーごとのルート",
+    "degreeUnavailable": "レイヤーごとのルートがONのため\n度数表示は使用できません"
   },
   "degreeFilter": {
     "title": "度数"
@@ -648,10 +649,8 @@
       "noteFretboard": "音名・指板",
       "degreeFretboard": "度数・指板",
       "scaleChoice": "スケール・音名選択",
-      "scaleFretboard": "スケール・指板",
       "diatonicAll": "ダイアトニック・全答",
-      "chordChoice": "コード・識別",
-      "chordFretboard": "コード・指板"
+      "chordChoice": "コード・識別"
     },
     "filterAll": "すべて",
     "desc": {
@@ -665,9 +664,7 @@
       "degreeChoice": "12個の選択肢から度数を選ぶ",
       "degreeFretboard": "指板上の該当フレットをタップする",
       "chordIdentify": "コードフォームを見てコード名を答える",
-      "chordFretboard": "指板上でコードの構成音をタップする",
       "scaleNoteSelect": "スケールの構成音を選択肢から選ぶ",
-      "scaleFretboard": "指板上でスケールの構成音をすべてタップする",
       "diatonicAll": "キー内のダイアトニックコードをすべて答える"
     },
     "quizNoteNames": {

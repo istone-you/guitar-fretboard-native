@@ -251,6 +251,13 @@ export const SURFACE_DIVIDER = "rgba(128,128,128,0.2)";
 
 // ── On-accent-color surface (always white-toned — used on layer/accent bg) ───
 
+// ── Tooltip ───────────────────────────────────────────────────────────────────
+
+export const TOOLTIP_COLORS = {
+  bg: "rgba(0,0,0,0.78)",
+  text: "#ffffff",
+};
+
 export const ON_ACCENT = {
   chipBorder: "rgba(255,255,255,0.5)",
   dotBorder: "rgba(0,0,0,0.15)",

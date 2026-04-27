@@ -48,19 +48,13 @@ const QUIZ_GROUPS: {
     modeKey: "quiz.mode.chord",
     icon: "♯",
     accent: QUIZ_MODE_COLORS.chord,
-    options: [
-      { value: "chord-choice", descKey: "quiz.desc.chordIdentify" },
-      { value: "chord-fretboard", descKey: "quiz.desc.chordFretboard" },
-    ],
+    options: [{ value: "chord-choice", descKey: "quiz.desc.chordIdentify" }],
   },
   {
     modeKey: "quiz.mode.scale",
     icon: "≈",
     accent: QUIZ_MODE_COLORS.scale,
-    options: [
-      { value: "scale-choice", descKey: "quiz.desc.scaleNoteSelect" },
-      { value: "scale-fretboard", descKey: "quiz.desc.scaleFretboard" },
-    ],
+    options: [{ value: "scale-choice", descKey: "quiz.desc.scaleNoteSelect" }],
   },
   {
     modeKey: "quiz.mode.diatonic",

@@ -10,14 +10,20 @@ import { useQuizViewModel } from "../../hooks/useQuizViewModel";
 import { useQuizRecords } from "../../hooks/useQuizRecords";
 import { getNotesByAccidental } from "../../lib/fretboard";
 import { createDefaultLayer } from "../../types";
-import { QUIZ_ACCENT_COLORS, getColors } from "../../themes/design";
+import { QUIZ_ACCENT_COLORS, pickNextLayerColor, getColors } from "../../themes/design";
 import type { Accidental, BaseLabelMode, ScaleType, Theme, LayerConfig } from "../../types";
+
+const DIATONIC_TEMPLATE_IDS: Record<string, string> = {
+  "major-triad": "diatonicMajorTriad",
+  "major-seventh": "diatonicMajorSeventh",
+  "natural-minor-triad": "diatonicMinorTriad",
+  "natural-minor-seventh": "diatonicMinorSeventh",
+};
 import QuizActivePracticePane from "./Active";
 import StatsPane from "./Stats";
 import QuizSelectionScreen from "./Selection";
 
 export interface QuizScreenHandle {
-  onLeave: () => void;
   regenerate: () => void;
 }
 
@@ -31,6 +37,10 @@ export interface QuizScreenProps {
   isLandscape: boolean;
   winWidth: number;
   onFretboardDoubleTap: () => void;
+  layers: LayerConfig[];
+  layersFull: boolean;
+  onAddLayerAndNavigate: (layer: LayerConfig) => void;
+  onEnablePerLayerRoot: () => void;
   // Header props
   onThemeChange: (theme: Theme) => void;
   onFretRangeChange: (range: [number, number]) => void;
@@ -49,6 +59,10 @@ const QuizScreen = forwardRef<QuizScreenHandle, QuizScreenProps>(function QuizSc
     isLandscape,
     winWidth,
     onFretboardDoubleTap,
+    layers,
+    layersFull,
+    onAddLayerAndNavigate,
+    onEnablePerLayerRoot,
     onThemeChange,
     onFretRangeChange,
     onAccidentalChange,
@@ -132,9 +146,7 @@ const QuizScreen = forwardRef<QuizScreenHandle, QuizScreenProps>(function QuizSc
 
   const {
     showQuiz,
-    setShowQuiz,
     quizModeSelected,
-    setQuizModeSelected,
     quizSlideAnim,
     handleQuizModeSelect,
     handleChangeQuiz,
@@ -214,19 +226,62 @@ const QuizScreen = forwardRef<QuizScreenHandle, QuizScreenProps>(function QuizSc
     onShowQuizChange: handleShowQuizChange,
   };
 
-  useImperativeHandle(
-    ref,
-    () => ({
-      onLeave: () => {
-        handleShowQuizChange(false);
-        setQuizModeSelected(false);
-        setShowStats(false);
-        setShowQuiz(false);
-      },
-      regenerate: regenerateQuiz,
-    }),
-    [handleShowQuizChange, setQuizModeSelected, setShowQuiz, regenerateQuiz],
-  );
+  useImperativeHandle(ref, () => ({ regenerate: regenerateQuiz }), [regenerateQuiz]);
+
+  const handleAddQuizLayer = useCallback(() => {
+    if (!quizQuestion) return;
+    const color = pickNextLayerColor(layers);
+
+    if (quizMode === "note") {
+      const layer = createDefaultLayer("custom", `layer-${Date.now()}`, color);
+      layer.customMode = "note";
+      layer.selectedNotes = new Set([quizQuestion.correct]);
+      onAddLayerAndNavigate(layer);
+    } else if (quizMode === "degree") {
+      const layer = createDefaultLayer("custom", `layer-${Date.now()}`, color);
+      layer.customMode = "degree";
+      layer.selectedDegrees = new Set([quizQuestion.correct]);
+      const quizRoot = quizQuestion.promptQuizRoot ?? rootNote;
+      if (quizRoot !== rootNote) {
+        layer.layerRoot = quizRoot;
+        onEnablePerLayerRoot();
+      }
+      onAddLayerAndNavigate(layer);
+    } else if (quizMode === "chord") {
+      const layer = createDefaultLayer("chord", `layer-${Date.now()}`, color);
+      layer.chordDisplayMode = "form";
+      layer.chordType = quizQuestion.promptChordType ?? "Major";
+      if (quizQuestion.promptChordRoot && quizQuestion.promptChordRoot !== rootNote) {
+        layer.layerRoot = quizQuestion.promptChordRoot;
+        onEnablePerLayerRoot();
+      }
+      onAddLayerAndNavigate(layer);
+    } else if (quizMode === "scale") {
+      const layer = createDefaultLayer("scale", `layer-${Date.now()}`, color);
+      layer.scaleType = quizQuestion.promptScaleType ?? scaleType;
+      const scaleRoot = quizQuestion.promptScaleRoot ?? rootNote;
+      if (scaleRoot !== rootNote) {
+        layer.layerRoot = scaleRoot;
+        onEnablePerLayerRoot();
+      }
+      onAddLayerAndNavigate(layer);
+    } else if (quizMode === "diatonic") {
+      const layer = createDefaultLayer("progression", `layer-${Date.now()}`, color);
+      const keyType = quizQuestion.promptDiatonicKeyType ?? "major";
+      const chordSize = quizQuestion.promptDiatonicChordSize ?? "triad";
+      layer.progressionTemplateId =
+        DIATONIC_TEMPLATE_IDS[`${keyType}-${chordSize}`] ?? "diatonicMajorTriad";
+      onAddLayerAndNavigate(layer);
+    }
+  }, [
+    quizQuestion,
+    quizMode,
+    rootNote,
+    scaleType,
+    layers,
+    onAddLayerAndNavigate,
+    onEnablePerLayerRoot,
+  ]);
 
   const quizNoteOptions = [...getNotesByAccidental(accidental)];
 
@@ -374,6 +429,8 @@ const QuizScreen = forwardRef<QuizScreenHandle, QuizScreenProps>(function QuizSc
               onNextQuestion={handleNextQuestion}
               onRetryQuestion={handleRetryQuestion}
               onQuizStringsChange={handleQuizStringsChange}
+              layersFull={layersFull}
+              onAddLayer={handleAddQuizLayer}
             />
           </Animated.View>
         )}

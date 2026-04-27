@@ -13,6 +13,7 @@ interface ChordPanelProps {
   quizSelectedChordRoot: string | null;
   quizSelectedChordType: ChordType | null;
   chordQuizTypes: ChordType[];
+  noteOptions: string[];
   onChordQuizRootSelect: (root: string) => void;
   onChordQuizTypeSelect: (chordType: ChordType) => void;
   onSubmitChordChoice: () => void;
@@ -25,6 +26,7 @@ export default function ChordPanel({
   quizSelectedChordRoot,
   quizSelectedChordType,
   chordQuizTypes,
+  noteOptions,
   onChordQuizRootSelect,
   onChordQuizTypeSelect,
   onSubmitChordChoice,
@@ -37,7 +39,7 @@ export default function ChordPanel({
     <View style={{ gap: 10 }}>
       {/* Root selection */}
       <View style={styles.choicesGrid}>
-        {["A", "B", "C", "D", "E", "F", "G"].map((choice) => {
+        {noteOptions.slice(0, 12).map((choice) => {
           const isCorrectChoice = choice === question.promptChordRoot;
           const isSelectedChoice = choice === quizSelectedChordRoot;
           let bgColor: string, borderColor: string, textColor: string;

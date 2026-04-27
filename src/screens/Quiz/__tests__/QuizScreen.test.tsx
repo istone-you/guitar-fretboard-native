@@ -175,6 +175,10 @@ const defaultProps = {
   onFretRangeChange: jest.fn(),
   onAccidentalChange: jest.fn(),
   onLeftHandedChange: jest.fn(),
+  layers: [],
+  layersFull: false,
+  onAddLayerAndNavigate: jest.fn(),
+  onEnablePerLayerRoot: jest.fn(),
 };
 
 describe("QuizScreen", () => {
@@ -199,22 +203,10 @@ describe("QuizScreen", () => {
     expect(toJSON()).not.toBeNull();
   });
 
-  it("exposes onLeave and regenerate via ref", () => {
+  it("exposes regenerate via ref", () => {
     const ref = React.createRef<any>();
     render(<QuizScreen {...defaultProps} ref={ref} />);
-    expect(typeof ref.current?.onLeave).toBe("function");
     expect(typeof ref.current?.regenerate).toBe("function");
-  });
-
-  it("onLeave resets state", () => {
-    const ref = React.createRef<any>();
-    render(<QuizScreen {...defaultProps} ref={ref} />);
-    act(() => {
-      ref.current?.onLeave();
-    });
-    expect(mockHandleShowQuizChange).toHaveBeenCalledWith(false);
-    expect(mockSetQuizModeSelected).toHaveBeenCalledWith(false);
-    expect(mockSetShowQuiz).toHaveBeenCalledWith(false);
   });
 
   it("regenerate calls regenerateQuiz", () => {

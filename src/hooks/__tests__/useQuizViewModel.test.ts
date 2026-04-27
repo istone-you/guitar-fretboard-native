@@ -70,8 +70,8 @@ describe("useQuizViewModel – quizRootChangeEnabled", () => {
 
 describe("useQuizViewModel – quizKindValue", () => {
   it("formats as mode-type", () => {
-    const { hook } = setup({ quizMode: "chord", quizType: "fretboard" });
-    expect(hook.result.current.quizKindValue).toBe("chord-fretboard");
+    const { hook } = setup({ quizMode: "degree", quizType: "fretboard" });
+    expect(hook.result.current.quizKindValue).toBe("degree-fretboard");
   });
 
   it("formats diatonic-all correctly", () => {
@@ -85,9 +85,9 @@ describe("useQuizViewModel – quizKindValue", () => {
 // ---------------------------------------------------------------------------
 
 describe("useQuizViewModel – quizKindOptions", () => {
-  it("returns 9 quiz kind options", () => {
+  it("returns 7 quiz kind options", () => {
     const { hook } = setup();
-    expect(hook.result.current.quizKindOptions).toHaveLength(9);
+    expect(hook.result.current.quizKindOptions).toHaveLength(7);
   });
 
   it("contains expected values", () => {
@@ -99,9 +99,7 @@ describe("useQuizViewModel – quizKindOptions", () => {
       "degree-choice",
       "degree-fretboard",
       "chord-choice",
-      "chord-fretboard",
       "scale-choice",
-      "scale-fretboard",
       "diatonic-all",
     ]);
   });
@@ -120,27 +118,11 @@ describe("useQuizViewModel – handleQuizKindDropdownChange", () => {
     expect(onQuizKindChange).toHaveBeenCalledWith("note", "choice");
   });
 
-  it('parses "chord-fretboard" into mode=chord, type=fretboard', () => {
-    const { hook, onQuizKindChange } = setup();
-    act(() => {
-      hook.result.current.handleQuizKindDropdownChange("chord-fretboard");
-    });
-    expect(onQuizKindChange).toHaveBeenCalledWith("chord", "fretboard");
-  });
-
   it('parses "diatonic-all" correctly (mode=diatonic, type=all)', () => {
     const { hook, onQuizKindChange } = setup();
     act(() => {
       hook.result.current.handleQuizKindDropdownChange("diatonic-all");
     });
     expect(onQuizKindChange).toHaveBeenCalledWith("diatonic", "all");
-  });
-
-  it('parses "scale-fretboard" correctly', () => {
-    const { hook, onQuizKindChange } = setup();
-    act(() => {
-      hook.result.current.handleQuizKindDropdownChange("scale-fretboard");
-    });
-    expect(onQuizKindChange).toHaveBeenCalledWith("scale", "fretboard");
   });
 });

@@ -1,6 +1,5 @@
 import { useCallback, useState } from "react";
 import {
-  CHORD_SEMITONES,
   CHORD_SUFFIX_MAP,
   DEGREE_BY_SEMITONE,
   getNotesByAccidental,
@@ -148,57 +147,19 @@ export function useQuiz({
         const chordTypePool: ChordType[] =
           effectiveChordTypes.length > 0 ? effectiveChordTypes : ["Major"];
         const chordType = pickAvoiding(chordTypePool, quizHistory);
-        // Fix #2: use all 12 notes for chord root (not just natural notes)
         const chordRoot = pickAvoiding([...notes], quizHistory);
-        const chordRootIndex = getRootIndex(chordRoot);
-        const chordSemitones = [...(CHORD_SEMITONES[chordType] ?? new Set<number>())];
-        const correctNoteNames = chordSemitones.map(
-          (semitone) => notes[(chordRootIndex + semitone) % 12],
-        );
         const promptChordLabel = `${chordRoot}${CHORD_SUFFIX_MAP[chordType]}`;
         const historyKey = `${chordRoot}|${chordType}`;
         setQuizHistory((prev) => [...prev.slice(-QUIZ_HISTORY_SIZE + 1), historyKey]);
-
-        if (type === "choice") {
-          return {
-            stringIdx,
-            fret,
-            correct: historyKey,
-            choices: [],
-            answerLabel: promptChordLabel,
-            promptChordLabel,
-            promptChordRoot: chordRoot,
-            promptChordType: chordType,
-          };
-        }
-
-        const matchingCells: { stringIdx: number; fret: number }[] = [];
-
-        for (let currentStringIdx = 0; currentStringIdx < 6; currentStringIdx += 1) {
-          for (let currentFret = fretRange[0]; currentFret <= fretRange[1]; currentFret += 1) {
-            if (correctNoteNames.includes(notes[getNoteIndex(currentStringIdx, currentFret)])) {
-              matchingCells.push({
-                stringIdx: currentStringIdx,
-                fret: currentFret,
-              });
-            }
-          }
-        }
-
-        const targetCell =
-          matchingCells.length > 0
-            ? matchingCells[Math.floor(Math.random() * matchingCells.length)]
-            : undefined;
         return {
-          stringIdx: targetCell?.stringIdx ?? stringIdx,
-          fret: targetCell?.fret ?? fret,
-          correct: correctNoteNames[0] ?? "",
+          stringIdx,
+          fret,
+          correct: historyKey,
           choices: [],
-          answerLabel: correctNoteNames.join(" / "),
+          answerLabel: promptChordLabel,
           promptChordLabel,
           promptChordRoot: chordRoot,
           promptChordType: chordType,
-          correctNoteNames,
         };
       }
 
@@ -537,12 +498,8 @@ export function useQuiz({
       if (!showQuiz || quizType !== "fretboard" || selectedAnswer !== null || quizQuestion === null)
         return;
 
-      // Multi-cell modes (scale/chord/multiString): toggle cell
-      if (
-        quizMode === "chord" ||
-        quizMode === "scale" ||
-        ((quizMode === "note" || quizMode === "degree") && quizStrings.length > 1)
-      ) {
+      // Multi-cell modes (note/degree multiString): toggle cell
+      if ((quizMode === "note" || quizMode === "degree") && quizStrings.length > 1) {
         setQuizSelectedCells((prev) => {
           const exists = prev.some((c) => c.stringIdx === stringIdx && c.fret === fret);
           return exists
@@ -566,49 +523,6 @@ export function useQuiz({
     const effectiveRoot = quizQuestion.promptQuizRoot ?? rootNote;
     const rootIdx = getRootIndex(effectiveRoot);
     const correctNoteNames = quizQuestion.correctNoteNames ?? [];
-
-    // Scale fretboard: must select ALL cells that are scale notes
-    if (quizMode === "scale") {
-      const allCorrectCells: { stringIdx: number; fret: number }[] = [];
-      for (let s = 0; s < 6; s++) {
-        for (let f = fretRange[0]; f <= fretRange[1]; f++) {
-          if (correctNoteNames.includes(notes[getNoteIndex(s, f)] as string)) {
-            allCorrectCells.push({ stringIdx: s, fret: f });
-          }
-        }
-      }
-      const isCorrect =
-        allCorrectCells.length === quizSelectedCells.length &&
-        allCorrectCells.every((c) =>
-          quizSelectedCells.some((s) => s.stringIdx === c.stringIdx && s.fret === c.fret),
-        );
-      setQuizRevealNoteNames(correctNoteNames);
-      setSelectedAnswer(isCorrect ? quizQuestion.correct : "wrong");
-      setQuizScore((prev) => ({
-        correct: prev.correct + (isCorrect ? 1 : 0),
-        total: prev.total + 1,
-      }));
-      onRecord?.({ mode: "scale", correct: isCorrect, scaleType: quizQuestion.promptScaleType });
-      return;
-    }
-
-    // Chord fretboard: all unique chord tone names must be present, wrong notes NG, duplicates OK
-    if (quizMode === "chord") {
-      const selectedNames = new Set(
-        quizSelectedCells.map((c) => notes[getNoteIndex(c.stringIdx, c.fret)] as string),
-      );
-      const allSelectedCorrect = [...selectedNames].every((n) => correctNoteNames.includes(n));
-      const allTonesPresent = correctNoteNames.every((n) => selectedNames.has(n));
-      const isCorrect = allTonesPresent && allSelectedCorrect;
-      setQuizRevealNoteNames(correctNoteNames);
-      setSelectedAnswer(isCorrect ? quizQuestion.correct : "wrong");
-      setQuizScore((prev) => ({
-        correct: prev.correct + (isCorrect ? 1 : 0),
-        total: prev.total + 1,
-      }));
-      onRecord?.({ mode: "chord", correct: isCorrect, chordType: quizQuestion.promptChordType });
-      return;
-    }
 
     // Note/degree multi-string: correct note on every target string that has it
     const targetStrings = quizQuestion.promptQuizStrings ?? quizStrings;
