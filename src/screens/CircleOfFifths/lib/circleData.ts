@@ -13,7 +13,7 @@ export type RingName = MiRing;
 
 export type DiatonicFn = "T" | "SD" | "D";
 
-export type RelatedKeyRelation = "tonic" | "dominant" | "subdominant" | "parallel";
+export type RelatedKeyRelation = "tonic" | "dominant" | "subdominant" | "parallel" | "doushu";
 
 export const MAJOR_KEYS = [
   "C",
@@ -110,11 +110,13 @@ export function getRelatedKeyCells(selectedIndex: number, keyType: KeyType): Rel
   const K = mod12(selectedIndex);
   const primaryRing: "major" | "minor" = keyType === "major" ? "major" : "minor";
   const relativeRing: "major" | "minor" = keyType === "major" ? "minor" : "major";
+  const doushuPosition = keyType === "major" ? mod12(K + 9) : mod12(K + 3);
   return [
     { ring: primaryRing, position: K, relation: "tonic" },
     { ring: primaryRing, position: mod12(K + 1), relation: "dominant" },
     { ring: primaryRing, position: mod12(K - 1), relation: "subdominant" },
     { ring: relativeRing, position: K, relation: "parallel" },
+    { ring: relativeRing, position: doushuPosition, relation: "doushu" },
   ];
 }
 

@@ -16,6 +16,7 @@ const RELATION_LABEL_KEY: Record<RelatedKeyRelation, string> = {
   dominant: "circle.relation.dominant",
   subdominant: "circle.relation.subdominant",
   parallel: "circle.relation.parallel",
+  doushu: "circle.relation.doushu",
 };
 
 interface RelatedKeysPanelProps {

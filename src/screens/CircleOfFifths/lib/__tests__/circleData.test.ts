@@ -84,6 +84,7 @@ describe("circleData", () => {
         { ring: "major", position: 1, relation: "dominant" }, // G
         { ring: "major", position: 11, relation: "subdominant" }, // F
         { ring: "minor", position: 0, relation: "parallel" }, // Am
+        { ring: "minor", position: 9, relation: "doushu" }, // Cm
       ]);
     });
 
@@ -94,6 +95,7 @@ describe("circleData", () => {
         { ring: "minor", position: 1, relation: "dominant" }, // Em
         { ring: "minor", position: 11, relation: "subdominant" }, // Dm
         { ring: "major", position: 0, relation: "parallel" }, // C
+        { ring: "major", position: 3, relation: "doushu" }, // A major
       ]);
     });
   });

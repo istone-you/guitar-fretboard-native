@@ -158,31 +158,52 @@ export default function ModeFamilyView({
         }}
         showsVerticalScrollIndicator={false}
       >
-        {modes.map((entry, index) => (
-          <TouchableOpacity
-            key={entry.scaleType}
-            testID={`mode-row-${entry.scaleType}`}
-            activeOpacity={0.7}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setPendingEntry({ scaleType: entry.scaleType, rootIndex: entry.rootIndex });
-            }}
-            style={[styles.modeRow, { borderColor }]}
-          >
-            <View style={[styles.indexBadge, { backgroundColor: colors.surface2 }]}>
-              <Text style={[styles.indexText, { color: colors.textSubtle }]}>{index + 1}</Text>
-            </View>
-            <View style={styles.modeInfo}>
-              <Text style={[styles.modeRootNote, { color: colors.textStrong, fontWeight: "600" }]}>
-                {notes[entry.rootIndex]}
-              </Text>
-              <Text style={[styles.modeName, { color: colors.textSubtle }]}>
-                {scaleName(entry.scaleType)}
-              </Text>
-            </View>
-            <Icon name="chevron-right" size={14} color={colors.textSubtle} />
-          </TouchableOpacity>
-        ))}
+        {modes.map((entry, index) => {
+          const entryNotes = Array.from(SCALE_DEGREES[entry.scaleType as ScaleType] ?? [])
+            .sort((a, b) => a - b)
+            .map((s) => notes[(entry.rootIndex + s) % 12]);
+          return (
+            <TouchableOpacity
+              key={entry.scaleType}
+              testID={`mode-row-${entry.scaleType}`}
+              activeOpacity={0.7}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setPendingEntry({ scaleType: entry.scaleType, rootIndex: entry.rootIndex });
+              }}
+              style={[styles.modeRow, { borderColor }]}
+            >
+              <View style={styles.indexBadge}>
+                <Text style={[styles.indexText, { color: colors.textSubtle }]}>{index + 1}</Text>
+              </View>
+              <View style={styles.modeInfo}>
+                <View style={styles.modeNameRow}>
+                  <Text
+                    style={[styles.modeRootNote, { color: colors.textStrong, fontWeight: "600" }]}
+                  >
+                    {notes[entry.rootIndex]}
+                  </Text>
+                  <Text style={[styles.modeName, { color: colors.textSubtle }]}>
+                    {scaleName(entry.scaleType)}
+                  </Text>
+                </View>
+                <View style={styles.listNoteChipsRow}>
+                  {entryNotes.map((n) => (
+                    <View
+                      key={n}
+                      style={[styles.listNoteChip, { backgroundColor: colors.surface2 }]}
+                    >
+                      <Text style={[styles.listNoteChipText, { color: colors.textStrong }]}>
+                        {n}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+              <Icon name="chevron-right" size={14} color={colors.textSubtle} />
+            </TouchableOpacity>
+          );
+        })}
       </ScrollView>
 
       <FinderDetailSheet
@@ -369,6 +390,11 @@ const styles = StyleSheet.create({
   },
   modeInfo: {
     flex: 1,
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: 6,
+  },
+  modeNameRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
@@ -379,6 +405,21 @@ const styles = StyleSheet.create({
   },
   modeName: {
     fontSize: 13,
+  },
+  listNoteChipsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 4,
+  },
+  listNoteChip: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    borderCurve: "continuous",
+  },
+  listNoteChipText: {
+    fontSize: 11,
+    fontWeight: "600",
   },
   detailSheet: {
     width: "100%",

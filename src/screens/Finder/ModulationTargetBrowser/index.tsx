@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import "../../../i18n";
 import type { Accidental, Theme, LayerConfig, ChordType } from "../../../types";
 import { createDefaultLayer, MAX_LAYERS } from "../../../types";
-import { getColors, pickNextLayerColor, BLACK } from "../../../themes/design";
+import { getColors, pickNextLayerColor, RELATED_KEY_COLORS, BLACK } from "../../../themes/design";
 import { getRootIndex, getNotesByAccidental } from "../../../lib/fretboard";
 import {
   getRelatedKeys,
@@ -28,6 +28,7 @@ import PillButton from "../../../components/ui/PillButton";
 import { SegmentedToggle } from "../../../components/ui/SegmentedToggle";
 import FinderDetailSheet from "../../../components/ui/FinderDetailSheet";
 import LayerDescription from "../../../components/LayerEditModal/LayerDescription";
+import Icon from "../../../components/ui/Icon";
 
 type PendingChord = {
   rootIndex: number;
@@ -66,6 +67,9 @@ export default function ModulationTargetBrowser({
   const [rootNote, setRootNote] = useState("C");
   const [keyType, setKeyType] = useState<KeyType>("major");
   const [pendingChord, setPendingChord] = useState<PendingChord | null>(null);
+
+  const scrollViewRef = useRef<ScrollView>(null);
+  const sectionYRef = useRef<Partial<Record<string, number>>>({});
 
   const notes = getNotesByAccidental(accidental);
   const isFull = layers.length >= MAX_LAYERS;
@@ -161,73 +165,105 @@ export default function ModulationTargetBrowser({
       </View>
 
       <ScrollView
+        ref={scrollViewRef}
         contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 80 }]}
         showsVerticalScrollIndicator={false}
       >
+        <View testID="related-keys-summary" style={styles.summaryContainer}>
+          {sections.map(({ rk }) => {
+            const shortKeyName = `${notes[rk.rootIndex]}${rk.keyType === "minor" ? "m" : ""}`;
+            const relLabel = t(
+              `finder.relatedKeys.relation.${rk.relation}.${keyType}.${rk.keyType}`,
+            );
+            return (
+              <TouchableOpacity
+                key={rk.relation}
+                activeOpacity={0.7}
+                style={[styles.summaryCard, { backgroundColor: colors.surface, borderColor }]}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  const y = sectionYRef.current[rk.relation];
+                  if (y !== undefined) {
+                    scrollViewRef.current?.scrollTo({ y, animated: true });
+                  }
+                }}
+              >
+                <Text style={[styles.summaryRelLabel, { color: colors.textSubtle }]}>
+                  {relLabel}
+                </Text>
+                <Text style={[styles.summaryKeyName, { color: colors.textStrong }]}>
+                  {shortKeyName}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
         {sections.map(({ rk, diatonic, pivots, pivotSet }) => {
           const relKeyName = keyLabel(rk.rootIndex, rk.keyType);
           const relLabel = t(`finder.relatedKeys.relation.${rk.relation}.${keyType}.${rk.keyType}`);
-          const desc = t(`finder.relatedKeys.desc.${rk.relation}`);
 
           return (
             <View
               key={`${rk.relation}-${rk.rootIndex}`}
               testID={`related-section-${rk.relation}`}
-              style={[styles.section, { borderColor }]}
+              style={styles.sectionGroup}
+              onLayout={(e) => {
+                sectionYRef.current[rk.relation] = e.nativeEvent.layout.y;
+              }}
             >
-              <View style={styles.sectionHeader}>
-                <Text style={[styles.relationLabel, { color: colors.textSubtle }]}>{relLabel}</Text>
-                <Text style={[styles.relKeyName, { color: colors.textStrong }]}>{relKeyName}</Text>
-                <Text style={[styles.descText, { color: colors.textSubtle }]}>{desc}</Text>
+              <View style={styles.sectionHeaderRow}>
+                <Text style={[styles.sectionHeader, { color: colors.textSubtle }]}>{relLabel}</Text>
+                <Text style={[styles.sectionKeyName, { color: colors.textStrong }]}>
+                  {relKeyName}
+                </Text>
               </View>
-              <View style={styles.chipsRow}>
-                {diatonic.map((c) => {
-                  const key = `${c.rootIndex}-${c.chordType}`;
-                  const isShared = pivotSet.has(key);
-                  const pivot = pivots.find((p) => `${p.rootIndex}-${p.chordType}` === key);
-                  return (
-                    <TouchableOpacity
-                      key={c.degree}
-                      testID={`related-chip-${rk.relation}-${c.degree}`}
-                      activeOpacity={0.7}
-                      onPress={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        setPendingChord({
-                          rootIndex: c.rootIndex,
-                          chordType: c.chordType as ChordType,
-                          degreeInBase: pivot?.degreeLabelInA,
-                          baseKeyName: keyLabel(rootIndex, keyType),
-                          degreeInRelated: c.degreeLabel,
-                          relatedKeyName: relKeyName,
-                        });
-                      }}
-                      style={[
-                        styles.chip,
-                        {
-                          backgroundColor: isShared ? colors.chipSelectedBg : colors.surface2,
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.chipDegree,
-                          { color: isShared ? colors.chipSelectedText : colors.textSubtle },
-                        ]}
-                      >
-                        {c.degreeLabel}
-                      </Text>
-                      <Text
-                        style={[
-                          styles.chipChordName,
-                          { color: isShared ? colors.chipSelectedText : colors.textStrong },
-                        ]}
-                      >
+              {diatonic.map((c) => {
+                const key = `${c.rootIndex}-${c.chordType}`;
+                const isPivot = pivotSet.has(key);
+                const pivot = pivots.find((p) => `${p.rootIndex}-${p.chordType}` === key);
+                return (
+                  <TouchableOpacity
+                    key={c.degree}
+                    testID={`related-chord-${rk.relation}-${c.degree}`}
+                    style={[
+                      styles.chordRow,
+                      {
+                        borderColor,
+                        backgroundColor: colors.surface,
+                        borderLeftWidth: isPivot ? 3 : StyleSheet.hairlineWidth,
+                        borderLeftColor: isPivot ? RELATED_KEY_COLORS.subdominant : borderColor,
+                      },
+                    ]}
+                    activeOpacity={0.7}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setPendingChord({
+                        rootIndex: c.rootIndex,
+                        chordType: c.chordType as ChordType,
+                        degreeInBase: pivot?.degreeLabelInA,
+                        baseKeyName: keyLabel(rootIndex, keyType),
+                        degreeInRelated: c.degreeLabel,
+                        relatedKeyName: relKeyName,
+                      });
+                    }}
+                  >
+                    <View style={styles.chordLeft}>
+                      <Text style={[styles.chordName, { color: colors.textStrong }]}>
                         {chordDisplayName(c.rootIndex, c.chordType, notes)}
                       </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
+                      <Text style={[styles.chordDegree, { color: colors.textSubtle }]}>
+                        {c.degreeLabel}
+                      </Text>
+                    </View>
+                    {isPivot && (
+                      <Text style={[styles.pivotBadge, { color: RELATED_KEY_COLORS.subdominant }]}>
+                        {t("finder.relatedKeys.pivot")}
+                      </Text>
+                    )}
+                    <Icon name="chevron-right" size={14} color={colors.textSubtle} />
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           );
         })}
@@ -321,56 +357,74 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     gap: 16,
   },
-  section: {
-    borderRadius: 16,
+  summaryContainer: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  summaryCard: {
+    flex: 1,
+    alignItems: "center",
+    borderRadius: 10,
     borderCurve: "continuous",
     borderWidth: StyleSheet.hairlineWidth,
-    overflow: "hidden",
-    gap: 0,
-  },
-  sectionHeader: {
-    paddingHorizontal: 14,
-    paddingTop: 12,
-    paddingBottom: 10,
-    gap: 2,
-  },
-  relationLabel: {
-    fontSize: 11,
-    fontWeight: "600",
-    textTransform: "uppercase",
-    letterSpacing: 0.4,
-  },
-  relKeyName: {
-    fontSize: 18,
-    fontWeight: "700",
-  },
-  descText: {
-    fontSize: 12,
-    lineHeight: 18,
-    paddingTop: 2,
-  },
-  chipsRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    paddingHorizontal: 14,
-    paddingBottom: 14,
-  },
-  chip: {
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     paddingVertical: 8,
-    borderRadius: 12,
-    borderCurve: "continuous",
-    alignItems: "center",
-    minWidth: 56,
-    gap: 3,
+    gap: 4,
   },
-  chipDegree: {
+  summaryRelLabel: {
     fontSize: 10,
     fontWeight: "600",
+    textAlign: "center",
   },
-  chipChordName: {
+  summaryKeyName: {
+    fontSize: 16,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  sectionGroup: {
+    gap: 8,
+    marginTop: 4,
+  },
+  sectionHeaderRow: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    gap: 8,
+  },
+  sectionHeader: {
+    fontSize: 11,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  sectionKeyName: {
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  chordRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderRadius: 14,
+    borderCurve: "continuous",
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    gap: 8,
+  },
+  chordLeft: {
+    flex: 1,
+    gap: 2,
+  },
+  chordName: {
     fontSize: 14,
+    fontWeight: "700",
+  },
+  chordDegree: {
+    fontSize: 11,
+    fontWeight: "500",
+  },
+  pivotBadge: {
+    fontSize: 11,
     fontWeight: "700",
   },
   degreeBadges: {

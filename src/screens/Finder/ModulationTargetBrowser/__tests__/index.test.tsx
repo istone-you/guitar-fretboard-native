@@ -52,6 +52,13 @@ jest.mock("../../../../components/ui/ChordDiagram", () => ({
 }));
 jest.mock("../../../../components/ui/FinderDetailSheet", () => () => null);
 jest.mock("../../../../components/LayerEditModal/LayerDescription", () => () => null);
+jest.mock("../../../../components/ui/Icon", () => () => null);
+jest.mock("../../../../components/ui/PillButton", () => {
+  const { TouchableOpacity } = require("react-native");
+  return ({ onPress, children }: { onPress: () => void; children: React.ReactNode }) => (
+    <TouchableOpacity onPress={onPress}>{children}</TouchableOpacity>
+  );
+});
 
 const baseProps = {
   theme: "dark" as const,
@@ -83,9 +90,14 @@ describe("ModulationTargetBrowser", () => {
     expect(screen.getByTestId("related-section-subdominant")).toBeTruthy();
   });
 
-  it("shows 7 diatonic chips per section", () => {
+  it("shows 7 diatonic chords per section", () => {
     render(<ModulationTargetBrowser {...baseProps} />);
-    const relativeChips = screen.getAllByTestId(/^related-chip-relative-/);
-    expect(relativeChips).toHaveLength(7);
+    const relativeChords = screen.getAllByTestId(/^related-chord-relative-/);
+    expect(relativeChords).toHaveLength(7);
+  });
+
+  it("shows related keys summary at top", () => {
+    render(<ModulationTargetBrowser {...baseProps} />);
+    expect(screen.getByTestId("related-keys-summary")).toBeTruthy();
   });
 });

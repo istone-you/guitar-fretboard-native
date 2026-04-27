@@ -35,8 +35,8 @@ jest.mock("../../../lib/fretboard", () => ({
   DIATONIC_CHORDS: { "major-triad": [{ value: "I" }] },
   TRIAD_INVERSION_OPTIONS: [{ value: "root" }, { value: "first" }, { value: "second" }],
   PROGRESSION_TEMPLATES: [
-    { id: "251", name: "ii-V-I", degrees: ["ii", "V", "I"] },
-    { id: "pop", name: "I-V-vi-IV", degrees: ["I", "V", "vi", "IV"] },
+    { id: "251", name: "IIm-V-I", degrees: ["ii", "V", "I"] },
+    { id: "pop", name: "I-V-VIm-IV", degrees: ["I", "V", "vi", "IV"] },
   ],
   chordSuffix: (t: string) => ({ Major: "", Minor: "m", "7th": "7" })[t] ?? t,
   getDiatonicChord: () => ({ rootIndex: 0, chordType: "Major" }),

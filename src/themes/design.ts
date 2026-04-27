@@ -334,16 +334,19 @@ export const DIATONIC_FUNCTION_COLORS: Record<"T" | "SD" | "D", string> = {
 
 // ── Circle of Fifths overlay colors (drawn from COLOR_PRESETS for consistency) ─
 
-export const RELATED_KEY_COLORS: Record<"tonic" | "dominant" | "subdominant" | "parallel", string> =
-  {
-    tonic: "#ff4d4d",
-    dominant: "#84cc16",
-    subdominant: "#00bfff",
-    parallel: "#a78bfa",
-  };
+export const RELATED_KEY_COLORS: Record<
+  "tonic" | "dominant" | "subdominant" | "parallel" | "doushu",
+  string
+> = {
+  tonic: "#ff4d4d",
+  dominant: "#84cc16",
+  subdominant: "#00bfff",
+  parallel: "#a78bfa",
+  doushu: "#f59e0b",
+};
 
 export const CIRCLE_OVERLAY_COLORS = {
   secondaryDominant: "#ff8c00",
   tritoneSub: "#40e0d0",
-  modalInterchange: "#c084fc",
+  modalInterchange: "#f97316",
 } as const;

@@ -26,7 +26,8 @@
       "tonic": "Tonic",
       "dominant": "Dominant",
       "subdominant": "Subdominant",
-      "parallel": "Relative"
+      "parallel": "Relative",
+      "doushu": "Parallel Key"
     },
     "legend": {
       "tonicFn": "T (Tonic)",
@@ -371,6 +372,7 @@
       "baseKey": "Key: {{key}}",
       "diatonicChords": "Diatonic Chords",
       "pivotChords": "Common Chords (Pivot)",
+      "pivot": "Pivot",
       "desc": {
         "relative": "Shares the same key signature but has a different tonic. The relative minor starts a minor 3rd below the major root — same notes, different feel.",
         "parallel": "Shares the same tonic but has a different key signature. Switching between parallel keys creates a dramatic shift between brightness and darkness.",
@@ -380,18 +382,18 @@
       "relation": {
         "relative": {
           "major": {
-            "minor": "Relative Minor"
+            "minor": "Relative Key"
           },
           "minor": {
-            "major": "Relative Major"
+            "major": "Relative Key"
           }
         },
         "parallel": {
           "major": {
-            "minor": "Parallel Minor"
+            "minor": "Parallel Key"
           },
           "minor": {
-            "major": "Parallel Major"
+            "major": "Parallel Key"
           }
         },
         "dominant": {

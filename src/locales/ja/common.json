@@ -26,7 +26,8 @@
       "tonic": "主調",
       "dominant": "属調",
       "subdominant": "下属調",
-      "parallel": "平行調"
+      "parallel": "平行調",
+      "doushu": "同主調"
     },
     "legend": {
       "tonicFn": "T (トニック)",
@@ -371,6 +372,7 @@
       "baseKey": "基準キー: {{key}}",
       "diatonicChords": "ダイアトニックコード",
       "pivotChords": "共通コード（ピボット）",
+      "pivot": "共通",
       "desc": {
         "relative": "同じ調号（同じ音）を持ちながら主音が異なるキー。長調の主音から短3度下が関係短調の主音になります。同じ音材で異なる感情を持ちます。",
         "parallel": "同じ主音を持ちながら調号が異なるキー。平行調への転換は明暗の劇的な変化をもたらし、楽曲に表情の幅を生み出します。",
@@ -380,18 +382,18 @@
       "relation": {
         "relative": {
           "major": {
-            "minor": "関係短調"
+            "minor": "平行調"
           },
           "minor": {
-            "major": "関係長調"
+            "major": "平行調"
           }
         },
         "parallel": {
           "major": {
-            "minor": "平行短調"
+            "minor": "同主調"
           },
           "minor": {
-            "major": "平行長調"
+            "major": "同主調"
           }
         },
         "dominant": {

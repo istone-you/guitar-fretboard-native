@@ -2491,7 +2491,8 @@ export function diatonicDegreeLabel(
 export function templateDisplayName(template: ProgressionTemplate): string {
   if (template.id.startsWith("tpl-") || template.id === "blues" || !template.degrees)
     return template.name;
-  return template.degrees.map((d) => diatonicDegreeLabel(d)).join("-");
+  const keyType = template.degrees.includes("i") ? "minor" : "major";
+  return template.degrees.map((d) => diatonicDegreeLabel(d, { keyType })).join("-");
 }
 
 export const CHROMATIC_DEGREE_OFFSETS: Record<string, number> = {
@@ -2537,10 +2538,10 @@ export function resolveProgressionStep(
 
 export const PROGRESSION_TEMPLATES: ProgressionTemplate[] = [
   { id: "145", name: "I-IV-V", degrees: ["I", "IV", "V"] },
-  { id: "251", name: "ii-V-I", degrees: ["ii", "V", "I"] },
-  { id: "1625", name: "I-vi-ii-V", degrees: ["I", "vi", "ii", "V"] },
-  { id: "pop", name: "I-V-vi-IV", degrees: ["I", "V", "vi", "IV"] },
-  { id: "andalusian", name: "i-VII-VI-VII", degrees: ["i", "VII", "VI", "VII"] },
+  { id: "251", name: "IIm-V-I", degrees: ["ii", "V", "I"] },
+  { id: "1625", name: "I-VIm-IIm-V", degrees: ["I", "vi", "ii", "V"] },
+  { id: "pop", name: "I-V-VIm-IV", degrees: ["I", "V", "vi", "IV"] },
+  { id: "andalusian", name: "Im-♭VII-♭VI-♭VII", degrees: ["i", "VII", "VI", "VII"] },
   {
     id: "blues",
     name: "12bar blues",
