@@ -9,6 +9,8 @@ import {
   Animated,
   Easing,
   useWindowDimensions,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import Svg, { Path } from "react-native-svg";
@@ -28,6 +30,7 @@ import BottomSheetModal, {
 import SheetProgressiveHeader from "../../../components/ui/SheetProgressiveHeader";
 import GlassIconButton from "../../../components/ui/GlassIconButton";
 import { SegmentedToggle } from "../../../components/ui/SegmentedToggle";
+import ChevronIcon from "../../../components/ui/ChevronIcon";
 
 export const MAX_PROGRESSION_DEGREES = 16;
 
@@ -178,7 +181,7 @@ interface TemplateFormSheetProps {
   theme: Theme;
   accidental: Accidental;
   initialTemplate: CustomProgressionTemplate | null;
-  onSave: (name: string, chords: ProgressionChord[]) => void;
+  onSave: (name: string, chords: ProgressionChord[], description?: string) => void;
   initialInputMode?: "degree" | "note";
   initialNoteKey?: string;
 }
@@ -196,12 +199,14 @@ export default function TemplateFormSheet({
   const { t } = useTranslation();
   const isDark = theme === "dark";
   const sheetHeight = useSheetHeight();
-  const { width: winWidth } = useWindowDimensions();
+  const { width: winWidth, height: winHeight } = useWindowDimensions();
+  const descriptionSheetHeight = Math.max(460, Math.min(700, Math.round(winHeight * 0.78)));
 
   const colors = getColors(isDark);
   const calloutBorder = isDark ? colors.border2 : colors.borderStrong;
 
   const [formName, setFormName] = useState(() => initialTemplate?.name ?? "");
+  const [formDescription, setFormDescription] = useState(() => initialTemplate?.description ?? "");
   const [formChords, setFormChords] = useState<ProgressionChord[]>(() =>
     initialTemplate?.chords ? [...initialTemplate.chords] : [],
   );
@@ -212,8 +217,10 @@ export default function TemplateFormSheet({
   const [inputMode, setInputMode] = useState<"degree" | "note">(initialInputMode ?? "degree");
   const [noteKey, setNoteKey] = useState(initialNoteKey ?? "C");
   const [selectedNote, setSelectedNote] = useState<string | null>(null);
-  const [step, setStep] = useState<"main" | "keySelect">("main");
+  const [step, setStep] = useState<"main" | "keySelect" | "description" | "progression">("main");
+  const [headerHeight, setHeaderHeight] = useState(96);
   const slideAnim = useRef(new Animated.Value(0)).current;
+  const heightAnim = useRef(new Animated.Value(sheetHeight)).current;
   const pendingEnterDir = useRef(0);
 
   const noteNames = getNotesByAccidental(accidental);
@@ -289,10 +296,36 @@ export default function TemplateFormSheet({
     setStep("keySelect");
   };
 
-  const navigateBack = () => {
+  const navigateToDescription = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    pendingEnterDir.current = 1;
+    Animated.timing(heightAnim, {
+      toValue: descriptionSheetHeight,
+      duration: 300,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
+    setStep("description");
+  };
+
+  const navigateToProgression = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    pendingEnterDir.current = 1;
+    setStep("progression");
+  };
+
+  const navigateBack = (target: "main" | "progression" = "main") => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     pendingEnterDir.current = -1;
-    setStep("main");
+    if (step === "description") {
+      Animated.timing(heightAnim, {
+        toValue: sheetHeight,
+        duration: 260,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+      }).start();
+    }
+    setStep(target);
   };
 
   const handleDegreePress = (deg: string) => {
@@ -320,6 +353,7 @@ export default function TemplateFormSheet({
 
   const resetForm = () => {
     setFormName(initialTemplate?.name ?? "");
+    setFormDescription(initialTemplate?.description ?? "");
     setFormChords(initialTemplate?.chords ? [...initialTemplate.chords] : []);
     setSelectedDegree(null);
     setSelectedNote(null);
@@ -327,6 +361,7 @@ export default function TemplateFormSheet({
     setInputMode(initialInputMode ?? "degree");
     setNoteKey(initialNoteKey ?? "C");
     setStep("main");
+    heightAnim.setValue(sheetHeight);
     calloutAnim.setValue(0);
   };
 
@@ -339,7 +374,7 @@ export default function TemplateFormSheet({
     const trimmed = formName.trim();
     if (!trimmed || formChords.length === 0) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    onSave(trimmed, formChords);
+    onSave(trimmed, formChords, formDescription.trim() || undefined);
     close();
   };
 
@@ -352,10 +387,14 @@ export default function TemplateFormSheet({
   return (
     <BottomSheetModal visible={visible} onClose={handleClose}>
       {({ close, dragHandlers }) => (
-        <View
+        <Animated.View
           style={[
             styles.sheet,
-            { height: sheetHeight, backgroundColor: colors.sheetBg, borderColor: colors.border2 },
+            {
+              height: heightAnim,
+              backgroundColor: colors.sheetBg,
+              borderColor: colors.border2,
+            },
           ]}
         >
           <View style={{ flex: 1, overflow: "hidden" }}>
@@ -413,6 +452,78 @@ export default function TemplateFormSheet({
                       paddingBottom: 24,
                     }}
                   >
+                    {/* 進行・説明文 nav rows */}
+                    <View
+                      style={[
+                        styles.navSection,
+                        {
+                          borderColor: calloutBorder,
+                          marginTop: 8,
+                        },
+                      ]}
+                    >
+                      <TouchableOpacity
+                        onPress={navigateToProgression}
+                        style={[
+                          styles.iosRow,
+                          {
+                            borderBottomWidth: StyleSheet.hairlineWidth,
+                            borderBottomColor: calloutBorder,
+                          },
+                        ]}
+                        activeOpacity={0.6}
+                      >
+                        <Text style={[styles.iosRowLabel, { color: colors.textStrong }]}>
+                          {t("templates.progression")}
+                        </Text>
+                        <View style={styles.iosRowRight}>
+                          <Text
+                            style={[styles.iosRowValue, { color: colors.textSubtle }]}
+                            numberOfLines={1}
+                          >
+                            {formChords.length === 0
+                              ? t("finder.none")
+                              : formChords.length <= 4
+                                ? formChords.map(chordDisplayLabel).join("–")
+                                : `${formChords.slice(0, 4).map(chordDisplayLabel).join("–")}…`}
+                          </Text>
+                          <ChevronIcon size={12} color={colors.textMuted} direction="right" />
+                        </View>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={navigateToDescription}
+                        style={styles.iosRow}
+                        activeOpacity={0.6}
+                      >
+                        <Text style={[styles.iosRowLabel, { color: colors.textStrong }]}>
+                          {t("templates.description")}
+                        </Text>
+                        <View style={styles.iosRowRight}>
+                          <Text
+                            style={[styles.iosRowValue, { color: colors.textSubtle }]}
+                            numberOfLines={1}
+                          >
+                            {formDescription.trim() || t("finder.none")}
+                          </Text>
+                          <ChevronIcon size={12} color={colors.textMuted} direction="right" />
+                        </View>
+                      </TouchableOpacity>
+                    </View>
+                  </ScrollView>
+                </>
+              )}
+
+              {/* Step: コード進行入力 */}
+              {step === "progression" && (
+                <View style={{ flex: 1 }}>
+                  <ScrollView
+                    style={{ flex: 1 }}
+                    contentContainerStyle={{
+                      paddingHorizontal: 16,
+                      paddingTop: headerHeight + 8,
+                      paddingBottom: 24,
+                    }}
+                  >
                     {/* 音名・度数 モードトグル */}
                     <NoteDegreeModeToggle
                       theme={theme}
@@ -451,6 +562,7 @@ export default function TemplateFormSheet({
                         </TouchableOpacity>
                       </View>
                     )}
+
                     <View style={[styles.chipsRow, { justifyContent: "center" }]}>
                       {inputMode === "degree"
                         ? CHROMATIC_DEGREES.map(([deg, label]) => {
@@ -623,7 +735,30 @@ export default function TemplateFormSheet({
                       </View>
                     )}
                   </ScrollView>
-                </>
+                  <SheetProgressiveHeader
+                    isDark={isDark}
+                    bgColor={colors.sheetBg}
+                    dragHandlers={dragHandlers}
+                    contentPaddingHorizontal={14}
+                    onLayout={setHeaderHeight}
+                    style={styles.absoluteHeader}
+                  >
+                    <View style={{ flexDirection: "row", alignItems: "center" }}>
+                      <GlassIconButton
+                        isDark={isDark}
+                        onPress={() => navigateBack("main")}
+                        icon="back"
+                        style={styles.subHeaderLeft}
+                      />
+                      <View style={styles.subHeaderCenter}>
+                        <Text style={[styles.subHeaderTitle, { color: colors.textStrong }]}>
+                          {t("templates.progression")}
+                        </Text>
+                      </View>
+                      <View style={styles.subHeaderRight} />
+                    </View>
+                  </SheetProgressiveHeader>
+                </View>
               )}
 
               {/* Step: キー選択 */}
@@ -643,13 +778,68 @@ export default function TemplateFormSheet({
                       });
                     }
                   }}
-                  onBack={navigateBack}
+                  onBack={() => navigateBack("progression")}
                   dragHandlers={dragHandlers}
                 />
               )}
+
+              {/* Step: 説明文編集 */}
+              {step === "description" && (
+                <View style={{ flex: 1 }}>
+                  <KeyboardAvoidingView
+                    style={{ flex: 1 }}
+                    behavior={Platform.OS === "ios" ? "padding" : undefined}
+                  >
+                    <ScrollView
+                      style={{ flex: 1 }}
+                      contentContainerStyle={{
+                        paddingTop: headerHeight,
+                        paddingHorizontal: 16,
+                        paddingBottom: 24,
+                      }}
+                      keyboardShouldPersistTaps="handled"
+                    >
+                      <TextInput
+                        style={[styles.descriptionInput, { color: colors.textStrong }]}
+                        placeholder={t("templates.descriptionPlaceholder")}
+                        placeholderTextColor={colors.textMuted}
+                        value={formDescription}
+                        onChangeText={setFormDescription}
+                        multiline
+                        maxLength={500}
+                        autoFocus
+                        textAlignVertical="top"
+                      />
+                    </ScrollView>
+                  </KeyboardAvoidingView>
+                  <SheetProgressiveHeader
+                    isDark={isDark}
+                    bgColor={colors.sheetBg}
+                    dragHandlers={dragHandlers}
+                    contentPaddingHorizontal={14}
+                    onLayout={setHeaderHeight}
+                    style={styles.absoluteHeader}
+                  >
+                    <View style={{ flexDirection: "row", alignItems: "center" }}>
+                      <GlassIconButton
+                        isDark={isDark}
+                        onPress={() => navigateBack()}
+                        icon="back"
+                        style={styles.subHeaderLeft}
+                      />
+                      <View style={styles.subHeaderCenter}>
+                        <Text style={[styles.subHeaderTitle, { color: colors.textStrong }]}>
+                          {t("templates.description")}
+                        </Text>
+                      </View>
+                      <View style={styles.subHeaderRight} />
+                    </View>
+                  </SheetProgressiveHeader>
+                </View>
+              )}
             </Animated.View>
           </View>
-        </View>
+        </Animated.View>
       )}
     </BottomSheetModal>
   );
@@ -733,5 +923,67 @@ const styles = StyleSheet.create({
   pillValue: {
     fontSize: 14,
     fontWeight: "600",
+  },
+  navSection: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  iosSection: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  iosRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    minHeight: 44,
+    paddingVertical: 8,
+  },
+  iosRowLabel: {
+    fontSize: 15,
+    fontWeight: "400",
+    flex: 1,
+  },
+  iosRowRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    flexShrink: 0,
+    maxWidth: "55%",
+  },
+  iosRowValue: {
+    fontSize: 14,
+    textAlign: "right",
+    flexShrink: 1,
+  },
+  absoluteHeader: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1,
+    paddingTop: SHEET_HANDLE_CLEARANCE,
+  },
+  subHeaderLeft: {
+    width: 40,
+    alignItems: "flex-start",
+    justifyContent: "center",
+  },
+  subHeaderRight: {
+    width: 40,
+  },
+  subHeaderCenter: {
+    flex: 1,
+    alignItems: "center",
+  },
+  subHeaderTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  descriptionInput: {
+    fontSize: 15,
+    lineHeight: 22,
+    minHeight: 120,
+    paddingVertical: 12,
   },
 });

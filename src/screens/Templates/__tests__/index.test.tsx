@@ -27,7 +27,7 @@ jest.mock("../TemplateFormSheet", () => {
     }: {
       visible: boolean;
       onClose: () => void;
-      onSave: (name: string, chords: unknown[]) => void;
+      onSave: (name: string, chords: unknown[], description?: string) => void;
     }) =>
       visible ? (
         <View testID="template-form-sheet">
@@ -141,7 +141,7 @@ describe("TemplatesPane", () => {
       ref.current?.openTemplateForm(tpl);
     });
     fireEvent.press(screen.getByTestId("form-save"));
-    expect(onUpdateTemplate).toHaveBeenCalledWith(tpl.id, "New Template", []);
+    expect(onUpdateTemplate).toHaveBeenCalledWith(tpl.id, "New Template", [], undefined);
   });
 
   it("closes the form when form-close is pressed", () => {

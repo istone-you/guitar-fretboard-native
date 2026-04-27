@@ -193,24 +193,24 @@ describe("TemplateFormSheet", () => {
 
   it("selects a degree and shows chord type panel", () => {
     render(<TemplateFormSheet {...defaultProps} />);
+    // Navigate to progression sub-page
+    fireEvent.press(screen.getByText("templates.progression"));
     const degreeBtn = screen.getByText("I");
     fireEvent.press(degreeBtn);
-    // After pressing a degree, the callout panel becomes visible (pointerEvents auto)
     expect(screen.getByText("I")).toBeTruthy();
   });
 
   it("adds a chord by selecting degree then chord type", () => {
     render(<TemplateFormSheet {...defaultProps} />);
-    // Press degree "I"
+    fireEvent.press(screen.getByText("templates.progression"));
     fireEvent.press(screen.getByText("I"));
-    // Press chord type "M" (Major)
     fireEvent.press(screen.getByText("M"));
-    // Degree chip "I" should appear in the progression list
     expect(screen.getAllByText("I").length).toBeGreaterThan(0);
   });
 
   it("re-pressing same degree hides the callout", () => {
     render(<TemplateFormSheet {...defaultProps} />);
+    fireEvent.press(screen.getByText("templates.progression"));
     fireEvent.press(screen.getByText("I"));
     fireEvent.press(screen.getByText("I")); // toggle off
     expect(screen.getByText("I")).toBeTruthy();
@@ -218,26 +218,30 @@ describe("TemplateFormSheet", () => {
 
   it("changing selected degree while another is active replaces it", () => {
     render(<TemplateFormSheet {...defaultProps} />);
+    fireEvent.press(screen.getByText("templates.progression"));
     fireEvent.press(screen.getByText("I"));
     fireEvent.press(screen.getByText("II"));
-    // No crash — second degree is now selected
     expect(screen.getByText("II")).toBeTruthy();
   });
 
   it("calls onSave with name and chords when save is pressed", () => {
     const onSave = jest.fn();
     const { UNSAFE_getByType } = render(<TemplateFormSheet {...defaultProps} onSave={onSave} />);
-    // Type a name
     const { TextInput } = require("react-native");
+    // Type a name on the main step first
     fireEvent.changeText(UNSAFE_getByType(TextInput), "New Prog");
-    // Add a chord
+    // Navigate to progression sub-page and add a chord
+    fireEvent.press(screen.getByText("templates.progression"));
     fireEvent.press(screen.getByText("I"));
     fireEvent.press(screen.getByText("M"));
+    // Navigate back to main step
+    fireEvent.press(screen.getByTestId("glass-back"));
     // Press save
     fireEvent.press(screen.getByTestId("glass-check"));
     expect(onSave).toHaveBeenCalledWith(
       "New Prog",
       expect.arrayContaining([expect.objectContaining({ degree: "I" })]),
+      undefined,
     );
   });
 

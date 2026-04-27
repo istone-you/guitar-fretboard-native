@@ -24,7 +24,12 @@ interface TemplateDetailPaneProps {
   accidental: Accidental;
   template: CustomProgressionTemplate;
   layers: LayerConfig[];
-  onUpdateTemplate: (id: string, name: string, chords: ProgressionChord[]) => void;
+  onUpdateTemplate: (
+    id: string,
+    name: string,
+    chords: ProgressionChord[],
+    description?: string,
+  ) => void;
   onAddLayer: (layer: LayerConfig) => void;
 }
 
@@ -107,6 +112,13 @@ function TemplateDetailPane({
           </View>
         </View>
 
+        {/* Description */}
+        {!!template.description && (
+          <Text style={[styles.description, { color: colors.textSubtle }]}>
+            {template.description}
+          </Text>
+        )}
+
         {/* Chord diagram list */}
         {template.chords.map((chord, i) => {
           const offset = CHROMATIC_DEGREE_OFFSETS[chord.degree] ?? 0;
@@ -144,8 +156,8 @@ function TemplateDetailPane({
         theme={theme}
         accidental={accidental}
         initialTemplate={template}
-        onSave={(name, chords) => {
-          onUpdateTemplate(template.id, name, chords);
+        onSave={(name, chords, description) => {
+          onUpdateTemplate(template.id, name, chords, description);
           setFormVisible(false);
         }}
       />
@@ -179,6 +191,13 @@ const styles = StyleSheet.create({
   chordItem: {
     paddingHorizontal: 16,
     gap: 6,
+  },
+  description: {
+    fontSize: 14,
+    lineHeight: 20,
+    paddingHorizontal: 16,
+    paddingTop: 4,
+    paddingBottom: 4,
   },
   chordLabel: {
     fontSize: 15,

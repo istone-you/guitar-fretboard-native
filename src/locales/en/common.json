@@ -291,7 +291,9 @@
     "progression": "Progression",
     "tension": "Tension",
     "selectDegree": "Select a degree first",
-    "key": "Key"
+    "key": "Key",
+    "description": "Description",
+    "descriptionPlaceholder": "Add a description..."
   },
   "finder": {
     "longPressInstruction": "Long press the fretboard to select root note",

@@ -178,7 +178,7 @@ describe("TemplateDetailPane", () => {
     const buttons = UNSAFE_getAllByType(TouchableOpacity);
     fireEvent.press(buttons[buttons.length - 1]);
     fireEvent.press(screen.getByTestId("form-save"));
-    expect(onUpdateTemplate).toHaveBeenCalledWith("t1", "Updated", expect.any(Array));
+    expect(onUpdateTemplate).toHaveBeenCalledWith("t1", "Updated", expect.any(Array), undefined);
   });
 
   it("closes the form sheet on form-close", () => {

@@ -2386,6 +2386,7 @@ export interface ProgressionTemplate {
   name: string;
   degrees?: string[];
   chords?: ProgressionChord[];
+  description?: string;
 }
 
 /** コード種別 → 表示サフィックス変換。全度数ラベル生成の共通基盤。 */

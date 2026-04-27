@@ -66,8 +66,13 @@ export default function LayerDescription({
   } else if (layer.type === "progression") {
     layerDesc = t("description.layer.progression");
     const templateId = layer.progressionTemplateId ?? "251";
-    const desc = t(`description.progression.${templateId}`, { defaultValue: "" });
-    if (desc) itemDesc = desc;
+    const tp = (progressionTemplates ?? PROGRESSION_TEMPLATES).find((t_) => t_.id === templateId);
+    if (tp?.description) {
+      itemDesc = tp.description;
+    } else {
+      const desc = t(`description.progression.${templateId}`, { defaultValue: "" });
+      if (desc) itemDesc = desc;
+    }
   } else {
     layerDesc = t("description.layer.custom");
   }

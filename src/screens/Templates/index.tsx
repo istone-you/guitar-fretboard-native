@@ -36,8 +36,13 @@ export interface TemplatesPaneProps {
   accidental: Accidental;
   layers: LayerConfig[];
   customTemplates: CustomProgressionTemplate[];
-  onSaveTemplate: (name: string, chords: ProgressionChord[]) => void;
-  onUpdateTemplate: (id: string, name: string, chords: ProgressionChord[]) => void;
+  onSaveTemplate: (name: string, chords: ProgressionChord[], description?: string) => void;
+  onUpdateTemplate: (
+    id: string,
+    name: string,
+    chords: ProgressionChord[],
+    description?: string,
+  ) => void;
   onDeleteTemplate: (id: string) => void;
   onReorderTemplates: (orderedIds: string[]) => void;
   onAddLayerAndNavigate: (layer: LayerConfig) => void;
@@ -542,11 +547,11 @@ const TemplatesPane = forwardRef<TemplatesPaneHandle, TemplatesPaneProps>(functi
             theme={theme}
             accidental={accidental}
             initialTemplate={editingTemplate}
-            onSave={(name, chords) => {
+            onSave={(name, chords, description) => {
               if (editingTemplate) {
-                onUpdateTemplate(editingTemplate.id, name, chords);
+                onUpdateTemplate(editingTemplate.id, name, chords, description);
               } else {
-                onSaveTemplate(name, chords);
+                onSaveTemplate(name, chords, description);
               }
             }}
           />

@@ -110,7 +110,12 @@ export default function App() {
   const allProgressionTemplates = useMemo(
     () => [
       ...PROGRESSION_TEMPLATES,
-      ...customTemplates.map((ct) => ({ id: ct.id, name: ct.name, chords: ct.chords })),
+      ...customTemplates.map((ct) => ({
+        id: ct.id,
+        name: ct.name,
+        chords: ct.chords,
+        description: ct.description,
+      })),
     ],
     [customTemplates],
   );

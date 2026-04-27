@@ -9,6 +9,7 @@ export interface CustomProgressionTemplate {
   name: string;
   chords: ProgressionChord[];
   createdAt: number;
+  description?: string;
 }
 
 function migrateLegacyTemplate(raw: Record<string, unknown>): CustomProgressionTemplate {
@@ -49,14 +50,19 @@ export function useProgressionTemplates() {
     AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   };
 
-  const saveTemplate = (name: string, chords: ProgressionChord[]): string => {
+  const saveTemplate = (name: string, chords: ProgressionChord[], description?: string): string => {
     const id = `tpl-${Date.now()}`;
-    persist([...customTemplates, { id, name, chords, createdAt: Date.now() }]);
+    persist([...customTemplates, { id, name, chords, createdAt: Date.now(), description }]);
     return id;
   };
 
-  const updateTemplate = (id: string, name: string, chords: ProgressionChord[]) => {
-    persist(customTemplates.map((t) => (t.id === id ? { ...t, name, chords } : t)));
+  const updateTemplate = (
+    id: string,
+    name: string,
+    chords: ProgressionChord[],
+    description?: string,
+  ) => {
+    persist(customTemplates.map((t) => (t.id === id ? { ...t, name, chords, description } : t)));
   };
 
   const deleteTemplate = (id: string) => {

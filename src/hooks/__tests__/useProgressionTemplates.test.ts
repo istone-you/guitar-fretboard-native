@@ -36,6 +36,34 @@ describe("useProgressionTemplates", () => {
     expect(result.current.customTemplates[0].chords).toEqual([{ degree: "I", chordType: "Major" }]);
   });
 
+  it("saveTemplate stores description when provided", () => {
+    const { result } = renderHook(() => useProgressionTemplates());
+    act(() => {
+      result.current.saveTemplate("My Progression", [], "A test description");
+    });
+    expect(result.current.customTemplates[0].description).toBe("A test description");
+  });
+
+  it("saveTemplate leaves description undefined when not provided", () => {
+    const { result } = renderHook(() => useProgressionTemplates());
+    act(() => {
+      result.current.saveTemplate("My Progression", []);
+    });
+    expect(result.current.customTemplates[0].description).toBeUndefined();
+  });
+
+  it("updateTemplate updates description", () => {
+    const { result } = renderHook(() => useProgressionTemplates());
+    act(() => {
+      result.current.saveTemplate("Original", []);
+    });
+    const id = result.current.customTemplates[0].id;
+    act(() => {
+      result.current.updateTemplate(id, "Updated", [], "New description");
+    });
+    expect(result.current.customTemplates[0].description).toBe("New description");
+  });
+
   it("saveTemplate assigns an id with tpl- prefix and a createdAt timestamp", () => {
     const { result } = renderHook(() => useProgressionTemplates());
     act(() => {

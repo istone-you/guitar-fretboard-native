@@ -291,7 +291,9 @@
     "progression": "進行",
     "tension": "テンション",
     "selectDegree": "音度を先に選んでください",
-    "key": "キー"
+    "key": "キー",
+    "description": "説明文",
+    "descriptionPlaceholder": "説明を入力..."
   },
   "finder": {
     "longPressInstruction": "指板を長押しでルート音を選択",
