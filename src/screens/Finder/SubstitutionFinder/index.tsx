@@ -1,12 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  useWindowDimensions,
-} from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -23,10 +16,12 @@ import {
   type SubstitutionType,
 } from "../../../lib/substitutions";
 import ChordDiagram, { getAllChordForms } from "../../../components/ui/ChordDiagram";
+import { useChordDiagramWidth } from "../../../hooks/useChordDiagramWidth";
 import NotePickerButton from "../../../components/ui/NotePickerButton";
-import NotePill from "../../../components/ui/NotePill";
+import FinderChordPicker from "../../../components/ui/FinderChordPicker";
 import { SegmentedToggle } from "../../../components/ui/SegmentedToggle";
 import FinderDetailSheet from "../../../components/ui/FinderDetailSheet";
+import Icon from "../../../components/ui/Icon";
 
 interface SubstitutionFinderProps {
   theme: Theme;
@@ -60,8 +55,6 @@ export default function SubstitutionFinder({
   const isDark = theme === "dark";
   const colors = getColors(isDark);
   const insets = useSafeAreaInsets();
-  const { width: screenWidth } = useWindowDimensions();
-
   const [keyRoot, setKeyRoot] = useState("C");
   const [keyType, setKeyType] = useState<KeyType>("major");
   const [rootNote, setRootNote] = useState("C");
@@ -74,9 +67,7 @@ export default function SubstitutionFinder({
   const notes = getNotesByAccidental(accidental);
   const isFull = layers.length >= MAX_LAYERS;
   const borderColor = isDark ? colors.border : colors.border2;
-
-  const FORM_GAP = 8;
-  const formWidth = Math.floor((screenWidth - 32 - FORM_GAP * 2) / 3);
+  const formWidth = useChordDiagramWidth();
 
   const sourceChordName = `${rootNote}${CHORD_SUFFIX_MAP[selectedChordType] ?? ""}`;
   const sourceForms = useMemo(
@@ -142,8 +133,8 @@ export default function SubstitutionFinder({
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setKeyRoot(note);
             }}
-            label={t("finder.substitution.keyRoot")}
-            sheetTitle={t("finder.substitution.keyRoot")}
+            label={t("header.key")}
+            sheetTitle={t("header.key")}
           />
           <SegmentedToggle
             theme={theme}
@@ -159,36 +150,19 @@ export default function SubstitutionFinder({
       </View>
 
       {/* Chord root picker */}
-      <View style={[styles.pickerRow, { borderBottomColor: borderColor }]}>
-        <NotePickerButton
-          theme={theme}
-          accidental={accidental}
-          value={rootNote}
-          onChange={(note) => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            setRootNote(note);
-          }}
-          label={t("header.root")}
-          sheetTitle={t("header.root")}
-        />
-        <View style={styles.chipsRow}>
-          {SUBSTITUTION_CHORD_TYPES.map((ct) => (
-            <NotePill
-              key={ct}
-              label={SUBSTITUTION_CHORD_LABELS[ct] ?? ct}
-              selected={selectedChordType === ct}
-              activeBg={colors.chipSelectedBg}
-              activeText={colors.chipSelectedText}
-              inactiveBg={colors.chipUnselectedBg}
-              inactiveText={colors.text}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setSelectedChordType(ct);
-              }}
-            />
-          ))}
-        </View>
-      </View>
+      <FinderChordPicker
+        theme={theme}
+        accidental={accidental}
+        rootNote={rootNote}
+        onRootChange={setRootNote}
+        chordTypes={SUBSTITUTION_CHORD_TYPES.map((ct) => ({
+          value: ct,
+          label: SUBSTITUTION_CHORD_LABELS[ct] ?? ct,
+        }))}
+        selectedChordType={selectedChordType}
+        onChordTypeChange={(type) => setSelectedChordType(type as ChordType)}
+        borderColor={borderColor}
+      />
 
       {/* Results */}
       <ScrollView
@@ -203,9 +177,12 @@ export default function SubstitutionFinder({
             setSourceDetailVisible(true);
           }}
         >
-          <Text style={[styles.sourceChordName, { color: colors.textStrong }]}>
-            {sourceChordName}
-          </Text>
+          <View style={styles.sourceNameRow}>
+            <Text style={[styles.sourceChordName, { color: colors.textStrong }]}>
+              {sourceChordName}
+            </Text>
+            <Icon name="chevron-right" size={14} color={colors.textSubtle} />
+          </View>
           {sourceForms.length > 0 && (
             <View style={styles.cardFormsRow}>
               {sourceForms.map((cells, fi) => (
@@ -259,6 +236,8 @@ export default function SubstitutionFinder({
                   <Text style={[styles.subChordName, { color: colors.textStrong }]}>
                     {subChordName}
                   </Text>
+                  <View style={{ flex: 1 }} />
+                  <Icon name="chevron-right" size={14} color={colors.textSubtle} />
                 </View>
                 {subForms.length > 0 && (
                   <View style={styles.cardFormsRow}>
@@ -359,12 +338,6 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     justifyContent: "center",
   },
-  chipsRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    justifyContent: "center",
-  },
   resultContent: {
     paddingHorizontal: 16,
     paddingTop: 12,
@@ -378,6 +351,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 14,
     gap: 10,
+  },
+  sourceNameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   sourceChordName: {
     fontSize: 17,
@@ -398,12 +376,12 @@ const styles = StyleSheet.create({
     borderCurve: "continuous",
     borderWidth: StyleSheet.hairlineWidth,
     overflow: "hidden",
+    paddingHorizontal: 14,
   },
   subHeader: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    paddingHorizontal: 14,
     paddingTop: 14,
     paddingBottom: 10,
   },
@@ -423,9 +401,7 @@ const styles = StyleSheet.create({
   },
   cardFormsRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
     gap: 8,
-    paddingHorizontal: 14,
     paddingBottom: 10,
   },
   modalDiagrams: {

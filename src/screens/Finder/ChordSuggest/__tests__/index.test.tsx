@@ -19,25 +19,143 @@ jest.mock("react-native-safe-area-context", () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
 }));
 
-jest.mock("../../../../components/ui/NotePickerButton", () => {
+jest.mock("../../../../components/ui/NoteDegreeModeToggle", () => {
   const { TouchableOpacity, Text } = require("react-native");
   return {
     __esModule: true,
-    default: ({ value, onChange }: { value: string; onChange: (n: string) => void }) => (
-      <TouchableOpacity testID="note-picker" onPress={() => onChange("G")}>
-        <Text testID="note-value">{value}</Text>
+    default: ({ value, onChange }: { value: string; onChange: (mode: string) => void }) => (
+      <TouchableOpacity
+        testID="mode-toggle"
+        onPress={() => onChange(value === "note" ? "degree" : "note")}
+      >
+        <Text>{value}</Text>
       </TouchableOpacity>
     ),
   };
 });
 
-jest.mock("../../../../components/ui/ChordDiagram", () => {
+jest.mock("../../../../components/ui/SegmentedToggle", () => {
+  const { TouchableOpacity, Text } = require("react-native");
+  return {
+    __esModule: true,
+    SegmentedToggle: ({
+      value,
+      onChange,
+    }: {
+      value: "major" | "minor";
+      onChange: (value: "major" | "minor") => void;
+    }) => (
+      <TouchableOpacity
+        testID="key-type-toggle"
+        onPress={() => onChange(value === "major" ? "minor" : "major")}
+      >
+        <Text>{value}</Text>
+      </TouchableOpacity>
+    ),
+  };
+});
+
+jest.mock("../../../../components/ui/ProgressionChordInput", () => {
+  const { View, TouchableOpacity, Text } = require("react-native");
+  return {
+    __esModule: true,
+    default: ({
+      chords,
+      onChordsChange,
+      onKeyPress,
+      keyAccessory,
+      emptyText,
+    }: {
+      chords: { degree: string; chordType: string }[];
+      onChordsChange: (next: { degree: string; chordType: string }[]) => void;
+      onKeyPress?: () => void;
+      keyAccessory?: React.ReactNode;
+      emptyText?: string;
+    }) => (
+      <View>
+        {keyAccessory}
+        <TouchableOpacity
+          testID="progression-add-chord"
+          onPress={() => onChordsChange([...chords, { degree: "I", chordType: "Major" }])}
+        />
+        {onKeyPress ? <TouchableOpacity testID="key-nav-btn" onPress={onKeyPress} /> : null}
+        {chords.length === 0 && emptyText ? <Text>{emptyText}</Text> : null}
+        {chords.map((chord, index) => (
+          <Text key={`${chord.degree}-${chord.chordType}-${index}`} testID={`chord-chip-${index}`}>
+            {`${chord.degree}-${chord.chordType}`}
+          </Text>
+        ))}
+      </View>
+    ),
+    DEGREE_TO_OFFSET: {
+      I: 0,
+      bII: 1,
+      II: 2,
+      bIII: 3,
+      III: 4,
+      IV: 5,
+      bV: 6,
+      V: 7,
+      bVI: 8,
+      VI: 9,
+      bVII: 10,
+      VII: 11,
+    },
+    OFFSET_TO_DEGREE: {
+      0: "I",
+      1: "bII",
+      2: "II",
+      3: "bIII",
+      4: "III",
+      5: "IV",
+      6: "bV",
+      7: "V",
+      8: "bVI",
+      9: "VI",
+      10: "bVII",
+      11: "VII",
+    },
+  };
+});
+
+jest.mock("../../../../components/ui/NoteSelectPage", () => {
+  const { TouchableOpacity, Text } = require("react-native");
+  return {
+    __esModule: true,
+    default: ({ onSelect, onBack }: { onSelect: (note: string) => void; onBack: () => void }) => (
+      <>
+        <TouchableOpacity testID="note-select-G" onPress={() => onSelect("G")} />
+        <TouchableOpacity testID="note-select-back" onPress={onBack}>
+          <Text>Back</Text>
+        </TouchableOpacity>
+      </>
+    ),
+  };
+});
+
+jest.mock("../../../../components/ui/BottomSheetModal", () => {
   const { View } = require("react-native");
   return {
     __esModule: true,
-    default: () => <View testID="chord-diagram" />,
-    getAllChordForms: (_rootIndex: number, chordType: string) =>
-      chordType === "Major" || chordType === "Minor" ? [[{ string: 0, fret: 1 }]] : [],
+    default: ({
+      visible,
+      children,
+      onClose,
+    }: {
+      visible: boolean;
+      children: (controls: {
+        close: () => void;
+        closeWithCallback: (cb: () => void) => void;
+        dragHandlers: object;
+      }) => React.ReactNode;
+      onClose: () => void;
+    }) =>
+      visible ? (
+        <View testID="bottom-sheet">
+          {children({ close: onClose, closeWithCallback: (cb) => cb(), dragHandlers: {} })}
+        </View>
+      ) : null,
+    useSheetHeight: () => 500,
   };
 });
 
@@ -51,23 +169,12 @@ jest.mock("../../../../hooks/useProgressionTemplates", () => ({
   }),
 }));
 
-jest.mock("../../../../components/ui/Icon", () => {
-  const { View } = require("react-native");
-  return {
-    __esModule: true,
-    default: () => <View testID="icon" />,
-  };
-});
-
 jest.mock("../../../Templates/TemplateFormSheet", () => {
   const { View } = require("react-native");
   return {
     __esModule: true,
     default: ({ visible }: { visible: boolean }) =>
       visible ? <View testID="template-form-sheet" /> : null,
-    CHROMATIC_DEGREES: [],
-    CHORD_TYPE_GROUPS: [],
-    DEGREE_TO_OFFSET: {},
   };
 });
 
@@ -83,56 +190,71 @@ describe("ChordSuggest", () => {
     expect(render(<ChordSuggest {...defaultProps} />).toJSON()).toBeTruthy();
   });
 
-  it("shows default root note C", () => {
+  it("shows diatonic suggestion cards when no chords are selected", () => {
     render(<ChordSuggest {...defaultProps} />);
-    expect(screen.getByTestId("note-value").props.children).toBe("C");
+    expect(screen.getAllByTestId("entry-card")).toHaveLength(7);
+    expect(screen.getByText("finder.chordSuggest.category.diatonic-first")).toBeTruthy();
+    expect(screen.getByText("VIIm(-5)")).toBeTruthy();
   });
 
-  it("shows chord type chips", () => {
+  it("switches to minor-key diatonic suggestions", () => {
     render(<ChordSuggest {...defaultProps} />);
-    expect(screen.getByText("Major")).toBeTruthy();
-    expect(screen.getByText("Minor")).toBeTruthy();
-    expect(screen.getByText("maj7")).toBeTruthy();
-    expect(screen.getByText("m7")).toBeTruthy();
-    expect(screen.getByText("7")).toBeTruthy();
+    fireEvent.press(screen.getByTestId("key-type-toggle"));
+
+    expect(screen.getByText("Cm")).toBeTruthy();
+    expect(screen.getByText("Im")).toBeTruthy();
   });
 
-  it("shows category headers for suggestions", () => {
+  it("opens key selection sheet when key button is pressed", () => {
     render(<ChordSuggest {...defaultProps} />);
-    expect(screen.getByText("finder.chordSuggest.category.diatonic")).toBeTruthy();
-    expect(screen.getByText("finder.chordSuggest.category.secondary-dominant")).toBeTruthy();
+    fireEvent.press(screen.getByTestId("key-nav-btn"));
+    expect(screen.getByTestId("note-select-back")).toBeTruthy();
   });
 
-  it("updates root note when picker changes and resets chain", () => {
+  it("resets chords when the key is changed", () => {
     render(<ChordSuggest {...defaultProps} />);
-    fireEvent.press(screen.getByTestId("note-picker"));
-    expect(screen.getByTestId("note-value").props.children).toBe("G");
+    fireEvent.press(screen.getByTestId("progression-add-chord"));
+    expect(screen.getByText("finder.progressionAnalysis.save")).toBeTruthy();
+
+    fireEvent.press(screen.getByTestId("key-nav-btn"));
+    fireEvent.press(screen.getByTestId("note-select-G"));
+
+    expect(screen.queryByText("finder.progressionAnalysis.save")).toBeNull();
+    expect(screen.queryByTestId("note-select-back")).toBeNull();
   });
 
-  it("shows chain hint when chain is empty", () => {
+  it("updates diatonic suggestions when the key changes", () => {
     render(<ChordSuggest {...defaultProps} />);
-    expect(screen.getByText("finder.chordSuggest.chainHint")).toBeTruthy();
+    expect(screen.queryByText("F♯dim")).toBeNull();
+
+    fireEvent.press(screen.getByTestId("key-nav-btn"));
+    fireEvent.press(screen.getByTestId("note-select-G"));
+
+    expect(screen.getByText("F♯dim")).toBeTruthy();
+    expect(screen.getByText("VIIm(-5)")).toBeTruthy();
   });
 
-  it("adds chord to chain when suggestion is tapped", () => {
+  it("uses next-chord suggestions after a chord is added", () => {
     render(<ChordSuggest {...defaultProps} />);
+    fireEvent.press(screen.getByTestId("progression-add-chord"));
+    expect(screen.getByText("finder.chordSuggest.category.two-five-entry")).toBeTruthy();
+  });
+
+  it("adds a chord when a suggestion card is pressed", () => {
+    render(<ChordSuggest {...defaultProps} />);
+    fireEvent.press(screen.getByTestId("progression-add-chord"));
+    expect(screen.getByTestId("chord-chip-0")).toBeTruthy();
+
     const [firstCard] = screen.getAllByTestId("entry-card");
     fireEvent.press(firstCard);
-    expect(screen.getByTestId("chain-undo")).toBeTruthy();
+
+    expect(screen.getByTestId("chord-chip-1")).toBeTruthy();
   });
 
-  it("does not show save button when chain is empty", () => {
+  it("shows the save button when chords are present", () => {
     render(<ChordSuggest {...defaultProps} />);
-    expect(screen.queryByText("finder.progressionAnalysis.saveAsTemplate")).toBeNull();
-  });
-
-  it("shows save button and opens TemplateFormSheet when chain has items", () => {
-    render(<ChordSuggest {...defaultProps} />);
-    const [firstCard] = screen.getAllByTestId("entry-card");
-    fireEvent.press(firstCard);
-    expect(screen.getByText("finder.progressionAnalysis.saveAsTemplate")).toBeTruthy();
-    fireEvent.press(screen.getByText("finder.progressionAnalysis.saveAsTemplate"));
-    expect(screen.getByTestId("template-form-sheet")).toBeTruthy();
+    fireEvent.press(screen.getByTestId("progression-add-chord"));
+    expect(screen.getByText("finder.progressionAnalysis.save")).toBeTruthy();
   });
 
   it("renders in dark theme without crashing", () => {

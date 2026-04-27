@@ -13,7 +13,7 @@ export interface SubstitutionResult {
 export const SUBSTITUTION_CHORD_TYPES: ChordType[] = ["Major", "Minor", "maj7", "m7", "7th"];
 
 export const SUBSTITUTION_CHORD_LABELS: Partial<Record<ChordType, string>> = {
-  Major: "Maj",
+  Major: "M",
   Minor: "m",
   maj7: "maj7",
   m7: "m7",

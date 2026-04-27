@@ -1,63 +1,34 @@
-import { useState, useMemo, useRef, useLayoutEffect } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  Animated,
-  Easing,
-  useWindowDimensions,
-} from "react-native";
+import { useState, useMemo, useRef } from "react";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import "../../../i18n";
-import type { Accidental, Theme, ChordType, ProgressionChord } from "../../../types";
+import type { Accidental, Theme, ProgressionChord } from "../../../types";
 import { getColors, DIATONIC_FUNCTION_COLORS } from "../../../themes/design";
 import {
   getNotesByAccidental,
-  CHORD_SUFFIX_MAP,
   PROGRESSION_TEMPLATES,
   resolveProgressionDegree,
 } from "../../../lib/fretboard";
 import { analyzeProgression, chordDisplayName } from "../../../lib/harmonyUtils";
-import TemplateFormSheet, {
-  CHROMATIC_DEGREES,
-  CHORD_TYPE_GROUPS,
+import TemplateFormSheet from "../../Templates/TemplateFormSheet";
+import ProgressionChordInput, {
   DEGREE_TO_OFFSET,
-} from "../../Templates/TemplateFormSheet";
+  OFFSET_TO_DEGREE,
+  type ProgressionChordInputHandle,
+} from "../../../components/ui/ProgressionChordInput";
 import type { CustomProgressionTemplate } from "../../../hooks/useProgressionTemplates";
 import NoteDegreeModeToggle from "../../../components/ui/NoteDegreeModeToggle";
 import NoteSelectPage from "../../../components/ui/NoteSelectPage";
-import { SegmentedToggle } from "../../../components/ui/SegmentedToggle";
 import PillButton from "../../../components/ui/PillButton";
 import Icon from "../../../components/ui/Icon";
-import Svg, { Path } from "react-native-svg";
-import { ON_ACCENT, WHITE } from "../../../themes/design";
 import BottomSheetModal, {
   SHEET_HANDLE_CLEARANCE,
   useSheetHeight,
 } from "../../../components/ui/BottomSheetModal";
 import SheetProgressiveHeader from "../../../components/ui/SheetProgressiveHeader";
 import GlassIconButton from "../../../components/ui/GlassIconButton";
-
-const MAX_CHORDS = 16;
-
-const OFFSET_TO_DEGREE: Record<number, string> = {
-  0: "I",
-  1: "bII",
-  2: "II",
-  3: "bIII",
-  4: "III",
-  5: "IV",
-  6: "bV",
-  7: "V",
-  8: "bVI",
-  9: "VI",
-  10: "bVII",
-  11: "VII",
-};
 
 interface ProgressionAnalyzerProps {
   theme: Theme;
@@ -80,128 +51,25 @@ export default function ProgressionAnalyzer({
   const isDark = theme === "dark";
   const colors = getColors(isDark);
   const insets = useSafeAreaInsets();
-  const { width: winWidth } = useWindowDimensions();
   const borderColor = isDark ? colors.border : colors.border2;
-  const calloutBorder = isDark ? colors.border2 : colors.borderStrong;
 
   const notes = getNotesByAccidental(accidental);
   const sheetHeight = useSheetHeight();
 
   const [inputMode, setInputMode] = useState<"degree" | "note">("note");
   const [noteKey, setNoteKey] = useState(initialNoteKey ?? "C");
+  const [showKeySheet, setShowKeySheet] = useState(false);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   const [showSaveSheet, setShowSaveSheet] = useState(false);
-  const [selectedDegree, setSelectedDegree] = useState<string | null>(null);
-  const [selectedNote, setSelectedNote] = useState<string | null>(null);
-  const [selectedChordGroup, setSelectedChordGroup] = useState<"triad" | "seventh" | "tension">(
-    "triad",
-  );
   const [chords, setChords] = useState<ProgressionChord[]>(initialChords ?? []);
-  const [step, setStep] = useState<"main" | "keySelect">("main");
-
-  const calloutAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(0)).current;
-  const pendingEnterDir = useRef(0);
+  const progressionInputRef = useRef<ProgressionChordInputHandle>(null);
 
   const keyNoteIndex = notes.findIndex((n) => n === noteKey);
-
-  const noteToChromaDegree = (note: string): string => {
-    const noteIdx = notes.findIndex((n) => n === note);
-    if (noteIdx < 0 || keyNoteIndex < 0) return "I";
-    return OFFSET_TO_DEGREE[(noteIdx - keyNoteIndex + 12) % 12] ?? "I";
-  };
-
-  const degreeToNote = (degree: string): string => {
-    const offset = DEGREE_TO_OFFSET[degree];
-    if (offset === undefined || keyNoteIndex < 0) return "";
-    return notes[(keyNoteIndex + offset) % 12] ?? "";
-  };
-
-  const showCallout = () =>
-    Animated.timing(calloutAnim, {
-      toValue: 1,
-      duration: 220,
-      easing: Easing.out(Easing.ease),
-      useNativeDriver: false,
-    }).start();
-
-  const hideCallout = (onDone?: () => void) =>
-    Animated.timing(calloutAnim, {
-      toValue: 0,
-      duration: 180,
-      easing: Easing.in(Easing.ease),
-      useNativeDriver: false,
-    }).start(onDone);
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useLayoutEffect(() => {
-    const dir = pendingEnterDir.current;
-    if (dir !== 0) {
-      pendingEnterDir.current = 0;
-      slideAnim.stopAnimation();
-      slideAnim.setValue(dir * winWidth);
-      Animated.spring(slideAnim, {
-        toValue: 0,
-        tension: 120,
-        friction: 20,
-        useNativeDriver: false,
-      }).start();
-    }
-  }, [step]);
-
-  const handleDegreePress = (deg: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    if (selectedDegree === deg) {
-      hideCallout(() => setSelectedDegree(null));
-    } else if (selectedDegree === null) {
-      setSelectedDegree(deg);
-      showCallout();
-    } else {
-      setSelectedDegree(deg);
-    }
-  };
-
-  const handleNotePress = (note: string) => {
-    const degree = noteToChromaDegree(note);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    if (selectedNote === note) {
-      hideCallout(() => {
-        setSelectedDegree(null);
-        setSelectedNote(null);
-      });
-    } else if (selectedDegree === null) {
-      setSelectedDegree(degree);
-      setSelectedNote(note);
-      showCallout();
-    } else {
-      setSelectedDegree(degree);
-      setSelectedNote(note);
-    }
-  };
-
-  const handleChordTypePress = (chordType: ChordType) => {
-    if (!selectedDegree || chords.length >= MAX_CHORDS) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    const deg = selectedDegree;
-    setChords((prev) => [...prev, { degree: deg, chordType }]);
-    hideCallout(() => {
-      setSelectedDegree(null);
-      setSelectedNote(null);
-    });
-  };
-
-  const handleRemove = (index: number) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setChords((prev) => prev.filter((_, i) => i !== index));
-  };
 
   const handleLoadTemplate = (templateChords: ProgressionChord[]) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setChords(templateChords);
-    hideCallout(() => {
-      setSelectedDegree(null);
-      setSelectedNote(null);
-    });
+    progressionInputRef.current?.resetSelection();
     setShowTemplatePicker(false);
   };
 
@@ -227,470 +95,249 @@ export default function ProgressionAnalyzer({
     return analyzeProgression(chordsForAnalysis);
   }, [chordsForAnalysis]);
 
-  const chordGroupOptions = [
-    { value: "triad" as const, label: t("options.diatonicChordSize.triad") },
-    { value: "seventh" as const, label: t("options.diatonicChordSize.seventh") },
-    { value: "tension" as const, label: t("templates.tension") },
-  ];
-
-  const chordLabel = (chord: ProgressionChord): string => {
-    if (inputMode === "note") {
-      const noteName = degreeToNote(chord.degree);
-      const suffix = CHORD_SUFFIX_MAP[chord.chordType] ?? chord.chordType;
-      return `${noteName}${suffix}`;
-    }
-    const deg = chord.degree.replace("b", "♭");
-    const suffix = CHORD_SUFFIX_MAP[chord.chordType] ?? chord.chordType;
-    return `${deg}${suffix}`;
-  };
-
   return (
     <View style={[styles.root, { backgroundColor: colors.pageBg }]}>
-      <Animated.View style={{ flex: 1, transform: [{ translateX: slideAnim }] }}>
-        {step === "main" && (
-          <>
-            <NoteDegreeModeToggle
-              theme={theme}
-              value={inputMode}
-              onChange={(mode) => {
-                setInputMode(mode);
-                hideCallout(() => {
-                  setSelectedDegree(null);
-                  setSelectedNote(null);
-                });
+      <NoteDegreeModeToggle
+        theme={theme}
+        value={inputMode}
+        onChange={(mode) => {
+          setInputMode(mode);
+          progressionInputRef.current?.resetSelection();
+        }}
+      />
+
+      <ScrollView
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 80 }]}
+        showsVerticalScrollIndicator={false}
+      >
+        <ProgressionChordInput
+          ref={progressionInputRef}
+          theme={theme}
+          accidental={accidental}
+          inputMode={inputMode}
+          noteKey={noteKey}
+          onKeyPress={() => setShowKeySheet(true)}
+          keyRowStyle={styles.keyNavRow}
+          chords={chords}
+          onChordsChange={setChords}
+          calloutBg={colors.pageBg}
+          emptyText={t("finder.progressionAnalysis.empty")}
+        />
+
+        {chords.length === 0 && (
+          <View style={styles.templateSection}>
+            <View style={styles.orDivider}>
+              <View style={[styles.dividerLine, { backgroundColor: borderColor }]} />
+              <Text style={[styles.orText, { color: colors.textSubtle }]}>
+                {t("finder.progressionAnalysis.or")}
+              </Text>
+              <View style={[styles.dividerLine, { backgroundColor: borderColor }]} />
+            </View>
+            <View style={styles.templateRow}>
+              <PillButton
+                testID="load-template-btn"
+                isDark={isDark}
+                onPress={() => setShowTemplatePicker(true)}
+              >
+                <Icon name="bar-chart" size={13} color={colors.textSubtle} />
+                <Text style={[styles.templateBtnText, { color: colors.textSubtle }]}>
+                  {t("finder.progressionAnalysis.loadTemplate")}
+                </Text>
+              </PillButton>
+            </View>
+          </View>
+        )}
+
+        {chords.length > 0 && (
+          <View style={styles.analyzeRow}>
+            <PillButton isDark={isDark} style={styles.btn} onPress={() => setShowSaveSheet(true)}>
+              <Text style={[styles.btnText, { color: colors.textStrong }]}>
+                {t("finder.progressionAnalysis.save")}
+              </Text>
+            </PillButton>
+            <PillButton
+              isDark={isDark}
+              variant="danger"
+              style={styles.btn}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setChords([]);
+                progressionInputRef.current?.resetSelection();
               }}
-            />
-
-            <ScrollView
-              contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 80 }]}
-              showsVerticalScrollIndicator={false}
             >
-              {/* Template load button */}
-              <View style={styles.templateRow}>
-                <TouchableOpacity
-                  testID="load-template-btn"
-                  onPress={() => setShowTemplatePicker(true)}
-                  activeOpacity={0.7}
-                  style={[styles.templateBtn, { backgroundColor: colors.surface, borderColor }]}
-                >
-                  <Icon name="bar-chart" size={13} color={colors.textSubtle} />
-                  <Text style={[styles.templateBtnText, { color: colors.textSubtle }]}>
-                    {t("finder.progressionAnalysis.loadTemplate")}
-                  </Text>
-                </TouchableOpacity>
-              </View>
+              <Text style={[styles.btnText, { color: colors.textDanger }]}>
+                {t("finder.progressionAnalysis.reset")}
+              </Text>
+            </PillButton>
+          </View>
+        )}
 
-              {/* Key picker (note mode only) */}
-              {inputMode === "note" && (
-                <View style={styles.keyNavRow}>
-                  <TouchableOpacity
-                    testID="key-nav-btn"
-                    onPress={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      pendingEnterDir.current = 1;
-                      setStep("keySelect");
-                    }}
-                    activeOpacity={0.7}
-                    style={[styles.keyPill, { backgroundColor: colors.surface, borderColor }]}
-                  >
-                    <Text style={[styles.keyPillLabel, { color: colors.textSubtle }]}>
-                      {t("templates.key")}
-                    </Text>
-                    <Text style={[styles.keyPillValue, { color: colors.textStrong }]}>
-                      {noteKey}
-                    </Text>
-                  </TouchableOpacity>
+        {chords.length > 0 && analysisResults.length === 0 && (
+          <Text style={[styles.emptyText, { color: colors.textSubtle }]}>
+            {t("finder.progressionAnalysis.noResult")}
+          </Text>
+        )}
+        {analysisResults.length > 0 && (
+          <>
+            <Text style={[styles.sectionLabel, { color: colors.textSubtle }]}>
+              {t("finder.progressionAnalysis.result")}
+            </Text>
+
+            <View style={[styles.legend, { borderColor }]}>
+              {(
+                [
+                  {
+                    badge: "T",
+                    bg: DIATONIC_FUNCTION_COLORS.T,
+                    text: "#ffffff",
+                    label: t("finder.progressionAnalysis.legendT"),
+                  },
+                  {
+                    badge: "SD",
+                    bg: DIATONIC_FUNCTION_COLORS.SD,
+                    text: "#ffffff",
+                    label: t("finder.progressionAnalysis.legendSD"),
+                  },
+                  {
+                    badge: "D",
+                    bg: DIATONIC_FUNCTION_COLORS.D,
+                    text: "#ffffff",
+                    label: t("finder.progressionAnalysis.legendD"),
+                  },
+                  {
+                    badge: "V/x",
+                    bg: colors.secDomBadgeBg,
+                    text: colors.secDomBadgeText,
+                    label: t("finder.progressionAnalysis.legendSecDom"),
+                  },
+                  {
+                    badge: t("finder.progressionAnalysis.borrowed", { degree: "x" }),
+                    bg: colors.borrowedBadgeBg,
+                    text: colors.borrowedBadgeText,
+                    label: t("finder.progressionAnalysis.legendBorrowed"),
+                  },
+                ] as const
+              ).map(({ badge, bg, text, label }) => (
+                <View key={badge} style={styles.legendRow}>
+                  <View style={[styles.fnBadge, { backgroundColor: bg }]}>
+                    <Text style={[styles.fnText, { color: text }]}>{badge}</Text>
+                  </View>
+                  <Text style={[styles.legendLabel, { color: colors.textSubtle }]}>{label}</Text>
                 </View>
-              )}
+              ))}
+            </View>
 
-              {/* Degree / note chips */}
-              <View style={[styles.chipsRow, { justifyContent: "center" }]}>
-                {inputMode === "degree"
-                  ? CHROMATIC_DEGREES.map(([deg, label]) => {
-                      const isActive = selectedDegree === deg;
+            {analysisResults.map((result, ri) => {
+              const keyName = `${notes[result.rootIndex]} ${result.keyType === "major" ? "Major" : "Minor"}`;
+              const matched = result.chords.filter((c) => c.isDiatonic).length;
+              const total = result.chords.length;
+              return (
+                <View key={ri} style={[styles.card, { borderColor }]}>
+                  <View style={styles.resultHeader}>
+                    <Text style={[styles.keyName, { color: colors.textStrong }]}>{keyName}</Text>
+                    <Text style={[styles.scoreText, { color: colors.textSubtle }]}>
+                      {t("finder.progressionAnalysis.keyScore", {
+                        matched: String(matched),
+                        total: String(total),
+                      })}
+                    </Text>
+                  </View>
+                  <View style={styles.chipsRow}>
+                    {result.chords.map((chord, ci) => {
+                      const name = chordDisplayName(chord.rootIndex, chord.chordType, notes);
                       return (
-                        <TouchableOpacity
-                          key={deg}
-                          testID={`degree-chip-${deg}`}
-                          onPress={() => handleDegreePress(deg)}
+                        <View
+                          key={ci}
+                          testID={`result-chord-${ri}-${ci}`}
                           style={[
-                            styles.pickerChip,
+                            styles.resultChip,
                             {
-                              backgroundColor: isActive ? colors.primaryBtn : colors.fillIdle,
-                              borderColor: isActive ? "transparent" : colors.borderStrong,
+                              backgroundColor: chord.isDiatonic
+                                ? colors.surface2
+                                : colors.chipUnselectedBg,
                             },
                           ]}
-                          activeOpacity={0.7}
-                          hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
                         >
-                          <Text
-                            style={[
-                              styles.pickerChipText,
-                              {
-                                color: isActive
-                                  ? colors.primaryBtnText
-                                  : isDark
-                                    ? colors.textStrong
-                                    : colors.textDim,
-                              },
-                            ]}
-                          >
-                            {label}
+                          <Text style={[styles.resultChipName, { color: colors.textStrong }]}>
+                            {name}
                           </Text>
-                        </TouchableOpacity>
-                      );
-                    })
-                  : notes.map((note) => {
-                      const isActive = selectedNote === note;
-                      return (
-                        <TouchableOpacity
-                          key={note}
-                          testID={`note-chip-${note}`}
-                          onPress={() => handleNotePress(note)}
-                          style={[
-                            styles.pickerChip,
-                            {
-                              backgroundColor: isActive ? colors.primaryBtn : colors.fillIdle,
-                              borderColor: isActive ? "transparent" : colors.borderStrong,
-                            },
-                          ]}
-                          activeOpacity={0.7}
-                          hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-                        >
-                          <Text
-                            style={[
-                              styles.pickerChipText,
-                              {
-                                color: isActive
-                                  ? colors.primaryBtnText
-                                  : isDark
-                                    ? colors.textStrong
-                                    : colors.textDim,
-                              },
-                            ]}
-                          >
-                            {note}
-                          </Text>
-                        </TouchableOpacity>
+                          {chord.isDiatonic && chord.degree ? (
+                            <View style={styles.badgeRow}>
+                              <Text style={[styles.degreeText, { color: colors.textSubtle }]}>
+                                {chord.degree}
+                              </Text>
+                              {chord.fn && (
+                                <View
+                                  style={[
+                                    styles.fnBadge,
+                                    { backgroundColor: DIATONIC_FUNCTION_COLORS[chord.fn] },
+                                  ]}
+                                >
+                                  <Text style={styles.fnText}>{chord.fn}</Text>
+                                </View>
+                              )}
+                            </View>
+                          ) : chord.secDomTarget ? (
+                            <View
+                              style={[styles.fnBadge, { backgroundColor: colors.secDomBadgeBg }]}
+                            >
+                              <Text style={[styles.fnText, { color: colors.secDomBadgeText }]}>
+                                {`V/${chord.secDomTarget}`}
+                              </Text>
+                            </View>
+                          ) : chord.borrowedDegree ? (
+                            <View
+                              style={[styles.fnBadge, { backgroundColor: colors.borrowedBadgeBg }]}
+                            >
+                              <Text style={[styles.fnText, { color: colors.borrowedBadgeText }]}>
+                                {t("finder.progressionAnalysis.borrowed", {
+                                  degree: chord.borrowedDegree,
+                                })}
+                              </Text>
+                            </View>
+                          ) : (
+                            <Text style={[styles.nonDiatonic, { color: colors.textMuted }]}>?</Text>
+                          )}
+                        </View>
                       );
                     })}
-              </View>
-
-              {/* Chord type callout */}
-              <Animated.View
-                pointerEvents={selectedDegree ? "auto" : "none"}
-                style={{
-                  opacity: calloutAnim,
-                  maxHeight: calloutAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 300] }),
-                  overflow: "hidden",
-                  marginTop: 8,
-                }}
-              >
-                <View
-                  style={[
-                    styles.callout,
-                    { backgroundColor: colors.pageBg, borderColor: calloutBorder },
-                  ]}
-                >
-                  <SegmentedToggle
-                    theme={theme}
-                    value={selectedChordGroup}
-                    onChange={(v) => setSelectedChordGroup(v as "triad" | "seventh" | "tension")}
-                    options={chordGroupOptions}
-                    size="compact"
-                    segmentWidth={84}
-                  />
-                  <View style={[styles.chipsRow, { marginTop: 16, justifyContent: "center" }]}>
-                    {(
-                      CHORD_TYPE_GROUPS.find((g) => g.labelKey === selectedChordGroup)?.types ?? []
-                    ).map(([chordType, label]) => (
-                      <TouchableOpacity
-                        key={chordType}
-                        testID={`chord-type-${chordType}`}
-                        onPress={() => handleChordTypePress(chordType)}
-                        disabled={chords.length >= MAX_CHORDS}
-                        style={[
-                          styles.chordTypeChip,
-                          { backgroundColor: colors.pageBg, borderColor: colors.borderStrong },
-                        ]}
-                        activeOpacity={0.7}
-                        hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-                      >
-                        <Text
-                          style={[
-                            styles.pickerChipText,
-                            { color: isDark ? colors.textStrong : colors.textDim },
-                          ]}
-                        >
-                          {label}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
                   </View>
                 </View>
-              </Animated.View>
-
-              {/* Added chords */}
-              {chords.length === 0 ? (
-                <Text style={[styles.emptyText, { color: colors.textSubtle }]}>
-                  {t("finder.progressionAnalysis.empty")}
-                </Text>
-              ) : (
-                <View style={styles.chipsRow}>
-                  {chords.map((chord, i) => (
-                    <View
-                      key={`${chord.degree}-${chord.chordType}-${i}`}
-                      style={styles.progressionItem}
-                    >
-                      {i > 0 && <Text style={[styles.arrow, { color: colors.textSubtle }]}>→</Text>}
-                      <TouchableOpacity
-                        testID={`chord-chip-${i}`}
-                        onPress={() => handleRemove(i)}
-                        style={[
-                          styles.addedChip,
-                          {
-                            backgroundColor: isDark ? colors.textMuted : colors.textSubtle,
-                            borderColor: "transparent",
-                          },
-                        ]}
-                        activeOpacity={0.7}
-                      >
-                        <Text style={[styles.pickerChipText, { color: WHITE }]}>
-                          {chordLabel(chord)}
-                        </Text>
-                        <Svg
-                          width={8}
-                          height={8}
-                          viewBox="0 0 12 12"
-                          fill="none"
-                          style={{ marginLeft: 4 }}
-                        >
-                          <Path
-                            d="M9 3L3 9M3 3l6 6"
-                            stroke={ON_ACCENT.iconStroke}
-                            strokeWidth={1.8}
-                            strokeLinecap="round"
-                          />
-                        </Svg>
-                      </TouchableOpacity>
-                    </View>
-                  ))}
-                </View>
-              )}
-
-              {/* Save / Reset buttons */}
-              {chords.length > 0 && (
-                <View style={styles.analyzeRow}>
-                  <PillButton
-                    isDark={isDark}
-                    style={styles.btn}
-                    onPress={() => setShowSaveSheet(true)}
-                  >
-                    <Text style={[styles.btnText, { color: colors.textStrong }]}>
-                      {t("finder.progressionAnalysis.save")}
-                    </Text>
-                  </PillButton>
-                  <PillButton
-                    isDark={isDark}
-                    variant="danger"
-                    style={styles.btn}
-                    onPress={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      setChords([]);
-                      hideCallout(() => {
-                        setSelectedDegree(null);
-                        setSelectedNote(null);
-                      });
-                    }}
-                  >
-                    <Text style={[styles.btnText, { color: colors.textDanger }]}>
-                      {t("finder.progressionAnalysis.reset")}
-                    </Text>
-                  </PillButton>
-                </View>
-              )}
-
-              {/* Results */}
-              {chords.length > 0 && analysisResults.length === 0 && (
-                <Text style={[styles.emptyText, { color: colors.textSubtle }]}>
-                  {t("finder.progressionAnalysis.noResult")}
-                </Text>
-              )}
-              {analysisResults.length > 0 && (
-                <>
-                  <Text style={[styles.sectionLabel, { color: colors.textSubtle }]}>
-                    {t("finder.progressionAnalysis.result")}
-                  </Text>
-
-                  {/* Legend */}
-                  <View style={[styles.legend, { borderColor }]}>
-                    {(
-                      [
-                        {
-                          badge: "T",
-                          bg: DIATONIC_FUNCTION_COLORS.T,
-                          text: "#ffffff",
-                          label: t("finder.progressionAnalysis.legendT"),
-                        },
-                        {
-                          badge: "SD",
-                          bg: DIATONIC_FUNCTION_COLORS.SD,
-                          text: "#ffffff",
-                          label: t("finder.progressionAnalysis.legendSD"),
-                        },
-                        {
-                          badge: "D",
-                          bg: DIATONIC_FUNCTION_COLORS.D,
-                          text: "#ffffff",
-                          label: t("finder.progressionAnalysis.legendD"),
-                        },
-                        {
-                          badge: "V/x",
-                          bg: colors.secDomBadgeBg,
-                          text: colors.secDomBadgeText,
-                          label: t("finder.progressionAnalysis.legendSecDom"),
-                        },
-                        {
-                          badge: t("finder.progressionAnalysis.borrowed", { degree: "x" }),
-                          bg: colors.borrowedBadgeBg,
-                          text: colors.borrowedBadgeText,
-                          label: t("finder.progressionAnalysis.legendBorrowed"),
-                        },
-                      ] as const
-                    ).map(({ badge, bg, text, label }) => (
-                      <View key={badge} style={styles.legendRow}>
-                        <View style={[styles.fnBadge, { backgroundColor: bg }]}>
-                          <Text style={[styles.fnText, { color: text }]}>{badge}</Text>
-                        </View>
-                        <Text style={[styles.legendLabel, { color: colors.textSubtle }]}>
-                          {label}
-                        </Text>
-                      </View>
-                    ))}
-                  </View>
-
-                  {analysisResults.map((result, ri) => {
-                    const keyName = `${notes[result.rootIndex]} ${result.keyType === "major" ? "Major" : "Minor"}`;
-                    const matched = result.chords.filter((c) => c.isDiatonic).length;
-                    const total = result.chords.length;
-                    return (
-                      <View key={ri} style={[styles.card, { borderColor }]}>
-                        <View style={styles.resultHeader}>
-                          <Text style={[styles.keyName, { color: colors.textStrong }]}>
-                            {keyName}
-                          </Text>
-                          <Text style={[styles.scoreText, { color: colors.textSubtle }]}>
-                            {t("finder.progressionAnalysis.keyScore", {
-                              matched: String(matched),
-                              total: String(total),
-                            })}
-                          </Text>
-                        </View>
-                        <View style={styles.chipsRow}>
-                          {result.chords.map((chord, ci) => {
-                            const name = chordDisplayName(chord.rootIndex, chord.chordType, notes);
-                            return (
-                              <View
-                                key={ci}
-                                testID={`result-chord-${ri}-${ci}`}
-                                style={[
-                                  styles.resultChip,
-                                  {
-                                    backgroundColor: chord.isDiatonic
-                                      ? colors.surface2
-                                      : colors.chipUnselectedBg,
-                                  },
-                                ]}
-                              >
-                                <Text style={[styles.resultChipName, { color: colors.textStrong }]}>
-                                  {name}
-                                </Text>
-                                {chord.isDiatonic && chord.degree ? (
-                                  <View style={styles.badgeRow}>
-                                    <Text style={[styles.degreeText, { color: colors.textSubtle }]}>
-                                      {chord.degree}
-                                    </Text>
-                                    {chord.fn && (
-                                      <View
-                                        style={[
-                                          styles.fnBadge,
-                                          { backgroundColor: DIATONIC_FUNCTION_COLORS[chord.fn] },
-                                        ]}
-                                      >
-                                        <Text style={styles.fnText}>{chord.fn}</Text>
-                                      </View>
-                                    )}
-                                  </View>
-                                ) : chord.secDomTarget ? (
-                                  <View
-                                    style={[
-                                      styles.fnBadge,
-                                      { backgroundColor: colors.secDomBadgeBg },
-                                    ]}
-                                  >
-                                    <Text
-                                      style={[styles.fnText, { color: colors.secDomBadgeText }]}
-                                    >
-                                      {`V/${chord.secDomTarget}`}
-                                    </Text>
-                                  </View>
-                                ) : chord.borrowedDegree ? (
-                                  <View
-                                    style={[
-                                      styles.fnBadge,
-                                      { backgroundColor: colors.borrowedBadgeBg },
-                                    ]}
-                                  >
-                                    <Text
-                                      style={[styles.fnText, { color: colors.borrowedBadgeText }]}
-                                    >
-                                      {t("finder.progressionAnalysis.borrowed", {
-                                        degree: chord.borrowedDegree,
-                                      })}
-                                    </Text>
-                                  </View>
-                                ) : (
-                                  <Text style={[styles.nonDiatonic, { color: colors.textMuted }]}>
-                                    ?
-                                  </Text>
-                                )}
-                              </View>
-                            );
-                          })}
-                        </View>
-                      </View>
-                    );
-                  })}
-                </>
-              )}
-            </ScrollView>
+              );
+            })}
           </>
         )}
+      </ScrollView>
 
-        {step === "keySelect" && (
-          <NoteSelectPage
-            theme={theme}
-            bgColor={colors.pageBg}
-            title={t("templates.key")}
-            notes={notes}
-            selectedNote={noteKey}
-            onSelect={(note) => {
-              if (note !== noteKey) {
+      <BottomSheetModal visible={showKeySheet} onClose={() => setShowKeySheet(false)}>
+        {({ close, dragHandlers }) => (
+          <View
+            style={[
+              styles.sheet,
+              {
+                height: sheetHeight,
+                backgroundColor: colors.deepBg,
+                borderColor: colors.sheetBorder,
+              },
+            ]}
+          >
+            <NoteSelectPage
+              theme={theme}
+              bgColor={colors.deepBg}
+              title={t("header.key")}
+              notes={notes}
+              selectedNote={noteKey}
+              onSelect={(note) => {
                 setNoteKey(note);
-                hideCallout(() => {
-                  setSelectedDegree(null);
-                  setSelectedNote(null);
-                });
-              }
-            }}
-            onBack={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              pendingEnterDir.current = -1;
-              setStep("main");
-            }}
-          />
+                progressionInputRef.current?.resetSelection();
+                close();
+              }}
+              onBack={close}
+              dragHandlers={dragHandlers}
+            />
+          </View>
         )}
-      </Animated.View>
+      </BottomSheetModal>
 
       {/* Template picker sheet */}
       <BottomSheetModal visible={showTemplatePicker} onClose={() => setShowTemplatePicker(false)}>
@@ -816,24 +463,6 @@ const styles = StyleSheet.create({
   },
   keyNavRow: {
     alignItems: "center",
-  },
-  keyPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 20,
-    borderCurve: "continuous",
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-  },
-  keyPillLabel: {
-    fontSize: 11,
-    fontWeight: "500",
-  },
-  keyPillValue: {
-    fontSize: 14,
-    fontWeight: "600",
   },
   chipsRow: {
     flexDirection: "row",
@@ -991,18 +620,25 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "500",
   },
-  templateRow: {
-    alignItems: "center",
+  templateSection: {
+    marginTop: -12,
+    gap: 24,
   },
-  templateBtn: {
+  orDivider: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 20,
-    borderCurve: "continuous",
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    gap: 10,
+  },
+  dividerLine: {
+    flex: 1,
+    height: StyleSheet.hairlineWidth,
+  },
+  orText: {
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  templateRow: {
+    alignItems: "center",
   },
   templateBtnText: {
     fontSize: 13,

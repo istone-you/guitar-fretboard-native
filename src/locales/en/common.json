@@ -437,10 +437,11 @@
       "result": "Analysis Result",
       "keyScore": "{{matched}} / {{total}}",
       "nonDiatonic": "Non-diatonic",
-      "empty": "Add chords to analyze",
+      "empty": "Add chords",
       "noResult": "No matching key found",
       "borrowed": "b.{{degree}}",
       "loadTemplate": "Load from template",
+      "or": "or",
       "saveAsTemplate": "Save as template",
       "save": "Save",
       "reset": "Reset",
@@ -513,6 +514,7 @@
       "chainHint": "→ Tap a chord to add it",
       "addAsProgression": "Add as Progression",
       "category": {
+        "diatonic-first": "Diatonic Chords",
         "diatonic": "Diatonic Transitions",
         "two-five-entry": "ii–V Entry",
         "secondary-dominant": "Secondary Dominant",
@@ -560,6 +562,7 @@
       "major": "Major",
       "minor": "Minor",
       "keySection": "Key",
+      "key": "Key",
       "keyRoot": "Key Root",
       "chordSection": "Chord",
       "chordRoot": "Chord Root",
@@ -631,6 +634,10 @@
     "back": "Back",
     "selectTitle": "Select Quiz",
     "changeQuiz": "Change Quiz",
+    "keyType": {
+      "major": "Major",
+      "minor": "Minor"
+    },
     "mode": {
       "note": "Notes",
       "degree": "Degrees",

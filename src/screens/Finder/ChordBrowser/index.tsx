@@ -1,12 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  useWindowDimensions,
-} from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -16,8 +9,10 @@ import { createDefaultLayer, MAX_LAYERS } from "../../../types";
 import { getColors, pickNextLayerColor, BLACK } from "../../../themes/design";
 import { CHORD_TYPES_CORE, CHORD_SUFFIX_MAP, getRootIndex } from "../../../lib/fretboard";
 import ChordDiagram, { getAllChordForms } from "../../../components/ui/ChordDiagram";
+import { useChordDiagramWidth } from "../../../hooks/useChordDiagramWidth";
 import NotePickerButton from "../../../components/ui/NotePickerButton";
 import FinderDetailSheet from "../../../components/ui/FinderDetailSheet";
+import Icon from "../../../components/ui/Icon";
 import LayerDescription from "../../../components/LayerEditModal/LayerDescription";
 
 interface ChordBrowserProps {
@@ -41,16 +36,13 @@ export default function ChordBrowser({
   const isDark = theme === "dark";
   const colors = getColors(isDark);
   const insets = useSafeAreaInsets();
-  const { width: screenWidth } = useWindowDimensions();
   const [rootNote, setRootNote] = useState("C");
   const [pendingType, setPendingType] = useState<ChordType | null>(null);
 
   const rootIndex = getRootIndex(rootNote);
   const isFull = layers.length >= MAX_LAYERS;
   const borderColor = isDark ? colors.border : colors.border2;
-
-  const FORM_GAP = 8;
-  const formWidth = Math.floor((screenWidth - 32 - FORM_GAP * 2) / 3);
+  const formWidth = useChordDiagramWidth();
 
   const handleAddLayer = useCallback(() => {
     if (!pendingType || isFull) return;
@@ -121,7 +113,12 @@ export default function ChordBrowser({
 
       {/* Chord list */}
       <ScrollView
-        contentContainerStyle={{ paddingBottom: insets.bottom + 80 }}
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingTop: 12,
+          paddingBottom: insets.bottom + 80,
+          gap: 12,
+        }}
         showsVerticalScrollIndicator={false}
       >
         {chordList.map(({ chordType, forms, suffix }) => (
@@ -132,11 +129,14 @@ export default function ChordBrowser({
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setPendingType(chordType);
             }}
-            style={[styles.chordItem, { borderBottomColor: borderColor }]}
+            style={[styles.chordItem, { borderColor }]}
           >
-            <Text style={[styles.chordLabel, { color: colors.textStrong }]}>
-              {`${rootNote}${suffix}`}
-            </Text>
+            <View style={styles.chordItemHeader}>
+              <Text style={[styles.chordLabel, { color: colors.textStrong }]}>
+                {`${rootNote}${suffix}`}
+              </Text>
+              <Icon name="chevron-right" size={14} color={colors.textSubtle} />
+            </View>
             <View style={styles.formsRow}>
               {forms.map((cells, fi) => (
                 <ChordDiagram
@@ -190,11 +190,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   chordItem: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
+    borderRadius: 16,
+    borderCurve: "continuous",
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: "hidden",
+    paddingHorizontal: 14,
+    paddingTop: 14,
     paddingBottom: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
     gap: 8,
+  },
+  chordItemHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   chordLabel: {
     fontSize: 15,

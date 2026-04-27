@@ -13,15 +13,13 @@ import {
   Platform,
 } from "react-native";
 import * as Haptics from "expo-haptics";
-import Svg, { Path } from "react-native-svg";
 import { useTranslation } from "react-i18next";
 import "../../../i18n";
-import type { Theme, ChordType, ProgressionChord, Accidental } from "../../../types";
+import type { Theme, ProgressionChord, Accidental } from "../../../types";
 import type { CustomProgressionTemplate } from "../../../hooks/useProgressionTemplates";
-import { CHORD_SUFFIX_MAP, getNotesByAccidental } from "../../../lib/fretboard";
-import { getColors, WHITE, ON_ACCENT } from "../../../themes/design";
+import { getNotesByAccidental } from "../../../lib/fretboard";
+import { getColors } from "../../../themes/design";
 import NoteDegreeModeToggle from "../../../components/ui/NoteDegreeModeToggle";
-import { getPillStyle } from "../../../components/ui/PillButton";
 import NoteSelectPage from "../../../components/ui/NoteSelectPage";
 import BottomSheetModal, {
   SHEET_HANDLE_CLEARANCE,
@@ -29,151 +27,19 @@ import BottomSheetModal, {
 } from "../../../components/ui/BottomSheetModal";
 import SheetProgressiveHeader from "../../../components/ui/SheetProgressiveHeader";
 import GlassIconButton from "../../../components/ui/GlassIconButton";
-import { SegmentedToggle } from "../../../components/ui/SegmentedToggle";
 import ChevronIcon from "../../../components/ui/ChevronIcon";
+import ProgressionChordInput, {
+  chordDisplayLabel,
+  type ProgressionChordInputHandle,
+} from "../../../components/ui/ProgressionChordInput";
 
-export const MAX_PROGRESSION_DEGREES = 16;
-
-export const DEGREE_TO_OFFSET: Record<string, number> = {
-  I: 0,
-  bII: 1,
-  II: 2,
-  bIII: 3,
-  III: 4,
-  IV: 5,
-  bV: 6,
-  V: 7,
-  bVI: 8,
-  VI: 9,
-  bVII: 10,
-  VII: 11,
-};
-
-const OFFSET_TO_DEGREE: Record<number, string> = {
-  0: "I",
-  1: "bII",
-  2: "II",
-  3: "bIII",
-  4: "III",
-  5: "IV",
-  6: "bV",
-  7: "V",
-  8: "bVI",
-  9: "VI",
-  10: "bVII",
-  11: "VII",
-};
-
-export const CHROMATIC_DEGREES: [string, string][] = [
-  ["I", "I"],
-  ["bII", "♭II"],
-  ["II", "II"],
-  ["bIII", "♭III"],
-  ["III", "III"],
-  ["IV", "IV"],
-  ["bV", "♭V"],
-  ["V", "V"],
-  ["bVI", "♭VI"],
-  ["VI", "VI"],
-  ["bVII", "♭VII"],
-  ["VII", "VII"],
-];
-
-export const CHORD_TYPE_GROUPS: {
-  labelKey: "triad" | "seventh" | "tension";
-  types: [ChordType, string][];
-}[] = [
-  {
-    labelKey: "triad",
-    types: [
-      ["Major", "M"],
-      ["Minor", "m"],
-      ["dim", "dim"],
-      ["aug", "aug"],
-      ["sus2", "sus2"],
-      ["sus4", "sus4"],
-      ["7sus4", "7sus4"],
-      ["5", "5"],
-    ],
-  },
-  {
-    labelKey: "seventh",
-    types: [
-      ["7th", "7"],
-      ["maj7", "M7"],
-      ["m7", "m7"],
-      ["m7(b5)", "m7♭5"],
-      ["dim7", "dim7"],
-      ["m(maj7)", "m(M7)"],
-      ["6", "6"],
-      ["m6", "m6"],
-    ],
-  },
-  {
-    labelKey: "tension",
-    types: [
-      ["9", "9"],
-      ["maj9", "M9"],
-      ["m9", "m9"],
-      ["add9", "add9"],
-      ["m(add9)", "m(add9)"],
-      ["7(b9)", "7♭9"],
-      ["7(#9)", "7♯9"],
-      ["11", "11"],
-      ["#11", "♯11"],
-      ["add11", "add11"],
-      ["add#11", "add♯11"],
-      ["m11", "m11"],
-      ["13", "13"],
-      ["b13", "♭13"],
-      ["maj13", "M13"],
-      ["m13", "m13"],
-      ["6/9", "6/9"],
-      ["m6/9", "m6/9"],
-    ],
-  },
-];
-
-export function chordDisplayLabel(chord: ProgressionChord): string {
-  const deg = chord.degree.replace("b", "♭");
-  const suffix = CHORD_SUFFIX_MAP[chord.chordType] ?? chord.chordType;
-  return deg + suffix;
-}
-
-function DegreeChip({
-  label,
-  isDark,
-  onPress,
-}: {
-  label: string;
-  isDark: boolean;
-  onPress: () => void;
-}) {
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      style={[
-        styles.degreeChip,
-        {
-          backgroundColor: isDark ? getColors(isDark).textMuted : getColors(isDark).textSubtle,
-          borderColor: "transparent",
-        },
-      ]}
-      activeOpacity={0.7}
-      hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-    >
-      <Text style={[styles.degreeChipText, { color: WHITE }]}>{label}</Text>
-      <Svg width={8} height={8} viewBox="0 0 12 12" fill="none" style={{ marginLeft: 4 }}>
-        <Path
-          d="M9 3L3 9M3 3l6 6"
-          stroke={ON_ACCENT.iconStroke}
-          strokeWidth={1.8}
-          strokeLinecap="round"
-        />
-      </Svg>
-    </TouchableOpacity>
-  );
-}
+export {
+  CHROMATIC_DEGREES,
+  CHORD_TYPE_GROUPS,
+  DEGREE_TO_OFFSET,
+  chordDisplayLabel,
+  MAX_PROGRESSION_CHORDS as MAX_PROGRESSION_DEGREES,
+} from "../../../components/ui/ProgressionChordInput";
 
 interface TemplateFormSheetProps {
   visible: boolean;
@@ -210,69 +76,16 @@ export default function TemplateFormSheet({
   const [formChords, setFormChords] = useState<ProgressionChord[]>(() =>
     initialTemplate?.chords ? [...initialTemplate.chords] : [],
   );
-  const [selectedDegree, setSelectedDegree] = useState<string | null>(null);
-  const [selectedChordGroup, setSelectedChordGroup] = useState<"triad" | "seventh" | "tension">(
-    "triad",
-  );
   const [inputMode, setInputMode] = useState<"degree" | "note">(initialInputMode ?? "degree");
   const [noteKey, setNoteKey] = useState(initialNoteKey ?? "C");
-  const [selectedNote, setSelectedNote] = useState<string | null>(null);
   const [step, setStep] = useState<"main" | "keySelect" | "description" | "progression">("main");
   const [headerHeight, setHeaderHeight] = useState(96);
   const slideAnim = useRef(new Animated.Value(0)).current;
   const heightAnim = useRef(new Animated.Value(sheetHeight)).current;
   const pendingEnterDir = useRef(0);
+  const progressionInputRef = useRef<ProgressionChordInputHandle>(null);
 
   const noteNames = getNotesByAccidental(accidental);
-  const keyNoteIndex = noteNames.findIndex((n) => n === noteKey);
-
-  const noteToChromaDegree = (note: string): string => {
-    const noteIdx = noteNames.findIndex((n) => n === note);
-    if (noteIdx < 0 || keyNoteIndex < 0) return "I";
-    return OFFSET_TO_DEGREE[(noteIdx - keyNoteIndex + 12) % 12] ?? "I";
-  };
-
-  const degreeToNote = (degree: string): string => {
-    const offset = DEGREE_TO_OFFSET[degree];
-    if (offset === undefined || keyNoteIndex < 0) return "";
-    return noteNames[(keyNoteIndex + offset) % 12] ?? "";
-  };
-
-  const handleNotePress = (note: string) => {
-    const degree = noteToChromaDegree(note);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    if (selectedNote === note) {
-      hideCallout(() => {
-        setSelectedDegree(null);
-        setSelectedNote(null);
-      });
-    } else if (selectedDegree === null) {
-      setSelectedDegree(degree);
-      setSelectedNote(note);
-      showCallout();
-    } else {
-      setSelectedDegree(degree);
-      setSelectedNote(note);
-    }
-  };
-
-  const calloutAnim = useRef(new Animated.Value(0)).current;
-
-  const showCallout = () =>
-    Animated.timing(calloutAnim, {
-      toValue: 1,
-      duration: 220,
-      easing: Easing.out(Easing.ease),
-      useNativeDriver: false,
-    }).start();
-
-  const hideCallout = (onDone?: () => void) =>
-    Animated.timing(calloutAnim, {
-      toValue: 0,
-      duration: 180,
-      easing: Easing.in(Easing.ease),
-      useNativeDriver: false,
-    }).start(onDone);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useLayoutEffect(() => {
@@ -328,41 +141,15 @@ export default function TemplateFormSheet({
     setStep(target);
   };
 
-  const handleDegreePress = (deg: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    if (selectedDegree === deg) {
-      hideCallout(() => setSelectedDegree(null));
-    } else if (selectedDegree === null) {
-      setSelectedDegree(deg);
-      showCallout();
-    } else {
-      setSelectedDegree(deg);
-    }
-  };
-
-  const handleChordTypePress = (chordType: ChordType) => {
-    if (!selectedDegree || formChords.length >= MAX_PROGRESSION_DEGREES) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    const deg = selectedDegree;
-    setFormChords((prev) => [...prev, { degree: deg, chordType }]);
-    hideCallout(() => {
-      setSelectedDegree(null);
-      setSelectedNote(null);
-    });
-  };
-
   const resetForm = () => {
     setFormName(initialTemplate?.name ?? "");
     setFormDescription(initialTemplate?.description ?? "");
     setFormChords(initialTemplate?.chords ? [...initialTemplate.chords] : []);
-    setSelectedDegree(null);
-    setSelectedNote(null);
-    setSelectedChordGroup("triad");
     setInputMode(initialInputMode ?? "degree");
     setNoteKey(initialNoteKey ?? "C");
     setStep("main");
     heightAnim.setValue(sheetHeight);
-    calloutAnim.setValue(0);
+    progressionInputRef.current?.resetSelection();
   };
 
   const handleClose = () => {
@@ -377,12 +164,6 @@ export default function TemplateFormSheet({
     onSave(trimmed, formChords, formDescription.trim() || undefined);
     close();
   };
-
-  const chordGroupOptions = [
-    { value: "triad" as const, label: t("options.diatonicChordSize.triad") },
-    { value: "seventh" as const, label: t("options.diatonicChordSize.seventh") },
-    { value: "tension" as const, label: t("templates.tension") },
-  ];
 
   return (
     <BottomSheetModal visible={visible} onClose={handleClose}>
@@ -530,210 +311,42 @@ export default function TemplateFormSheet({
                       value={inputMode}
                       onChange={(mode) => {
                         setInputMode(mode);
-                        hideCallout(() => {
-                          setSelectedDegree(null);
-                          setSelectedNote(null);
-                        });
+                        progressionInputRef.current?.resetSelection();
                       }}
                     />
 
-                    {/* セレクター (度数 or 音名) */}
-                    <Text
-                      style={[
-                        styles.formLabel,
-                        { color: colors.textSubtle, marginTop: 14, textAlign: "center" },
-                      ]}
-                    >
-                      {inputMode === "note" ? t("noteFilter.title") : t("templates.degrees")}
-                    </Text>
-
-                    {/* 音名モード: キー選択ナビ行 */}
-                    {inputMode === "note" && (
-                      <View style={styles.keyNavRow}>
-                        <TouchableOpacity onPress={navigateToKeySelect} activeOpacity={0.7}>
-                          <View style={getPillStyle(colors)}>
-                            <Text style={[styles.pillLabel, { color: colors.textSubtle }]}>
-                              {t("templates.key")}
-                            </Text>
-                            <Text style={[styles.pillValue, { color: colors.text }]}>
-                              {noteKey}
-                            </Text>
-                          </View>
-                        </TouchableOpacity>
-                      </View>
-                    )}
-
-                    <View style={[styles.chipsRow, { justifyContent: "center" }]}>
-                      {inputMode === "degree"
-                        ? CHROMATIC_DEGREES.map(([deg, label]) => {
-                            const isActive = selectedDegree === deg;
-                            return (
-                              <TouchableOpacity
-                                key={deg}
-                                onPress={() => handleDegreePress(deg)}
-                                style={[
-                                  styles.degreePickerChip,
-                                  {
-                                    backgroundColor: isActive ? colors.primaryBtn : colors.fillIdle,
-                                    borderColor: isActive ? "transparent" : colors.borderStrong,
-                                  },
-                                ]}
-                                activeOpacity={0.7}
-                                hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-                              >
-                                <Text
-                                  style={[
-                                    styles.degreeChipText,
-                                    {
-                                      color: isActive
-                                        ? colors.primaryBtnText
-                                        : isDark
-                                          ? colors.textStrong
-                                          : colors.textDim,
-                                    },
-                                  ]}
-                                >
-                                  {label}
-                                </Text>
-                              </TouchableOpacity>
-                            );
-                          })
-                        : noteNames.map((note) => {
-                            const isActive = selectedNote === note;
-                            return (
-                              <TouchableOpacity
-                                key={note}
-                                onPress={() => handleNotePress(note)}
-                                style={[
-                                  styles.degreePickerChip,
-                                  {
-                                    backgroundColor: isActive ? colors.primaryBtn : colors.fillIdle,
-                                    borderColor: isActive ? "transparent" : colors.borderStrong,
-                                  },
-                                ]}
-                                activeOpacity={0.7}
-                                hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-                              >
-                                <Text
-                                  style={[
-                                    styles.degreeChipText,
-                                    {
-                                      color: isActive
-                                        ? colors.primaryBtnText
-                                        : isDark
-                                          ? colors.textStrong
-                                          : colors.textDim,
-                                    },
-                                  ]}
-                                >
-                                  {note}
-                                </Text>
-                              </TouchableOpacity>
-                            );
-                          })}
-                    </View>
-
-                    {/* コードタイプパネル */}
-                    <Animated.View
-                      pointerEvents={selectedDegree ? "auto" : "none"}
-                      style={{
-                        opacity: calloutAnim,
-                        maxHeight: calloutAnim.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [0, 300],
-                        }),
-                        overflow: "hidden",
-                        marginTop: 8,
-                      }}
-                    >
-                      <View
-                        style={[
-                          styles.callout,
-                          { backgroundColor: colors.sheetBg, borderColor: calloutBorder },
-                        ]}
-                      >
-                        <SegmentedToggle
-                          theme={theme}
-                          value={selectedChordGroup}
-                          onChange={(v) =>
-                            setSelectedChordGroup(v as "triad" | "seventh" | "tension")
-                          }
-                          options={chordGroupOptions}
-                          size="compact"
-                          segmentWidth={84}
-                        />
-                        <View
-                          style={[styles.chipsRow, { marginTop: 16, justifyContent: "center" }]}
+                    <ProgressionChordInput
+                      ref={progressionInputRef}
+                      theme={theme}
+                      accidental={accidental}
+                      inputMode={inputMode}
+                      noteKey={noteKey}
+                      onKeyPress={navigateToKeySelect}
+                      keyRowStyle={styles.keyNavRow}
+                      topSlot={
+                        <Text
+                          style={[
+                            styles.formLabel,
+                            { color: colors.textSubtle, marginTop: 14, textAlign: "center" },
+                          ]}
                         >
-                          {(
-                            CHORD_TYPE_GROUPS.find((g) => g.labelKey === selectedChordGroup)
-                              ?.types ?? []
-                          ).map(([chordType, label]) => (
-                            <TouchableOpacity
-                              key={chordType}
-                              onPress={() => handleChordTypePress(chordType)}
-                              disabled={formChords.length >= MAX_PROGRESSION_DEGREES}
-                              style={[
-                                styles.chordTypeChip,
-                                {
-                                  backgroundColor: colors.sheetBg,
-                                  borderColor: colors.borderStrong,
-                                },
-                              ]}
-                              activeOpacity={0.7}
-                              hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-                            >
-                              <Text
-                                style={[
-                                  styles.degreeChipText,
-                                  { color: isDark ? colors.textStrong : colors.textDim },
-                                ]}
-                              >
-                                {label}
-                              </Text>
-                            </TouchableOpacity>
-                          ))}
-                        </View>
-                      </View>
-                    </Animated.View>
-
-                    {/* コード進行 */}
-                    <Text
-                      style={[
-                        styles.formLabel,
-                        { color: colors.textSubtle, marginTop: 14, textAlign: "center" },
-                      ]}
-                    >
-                      {t("templates.progression")}
-                    </Text>
-                    {formChords.length > 0 && (
-                      <View style={styles.chipsRow}>
-                        {formChords.map((chord, i) => (
-                          <View
-                            key={`${chord.degree}-${chord.chordType}-${i}`}
-                            style={styles.progressionItem}
-                          >
-                            {i > 0 && (
-                              <Text style={[styles.progressionArrow, { color: colors.textSubtle }]}>
-                                →
-                              </Text>
-                            )}
-                            <DegreeChip
-                              label={
-                                inputMode === "note"
-                                  ? `${degreeToNote(chord.degree)}${CHORD_SUFFIX_MAP[chord.chordType] ?? chord.chordType}`
-                                  : chordDisplayLabel(chord)
-                              }
-                              isDark={isDark}
-                              onPress={() => {
-                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                setFormChords((prev) => prev.filter((_, idx) => idx !== i));
-                              }}
-                            />
-                          </View>
-                        ))}
-                      </View>
-                    )}
+                          {inputMode === "note" ? t("noteFilter.title") : t("templates.degrees")}
+                        </Text>
+                      }
+                      progressionSlot={
+                        <Text
+                          style={[
+                            styles.formLabel,
+                            { color: colors.textSubtle, marginTop: 14, textAlign: "center" },
+                          ]}
+                        >
+                          {t("templates.progression")}
+                        </Text>
+                      }
+                      chords={formChords}
+                      onChordsChange={setFormChords}
+                      calloutBg={colors.sheetBg}
+                    />
                   </ScrollView>
                   <SheetProgressiveHeader
                     isDark={isDark}
@@ -770,13 +383,8 @@ export default function TemplateFormSheet({
                   notes={noteNames}
                   selectedNote={noteKey}
                   onSelect={(note) => {
-                    if (note !== noteKey) {
-                      setNoteKey(note);
-                      hideCallout(() => {
-                        setSelectedDegree(null);
-                        setSelectedNote(null);
-                      });
-                    }
+                    setNoteKey(note);
+                    progressionInputRef.current?.resetSelection();
                   }}
                   onBack={() => navigateBack("progression")}
                   dragHandlers={dragHandlers}
@@ -919,14 +527,6 @@ const styles = StyleSheet.create({
   keyNavRow: {
     alignItems: "center",
     paddingBottom: 12,
-  },
-  pillLabel: {
-    fontSize: 11,
-    fontWeight: "500",
-  },
-  pillValue: {
-    fontSize: 14,
-    fontWeight: "600",
   },
   navSection: {
     borderTopWidth: StyleSheet.hairlineWidth,

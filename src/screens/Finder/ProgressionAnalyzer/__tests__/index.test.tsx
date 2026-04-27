@@ -11,10 +11,13 @@ jest.mock("../../../../hooks/useProgressionTemplates", () => ({
   }),
 }));
 jest.mock("../../../../components/ui/BottomSheetModal", () => {
+  const { View } = require("react-native");
   return {
     __esModule: true,
-    default: ({ visible, children }: any) =>
-      visible ? children({ close: jest.fn(), dragHandlers: {} }) : null,
+    default: ({ visible, children, onClose }: any) =>
+      visible ? (
+        <View>{children({ close: onClose, closeWithCallback: onClose, dragHandlers: {} })}</View>
+      ) : null,
     SHEET_HANDLE_CLEARANCE: 0,
     useSheetHeight: () => 500,
   };
@@ -59,6 +62,12 @@ jest.mock("../../../../components/ui/NoteDegreeModeToggle", () => {
     ),
   };
 });
+jest.mock("../../../../components/ui/SegmentedToggle", () => ({
+  SegmentedToggle: ({ value }: { value: string }) => {
+    const { Text } = require("react-native");
+    return <Text>{value}</Text>;
+  },
+}));
 jest.mock("../../../../components/ui/NoteSelectPage", () => {
   const { TouchableOpacity, Text } = require("react-native");
   return {
@@ -147,8 +156,8 @@ describe("ProgressionAnalyzer", () => {
     render(<ProgressionAnalyzer {...defaultProps} />);
     fireEvent.press(screen.getByTestId("key-nav-btn"));
     fireEvent.press(screen.getByTestId("note-select-G"));
-    fireEvent.press(screen.getByTestId("note-select-back"));
     expect(screen.getByTestId("note-chip-C")).toBeTruthy();
+    expect(screen.queryByTestId("note-select-back")).toBeNull();
   });
 
   it("renders in dark theme without crashing", () => {

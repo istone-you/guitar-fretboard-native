@@ -150,12 +150,12 @@ describe("SubstitutionFinder", () => {
 
   it("shows key root picker with default value C", () => {
     render(<SubstitutionFinder {...defaultProps} />);
-    expect(screen.getByTestId("note-value-finder.substitution.keyRoot").props.children).toBe("C");
+    expect(screen.getByTestId("note-value-header.key").props.children).toBe("C");
   });
 
   it("renders chord type chips", () => {
     render(<SubstitutionFinder {...defaultProps} />);
-    expect(screen.getByText("Maj")).toBeTruthy();
+    expect(screen.getByText("M")).toBeTruthy();
     expect(screen.getByText("m")).toBeTruthy();
     expect(screen.getByText("maj7")).toBeTruthy();
     expect(screen.getByText("m7")).toBeTruthy();

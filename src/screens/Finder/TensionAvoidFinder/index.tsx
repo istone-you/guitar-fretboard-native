@@ -1,12 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  useWindowDimensions,
-} from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -18,10 +11,12 @@ import { getRootIndex, getNotesByAccidental, CHORD_SUFFIX_MAP } from "../../../l
 import { getTensionsAndAvoids } from "../../../lib/harmonyUtils";
 import type { KeyType, TensionNote } from "../../../lib/harmonyUtils";
 import ChordDiagram, { getAllChordForms } from "../../../components/ui/ChordDiagram";
+import { useChordDiagramWidth } from "../../../hooks/useChordDiagramWidth";
 import NotePickerButton from "../../../components/ui/NotePickerButton";
-import NotePill from "../../../components/ui/NotePill";
+import FinderChordPicker from "../../../components/ui/FinderChordPicker";
 import { SegmentedToggle } from "../../../components/ui/SegmentedToggle";
 import FinderDetailSheet from "../../../components/ui/FinderDetailSheet";
+import Icon from "../../../components/ui/Icon";
 import LayerDescription from "../../../components/LayerEditModal/LayerDescription";
 
 interface TensionAvoidFinderProps {
@@ -164,13 +159,10 @@ export default function TensionAvoidFinder({
   const isDark = theme === "dark";
   const colors = getColors(isDark);
   const insets = useSafeAreaInsets();
-  const { width: screenWidth } = useWindowDimensions();
   const borderColor = isDark ? colors.border : colors.border2;
   const notes = getNotesByAccidental(accidental);
   const isFull = layers.length >= MAX_LAYERS;
-
-  const FORM_GAP = 8;
-  const formWidth = Math.floor((screenWidth - 32 - FORM_GAP * 2) / 3);
+  const formWidth = useChordDiagramWidth();
 
   const [keyRoot, setKeyRoot] = useState("C");
   const [keyType, setKeyType] = useState<KeyType>("major");
@@ -288,8 +280,8 @@ export default function TensionAvoidFinder({
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setKeyRoot(n);
             }}
-            label={t("finder.tensionAvoid.keyRoot", "キールート")}
-            sheetTitle={t("finder.tensionAvoid.keyRoot", "キールート")}
+            label={t("header.key")}
+            sheetTitle={t("header.key")}
           />
           <SegmentedToggle
             theme={theme}
@@ -305,36 +297,19 @@ export default function TensionAvoidFinder({
       </View>
 
       {/* Chord picker */}
-      <View style={[styles.pickerRow, { borderBottomColor: borderColor }]}>
-        <NotePickerButton
-          theme={theme}
-          accidental={accidental}
-          value={chordRoot}
-          onChange={(n) => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            setChordRoot(n);
-          }}
-          label={t("finder.tensionAvoid.chordRoot", "コードルート")}
-          sheetTitle={t("finder.tensionAvoid.chordRoot", "コードルート")}
-        />
-        <View style={styles.chipsRow}>
-          {CHORD_TYPES.map((ct) => (
-            <NotePill
-              key={ct}
-              label={CHORD_TYPE_LABELS[ct] ?? ct}
-              selected={chordType === ct}
-              activeBg={colors.chipSelectedBg}
-              activeText={colors.chipSelectedText}
-              inactiveBg={colors.chipUnselectedBg}
-              inactiveText={colors.text}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setChordType(ct);
-              }}
-            />
-          ))}
-        </View>
-      </View>
+      <FinderChordPicker
+        theme={theme}
+        accidental={accidental}
+        rootNote={chordRoot}
+        onRootChange={setChordRoot}
+        chordTypes={CHORD_TYPES.map((ct) => ({
+          value: ct,
+          label: CHORD_TYPE_LABELS[ct] ?? ct,
+        }))}
+        selectedChordType={chordType}
+        onChordTypeChange={(type) => setChordType(type as ChordType)}
+        borderColor={borderColor}
+      />
 
       <ScrollView
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 80 }]}
@@ -352,6 +327,7 @@ export default function TensionAvoidFinder({
         >
           <View style={styles.sourceHeader}>
             <Text style={[styles.sourceChordName, { color: colors.textStrong }]}>{chordName}</Text>
+            <Icon name="chevron-right" size={14} color={colors.textSubtle} />
           </View>
           <View style={styles.badgesRow}>
             {result.chordTones.map((tn) => (
@@ -420,6 +396,8 @@ export default function TensionAvoidFinder({
                       <Text style={[styles.subChordName, { color: colors.textStrong }]}>
                         {tensionChordName}
                       </Text>
+                      <View style={{ flex: 1 }} />
+                      <Icon name="chevron-right" size={14} color={colors.textSubtle} />
                     </View>
                   )}
                   <View
@@ -574,12 +552,6 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     justifyContent: "center",
   },
-  chipsRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    justifyContent: "center",
-  },
   content: {
     paddingHorizontal: 16,
     paddingTop: 12,
@@ -597,6 +569,7 @@ const styles = StyleSheet.create({
   sourceHeader: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     gap: 10,
   },
   sourceChordName: {
@@ -615,7 +588,6 @@ const styles = StyleSheet.create({
   },
   cardFormsRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
     gap: 8,
   },
   subSection: {

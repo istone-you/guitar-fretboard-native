@@ -1,13 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
-import {
-  Alert,
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  useWindowDimensions,
-} from "react-native";
+import { Alert, View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -28,6 +20,7 @@ import {
   diatonicDegreeLabel,
 } from "../../../lib/fretboard";
 import ChordDiagram, { getAllChordForms } from "../../../components/ui/ChordDiagram";
+import { useChordDiagramWidth } from "../../../hooks/useChordDiagramWidth";
 import NotePickerButton from "../../../components/ui/NotePickerButton";
 import BottomSheetModal, {
   SHEET_HANDLE_CLEARANCE,
@@ -91,7 +84,6 @@ export default function DiatonicBrowser({
   const isDark = theme === "dark";
   const colors = getColors(isDark);
   const insets = useSafeAreaInsets();
-  const { width: screenWidth } = useWindowDimensions();
   const sheetHeight = useSheetHeight();
 
   const [rootNote, setRootNote] = useState("C");
@@ -107,9 +99,7 @@ export default function DiatonicBrowser({
   const notes = getNotesByAccidental(accidental);
   const isFull = layers.length >= MAX_LAYERS;
   const borderColor = isDark ? colors.border : colors.border2;
-
-  const FORM_GAP = 8;
-  const formWidth = Math.floor((screenWidth - 32 - FORM_GAP * 2) / 3);
+  const formWidth = useChordDiagramWidth();
 
   const chordList = useMemo(() => {
     const scaleKey = keyType === "major" ? `major-${chordSize}` : `natural-minor-${chordSize}`;
@@ -309,7 +299,12 @@ export default function DiatonicBrowser({
 
       {/* Chord list */}
       <ScrollView
-        contentContainerStyle={{ paddingBottom: insets.bottom + 80 }}
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingTop: 12,
+          paddingBottom: insets.bottom + 80,
+          gap: 12,
+        }}
         showsVerticalScrollIndicator={false}
       >
         {chordList.map(
@@ -322,7 +317,7 @@ export default function DiatonicBrowser({
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 setPendingEntry({ degreeLabel, fn, chordRootIndex, chordType, chordName });
               }}
-              style={[styles.chordItem, { borderBottomColor: borderColor }]}
+              style={[styles.chordItem, { borderColor }]}
             >
               <View style={styles.chordHeader}>
                 <View style={[styles.degreeBadge, { backgroundColor: colors.surface }]}>
@@ -345,6 +340,8 @@ export default function DiatonicBrowser({
                         : t("finder.diatonicFunction.dominant")}
                   </Text>
                 </View>
+                <View style={{ flex: 1 }} />
+                <Icon name="chevron-right" size={14} color={colors.textSubtle} />
               </View>
               {forms.length > 0 && (
                 <View style={styles.formsRow}>
@@ -471,10 +468,13 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   chordItem: {
-    paddingHorizontal: 16,
+    borderRadius: 16,
+    borderCurve: "continuous",
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: "hidden",
+    paddingHorizontal: 14,
     paddingTop: 14,
     paddingBottom: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
     gap: 8,
   },
   chordHeader: {

@@ -300,12 +300,12 @@ export default function IdentifyPane({
     const name = isChord
       ? (item.match as ChordMatch).chordName
       : `${(item.match as ScaleMatch).root} ${t(`options.scale.${scaleI18nKey((item.match as ScaleMatch).scaleType)}`)}`;
-    const notes = isChord
-      ? (baseLabelMode === "degree"
-          ? (item.match as ChordMatch).chordDegrees
-          : (item.match as ChordMatch).chordNotes
-        ).join("  ")
-      : (item.match as ScaleMatch).scaleNotes.join("  ");
+    const noteArray = isChord
+      ? baseLabelMode === "degree"
+        ? (item.match as ChordMatch).chordDegrees
+        : (item.match as ChordMatch).chordNotes
+      : (item.match as ScaleMatch).scaleNotes;
+    const canHighlight = !isChord || baseLabelMode === "note";
     const tagLabel = isChord ? t("finder.chords") : t("finder.scales");
 
     return (
@@ -315,17 +315,38 @@ export default function IdentifyPane({
         onPress={() => setPendingItem(item)}
         style={[styles.matchRow, { borderTopColor: borderColor }]}
       >
-        <View style={styles.matchNameRow}>
-          <Text style={[styles.matchName, { color: textColor }]}>{name}</Text>
-          <View style={[styles.tag, { borderColor: colors.diagramLine }]}>
-            <Text style={[styles.tagText, { color: colors.textSubtle }]}>{tagLabel}</Text>
+        <View style={styles.matchHeader}>
+          <View style={styles.matchNameRow}>
+            <Text style={[styles.matchName, { color: textColor }]}>{name}</Text>
+            <View style={[styles.tag, { borderColor: colors.diagramLine }]}>
+              <Text style={[styles.tagText, { color: colors.textSubtle }]}>{tagLabel}</Text>
+            </View>
           </View>
+          <Icon name="chevron-right" size={14} color={colors.textSubtle} />
         </View>
-        <Animated.Text
-          style={[styles.matchNotes, { color: subTextColor, transform: [{ scale: labelScale }] }]}
-        >
-          {notes}
-        </Animated.Text>
+        <Animated.View style={[styles.noteChipsRow, { transform: [{ scale: labelScale }] }]}>
+          {noteArray.map((n) => {
+            const isSelected = canHighlight && effectiveNotes.has(n);
+            return (
+              <View
+                key={n}
+                style={[
+                  styles.noteChip,
+                  { backgroundColor: isSelected ? colors.primaryBtn : colors.chipUnselectedBg },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.noteChipText,
+                    { color: isSelected ? colors.primaryBtnText : colors.textDim },
+                  ]}
+                >
+                  {n}
+                </Text>
+              </View>
+            );
+          })}
+        </Animated.View>
       </TouchableOpacity>
     );
   };
@@ -829,12 +850,15 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   matchRow: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    gap: 6,
+  },
+  matchHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 14,
-    paddingVertical: 13,
-    borderTopWidth: StyleSheet.hairlineWidth,
   },
   matchNameRow: {
     flexDirection: "row",
@@ -857,9 +881,19 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "600",
   },
-  matchNotes: {
+  noteChipsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 4,
+  },
+  noteChip: {
+    borderRadius: 8,
+    borderCurve: "continuous",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  noteChipText: {
     fontSize: 11,
     fontWeight: "600",
-    textAlign: "right",
   },
 });

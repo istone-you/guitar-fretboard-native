@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   Animated,
-  Easing,
   useWindowDimensions,
 } from "react-native";
 import * as Haptics from "expo-haptics";
@@ -34,36 +33,21 @@ import {
   getChordsFromScale,
   chordDisplayName,
 } from "../../../lib/harmonyUtils";
-import {
-  CHROMATIC_DEGREES,
-  CHORD_TYPE_GROUPS,
-  DEGREE_TO_OFFSET,
-} from "../../Templates/TemplateFormSheet";
+import { DEGREE_TO_OFFSET } from "../../Templates/TemplateFormSheet";
 import NoteDegreeModeToggle from "../../../components/ui/NoteDegreeModeToggle";
 import NoteSelectPage from "../../../components/ui/NoteSelectPage";
 import { SegmentedToggle } from "../../../components/ui/SegmentedToggle";
-import PillButton from "../../../components/ui/PillButton";
+import PillButton, { getPillStyle } from "../../../components/ui/PillButton";
+import Icon from "../../../components/ui/Icon";
 import { buildScaleOptions } from "../../../components/ui/scaleOptions";
 import ChordDiagram, { getAllChordForms } from "../../../components/ui/ChordDiagram";
 import LayerDescription from "../../../components/LayerEditModal/LayerDescription";
 import FinderDetailSheet from "../../../components/ui/FinderDetailSheet";
+import ProgressionChordInput, {
+  type ProgressionChordInputHandle,
+} from "../../../components/ui/ProgressionChordInput";
 
 const MAX_CHORDS = 8;
-
-const OFFSET_TO_DEGREE: Record<number, string> = {
-  0: "I",
-  1: "bII",
-  2: "II",
-  3: "bIII",
-  4: "III",
-  5: "IV",
-  6: "bV",
-  7: "V",
-  8: "bVI",
-  9: "VI",
-  10: "bVII",
-  11: "VII",
-};
 
 type SheetState =
   | { kind: "chord"; chord: ProgressionChord; index: number }
@@ -92,7 +76,6 @@ export default function ScaleCompatibility({
   const insets = useSafeAreaInsets();
   const { width: winWidth } = useWindowDimensions();
   const borderColor = isDark ? colors.border : colors.border2;
-  const calloutBorder = isDark ? colors.border2 : colors.borderStrong;
 
   const notes = getNotesByAccidental(accidental);
   const { groups } = buildScaleOptions(t);
@@ -103,11 +86,6 @@ export default function ScaleCompatibility({
   );
   const [inputMode, setInputMode] = useState<"degree" | "note">("note");
   const [noteKey, setNoteKey] = useState("C");
-  const [selectedDegree, setSelectedDegree] = useState<string | null>(null);
-  const [selectedNote, setSelectedNote] = useState<string | null>(null);
-  const [selectedChordGroup, setSelectedChordGroup] = useState<"triad" | "seventh" | "tension">(
-    "triad",
-  );
   const [chords, setChords] = useState<ProgressionChord[]>([]);
   const [step, setStep] = useState<"main" | "keySelect">("main");
   const [activeSheet, setActiveSheet] = useState<SheetState | null>(null);
@@ -119,17 +97,11 @@ export default function ScaleCompatibility({
     degreeLabel: string;
   } | null>(null);
 
-  const calloutAnim = useRef(new Animated.Value(0)).current;
+  const progressionInputRef = useRef<ProgressionChordInputHandle>(null);
   const slideAnim = useRef(new Animated.Value(0)).current;
   const pendingEnterDir = useRef(0);
 
   const keyNoteIndex = notes.findIndex((n) => n === noteKey);
-
-  const noteToChromaDegree = (note: string): string => {
-    const noteIdx = notes.findIndex((n) => n === note);
-    if (noteIdx < 0 || keyNoteIndex < 0) return "I";
-    return OFFSET_TO_DEGREE[(noteIdx - keyNoteIndex + 12) % 12] ?? "I";
-  };
 
   const degreeToNote = (degree: string): string => {
     const offset = DEGREE_TO_OFFSET[degree];
@@ -137,21 +109,10 @@ export default function ScaleCompatibility({
     return notes[(keyNoteIndex + offset) % 12] ?? "";
   };
 
-  const showCallout = () =>
-    Animated.timing(calloutAnim, {
-      toValue: 1,
-      duration: 220,
-      easing: Easing.out(Easing.ease),
-      useNativeDriver: false,
-    }).start();
-
-  const hideCallout = (onDone?: () => void) =>
-    Animated.timing(calloutAnim, {
-      toValue: 0,
-      duration: 180,
-      easing: Easing.in(Easing.ease),
-      useNativeDriver: false,
-    }).start(onDone);
+  const handleRemove = (index: number) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setChords((prev) => prev.filter((_, i) => i !== index));
+  };
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useLayoutEffect(() => {
@@ -168,52 +129,6 @@ export default function ScaleCompatibility({
       }).start();
     }
   }, [step]);
-
-  const handleDegreePress = (deg: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    if (selectedDegree === deg) {
-      hideCallout(() => setSelectedDegree(null));
-    } else if (selectedDegree === null) {
-      setSelectedDegree(deg);
-      showCallout();
-    } else {
-      setSelectedDegree(deg);
-    }
-  };
-
-  const handleNotePress = (note: string) => {
-    const degree = noteToChromaDegree(note);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    if (selectedNote === note) {
-      hideCallout(() => {
-        setSelectedDegree(null);
-        setSelectedNote(null);
-      });
-    } else if (selectedDegree === null) {
-      setSelectedDegree(degree);
-      setSelectedNote(note);
-      showCallout();
-    } else {
-      setSelectedDegree(degree);
-      setSelectedNote(note);
-    }
-  };
-
-  const handleChordTypePress = (chordType: ChordType) => {
-    if (!selectedDegree || chords.length >= MAX_CHORDS) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    const deg = selectedDegree;
-    setChords((prev) => [...prev, { degree: deg, chordType }]);
-    hideCallout(() => {
-      setSelectedDegree(null);
-      setSelectedNote(null);
-    });
-  };
-
-  const handleRemove = (index: number) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setChords((prev) => prev.filter((_, i) => i !== index));
-  };
 
   const chordsAbsolute = useMemo(
     () =>
@@ -312,12 +227,6 @@ export default function ScaleCompatibility({
     { value: "seventh" as const, label: t("options.diatonicChordSize.seventh") },
   ];
 
-  const chordGroupOptions = [
-    { value: "triad" as const, label: t("options.diatonicChordSize.triad") },
-    { value: "seventh" as const, label: t("options.diatonicChordSize.seventh") },
-    { value: "tension" as const, label: t("templates.tension") },
-  ];
-
   const chordLabel = (chord: ProgressionChord): string => {
     if (inputMode === "note") {
       const noteName = degreeToNote(chord.degree);
@@ -377,10 +286,7 @@ export default function ScaleCompatibility({
                 value={inputMode}
                 onChange={(mode) => {
                   setInputMode(mode);
-                  hideCallout(() => {
-                    setSelectedDegree(null);
-                    setSelectedNote(null);
-                  });
+                  progressionInputRef.current?.resetSelection();
                 }}
               />
             )}
@@ -389,24 +295,26 @@ export default function ScaleCompatibility({
               contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 80 }]}
               showsVerticalScrollIndicator={false}
             >
-              {/* Key picker */}
-              <View style={styles.keyNavRow}>
-                <TouchableOpacity
-                  testID="key-nav-btn"
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    pendingEnterDir.current = 1;
-                    setStep("keySelect");
-                  }}
-                  activeOpacity={0.7}
-                  style={[styles.keyPill, { backgroundColor: colors.surface, borderColor }]}
-                >
-                  <Text style={[styles.keyPillLabel, { color: colors.textSubtle }]}>
-                    {t("templates.key")}
-                  </Text>
-                  <Text style={[styles.keyPillValue, { color: colors.textStrong }]}>{noteKey}</Text>
-                </TouchableOpacity>
-              </View>
+              {directionMode === "scale-to-chord" && (
+                <View style={styles.keyNavRow}>
+                  <TouchableOpacity
+                    testID="key-nav-btn"
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      pendingEnterDir.current = 1;
+                      setStep("keySelect");
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <View style={getPillStyle(colors)}>
+                      <Text style={[styles.keyPillLabel, { color: colors.textSubtle }]}>
+                        {t("header.key")}
+                      </Text>
+                      <Text style={[styles.keyPillValue, { color: colors.text }]}>{noteKey}</Text>
+                    </View>
+                  </TouchableOpacity>
+                </View>
+              )}
 
               {directionMode === "scale-to-chord" && (
                 <>
@@ -542,6 +450,7 @@ export default function ScaleCompatibility({
                                 ))}
                               </View>
                             </View>
+                            <Icon name="chevron-right" size={14} color={colors.textSubtle} />
                           </TouchableOpacity>
                         );
                       })}
@@ -557,198 +466,78 @@ export default function ScaleCompatibility({
 
               {directionMode === "chord-to-scale" && (
                 <>
-                  {/* Degree / note chips */}
-                  <View style={[styles.chipsRow, { justifyContent: "center" }]}>
-                    {inputMode === "degree"
-                      ? CHROMATIC_DEGREES.map(([deg, label]) => {
-                          const isActive = selectedDegree === deg;
-                          return (
-                            <TouchableOpacity
-                              key={deg}
-                              testID={`degree-chip-${deg}`}
-                              onPress={() => handleDegreePress(deg)}
-                              style={[
-                                styles.pickerChip,
-                                {
-                                  backgroundColor: isActive ? colors.primaryBtn : colors.fillIdle,
-                                  borderColor: isActive ? "transparent" : colors.borderStrong,
-                                },
-                              ]}
-                              activeOpacity={0.7}
-                              hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-                            >
-                              <Text
-                                style={[
-                                  styles.pickerChipText,
-                                  {
-                                    color: isActive
-                                      ? colors.primaryBtnText
-                                      : isDark
-                                        ? colors.textStrong
-                                        : colors.textDim,
-                                  },
-                                ]}
-                              >
-                                {label}
-                              </Text>
-                            </TouchableOpacity>
-                          );
-                        })
-                      : notes.map((note) => {
-                          const isActive = selectedNote === note;
-                          return (
-                            <TouchableOpacity
-                              key={note}
-                              testID={`note-chip-${note}`}
-                              onPress={() => handleNotePress(note)}
-                              style={[
-                                styles.pickerChip,
-                                {
-                                  backgroundColor: isActive ? colors.primaryBtn : colors.fillIdle,
-                                  borderColor: isActive ? "transparent" : colors.borderStrong,
-                                },
-                              ]}
-                              activeOpacity={0.7}
-                              hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-                            >
-                              <Text
-                                style={[
-                                  styles.pickerChipText,
-                                  {
-                                    color: isActive
-                                      ? colors.primaryBtnText
-                                      : isDark
-                                        ? colors.textStrong
-                                        : colors.textDim,
-                                  },
-                                ]}
-                              >
-                                {note}
-                              </Text>
-                            </TouchableOpacity>
-                          );
-                        })}
-                  </View>
-
-                  {/* Chord type callout */}
-                  <Animated.View
-                    pointerEvents={selectedDegree ? "auto" : "none"}
-                    style={{
-                      opacity: calloutAnim,
-                      maxHeight: calloutAnim.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [0, 300],
-                      }),
-                      overflow: "hidden",
-                      marginTop: 8,
+                  <ProgressionChordInput
+                    ref={progressionInputRef}
+                    theme={theme}
+                    accidental={accidental}
+                    inputMode={inputMode}
+                    noteKey={noteKey}
+                    onKeyPress={() => {
+                      pendingEnterDir.current = 1;
+                      setStep("keySelect");
                     }}
-                  >
-                    <View
-                      style={[
-                        styles.callout,
-                        { backgroundColor: colors.pageBg, borderColor: calloutBorder },
-                      ]}
-                    >
-                      <SegmentedToggle
-                        theme={theme}
-                        value={selectedChordGroup}
-                        onChange={(v) =>
-                          setSelectedChordGroup(v as "triad" | "seventh" | "tension")
-                        }
-                        options={chordGroupOptions}
-                        size="compact"
-                        segmentWidth={84}
-                      />
-                      <View style={[styles.chipsRow, { marginTop: 16, justifyContent: "center" }]}>
-                        {(
-                          CHORD_TYPE_GROUPS.find((g) => g.labelKey === selectedChordGroup)?.types ??
-                          []
-                        ).map(([chordType, label]) => (
-                          <TouchableOpacity
-                            key={chordType}
-                            testID={`chord-type-${chordType}`}
-                            onPress={() => handleChordTypePress(chordType)}
-                            disabled={chords.length >= MAX_CHORDS}
-                            style={[
-                              styles.chordTypeChip,
-                              { backgroundColor: colors.pageBg, borderColor: colors.borderStrong },
-                            ]}
-                            activeOpacity={0.7}
-                            hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-                          >
-                            <Text
-                              style={[
-                                styles.pickerChipText,
-                                { color: isDark ? colors.textStrong : colors.textDim },
-                              ]}
+                    showKeyButton
+                    keyRowStyle={styles.keyNavRow}
+                    chords={chords}
+                    onChordsChange={setChords}
+                    maxChords={MAX_CHORDS}
+                    calloutBg={colors.pageBg}
+                    emptyText={t("finder.scaleCompat.empty")}
+                    renderChords={({ chords: inputChords }) => (
+                      <>
+                        <View style={styles.chipsRow}>
+                          {inputChords.map((chord, i) => (
+                            <View
+                              key={`${chord.degree}-${chord.chordType}-${i}`}
+                              style={styles.progressionItem}
                             >
-                              {label}
+                              {i > 0 && (
+                                <Text style={[styles.arrow, { color: colors.textSubtle }]}>+</Text>
+                              )}
+                              <TouchableOpacity
+                                testID={`chord-chip-${i}`}
+                                onPress={() => {
+                                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                  setActiveSheet({ kind: "chord", chord, index: i });
+                                }}
+                                style={[
+                                  styles.addedChip,
+                                  { backgroundColor: colors.chipSelectedBg },
+                                ]}
+                                activeOpacity={0.7}
+                              >
+                                <Text
+                                  style={[styles.chipChordName, { color: colors.chipSelectedText }]}
+                                >
+                                  {chordLabel(chord)}
+                                </Text>
+                                <Text
+                                  style={[styles.chipNoteNames, { color: colors.chipSelectedText }]}
+                                >
+                                  {getChordNoteNames(chord).join("  ")}
+                                </Text>
+                              </TouchableOpacity>
+                            </View>
+                          ))}
+                        </View>
+                        <View style={styles.resetRow}>
+                          <PillButton
+                            isDark={isDark}
+                            variant="danger"
+                            onPress={() => {
+                              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                              progressionInputRef.current?.resetSelection();
+                              setChords([]);
+                            }}
+                          >
+                            <Text style={[styles.addBtnText, { color: colors.textDanger }]}>
+                              {t("finder.scaleCompat.reset")}
                             </Text>
-                          </TouchableOpacity>
-                        ))}
-                      </View>
-                    </View>
-                  </Animated.View>
-
-                  {/* Added chords */}
-                  {chords.length === 0 ? (
-                    <Text style={[styles.emptyText, { color: colors.textSubtle }]}>
-                      {t("finder.scaleCompat.empty")}
-                    </Text>
-                  ) : (
-                    <>
-                      <View style={styles.chipsRow}>
-                        {chords.map((chord, i) => (
-                          <View
-                            key={`${chord.degree}-${chord.chordType}-${i}`}
-                            style={styles.progressionItem}
-                          >
-                            {i > 0 && (
-                              <Text style={[styles.arrow, { color: colors.textSubtle }]}>+</Text>
-                            )}
-                            <TouchableOpacity
-                              testID={`chord-chip-${i}`}
-                              onPress={() => {
-                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                setActiveSheet({ kind: "chord", chord, index: i });
-                              }}
-                              style={[styles.addedChip, { backgroundColor: colors.chipSelectedBg }]}
-                              activeOpacity={0.7}
-                            >
-                              <Text
-                                style={[styles.chipChordName, { color: colors.chipSelectedText }]}
-                              >
-                                {chordLabel(chord)}
-                              </Text>
-                              <Text
-                                style={[styles.chipNoteNames, { color: colors.chipSelectedText }]}
-                              >
-                                {getChordNoteNames(chord).join("  ")}
-                              </Text>
-                            </TouchableOpacity>
-                          </View>
-                        ))}
-                      </View>
-                      <View style={styles.resetRow}>
-                        <PillButton
-                          isDark={isDark}
-                          variant="danger"
-                          onPress={() => {
-                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                            hideCallout(() => {
-                              setSelectedDegree(null);
-                              setSelectedNote(null);
-                            });
-                            setChords([]);
-                          }}
-                        >
-                          <Text style={[styles.addBtnText, { color: colors.textDanger }]}>
-                            {t("finder.scaleCompat.reset")}
-                          </Text>
-                        </PillButton>
-                      </View>
-                    </>
-                  )}
+                          </PillButton>
+                        </View>
+                      </>
+                    )}
+                  />
 
                   {/* Compatible scale results */}
                   {chords.length > 0 && (
@@ -827,6 +616,11 @@ export default function ScaleCompatibility({
                                         })}
                                       </View>
                                     </View>
+                                    <Icon
+                                      name="chevron-right"
+                                      size={14}
+                                      color={colors.textSubtle}
+                                    />
                                   </TouchableOpacity>
                                 );
                               })}
@@ -851,17 +645,12 @@ export default function ScaleCompatibility({
           <NoteSelectPage
             theme={theme}
             bgColor={colors.pageBg}
-            title={t("templates.key")}
+            title={t("header.key")}
             notes={notes}
             selectedNote={noteKey}
             onSelect={(note) => {
-              if (note !== noteKey) {
-                setNoteKey(note);
-                hideCallout(() => {
-                  setSelectedDegree(null);
-                  setSelectedNote(null);
-                });
-              }
+              setNoteKey(note);
+              progressionInputRef.current?.resetSelection();
             }}
             onBack={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -995,16 +784,6 @@ const styles = StyleSheet.create({
   },
   keyNavRow: {
     alignItems: "center",
-  },
-  keyPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 20,
-    borderCurve: "continuous",
-    paddingHorizontal: 14,
-    paddingVertical: 8,
   },
   keyPillLabel: {
     fontSize: 11,

@@ -8,8 +8,10 @@ import {
   getTensionsAndAvoids,
   getModalInterchangeChords,
   getChordsFromScale,
+  getDiatonicSuggestions,
   getChordSuggestions,
   getDominantMotionPatterns,
+  getModulationMeans,
 } from "../harmonyUtils";
 
 describe("getDiatonicChordList", () => {
@@ -331,6 +333,25 @@ describe("getChordsFromScale", () => {
 });
 
 describe("getChordSuggestions", () => {
+  it("returns major-key diatonic first-chord suggestions", () => {
+    const suggestions = getDiatonicSuggestions(0, "major");
+    expect(suggestions).toHaveLength(7);
+    expect(suggestions[0]).toMatchObject({
+      category: "diatonic-first",
+      rootIndex: 0,
+      chordType: "Major",
+      label: "I",
+    });
+    expect(suggestions[6]).toMatchObject({ rootIndex: 11, chordType: "dim", label: "VIIm(-5)" });
+  });
+
+  it("returns minor-key diatonic first-chord suggestions", () => {
+    const suggestions = getDiatonicSuggestions(0, "minor");
+    expect(suggestions).toHaveLength(7);
+    expect(suggestions[0]).toMatchObject({ rootIndex: 0, chordType: "Minor", label: "Im" });
+    expect(suggestions[2]).toMatchObject({ rootIndex: 3, chordType: "Major", label: "♭III" });
+  });
+
   it("C Major returns entries in all 8 categories", () => {
     const suggestions = getChordSuggestions(0, "Major");
     const categories = new Set(suggestions.map((s) => s.category));
@@ -427,5 +448,52 @@ describe("getDominantMotionPatterns", () => {
     expect(basicVI?.chords[0].rootIndex).toBe(4); // E
     expect(basicVI?.chords[1].rootIndex).toBe(9); // A
     expect(basicVI?.chords[1].chordType).toBe("Minor");
+  });
+});
+
+describe("getModulationMeans", () => {
+  it("enharmonic path is NOT shown when dest key type is major (only valid for minor)", () => {
+    // C Major → Eb Major: Bdim7 leads to Eb minor, not Eb major
+    const result = getModulationMeans(0, "major", 3, "major");
+    expect(result.enharmonic).toHaveLength(0);
+  });
+
+  it("enharmonic path IS shown when dest key type is minor", () => {
+    // C Major → Eb minor: Bdim7 → Eb minor is valid enharmonic modulation
+    const result = getModulationMeans(0, "major", 3, "minor");
+    expect(result.enharmonic).toHaveLength(1);
+    expect(result.enharmonic[0].destRootIndex).toBe(3);
+    expect(result.enharmonic[0].destKeyType).toBe("minor");
+  });
+
+  it("returns pivot chords for closely related keys", () => {
+    // C Major → G Major shares several diatonic chords
+    const result = getModulationMeans(0, "major", 7, "major");
+    expect(result.pivots.length).toBeGreaterThan(0);
+  });
+
+  it("modal is set when same root and different key type", () => {
+    // C Major → C minor (parallel)
+    const result = getModulationMeans(0, "major", 0, "minor");
+    expect(result.modal).not.toBeNull();
+    expect(result.modal?.modeName).toBe("aeolian");
+  });
+
+  it("modal is null when different roots", () => {
+    const result = getModulationMeans(0, "major", 5, "minor");
+    expect(result.modal).toBeNull();
+  });
+
+  it("chromatic mediant matches when dest is M3 above and same key type", () => {
+    // C Major → E Major (M3 up, major)
+    const result = getModulationMeans(0, "major", 4, "major");
+    expect(result.chromatic).not.toBeNull();
+    expect(result.chromatic?.relation).toBe("M3up");
+  });
+
+  it("chromatic mediant is null when dest is not a chromatic mediant", () => {
+    // C Major → G Major is not a chromatic mediant
+    const result = getModulationMeans(0, "major", 7, "major");
+    expect(result.chromatic).toBeNull();
   });
 });

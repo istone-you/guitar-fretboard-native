@@ -1,12 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  useWindowDimensions,
-} from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -23,10 +16,11 @@ import {
   CHORD_SUFFIX_MAP,
 } from "../../../lib/fretboard";
 import ChordDiagram from "../../../components/ui/ChordDiagram";
-import NotePickerButton from "../../../components/ui/NotePickerButton";
-import NotePill from "../../../components/ui/NotePill";
+import { useChordDiagramWidth } from "../../../hooks/useChordDiagramWidth";
+import FinderChordPicker from "../../../components/ui/FinderChordPicker";
 import FinderDetailSheet from "../../../components/ui/FinderDetailSheet";
 import LayerDescription from "../../../components/LayerEditModal/LayerDescription";
+import Icon from "../../../components/ui/Icon";
 
 interface OnChordFinderProps {
   theme: Theme;
@@ -68,8 +62,6 @@ const ALL_TYPES: string[] = (() => {
   return TYPE_ORDER.filter((t) => found.has(t));
 })();
 
-const FORM_GAP = 8;
-
 export default function OnChordFinder({
   theme,
   accidental,
@@ -80,11 +72,9 @@ export default function OnChordFinder({
   const isDark = theme === "dark";
   const colors = getColors(isDark);
   const insets = useSafeAreaInsets();
-  const { width: screenWidth } = useWindowDimensions();
   const borderColor = isDark ? colors.border : colors.border2;
   const isFull = layers.length >= MAX_LAYERS;
-
-  const formWidth = Math.floor((screenWidth - 32 - FORM_GAP * 2) / 3);
+  const formWidth = useChordDiagramWidth();
 
   const [chordRoot, setChordRoot] = useState("C");
   const [selectedType, setSelectedType] = useState<string>(ALL_TYPES[0] ?? "Major");
@@ -142,37 +132,19 @@ export default function OnChordFinder({
 
   return (
     <View style={[styles.root, { backgroundColor: colors.pageBg }]}>
-      <View style={[styles.pickerRow, { borderBottomColor: borderColor }]}>
-        <NotePickerButton
-          theme={theme}
-          accidental={accidental}
-          value={chordRoot}
-          onChange={(n) => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            setChordRoot(n);
-          }}
-          label={t("finder.onChord.chordRoot", "コードルート")}
-          sheetTitle={t("finder.onChord.chordRoot", "コードルート")}
-        />
-      </View>
-
-      <View style={[styles.chipsRow, { borderBottomColor: borderColor }]}>
-        {ALL_TYPES.filter((t) => availableTypesForRoot.has(t)).map((ct) => (
-          <NotePill
-            key={ct}
-            label={typeLabel(ct)}
-            selected={effectiveType === ct}
-            activeBg={colors.chipSelectedBg}
-            activeText={colors.chipSelectedText}
-            inactiveBg={colors.chipUnselectedBg}
-            inactiveText={colors.text}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setSelectedType(ct);
-            }}
-          />
-        ))}
-      </View>
+      <FinderChordPicker
+        theme={theme}
+        accidental={accidental}
+        rootNote={chordRoot}
+        onRootChange={setChordRoot}
+        chordTypes={ALL_TYPES.filter((t) => availableTypesForRoot.has(t)).map((ct) => ({
+          value: ct,
+          label: typeLabel(ct),
+        }))}
+        selectedChordType={effectiveType ?? ""}
+        onChordTypeChange={setSelectedType}
+        borderColor={borderColor}
+      />
 
       <ScrollView
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 80 }]}
@@ -206,6 +178,8 @@ export default function OnChordFinder({
                       </Text>
                     </View>
                   )}
+                  <View style={{ flex: 1 }} />
+                  <Icon name="chevron-right" size={14} color={colors.textSubtle} />
                 </View>
                 {cardVoicings.length > 0 && (
                   <View style={styles.cardFormsRow}>
@@ -263,20 +237,6 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
   },
-  pickerRow: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    alignItems: "center",
-  },
-  chipsRow: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
   content: {
     paddingHorizontal: 16,
     paddingTop: 12,
@@ -312,7 +272,6 @@ const styles = StyleSheet.create({
   },
   cardFormsRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
     gap: 8,
   },
   emptyText: {

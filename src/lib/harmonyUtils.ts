@@ -550,6 +550,7 @@ export function findKeyFromChords(
 // ── Chord Suggestions ─────────────────────────────────────────────────────────
 
 export type ChordSuggestCategory =
+  | "diatonic-first"
   | "diatonic"
   | "two-five-entry"
   | "secondary-dominant"
@@ -564,6 +565,47 @@ export interface ChordSuggestEntry {
   rootIndex: number;
   chordType: ChordType;
   label: string;
+}
+
+const MAJOR_DIATONIC_SUGGESTIONS: ReadonlyArray<{
+  offset: number;
+  chordType: ChordType;
+  label: string;
+}> = [
+  { offset: 0, chordType: "Major", label: "I" },
+  { offset: 2, chordType: "Minor", label: "IIm" },
+  { offset: 4, chordType: "Minor", label: "IIIm" },
+  { offset: 5, chordType: "Major", label: "IV" },
+  { offset: 7, chordType: "Major", label: "V" },
+  { offset: 9, chordType: "Minor", label: "VIm" },
+  { offset: 11, chordType: "dim", label: "VIIm(-5)" },
+];
+
+const MINOR_DIATONIC_SUGGESTIONS: ReadonlyArray<{
+  offset: number;
+  chordType: ChordType;
+  label: string;
+}> = [
+  { offset: 0, chordType: "Minor", label: "Im" },
+  { offset: 2, chordType: "dim", label: "IIm(-5)" },
+  { offset: 3, chordType: "Major", label: "♭III" },
+  { offset: 5, chordType: "Minor", label: "IVm" },
+  { offset: 7, chordType: "Minor", label: "Vm" },
+  { offset: 8, chordType: "Major", label: "♭VI" },
+  { offset: 10, chordType: "Major", label: "♭VII" },
+];
+
+export function getDiatonicSuggestions(
+  keyNoteIndex: number,
+  keyType: "major" | "minor",
+): ChordSuggestEntry[] {
+  const degrees = keyType === "major" ? MAJOR_DIATONIC_SUGGESTIONS : MINOR_DIATONIC_SUGGESTIONS;
+  return degrees.map(({ offset, chordType, label }) => ({
+    rootIndex: (keyNoteIndex + offset) % 12,
+    chordType,
+    label,
+    category: "diatonic-first",
+  }));
 }
 
 function inferKeyFromChord(
@@ -1080,7 +1122,7 @@ export function getModulationMeans(
   const pivots = getPivotChords(rootAIndex, keyTypeA, rootBIndex, keyTypeB);
 
   const enharmonic = getEnharmonicModulations(rootAIndex, keyTypeA).filter(
-    (e) => e.destRootIndex === rootBIndex,
+    (e) => e.destRootIndex === rootBIndex && e.destKeyType === keyTypeB,
   );
 
   const chromatic =

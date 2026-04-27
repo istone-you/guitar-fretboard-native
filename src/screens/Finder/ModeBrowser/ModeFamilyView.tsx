@@ -150,7 +150,12 @@ export default function ModeFamilyView({
 
       {/* Mode list */}
       <ScrollView
-        contentContainerStyle={{ paddingBottom: insets.bottom + 80 }}
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingTop: 12,
+          paddingBottom: insets.bottom + 80,
+          gap: 12,
+        }}
         showsVerticalScrollIndicator={false}
       >
         {modes.map((entry, index) => (
@@ -162,7 +167,7 @@ export default function ModeFamilyView({
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setPendingEntry({ scaleType: entry.scaleType, rootIndex: entry.rootIndex });
             }}
-            style={[styles.modeRow, { borderBottomColor: borderColor }]}
+            style={[styles.modeRow, { borderColor }]}
           >
             <View style={[styles.indexBadge, { backgroundColor: colors.surface2 }]}>
               <Text style={[styles.indexText, { color: colors.textSubtle }]}>{index + 1}</Text>
@@ -175,6 +180,7 @@ export default function ModeFamilyView({
                 {scaleName(entry.scaleType)}
               </Text>
             </View>
+            <Icon name="chevron-right" size={14} color={colors.textSubtle} />
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -341,9 +347,12 @@ const styles = StyleSheet.create({
   modeRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
+    borderRadius: 16,
+    borderCurve: "continuous",
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: "hidden",
+    paddingHorizontal: 14,
     paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
     gap: 12,
   },
   indexBadge: {

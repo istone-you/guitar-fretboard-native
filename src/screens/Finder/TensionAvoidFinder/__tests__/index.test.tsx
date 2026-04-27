@@ -175,8 +175,8 @@ describe("TensionAvoidFinder", () => {
 
   it("shows key root and chord root note pickers", () => {
     render(<TensionAvoidFinder {...defaultProps} />);
-    expect(screen.getByTestId("note-picker-キールート")).toBeTruthy();
-    expect(screen.getByTestId("note-picker-コードルート")).toBeTruthy();
+    expect(screen.getByTestId("note-picker-header.key")).toBeTruthy();
+    expect(screen.getByTestId("note-picker-header.root")).toBeTruthy();
   });
 
   it("shows major/minor key type toggle", () => {
@@ -218,7 +218,7 @@ describe("TensionAvoidFinder", () => {
 
   it("updates chord root when note picker is pressed", () => {
     render(<TensionAvoidFinder {...defaultProps} />);
-    fireEvent.press(screen.getByTestId("note-picker-コードルート"));
+    fireEvent.press(screen.getByTestId("note-picker-header.root"));
     // G Major: G(7), B(11), D(2)
     expect(screen.getByTestId("chord-tone-7")).toBeTruthy();
     expect(screen.getByTestId("chord-tone-11")).toBeTruthy();
@@ -227,7 +227,7 @@ describe("TensionAvoidFinder", () => {
 
   it("updates key root when key picker is pressed", () => {
     render(<TensionAvoidFinder {...defaultProps} />);
-    fireEvent.press(screen.getByTestId("note-picker-キールート"));
+    fireEvent.press(screen.getByTestId("note-picker-header.key"));
     expect(screen.getByTestId("chord-tone-0")).toBeTruthy();
   });
 

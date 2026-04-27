@@ -1,34 +1,33 @@
-import { useState, useMemo } from "react";
+import { useMemo, useRef, useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import "../../../i18n";
-import type { Accidental, Theme, ChordType, ProgressionChord } from "../../../types";
+import type { Accidental, Theme, ProgressionChord } from "../../../types";
 import { getColors } from "../../../themes/design";
-import { getRootIndex, getNotesByAccidental, CHORD_SUFFIX_MAP } from "../../../lib/fretboard";
+import { getNotesByAccidental, CHORD_SUFFIX_MAP } from "../../../lib/fretboard";
 import {
+  getDiatonicSuggestions,
   getChordSuggestions,
   type ChordSuggestCategory,
   type ChordSuggestEntry,
 } from "../../../lib/harmonyUtils";
-import NotePickerButton from "../../../components/ui/NotePickerButton";
-import NotePill from "../../../components/ui/NotePill";
-import Icon from "../../../components/ui/Icon";
 import PillButton from "../../../components/ui/PillButton";
+import ProgressionChordInput, {
+  DEGREE_TO_OFFSET,
+  OFFSET_TO_DEGREE,
+  type ProgressionChordInputHandle,
+} from "../../../components/ui/ProgressionChordInput";
+import NoteDegreeModeToggle from "../../../components/ui/NoteDegreeModeToggle";
+import NoteSelectPage from "../../../components/ui/NoteSelectPage";
+import BottomSheetModal, { useSheetHeight } from "../../../components/ui/BottomSheetModal";
+import { SegmentedToggle } from "../../../components/ui/SegmentedToggle";
 import TemplateFormSheet from "../../Templates/TemplateFormSheet";
 import { useProgressionTemplates } from "../../../hooks/useProgressionTemplates";
 
-const CHORD_TYPES: ChordType[] = ["Major", "Minor", "maj7", "m7", "7th"];
-const CHORD_LABELS: Partial<Record<ChordType, string>> = {
-  Major: "Major",
-  Minor: "Minor",
-  maj7: "maj7",
-  m7: "m7",
-  "7th": "7",
-};
-
 const CATEGORY_ORDER: ChordSuggestCategory[] = [
+  "diatonic-first",
   "diatonic",
   "two-five-entry",
   "secondary-dominant",
@@ -39,26 +38,10 @@ const CATEGORY_ORDER: ChordSuggestCategory[] = [
   "borrowed",
 ];
 
-// offset (0–11) → ProgressionChord degree string
-const OFFSET_TO_DEGREE: Record<number, string> = {
-  0: "I",
-  1: "bII",
-  2: "II",
-  3: "bIII",
-  4: "III",
-  5: "IV",
-  6: "bV",
-  7: "V",
-  8: "bVI",
-  9: "VI",
-  10: "bVII",
-  11: "VII",
-};
-
-interface ChainItem {
-  rootIndex: number;
-  chordType: ChordType;
-}
+const KEY_TYPE_OPTIONS = [
+  { value: "major" as const, label: "Major" },
+  { value: "minor" as const, label: "Minor" },
+];
 
 interface ChordSuggestProps {
   theme: Theme;
@@ -70,27 +53,29 @@ export default function ChordSuggest({ theme, accidental }: ChordSuggestProps) {
   const isDark = theme === "dark";
   const colors = getColors(isDark);
   const insets = useSafeAreaInsets();
+  const sheetHeight = useSheetHeight();
   const { saveTemplate } = useProgressionTemplates();
 
-  const [rootNote, setRootNote] = useState("C");
-  const [selectedChordType, setSelectedChordType] = useState<ChordType>("Major");
-  const [chain, setChain] = useState<ChainItem[]>([]);
+  const [noteKey, setNoteKey] = useState("C");
+  const [keyType, setKeyType] = useState<"major" | "minor">("major");
+  const [inputMode, setInputMode] = useState<"degree" | "note">("note");
+  const [chords, setChords] = useState<ProgressionChord[]>([]);
   const [showSaveSheet, setShowSaveSheet] = useState(false);
+  const [showKeySheet, setShowKeySheet] = useState(false);
+  const progressionInputRef = useRef<ProgressionChordInputHandle>(null);
 
-  const sourceRootIndex = getRootIndex(rootNote);
   const notes = getNotesByAccidental(accidental);
+  const keyNoteIndex = notes.findIndex((n) => n === noteKey);
   const borderColor = isDark ? colors.border : colors.border2;
 
-  const sourceChordName = `${rootNote}${CHORD_SUFFIX_MAP[selectedChordType] ?? ""}`;
-
-  // Current source for suggestions = last chain item, or user-selected chord
-  const currentRootIndex = chain.length > 0 ? chain[chain.length - 1].rootIndex : sourceRootIndex;
-  const currentChordType = chain.length > 0 ? chain[chain.length - 1].chordType : selectedChordType;
-
-  const suggestions = useMemo(
-    () => getChordSuggestions(currentRootIndex, currentChordType),
-    [currentRootIndex, currentChordType],
-  );
+  const suggestions = useMemo(() => {
+    if (chords.length === 0) {
+      return getDiatonicSuggestions(keyNoteIndex, keyType);
+    }
+    const lastChord = chords[chords.length - 1];
+    const rootIdx = (keyNoteIndex + (DEGREE_TO_OFFSET[lastChord.degree] ?? 0)) % 12;
+    return getChordSuggestions(rootIdx, lastChord.chordType);
+  }, [chords, keyNoteIndex, keyType]);
 
   const grouped = useMemo(() => {
     const map = new Map<ChordSuggestCategory, ChordSuggestEntry[]>();
@@ -102,118 +87,54 @@ export default function ChordSuggest({ theme, accidental }: ChordSuggestProps) {
     return map;
   }, [suggestions]);
 
-  const addToChain = (entry: ChordSuggestEntry) => {
+  const addSuggestionToChain = (entry: ChordSuggestEntry) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setChain((prev) => [...prev, { rootIndex: entry.rootIndex, chordType: entry.chordType }]);
-  };
-
-  const undoLast = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setChain((prev) => prev.slice(0, -1));
-  };
-
-  const chainAsProgressionChords = (): ProgressionChord[] => {
-    const allChords: ChainItem[] = [
-      { rootIndex: sourceRootIndex, chordType: selectedChordType },
-      ...chain,
-    ];
-    return allChords.map(({ rootIndex, chordType }) => {
-      const offset = (rootIndex - sourceRootIndex + 12) % 12;
-      return { degree: OFFSET_TO_DEGREE[offset] ?? "I", chordType };
-    });
+    const offset = (entry.rootIndex - keyNoteIndex + 12) % 12;
+    const degree = OFFSET_TO_DEGREE[offset] ?? "I";
+    setChords((prev) => [...prev, { degree, chordType: entry.chordType }]);
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.pageBg }}>
-      {/* Root picker */}
-      <View style={[styles.rootRow, { borderBottomColor: borderColor }]}>
-        <NotePickerButton
-          theme={theme}
-          accidental={accidental}
-          value={rootNote}
-          onChange={(note) => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            setRootNote(note);
-            setChain([]);
-          }}
-          label={t("header.root")}
-          sheetTitle={t("header.root")}
-        />
-      </View>
-
-      {/* Chord type chips */}
-      <View style={[styles.chipsRow, { borderBottomColor: borderColor }]}>
-        {CHORD_TYPES.map((ct) => (
-          <NotePill
-            key={ct}
-            label={CHORD_LABELS[ct] ?? ct}
-            selected={selectedChordType === ct}
-            activeBg={colors.chipSelectedBg}
-            activeText={colors.chipSelectedText}
-            inactiveBg={colors.chipUnselectedBg}
-            inactiveText={colors.text}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setSelectedChordType(ct);
-              setChain([]);
-            }}
-          />
-        ))}
-      </View>
-
-      {/* Chain bar */}
-      <View style={[styles.chainBarOuter, { borderBottomColor: borderColor }]}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.chainBarContent}
-          style={styles.chainBarScroll}
-        >
-          <View style={[styles.chainChipSource, { backgroundColor: colors.chipUnselectedBg }]}>
-            <Text style={[styles.chainChipText, { color: colors.textStrong }]}>
-              {sourceChordName}
-            </Text>
-          </View>
-          {chain.length === 0 ? (
-            <Text style={[styles.chainHint, { color: colors.textSubtle }]}>
-              {t("finder.chordSuggest.chainHint")}
-            </Text>
-          ) : (
-            chain.map((item, i) => {
-              const itemName = `${notes[item.rootIndex]}${CHORD_SUFFIX_MAP[item.chordType] ?? ""}`;
-              return (
-                <View key={i} style={styles.chainArrowGroup}>
-                  <Icon name="chevron-right" size={10} color={colors.textSubtle} />
-                  <View
-                    style={[styles.chainChipItem, { backgroundColor: colors.chipUnselectedBg }]}
-                  >
-                    <Text style={[styles.chainChipText, { color: colors.textStrong }]}>
-                      {itemName}
-                    </Text>
-                  </View>
-                </View>
-              );
-            })
-          )}
-        </ScrollView>
-        {chain.length > 0 && (
-          <TouchableOpacity
-            testID="chain-undo"
-            onPress={undoLast}
-            style={[styles.undoBtn, { borderColor }]}
-            hitSlop={8}
-          >
-            <Icon name="chevron-left" size={14} color={colors.textSubtle} />
-          </TouchableOpacity>
-        )}
-      </View>
+    <View style={[styles.root, { backgroundColor: colors.pageBg }]}>
+      <NoteDegreeModeToggle
+        theme={theme}
+        value={inputMode}
+        onChange={(mode) => {
+          setInputMode(mode);
+          progressionInputRef.current?.resetSelection();
+        }}
+      />
 
       <ScrollView
         contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 80 }]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Save as template button */}
-        {chain.length > 0 && (
+        <ProgressionChordInput
+          ref={progressionInputRef}
+          theme={theme}
+          accidental={accidental}
+          inputMode={inputMode}
+          noteKey={noteKey}
+          keyAccessory={
+            <SegmentedToggle
+              theme={theme}
+              value={keyType}
+              onChange={(value) => setKeyType(value as "major" | "minor")}
+              options={KEY_TYPE_OPTIONS}
+              size="compact"
+              segmentWidth={60}
+            />
+          }
+          onKeyPress={() => setShowKeySheet(true)}
+          showKeyButton
+          keyRowStyle={styles.keyControls}
+          chords={chords}
+          onChordsChange={setChords}
+          calloutBg={colors.pageBg}
+          emptyText={t("finder.progressionAnalysis.empty")}
+        />
+
+        {chords.length > 0 && (
           <View style={styles.saveRow}>
             <PillButton
               isDark={isDark}
@@ -221,13 +142,26 @@ export default function ChordSuggest({ theme, accidental }: ChordSuggestProps) {
               onPress={() => setShowSaveSheet(true)}
             >
               <Text style={[styles.saveBtnText, { color: colors.textStrong }]}>
-                {t("finder.progressionAnalysis.saveAsTemplate")}
+                {t("finder.progressionAnalysis.save")}
+              </Text>
+            </PillButton>
+            <PillButton
+              isDark={isDark}
+              variant="danger"
+              style={styles.saveBtn}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setChords([]);
+                progressionInputRef.current?.resetSelection();
+              }}
+            >
+              <Text style={[styles.saveBtnText, { color: colors.textDanger }]}>
+                {t("finder.progressionAnalysis.reset")}
               </Text>
             </PillButton>
           </View>
         )}
 
-        {/* Grouped suggestions */}
         {CATEGORY_ORDER.map((category) => {
           const entries = grouped.get(category);
           if (!entries || entries.length === 0) return null;
@@ -245,7 +179,7 @@ export default function ChordSuggest({ theme, accidental }: ChordSuggestProps) {
                       testID="entry-card"
                       style={[styles.entryCard, { borderColor, backgroundColor: colors.surface }]}
                       activeOpacity={0.7}
-                      onPress={() => addToChain(entry)}
+                      onPress={() => addSuggestionToChain(entry)}
                     >
                       <Text style={[styles.entryChordName, { color: colors.textStrong }]}>
                         {entryName}
@@ -262,24 +196,52 @@ export default function ChordSuggest({ theme, accidental }: ChordSuggestProps) {
         })}
       </ScrollView>
 
+      <BottomSheetModal visible={showKeySheet} onClose={() => setShowKeySheet(false)}>
+        {({ close, dragHandlers }) => (
+          <View
+            style={[
+              styles.sheet,
+              {
+                height: sheetHeight,
+                backgroundColor: colors.deepBg,
+                borderColor: colors.sheetBorder,
+              },
+            ]}
+          >
+            <NoteSelectPage
+              theme={theme}
+              bgColor={colors.deepBg}
+              title={t("header.key")}
+              notes={notes}
+              selectedNote={noteKey}
+              onSelect={(note) => {
+                setNoteKey(note);
+                setChords([]);
+                progressionInputRef.current?.resetSelection();
+                close();
+              }}
+              onBack={close}
+              dragHandlers={dragHandlers}
+            />
+          </View>
+        )}
+      </BottomSheetModal>
+
       <TemplateFormSheet
         key={showSaveSheet ? "open" : "closed"}
         visible={showSaveSheet}
         onClose={() => setShowSaveSheet(false)}
         theme={theme}
         accidental={accidental}
-        initialTemplate={
-          chain.length > 0
-            ? { id: "", name: "", chords: chainAsProgressionChords(), createdAt: 0 }
-            : null
-        }
-        initialInputMode="note"
-        initialNoteKey={rootNote}
+        initialTemplate={chords.length > 0 ? { id: "", name: "", chords, createdAt: 0 } : null}
+        initialInputMode={inputMode}
+        initialNoteKey={noteKey}
         onSave={(name, savedChords) => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
           saveTemplate(name, savedChords);
           setShowSaveSheet(false);
-          setChain([]);
+          setChords([]);
+          progressionInputRef.current?.resetSelection();
         }}
       />
     </View>
@@ -287,78 +249,26 @@ export default function ChordSuggest({ theme, accidental }: ChordSuggestProps) {
 }
 
 const styles = StyleSheet.create({
-  rootRow: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    alignItems: "center",
-  },
-  chipsRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-    justifyContent: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  chainBarOuter: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    paddingVertical: 8,
-  },
-  chainBarScroll: {
+  root: {
     flex: 1,
-  },
-  chainBarContent: {
-    paddingHorizontal: 16,
-    alignItems: "center",
-    gap: 4,
-    flexDirection: "row",
-  },
-  chainChipSource: {
-    borderRadius: 8,
-    borderCurve: "continuous",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  chainChipItem: {
-    borderRadius: 8,
-    borderCurve: "continuous",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  chainChipText: {
-    fontSize: 13,
-    fontWeight: "700",
-  },
-  chainArrowGroup: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  chainHint: {
-    fontSize: 12,
-    marginLeft: 4,
-  },
-  undoBtn: {
-    width: 32,
-    height: 32,
-    marginRight: 8,
-    borderRadius: 8,
-    borderCurve: "continuous",
-    borderWidth: StyleSheet.hairlineWidth,
-    alignItems: "center",
-    justifyContent: "center",
   },
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 12,
     gap: 16,
   },
+  keyControls: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+  },
   saveRow: {
     flexDirection: "row",
+    justifyContent: "center",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 16,
   },
   saveBtn: {
     flex: 1,
@@ -398,5 +308,12 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "600",
     textAlign: "center",
+  },
+  sheet: {
+    width: "100%",
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    borderWidth: 1,
+    overflow: "hidden",
   },
 });

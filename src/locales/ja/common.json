@@ -437,10 +437,11 @@
       "result": "分析結果",
       "keyScore": "{{matched}} / {{total}}",
       "nonDiatonic": "非ダイアトニック",
-      "empty": "コードを追加して分析",
+      "empty": "コードを追加",
       "noResult": "一致するキーが見つかりません",
       "borrowed": "借用{{degree}}",
-      "loadTemplate": "テンプレから読み込む",
+      "loadTemplate": "テンプレから読み込み",
+      "or": "もしくは",
       "saveAsTemplate": "テンプレとして保存",
       "save": "保存",
       "reset": "リセット",
@@ -513,6 +514,7 @@
       "chainHint": "→ 次のコードをタップして追加",
       "addAsProgression": "コード進行として追加",
       "category": {
+        "diatonic-first": "ダイアトニックコード",
         "diatonic": "ダイアトニック遷移",
         "two-five-entry": "Ⅱ–Ⅴの入口",
         "secondary-dominant": "セカンダリードミナント候補",
@@ -560,6 +562,7 @@
       "major": "メジャー",
       "minor": "マイナー",
       "keySection": "キー",
+      "key": "キー",
       "keyRoot": "キールート",
       "chordSection": "コード",
       "chordRoot": "コードルート",
@@ -631,6 +634,10 @@
     "back": "戻る",
     "selectTitle": "クイズを選ぶ",
     "changeQuiz": "クイズを変える",
+    "keyType": {
+      "major": "メジャー",
+      "minor": "マイナー"
+    },
     "mode": {
       "note": "音名",
       "degree": "度数",

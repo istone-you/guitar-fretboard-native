@@ -156,7 +156,7 @@ describe("OnChordFinder", () => {
 
   it("shows chord root note picker", () => {
     render(<OnChordFinder {...defaultProps} />);
-    expect(screen.getByTestId("note-picker-コードルート")).toBeTruthy();
+    expect(screen.getByTestId("note-picker-header.root")).toBeTruthy();
   });
 
   it("shows chord type chips for types present in C root", () => {
@@ -178,8 +178,8 @@ describe("OnChordFinder", () => {
 
   it("updates root and results when note picker is pressed", () => {
     render(<OnChordFinder {...defaultProps} />);
-    fireEvent.press(screen.getByTestId("note-picker-コードルート"));
-    expect(screen.getByTestId("note-picker-value-コードルート").props.children).toBe("G");
+    fireEvent.press(screen.getByTestId("note-picker-header.root"));
+    expect(screen.getByTestId("note-picker-value-header.root").props.children).toBe("G");
   });
 
   it("filters results when a type chip is pressed", () => {
