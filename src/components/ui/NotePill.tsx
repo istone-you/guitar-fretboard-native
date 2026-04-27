@@ -65,6 +65,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 999,
+    borderCurve: "continuous",
     borderWidth: 1,
     minWidth: 56,
     alignItems: "center",

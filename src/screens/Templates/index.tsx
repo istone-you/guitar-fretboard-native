@@ -350,6 +350,7 @@ const TemplatesPane = forwardRef<TemplatesPaneHandle, TemplatesPaneProps>(functi
           alignItems: "flex-end",
           backgroundColor: SEMANTIC_COLORS.destructive,
           borderRadius: ROW_RADIUS,
+          borderCurve: "continuous",
         },
       ]}
     >
@@ -478,6 +479,7 @@ const TemplatesPane = forwardRef<TemplatesPaneHandle, TemplatesPaneProps>(functi
                               {
                                 borderWidth: 1,
                                 borderRadius: ROW_RADIUS,
+                                borderCurve: "continuous",
                                 borderColor: colors.dragPlaceholderBorder,
                                 backgroundColor: colors.dragPlaceholderBg,
                               },
@@ -608,6 +610,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderWidth: 1,
     borderRadius: ROW_RADIUS,
+    borderCurve: "continuous",
     paddingVertical: 10,
     paddingLeft: 20,
     paddingRight: 12,

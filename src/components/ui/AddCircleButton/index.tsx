@@ -17,6 +17,7 @@ export default function AddCircleButton({ isDark, onPress, size = 22 }: AddCircl
         width: size,
         height: size,
         borderRadius: size / 2,
+        borderCurve: "continuous",
         borderWidth: 1.5,
         borderColor: color,
         alignItems: "center",

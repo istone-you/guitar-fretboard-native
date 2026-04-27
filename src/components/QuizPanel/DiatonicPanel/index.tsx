@@ -212,6 +212,7 @@ const styles = StyleSheet.create({
   card: {
     borderWidth: 1,
     borderRadius: 12,
+    borderCurve: "continuous",
     padding: 8,
     minWidth: 56,
     alignItems: "center",
@@ -225,6 +226,7 @@ const styles = StyleSheet.create({
   },
   choiceBtn: {
     borderRadius: 999,
+    borderCurve: "continuous",
     paddingHorizontal: 14,
     paddingVertical: 8,
     minWidth: 48,
@@ -232,6 +234,7 @@ const styles = StyleSheet.create({
   },
   submitBtn: {
     borderRadius: 999,
+    borderCurve: "continuous",
     paddingVertical: 10,
     paddingHorizontal: 24,
     alignItems: "center",

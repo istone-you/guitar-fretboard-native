@@ -217,6 +217,8 @@ export const radius = {
   pill: 999,
 } as const;
 
+export const CONTINUOUS = { borderCurve: "continuous" as const };
+
 export const fontSize = {
   xs: 11,
   sm: 12,

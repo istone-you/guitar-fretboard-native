@@ -83,6 +83,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 12,
+    borderCurve: "continuous",
     borderWidth: StyleSheet.hairlineWidth,
     marginHorizontal: 16,
     marginBottom: 4,
@@ -96,6 +97,7 @@ const styles = StyleSheet.create({
     width: 14,
     height: 14,
     borderRadius: 4,
+    borderCurve: "continuous",
   },
   label: {
     fontSize: 12,

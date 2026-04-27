@@ -253,6 +253,7 @@ function HeatmapGrid({
                     height: CELL - 2,
                     margin: 1,
                     borderRadius: 2,
+                    borderCurve: "continuous",
                     backgroundColor: bg,
                     borderWidth: total === 0 ? 1 : 0,
                     borderColor: total === 0 ? emptyBorder : "transparent",
@@ -571,6 +572,7 @@ const styles = StyleSheet.create({
   },
   card: {
     borderRadius: 16,
+    borderCurve: "continuous",
     borderWidth: 1,
     overflow: "hidden",
     shadowColor: BLACK,
@@ -607,11 +609,13 @@ const styles = StyleSheet.create({
   rankBarTrack: {
     height: 8,
     borderRadius: 4,
+    borderCurve: "continuous",
     overflow: "hidden",
   },
   rankBarFill: {
     height: "100%",
     borderRadius: 4,
+    borderCurve: "continuous",
   },
   rankRate: {
     fontSize: 13,
@@ -651,12 +655,14 @@ const styles = StyleSheet.create({
     width: 60,
     height: 8,
     borderRadius: 4,
+    borderCurve: "continuous",
     overflow: "hidden",
   },
   heatmapLegendSwatch: {
     width: 10,
     height: 10,
     borderRadius: 2,
+    borderCurve: "continuous",
   },
   collapsibleHeader: {
     flexDirection: "row",
@@ -673,6 +679,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
     paddingVertical: 10,
     borderRadius: 14,
+    borderCurve: "continuous",
     borderWidth: 1,
     alignItems: "center",
   },

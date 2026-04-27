@@ -54,6 +54,7 @@ export default function GlassIconButton({
           width: size,
           height: size,
           borderRadius: size / 2,
+          borderCurve: "continuous",
           alignItems: "center",
           justifyContent: "center",
           overflow: "hidden",

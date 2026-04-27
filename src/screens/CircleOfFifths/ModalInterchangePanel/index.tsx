@@ -111,6 +111,7 @@ export default function ModalInterchangePanel({
 const styles = StyleSheet.create({
   container: {
     borderRadius: 14,
+    borderCurve: "continuous",
     borderWidth: StyleSheet.hairlineWidth,
     marginHorizontal: 16,
     marginTop: 8,
@@ -132,6 +133,7 @@ const styles = StyleSheet.create({
   chip: {
     alignItems: "center",
     borderRadius: 8,
+    borderCurve: "continuous",
     borderWidth: 1,
     minWidth: 48,
     paddingHorizontal: 10,

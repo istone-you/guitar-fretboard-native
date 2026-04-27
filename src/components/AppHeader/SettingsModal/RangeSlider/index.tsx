@@ -210,6 +210,7 @@ const styles = StyleSheet.create({
     right: THUMB_W / 2,
     height: TRACK_H,
     borderRadius: TRACK_H / 2,
+    borderCurve: "continuous",
     overflow: "hidden",
   },
   fill: {
@@ -217,6 +218,7 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     borderRadius: TRACK_H / 2,
+    borderCurve: "continuous",
   },
   labelContainer: {
     position: "absolute",
@@ -241,6 +243,7 @@ const styles = StyleSheet.create({
     width: THUMB_W,
     height: THUMB_H,
     borderRadius: THUMB_H / 2,
+    borderCurve: "continuous",
     shadowColor: BLACK,
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.22,
@@ -251,6 +254,7 @@ const styles = StyleSheet.create({
     width: THUMB_W,
     height: THUMB_H,
     borderRadius: THUMB_H / 2,
+    borderCurve: "continuous",
     overflow: "hidden",
   },
   thumbWhite: {

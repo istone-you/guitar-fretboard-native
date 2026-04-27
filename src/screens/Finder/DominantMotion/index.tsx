@@ -305,6 +305,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     borderRadius: 14,
+    borderCurve: "continuous",
     borderWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: 14,
     paddingVertical: 12,
@@ -317,6 +318,7 @@ const styles = StyleSheet.create({
   typeBadge: {
     alignSelf: "flex-start",
     borderRadius: 6,
+    borderCurve: "continuous",
     paddingHorizontal: 6,
     paddingVertical: 2,
     marginTop: 4,

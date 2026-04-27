@@ -302,6 +302,7 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
+    borderCurve: "continuous",
   },
   listLabel: {
     flex: 1,

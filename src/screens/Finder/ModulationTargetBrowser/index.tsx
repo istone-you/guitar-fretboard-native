@@ -323,6 +323,7 @@ const styles = StyleSheet.create({
   },
   section: {
     borderRadius: 16,
+    borderCurve: "continuous",
     borderWidth: StyleSheet.hairlineWidth,
     overflow: "hidden",
     gap: 0,
@@ -359,6 +360,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 8,
     borderRadius: 12,
+    borderCurve: "continuous",
     alignItems: "center",
     minWidth: 56,
     gap: 3,
@@ -380,6 +382,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
+    borderCurve: "continuous",
     gap: 2,
   },
   degreeKey: {

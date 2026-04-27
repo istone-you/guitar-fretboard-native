@@ -1002,6 +1002,7 @@ const styles = StyleSheet.create({
     gap: 6,
     borderWidth: StyleSheet.hairlineWidth,
     borderRadius: 20,
+    borderCurve: "continuous",
     paddingHorizontal: 14,
     paddingVertical: 8,
   },
@@ -1021,6 +1022,7 @@ const styles = StyleSheet.create({
   pickerChip: {
     borderWidth: 2,
     borderRadius: 16,
+    borderCurve: "continuous",
     height: 32,
     minWidth: 36,
     paddingHorizontal: 8,
@@ -1033,6 +1035,7 @@ const styles = StyleSheet.create({
   },
   callout: {
     borderRadius: 14,
+    borderCurve: "continuous",
     borderWidth: 1,
     paddingVertical: 20,
     paddingHorizontal: 12,
@@ -1042,6 +1045,7 @@ const styles = StyleSheet.create({
   chordTypeChip: {
     borderWidth: 2,
     borderRadius: 16,
+    borderCurve: "continuous",
     height: 32,
     width: 60,
     alignItems: "center",
@@ -1060,6 +1064,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 8,
     borderRadius: 12,
+    borderCurve: "continuous",
     alignItems: "center",
     minWidth: 56,
     gap: 3,
@@ -1081,6 +1086,7 @@ const styles = StyleSheet.create({
   },
   card: {
     borderRadius: 16,
+    borderCurve: "continuous",
     borderWidth: StyleSheet.hairlineWidth,
     overflow: "hidden",
   },
@@ -1116,6 +1122,7 @@ const styles = StyleSheet.create({
   },
   noteChip: {
     borderRadius: 8,
+    borderCurve: "continuous",
     paddingHorizontal: 6,
     paddingVertical: 2,
   },

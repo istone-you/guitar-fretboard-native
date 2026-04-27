@@ -587,6 +587,7 @@ const styles = StyleSheet.create({
   },
   sourceSection: {
     borderRadius: 16,
+    borderCurve: "continuous",
     borderWidth: StyleSheet.hairlineWidth,
     overflow: "hidden",
     paddingHorizontal: 14,
@@ -606,6 +607,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
+    borderCurve: "continuous",
   },
   typeLabel: {
     fontSize: 11,
@@ -618,6 +620,7 @@ const styles = StyleSheet.create({
   },
   subSection: {
     borderRadius: 16,
+    borderCurve: "continuous",
     borderWidth: StyleSheet.hairlineWidth,
     overflow: "hidden",
   },
@@ -635,6 +638,7 @@ const styles = StyleSheet.create({
   },
   groupCard: {
     borderRadius: 16,
+    borderCurve: "continuous",
     borderWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: 14,
     paddingVertical: 14,
@@ -669,6 +673,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 8,
+    borderCurve: "continuous",
     borderWidth: StyleSheet.hairlineWidth,
   },
   toneBadgeText: {

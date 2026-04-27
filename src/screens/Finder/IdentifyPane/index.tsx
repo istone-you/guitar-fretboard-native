@@ -705,6 +705,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
+    borderCurve: "continuous",
     marginRight: 6,
     borderWidth: 2,
     borderColor: ON_ACCENT.chipBorder,
@@ -713,6 +714,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
+    borderCurve: "continuous",
     marginRight: 6,
   },
   chipText: {
@@ -802,6 +804,7 @@ const styles = StyleSheet.create({
   },
   card: {
     borderRadius: 16,
+    borderCurve: "continuous",
     borderWidth: StyleSheet.hairlineWidth,
     overflow: "hidden",
   },
@@ -847,6 +850,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5,
     paddingVertical: 1,
     borderRadius: 4,
+    borderCurve: "continuous",
     borderWidth: 1,
   },
   tagText: {

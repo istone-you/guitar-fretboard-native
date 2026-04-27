@@ -10,6 +10,7 @@ export function getPillStyle(colors: ThemeColors): ViewStyle {
     paddingHorizontal: 13,
     paddingVertical: 8,
     borderRadius: radius.lg,
+    borderCurve: "continuous",
     borderWidth: 1,
     borderColor: colors.borderStrong,
     backgroundColor: colors.surface,

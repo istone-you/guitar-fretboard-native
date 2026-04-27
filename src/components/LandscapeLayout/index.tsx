@@ -139,6 +139,7 @@ const styles = StyleSheet.create({
   },
   infoPill: {
     borderRadius: 999,
+    borderCurve: "continuous",
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderWidth: 1.5,

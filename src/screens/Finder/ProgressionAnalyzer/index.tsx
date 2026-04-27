@@ -823,6 +823,7 @@ const styles = StyleSheet.create({
     gap: 6,
     borderWidth: StyleSheet.hairlineWidth,
     borderRadius: 20,
+    borderCurve: "continuous",
     paddingHorizontal: 14,
     paddingVertical: 8,
   },
@@ -842,6 +843,7 @@ const styles = StyleSheet.create({
   pickerChip: {
     borderWidth: 2,
     borderRadius: 16,
+    borderCurve: "continuous",
     height: 32,
     minWidth: 36,
     paddingHorizontal: 8,
@@ -854,6 +856,7 @@ const styles = StyleSheet.create({
   },
   callout: {
     borderRadius: 14,
+    borderCurve: "continuous",
     borderWidth: 1,
     paddingVertical: 20,
     paddingHorizontal: 12,
@@ -863,6 +866,7 @@ const styles = StyleSheet.create({
   chordTypeChip: {
     borderWidth: 2,
     borderRadius: 16,
+    borderCurve: "continuous",
     height: 32,
     width: 60,
     alignItems: "center",
@@ -882,6 +886,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderWidth: 2,
     borderRadius: 16,
+    borderCurve: "continuous",
     height: 32,
     minWidth: 32,
     paddingHorizontal: 8,
@@ -912,6 +917,7 @@ const styles = StyleSheet.create({
   },
   card: {
     borderRadius: 16,
+    borderCurve: "continuous",
     borderWidth: StyleSheet.hairlineWidth,
     overflow: "hidden",
     paddingHorizontal: 14,
@@ -936,6 +942,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 8,
     borderRadius: 10,
+    borderCurve: "continuous",
     gap: 4,
     minWidth: 52,
   },
@@ -956,6 +963,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     paddingVertical: 1,
     borderRadius: 4,
+    borderCurve: "continuous",
   },
   fnText: {
     fontSize: 9,
@@ -969,6 +977,7 @@ const styles = StyleSheet.create({
   legend: {
     borderWidth: StyleSheet.hairlineWidth,
     borderRadius: 14,
+    borderCurve: "continuous",
     paddingHorizontal: 14,
     paddingVertical: 12,
     gap: 8,
@@ -991,6 +1000,7 @@ const styles = StyleSheet.create({
     gap: 6,
     borderWidth: StyleSheet.hairlineWidth,
     borderRadius: 20,
+    borderCurve: "continuous",
     paddingHorizontal: 14,
     paddingVertical: 8,
   },

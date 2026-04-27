@@ -867,6 +867,7 @@ const styles = StyleSheet.create({
   degreePickerChip: {
     borderWidth: 2,
     borderRadius: 16,
+    borderCurve: "continuous",
     height: 32,
     minWidth: 36,
     paddingHorizontal: 8,
@@ -875,6 +876,7 @@ const styles = StyleSheet.create({
   },
   callout: {
     borderRadius: 14,
+    borderCurve: "continuous",
     borderWidth: 1,
     paddingVertical: 20,
     paddingHorizontal: 12,
@@ -884,6 +886,7 @@ const styles = StyleSheet.create({
   chordTypeChip: {
     borderWidth: 2,
     borderRadius: 16,
+    borderCurve: "continuous",
     height: 32,
     width: 60,
     alignItems: "center",
@@ -895,6 +898,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderWidth: 2,
     borderRadius: 16,
+    borderCurve: "continuous",
     height: 32,
     minWidth: 32,
     paddingHorizontal: 8,

@@ -150,6 +150,7 @@ const styles = StyleSheet.create({
   statsBtnText: {},
   card: {
     borderRadius: 16,
+    borderCurve: "continuous",
     borderWidth: 1,
     overflow: "hidden",
     shadowColor: BLACK,
@@ -169,6 +170,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
+    borderCurve: "continuous",
     alignItems: "center",
     justifyContent: "center",
   },

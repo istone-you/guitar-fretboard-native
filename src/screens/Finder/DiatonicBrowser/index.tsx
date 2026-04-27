@@ -487,6 +487,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 6,
+    borderCurve: "continuous",
     alignItems: "center",
   },
   degreeText: {
@@ -498,6 +499,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 5,
+    borderCurve: "continuous",
   },
   functionText: {
     fontSize: 11,

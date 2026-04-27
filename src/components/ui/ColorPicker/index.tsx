@@ -46,5 +46,6 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
+    borderCurve: "continuous",
   },
 });

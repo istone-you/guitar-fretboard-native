@@ -281,6 +281,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 5,
     borderRadius: 2.5,
+    borderCurve: "continuous",
     backgroundColor: OVERLAY_COLORS.handle,
   },
 });

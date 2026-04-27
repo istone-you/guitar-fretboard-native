@@ -221,7 +221,7 @@ function ContextMenu({
 
 const menuStyles = StyleSheet.create({
   positioner: { flex: 1, justifyContent: "center", alignItems: "center" },
-  card: { width: 240, borderRadius: 14, overflow: "hidden" },
+  card: { width: 240, borderRadius: 14, borderCurve: "continuous", overflow: "hidden" },
   item: {
     flexDirection: "row",
     alignItems: "center",
@@ -805,7 +805,11 @@ export default function LayerList({
                     <View
                       style={[
                         styles.deleteBackground,
-                        { backgroundColor: SEMANTIC_COLORS.destructive, borderRadius: ROW_RADIUS },
+                        {
+                          backgroundColor: SEMANTIC_COLORS.destructive,
+                          borderRadius: ROW_RADIUS,
+                          borderCurve: "continuous",
+                        },
                       ]}
                     >
                       <View style={styles.deleteIconWrap}>
@@ -976,6 +980,7 @@ export default function LayerList({
                         {
                           borderWidth: 1,
                           borderRadius: ROW_RADIUS,
+                          borderCurve: "continuous",
                           borderColor: getColors(isDark).dragPlaceholderBorder,
                           backgroundColor: getColors(isDark).dragPlaceholderBg,
                         },
@@ -1149,6 +1154,7 @@ const styles = StyleSheet.create({
     gap: 8,
     borderWidth: 1,
     borderRadius: ROW_RADIUS,
+    borderCurve: "continuous",
     paddingVertical: 10,
     paddingHorizontal: 12,
   },
@@ -1185,6 +1191,7 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
     borderWidth: 1,
     borderRadius: 4,
+    borderCurve: "continuous",
     paddingHorizontal: 5,
     paddingVertical: 1,
   },

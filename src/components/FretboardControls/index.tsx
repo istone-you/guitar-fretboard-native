@@ -142,6 +142,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
     backgroundColor: TOOLTIP_COLORS.bg,
     borderRadius: radius.sm,
+    borderCurve: "continuous",
     paddingHorizontal: 10,
     paddingVertical: 6,
     zIndex: 100,

@@ -153,6 +153,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 3,
     borderRadius: 999,
+    borderCurve: "continuous",
   },
   iconWrapper: {
     width: 24,

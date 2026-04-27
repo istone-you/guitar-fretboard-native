@@ -86,6 +86,7 @@ export default function RelatedKeysPanel({
 const styles = StyleSheet.create({
   container: {
     borderRadius: 14,
+    borderCurve: "continuous",
     borderWidth: StyleSheet.hairlineWidth,
     marginHorizontal: 16,
     marginTop: 8,
@@ -100,6 +101,7 @@ const styles = StyleSheet.create({
   cell: {
     alignItems: "center",
     borderRadius: 10,
+    borderCurve: "continuous",
     borderWidth: StyleSheet.hairlineWidth,
     flex: 1,
     minWidth: 72,
@@ -109,6 +111,7 @@ const styles = StyleSheet.create({
   },
   dot: {
     borderRadius: 5,
+    borderCurve: "continuous",
     height: 10,
     width: 10,
   },

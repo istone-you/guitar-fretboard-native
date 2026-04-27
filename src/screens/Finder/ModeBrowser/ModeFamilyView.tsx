@@ -350,6 +350,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 8,
+    borderCurve: "continuous",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -418,6 +419,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 10,
+    borderCurve: "continuous",
   },
   noteChipText: {
     fontSize: 14,

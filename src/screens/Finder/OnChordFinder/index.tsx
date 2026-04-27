@@ -284,6 +284,7 @@ const styles = StyleSheet.create({
   },
   sourceCard: {
     borderRadius: 16,
+    borderCurve: "continuous",
     borderWidth: StyleSheet.hairlineWidth,
     overflow: "hidden",
     paddingHorizontal: 14,
@@ -303,6 +304,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
+    borderCurve: "continuous",
   },
   bassLabel: {
     fontSize: 11,

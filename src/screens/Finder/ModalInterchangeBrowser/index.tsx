@@ -311,6 +311,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     borderRadius: 14,
+    borderCurve: "continuous",
     borderWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: 14,
     paddingVertical: 12,
@@ -337,6 +338,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
+    borderCurve: "continuous",
   },
   badgeLabel: {
     fontSize: 12,

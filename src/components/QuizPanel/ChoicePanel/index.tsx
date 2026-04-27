@@ -97,6 +97,7 @@ const styles = StyleSheet.create({
   },
   choiceBtn: {
     borderRadius: 999,
+    borderCurve: "continuous",
     paddingHorizontal: 14,
     paddingVertical: 12,
     minWidth: 48,
@@ -108,6 +109,7 @@ const styles = StyleSheet.create({
   },
   submitBtn: {
     borderRadius: 999,
+    borderCurve: "continuous",
     paddingVertical: 10,
     paddingHorizontal: 24,
     alignItems: "center",

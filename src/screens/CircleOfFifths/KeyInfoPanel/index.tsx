@@ -112,6 +112,7 @@ export default function KeyInfoPanel({
 const styles = StyleSheet.create({
   container: {
     borderRadius: 14,
+    borderCurve: "continuous",
     borderWidth: StyleSheet.hairlineWidth,
     marginHorizontal: 16,
     marginTop: 8,
@@ -133,6 +134,7 @@ const styles = StyleSheet.create({
   chordChip: {
     alignItems: "center",
     borderRadius: 8,
+    borderCurve: "continuous",
     borderWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: 10,
     paddingVertical: 6,

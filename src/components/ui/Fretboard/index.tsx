@@ -233,6 +233,7 @@ const LayerOverlayDot = memo(function LayerOverlayDot({
         right: inset,
         bottom: inset,
         borderRadius: overlaySize / 2,
+        borderCurve: "continuous",
         alignItems: "center",
         justifyContent: "center",
         zIndex: overlay?.zIndex ?? 12 + idx,
@@ -745,6 +746,7 @@ export default function Fretboard({
                         width: size.customSize,
                         height: size.customSize,
                         borderRadius: size.customSize / 2,
+                        borderCurve: "continuous",
                         backgroundColor: getColors(isDark).textMuted,
                       }}
                     />
@@ -753,6 +755,7 @@ export default function Fretboard({
                         width: size.customSize,
                         height: size.customSize,
                         borderRadius: size.customSize / 2,
+                        borderCurve: "continuous",
                         backgroundColor: getColors(isDark).textMuted,
                       }}
                     />
@@ -763,6 +766,7 @@ export default function Fretboard({
                       width: size.customSize,
                       height: size.customSize,
                       borderRadius: size.customSize / 2,
+                      borderCurve: "continuous",
                       backgroundColor: getColors(isDark).textMuted,
                     }}
                   />
@@ -798,6 +802,7 @@ export default function Fretboard({
                     width,
                     height,
                     borderRadius: 12,
+                    borderCurve: "continuous",
                     borderWidth: 2,
                     zIndex: 6,
                     borderColor: `${color}99`,
@@ -1053,6 +1058,7 @@ const StringRow = memo(function StringRow({
                   right: overlayInset,
                   bottom: overlayInset,
                   borderRadius: overlaySize / 2,
+                  borderCurve: "continuous",
                   backgroundColor: quizColor ?? getColors(isDark).textStrong,
                   borderWidth: 1.5,
                   borderColor: ON_ACCENT.dotBorder,
@@ -1083,6 +1089,7 @@ const StringRow = memo(function StringRow({
                   right: overlayInset,
                   bottom: overlayInset,
                   borderRadius: overlaySize / 2,
+                  borderCurve: "continuous",
                   borderWidth: 2,
                   borderColor: hexToRgba(
                     isDark ? getColors(isDark).textStrong : getColors(isDark).text,
@@ -1106,6 +1113,7 @@ const StringRow = memo(function StringRow({
                   right: overlayInset,
                   bottom: overlayInset,
                   borderRadius: overlaySize / 2,
+                  borderCurve: "continuous",
                   zIndex: 29,
                   opacity: 0.9,
                 }}
@@ -1122,6 +1130,7 @@ const StringRow = memo(function StringRow({
                   right: overlayInset,
                   bottom: overlayInset,
                   borderRadius: overlaySize / 2,
+                  borderCurve: "continuous",
                   backgroundColor: SEMANTIC_COLORS.success,
                   alignItems: "center",
                   justifyContent: "center",
@@ -1151,6 +1160,7 @@ const StringRow = memo(function StringRow({
                   right: overlayInset,
                   bottom: overlayInset,
                   borderRadius: overlaySize / 2,
+                  borderCurve: "continuous",
                   backgroundColor: SEMANTIC_COLORS.success,
                   alignItems: "center",
                   justifyContent: "center",
@@ -1177,6 +1187,7 @@ const StringRow = memo(function StringRow({
                   right: overlayInset,
                   bottom: overlayInset,
                   borderRadius: overlaySize / 2,
+                  borderCurve: "continuous",
                   backgroundColor: SEMANTIC_COLORS.error,
                   alignItems: "center",
                   justifyContent: "center",
@@ -1203,6 +1214,7 @@ const StringRow = memo(function StringRow({
                   right: overlayInset,
                   bottom: overlayInset,
                   borderRadius: overlaySize / 2,
+                  borderCurve: "continuous",
                   backgroundColor: SEMANTIC_COLORS.success,
                   alignItems: "center",
                   justifyContent: "center",

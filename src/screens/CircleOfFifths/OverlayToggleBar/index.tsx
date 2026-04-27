@@ -116,6 +116,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: radius.pill,
+    borderCurve: "continuous",
     borderWidth: 1,
   },
   label: {

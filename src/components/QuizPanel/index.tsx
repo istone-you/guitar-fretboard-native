@@ -630,11 +630,13 @@ const styles = StyleSheet.create({
   navBtn: {
     borderWidth: 1,
     borderRadius: 999,
+    borderCurve: "continuous",
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
   submitBtn: {
     borderRadius: 999,
+    borderCurve: "continuous",
     paddingVertical: 10,
     paddingHorizontal: 24,
     alignItems: "center",
